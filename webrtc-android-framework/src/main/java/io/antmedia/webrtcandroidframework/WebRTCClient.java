@@ -115,6 +115,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   private String errorString = null;
   private String streamMode;
   private boolean openFrontCamera = true;
+  private boolean useUSBCamera;
 
   public WebRTCClient(IWebRTCListener webRTCListener, Activity context) {
     this.webRTCListener = webRTCListener;
@@ -133,6 +134,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   public SurfaceViewRenderer getFullscreenRenderer() {
     return fullscreenRenderer;
   }
+
 
   @Override
   public void startStream(String url, String streamId, String mode){
@@ -350,11 +352,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   }
 
   private boolean captureToTexture() {
-    return this.activity.getIntent().getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
+    return this.activity.getIntent().getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
   }
 
   public void setOpenFrontCamera(boolean openFrontCamera) {
-      this.openFrontCamera = openFrontCamera;
+    this.openFrontCamera = openFrontCamera;
   }
 
   private @Nullable VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
@@ -647,7 +649,14 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
       }
     } else if (screencaptureEnabled) {
       return createScreenCapturer();
-    } else if (useCamera2()) {
+    }
+    else if (isUseUSBCamera())
+    {
+      Logging.d(TAG, "Creating capturer using USB  Camera .");
+      videoCapturer = createCameraCapturer(new USBCameraEnumerator(this.activity, captureToTexture()));
+    }
+    else if (useCamera2())
+    {
       if (!captureToTexture()) {
         reportError(this.activity.getString(R.string.camera2_texture_only_error));
         return null;
@@ -666,6 +675,8 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     return videoCapturer;
   }
 
+
+
   public void setSwappedFeeds(boolean isSwappedFeeds) {
     Logging.d(TAG, "setSwappedFeeds: " + isSwappedFeeds);
     if (this.streamMode.equals(MODE_PUBLISH)) {
@@ -675,11 +686,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
       remoteProxyRenderer.setTarget(fullscreenRenderer);
     }
     else {
-        this.isSwappedFeeds = isSwappedFeeds;
-        localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
-        remoteProxyRenderer.setTarget(isSwappedFeeds ? pipRenderer : fullscreenRenderer);
-        fullscreenRenderer.setMirror(isSwappedFeeds);
-        pipRenderer.setMirror(!isSwappedFeeds);
+      this.isSwappedFeeds = isSwappedFeeds;
+      localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
+      remoteProxyRenderer.setTarget(isSwappedFeeds ? pipRenderer : fullscreenRenderer);
+      fullscreenRenderer.setMirror(isSwappedFeeds);
+      pipRenderer.setMirror(!isSwappedFeeds);
     }
   }
 
@@ -706,26 +717,28 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     if (peerConnectionParameters.videoCallEnabled) {
       videoCapturer = createVideoCapturer();
     }
-    peerConnectionClient.createPeerConnection(
-            localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+    if (peerConnectionClient != null) {
+      peerConnectionClient.createPeerConnection(
+              localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
 
-    if (signalingParameters.initiator) {
-      logAndToast("Creating OFFER...");
-      // Create offer. Offer SDP will be sent to answering client in
-      // PeerConnectionEvents.onLocalDescription event.
-      peerConnectionClient.createOffer();
-    } else {
-      if (params.offerSdp != null) {
-        peerConnectionClient.setRemoteDescription(params.offerSdp);
-        logAndToast("Creating ANSWER...");
-        // Create answer. Answer SDP will be sent to offering client in
+      if (signalingParameters.initiator) {
+        logAndToast("Creating OFFER...");
+        // Create offer. Offer SDP will be sent to answering client in
         // PeerConnectionEvents.onLocalDescription event.
-        peerConnectionClient.createAnswer();
-      }
-      if (params.iceCandidates != null) {
-        // Add remote ICE candidates from room.
-        for (IceCandidate iceCandidate : params.iceCandidates) {
-          peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+        peerConnectionClient.createOffer();
+      } else {
+        if (params.offerSdp != null) {
+          peerConnectionClient.setRemoteDescription(params.offerSdp);
+          logAndToast("Creating ANSWER...");
+          // Create answer. Answer SDP will be sent to offering client in
+          // PeerConnectionEvents.onLocalDescription event.
+          peerConnectionClient.createAnswer();
+        }
+        if (params.iceCandidates != null) {
+          // Add remote ICE candidates from room.
+          for (IceCandidate iceCandidate : params.iceCandidates) {
+            peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+          }
         }
       }
     }
@@ -965,5 +978,13 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         webRTCListener.onDisconnected();
       }
     });
+  }
+
+  public boolean isUseUSBCamera() {
+    return useUSBCamera;
+  }
+
+  public void setUseUSBCamera(boolean useUSBCamera) {
+    this.useUSBCamera = useUSBCamera;
   }
 }

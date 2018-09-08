@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/webrtc-android-framework" />
+            <option value="$PROJECT_DIR$/webrtcsampleapp" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
