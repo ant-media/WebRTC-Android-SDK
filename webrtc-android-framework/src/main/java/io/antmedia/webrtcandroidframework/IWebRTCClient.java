@@ -45,8 +45,9 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @param url websocket url to connect
      * @param streamId is the stream id in the server to process
      * @param mode one of the MODE_PUBLISH, MODE_PLAY, MODE_JOIN
+     * @param token one time token string
      */
-    void startStream(String url, String streamId, String mode);
+    void startStream(String url, String streamId, String mode, String token);
 
     /**
      * Stops the streaming

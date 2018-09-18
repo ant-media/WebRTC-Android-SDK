@@ -135,7 +135,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   }
 
   @Override
-  public void startStream(String url, String streamId, String mode){
+  public void startStream(String url, String streamId, String mode, String token){
 
     iceConnected = false;
     signalingParameters = null;
@@ -280,7 +280,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     // Create connection parameters.
     String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
     roomConnectionParameters =
-            new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode);
+            new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode ,token);
 
 
     // For command line execution run connection for <runTimeMs> and exit.
