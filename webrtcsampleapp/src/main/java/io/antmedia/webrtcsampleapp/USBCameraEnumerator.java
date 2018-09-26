@@ -1,4 +1,4 @@
-package io.antmedia.webrtcandroidframework;
+package io.antmedia.webrtcsampleapp;
 
 import android.app.Activity;
 import android.hardware.usb.UsbDevice;

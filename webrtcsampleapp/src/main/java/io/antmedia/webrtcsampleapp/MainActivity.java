@@ -22,7 +22,7 @@ import io.antmedia.webrtcandroidframework.apprtc.UnhandledExceptionHandler;
 public class MainActivity extends AppCompatActivity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.21:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://10.10.31.87:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -65,7 +65,9 @@ public class MainActivity extends AppCompatActivity implements IWebRTCListener {
 
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
 
-        webRTCClient.setUseUSBCamera(true);
+       //webRTCClient.setUseUSBCamera(true);
+
+        webRTCClient.setCameraEnumerator(new USBCameraEnumerator(this, true));
 
         webRTCClient.startStream(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH);
 

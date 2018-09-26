@@ -115,7 +115,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   private String errorString = null;
   private String streamMode;
   private boolean openFrontCamera = true;
-  private boolean useUSBCamera;
+  private CameraEnumerator cameraEnumerator;
 
   public WebRTCClient(IWebRTCListener webRTCListener, Activity context) {
     this.webRTCListener = webRTCListener;
@@ -637,6 +637,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     });
   }
 
+  public void setCameraEnumerator(CameraEnumerator cameraEnumerator) {
+
+    this.cameraEnumerator = cameraEnumerator;
+  }
+
   private @Nullable VideoCapturer createVideoCapturer() {
     final VideoCapturer videoCapturer;
     String videoFileAsCamera = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
@@ -650,10 +655,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     } else if (screencaptureEnabled) {
       return createScreenCapturer();
     }
-    else if (isUseUSBCamera())
+
+    else if (cameraEnumerator != null)
     {
       Logging.d(TAG, "Creating capturer using USB  Camera .");
-      videoCapturer = createCameraCapturer(new USBCameraEnumerator(this.activity, captureToTexture()));
+      videoCapturer = createCameraCapturer(cameraEnumerator);
     }
     else if (useCamera2())
     {
@@ -980,11 +986,4 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     });
   }
 
-  public boolean isUseUSBCamera() {
-    return useUSBCamera;
-  }
-
-  public void setUseUSBCamera(boolean useUSBCamera) {
-    this.useUSBCamera = useUSBCamera;
-  }
 }

@@ -1,9 +1,9 @@
-package io.antmedia.webrtcandroidframework;
+package io.antmedia.webrtcsampleapp;
 
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
-import android.media.MediaRecorder;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Surface;
 
@@ -13,12 +13,8 @@ import com.serenegiant.usb.UVCCamera;
 
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.SurfaceTextureHelper;
-import org.webrtc.VideoFrame;
-import org.webrtc.VideoSink;
 
 import java.util.List;
-
-import javax.annotation.Nullable;
 
 class USBCameraCapturer implements CameraVideoCapturer {
     private static final String TAG = USBCameraCapturer.class.getSimpleName();
