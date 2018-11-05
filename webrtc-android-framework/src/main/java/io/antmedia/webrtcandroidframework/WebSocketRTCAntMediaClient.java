@@ -120,7 +120,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
       public void run() {
         try {
           connectToRoomInternal();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
           e.printStackTrace();
         }
       }
