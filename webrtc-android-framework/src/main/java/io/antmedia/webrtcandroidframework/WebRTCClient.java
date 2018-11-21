@@ -115,6 +115,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   private String errorString = null;
   private String streamMode;
   private boolean openFrontCamera = true;
+  private VideoCapturer videoCapturer;
 
   public WebRTCClient(IWebRTCListener webRTCListener, Activity context) {
     this.webRTCListener = webRTCListener;
@@ -134,8 +135,10 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     return fullscreenRenderer;
   }
 
+
+
   @Override
-  public void startStream(String url, String streamId, String mode, String token){
+  public void init(String url, String streamId, String mode, String token){
 
     iceConnected = false;
     signalingParameters = null;
@@ -275,7 +278,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     //  appRtcClient = new DirectRTCClient(this);
     //}
 
-    appRtcClient = new WebSocketRTCAntMediaClient(this);
+
 
     // Create connection parameters.
     String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
@@ -293,6 +296,8 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
       }, runTimeMs);
     }
 
+
+
     // Create peer connection client.
     peerConnectionClient = new PeerConnectionClient(
             this.activity.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this);
@@ -302,6 +307,17 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     }
     peerConnectionClient.createPeerConnectionFactory(options);
 
+    videoCapturer = null;
+    if (peerConnectionParameters.videoCallEnabled) {
+      videoCapturer = createVideoCapturer();
+    }
+
+    peerConnectionClient.init(videoCapturer, localProxyVideoSink);
+
+  }
+
+  public void startStream() {
+    appRtcClient = new WebSocketRTCAntMediaClient(this);
     if (screencaptureEnabled) {
       startScreenCapture();
     } else {
@@ -354,7 +370,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
   }
 
   public void setOpenFrontCamera(boolean openFrontCamera) {
-      this.openFrontCamera = openFrontCamera;
+    this.openFrontCamera = openFrontCamera;
   }
 
   private @Nullable VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
@@ -675,11 +691,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
       remoteProxyRenderer.setTarget(fullscreenRenderer);
     }
     else {
-        this.isSwappedFeeds = isSwappedFeeds;
-        localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
-        remoteProxyRenderer.setTarget(isSwappedFeeds ? pipRenderer : fullscreenRenderer);
-        fullscreenRenderer.setMirror(isSwappedFeeds);
-        pipRenderer.setMirror(!isSwappedFeeds);
+      this.isSwappedFeeds = isSwappedFeeds;
+      localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
+      remoteProxyRenderer.setTarget(isSwappedFeeds ? pipRenderer : fullscreenRenderer);
+      fullscreenRenderer.setMirror(isSwappedFeeds);
+      pipRenderer.setMirror(!isSwappedFeeds);
     }
   }
 
@@ -702,10 +718,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
     signalingParameters = params;
     logAndToast("Creating peer connection, delay=" + delta + "ms");
-    VideoCapturer videoCapturer = null;
-    if (peerConnectionParameters.videoCallEnabled) {
-      videoCapturer = createVideoCapturer();
-    }
+
     peerConnectionClient.createPeerConnection(
             localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
 

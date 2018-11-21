@@ -20,7 +20,7 @@ import io.antmedia.webrtcandroidframework.apprtc.UnhandledExceptionHandler;
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.29:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -52,7 +52,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
 
         //String streamId = "stream" + (int)(Math.random() * 999);
-        String streamId = "stream1";
+        String streamId = "stream136";
         String tokenId = "tokenId";
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
@@ -62,7 +62,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
-        webRTCClient.startStream(SERVER_URL, streamId, IWebRTCClient.MODE_PLAY, tokenId);
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId);
+
+
+        webRTCClient.startStream();
 
     }
 
