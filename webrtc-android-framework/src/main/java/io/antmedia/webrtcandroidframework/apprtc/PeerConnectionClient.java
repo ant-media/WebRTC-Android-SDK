@@ -11,6 +11,7 @@
 package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -188,7 +189,6 @@ public class PeerConnectionClient {
     private RecordedAudioToFileController saveRecordedAudioToFile = null;
 
 
-
     public void init(VideoCapturer videoCapturer, VideoSink localRender) {
         this.localRender = localRender;
         this.videoCapturer = videoCapturer;
@@ -197,6 +197,10 @@ public class PeerConnectionClient {
             createVideoTrack(videoCapturer);
             createAudioTrack();
         });
+    }
+
+    public SurfaceTexture getSurfaceTexture() {
+        return surfaceTextureHelper.getSurfaceTexture();
     }
 
     /**
@@ -1036,6 +1040,19 @@ public class PeerConnectionClient {
             localVideoTrack.addSink(localRender);
         }
 
+        return localVideoTrack;
+    }
+
+    public int getSurfaceWidth() {
+        return surfaceTextureHelper.getTextureWidth();
+    }
+
+    public int getSurfaceHeight() {
+        return surfaceTextureHelper.getTextureHeight();
+    }
+
+    @Nullable
+    public VideoTrack getLocalVideoTrack() {
         return localVideoTrack;
     }
 

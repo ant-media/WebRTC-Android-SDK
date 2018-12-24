@@ -1,39 +1,50 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.media.MediaCodec;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.HandlerThread;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
+import android.view.Surface;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
+import org.webrtc.EglBase;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoSink;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
+import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 import io.antmedia.webrtcandroidframework.apprtc.UnhandledExceptionHandler;
+
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.34:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
-
-        //below exception handler show the exception in a popup window
-        //it is better to use in development, do not use in production
-        Thread.setDefaultUncaughtExceptionHandler(new UnhandledExceptionHandler(this));
 
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
@@ -52,7 +63,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
 
         //String streamId = "stream" + (int)(Math.random() * 999);
-        String streamId = "stream136";
+        String streamId = "stream1";
         String tokenId = "tokenId";
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
@@ -62,10 +73,34 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
+        // Check for mandatory permissions.
+        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
+            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
+
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId);
 
-
         webRTCClient.startStream();
+
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    public void startRecording(View v) {
+        if (!webRTCClient.isRecording()) {
+
+            ((Button)v).setText("Stop Recording");
+            webRTCClient.startRecording(null, 800000, 64000);
+        }
+        else {
+            webRTCClient.stopRecording();
+            ((Button)v).setText("Start Recording");
+        }
 
     }
 
@@ -111,6 +146,9 @@ public class MainActivity extends Activity implements IWebRTCListener {
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
+        if (webRTCClient.isRecording()) {
+            webRTCClient.stopRecording();
+        }
     }
 
     @Override
@@ -126,6 +164,4 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         finish();
     }
-
-
 }
