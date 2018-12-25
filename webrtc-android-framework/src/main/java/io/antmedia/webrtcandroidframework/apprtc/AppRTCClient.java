@@ -31,14 +31,16 @@ public interface AppRTCClient {
     public final boolean loopback;
     public final String urlParameters;
     public final String mode;
+    public final String token;
 
     public RoomConnectionParameters(
-        String roomUrl, String roomId, boolean loopback, String urlParameters, String mode) {
+        String roomUrl, String roomId, boolean loopback, String urlParameters, String mode, String token) {
       this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.loopback = loopback;
       this.urlParameters = urlParameters;
       this.mode = mode;
+      this.token = token;
     }
 
   }

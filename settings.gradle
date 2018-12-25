@@ -1,1 +1,1 @@
-include ':webrtc-android-framework', ':webrtcsampleapp'
+include ':webrtc-android-framework', ':webrtc-android-sample-app'

@@ -47,7 +47,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
 
 
   /*
-  WS communication parameters for Ant media server entegration
+  WS communication parameters for Ant media server integration
    */
 
   private static final String COMMAND_PUBLISH = "publish";
@@ -64,6 +64,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   private static final String PLAY_FINISHED_DEFINITION = "play_finished";
   public static final String COMMAND = "command";
   public static final String STREAM_ID = "streamId";
+  public static final String TOKEN_ID = "token";
   private static final String COMMAND_PLAY = "play";
   public static final String COMMAND_JOIN = "join";
   public static final String ERROR_COMMAND = "error";
@@ -119,7 +120,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
       public void run() {
         try {
           connectToRoomInternal();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
           e.printStackTrace();
         }
       }
@@ -150,7 +151,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
 
 
   // Connects to room - function runs on a local looper thread.
-  private void connectToRoomInternal() throws InterruptedException {
+  private void connectToRoomInternal() {
 
     //  setServerName("192.168.1.4");
 
@@ -162,7 +163,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
     roomState = ConnectionState.NEW;
 
 
-    wsClient = new WebSocketChannelAntMediaClient(handler, this, connectionParameters.roomId,connectionParameters.mode);
+    wsClient = new WebSocketChannelAntMediaClient(handler, this, connectionParameters.roomId, connectionParameters.mode, connectionParameters.token);
 
     if(connectionParameters.mode.equals(COMMAND_JOIN)){
       setLeaveMessage("leave");

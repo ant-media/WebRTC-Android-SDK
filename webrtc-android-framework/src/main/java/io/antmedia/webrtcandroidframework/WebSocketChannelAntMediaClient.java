@@ -13,8 +13,6 @@ package io.antmedia.webrtcandroidframework;
 import android.os.Handler;
 import android.util.Log;
 
-import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
-import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,6 +23,8 @@ import java.util.LinkedList;
 import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 
 /**
  * WebSocket client implementation.
@@ -46,6 +46,7 @@ public class WebSocketChannelAntMediaClient {
   private String postServerUrl;
   private String roomID;
   private String clientID;
+  private String token;
   private WebSocketConnectionState state;
   private final Object closeEventLock = new Object();
   private boolean closeEvent;
@@ -70,11 +71,12 @@ public class WebSocketChannelAntMediaClient {
     void onWebSocketError(final String description);
   }
 
-  public WebSocketChannelAntMediaClient(Handler handler, WebSocketChannelEvents events, String roomID, String streamMode) {
+  public WebSocketChannelAntMediaClient(Handler handler, WebSocketChannelEvents events, String roomID, String streamMode, String token) {
     this.handler = handler;
     this.events = events;
     this.roomID = roomID;
     this.streamMode = streamMode;
+    this.token = token;
     clientID = null;
     wsSendQueue = new LinkedList<String>();
     state = WebSocketConnectionState.NEW;
@@ -252,7 +254,7 @@ public class WebSocketChannelAntMediaClient {
     try {
       json.put(WebSocketRTCAntMediaClient.COMMAND, streamMode);
       json.put(WebSocketRTCAntMediaClient.STREAM_ID, roomID);
-
+      json.put(WebSocketRTCAntMediaClient.TOKEN_ID, token);
 
       Log.d(TAG, "websocket first message from client " + json.toString());
 

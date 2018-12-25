@@ -32,7 +32,6 @@ import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
-
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -189,6 +188,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private CallFragment callFragment;
   private HudFragment hudFragment;
   private CpuMonitor cpuMonitor;
+  private String tokenId;
 
   @Override
   // TODO(bugs.webrtc.org/8580): LayoutParams.FLAG_TURN_SCREEN_ON and
@@ -347,7 +347,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     // Create connection parameters.
     String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
     roomConnectionParameters =
-        new AppRTCClient.RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters, null);
+        new AppRTCClient.RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters, null, tokenId);
 
     // Create CPU monitor
     if (CpuMonitor.isSupported()) {

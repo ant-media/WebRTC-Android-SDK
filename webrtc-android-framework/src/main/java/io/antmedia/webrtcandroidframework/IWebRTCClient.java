@@ -37,16 +37,24 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      */
     void setOpenFrontCamera(boolean openFrontCamera);
 
+
     /**
-     * Starts the streaming according to mode
+
      * If mode is MODE_PUBLISH, stream with streamId field will be published to the Server
      * if mode is MODE_PLAY, stream with streamId field will be played from the Server
      *
      * @param url websocket url to connect
      * @param streamId is the stream id in the server to process
      * @param mode one of the MODE_PUBLISH, MODE_PLAY, MODE_JOIN
+     * @param token one time token string
      */
-    void startStream(String url, String streamId, String mode);
+    void init(String url, String streamId, String mode, String token);
+
+
+    /**
+     * Starts the streaming according to mode
+     */
+    void startStream();
 
     /**
      * Stops the streaming
