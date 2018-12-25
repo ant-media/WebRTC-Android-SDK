@@ -847,33 +847,34 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     private void onConnectedToRoomInternal(final AppRTCClient.SignalingParameters params) {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
-    signalingParameters = params;
-    logAndToast("Creating peer connection, delay=" + delta + "ms");
-    VideoCapturer videoCapturer = null;
-    if (peerConnectionParameters.videoCallEnabled) {
-      videoCapturer = createVideoCapturer();
-    }
-    if (peerConnectionClient != null) {
-      peerConnectionClient.createPeerConnection(
-              localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+        signalingParameters = params;
+        logAndToast("Creating peer connection, delay=" + delta + "ms");
+        VideoCapturer videoCapturer = null;
+        if (peerConnectionParameters.videoCallEnabled) {
+            videoCapturer = createVideoCapturer();
+        }
+        if (peerConnectionClient != null) {
+            peerConnectionClient.createPeerConnection(
+                    localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
 
-        if (signalingParameters.initiator) {
-            logAndToast("Creating OFFER...");
-            // Create offer. Offer SDP will be sent to answering client in
-            // PeerConnectionEvents.onLocalDescription event.
-            peerConnectionClient.createOffer();
-        } else {
-            if (params.offerSdp != null) {
-                peerConnectionClient.setRemoteDescription(params.offerSdp);
-                logAndToast("Creating ANSWER...");
-                // Create answer. Answer SDP will be sent to offering client in
+            if (signalingParameters.initiator) {
+                logAndToast("Creating OFFER...");
+                // Create offer. Offer SDP will be sent to answering client in
                 // PeerConnectionEvents.onLocalDescription event.
-                peerConnectionClient.createAnswer();
-            }
-            if (params.iceCandidates != null) {
-                // Add remote ICE candidates from room.
-                for (IceCandidate iceCandidate : params.iceCandidates) {
-                    peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                peerConnectionClient.createOffer();
+            } else {
+                if (params.offerSdp != null) {
+                    peerConnectionClient.setRemoteDescription(params.offerSdp);
+                    logAndToast("Creating ANSWER...");
+                    // Create answer. Answer SDP will be sent to offering client in
+                    // PeerConnectionEvents.onLocalDescription event.
+                    peerConnectionClient.createAnswer();
+                }
+                if (params.iceCandidates != null) {
+                    // Add remote ICE candidates from room.
+                    for (IceCandidate iceCandidate : params.iceCandidates) {
+                        peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                    }
                 }
             }
         }
