@@ -85,6 +85,8 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import io.antmedia.webrtcandroidframework.recorder.SharedAudioRecorderBuilder;
+
 /**
  * Peer connection client implementation.
  *
@@ -187,6 +189,8 @@ public class PeerConnectionClient {
     // recorded audio samples to an output file.
     @Nullable
     private RecordedAudioToFileController saveRecordedAudioToFile = null;
+    private org.webrtc.audio.WebRtcAudioRecord webRtcAudioRecord;
+    private int sampleRate;
 
 
     public void init(VideoCapturer videoCapturer, VideoSink localRender) {
@@ -442,9 +446,12 @@ public class PeerConnectionClient {
             }
         }
 
-        final AudioDeviceModule adm = peerConnectionParameters.useLegacyAudioDevice
-                ? createLegacyAudioDevice()
-                : createJavaAudioDevice();
+        //final AudioDeviceModule adm = peerConnectionParameters.useLegacyAudioDevice
+         //       ? createLegacyAudioDevice()
+         //       : createJavaAudioDevice();
+
+        final AudioDeviceModule adm = createSharedJavaAudioDevice();
+
 
         // Create peer connection factory.
         if (options != null) {
@@ -617,6 +624,79 @@ public class PeerConnectionClient {
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
                 .createAudioDeviceModule();
+    }
+
+    AudioDeviceModule createSharedJavaAudioDevice() {
+        // Enable/disable OpenSL ES playback.
+        if (!peerConnectionParameters.useOpenSLES) {
+            Log.w(TAG, "External OpenSLES ADM not implemented yet.");
+            // TODO(magjed): Add support for external OpenSLES ADM.
+        }
+
+        // Set audio record error callbacks.
+        AudioRecordErrorCallback audioRecordErrorCallback = new AudioRecordErrorCallback() {
+            @Override
+            public void onWebRtcAudioRecordInitError(String errorMessage) {
+                Log.e(TAG, "onWebRtcAudioRecordInitError: " + errorMessage);
+                reportError(errorMessage);
+            }
+
+            @Override
+            public void onWebRtcAudioRecordStartError(
+                    JavaAudioDeviceModule.AudioRecordStartErrorCode errorCode, String errorMessage) {
+                Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorCode + ". " + errorMessage);
+                reportError(errorMessage);
+            }
+
+            @Override
+            public void onWebRtcAudioRecordError(String errorMessage) {
+                Log.e(TAG, "onWebRtcAudioRecordError: " + errorMessage);
+                reportError(errorMessage);
+            }
+        };
+
+        AudioTrackErrorCallback audioTrackErrorCallback = new AudioTrackErrorCallback() {
+            @Override
+            public void onWebRtcAudioTrackInitError(String errorMessage) {
+                Log.e(TAG, "onWebRtcAudioTrackInitError: " + errorMessage);
+                reportError(errorMessage);
+            }
+
+            @Override
+            public void onWebRtcAudioTrackStartError(
+                    JavaAudioDeviceModule.AudioTrackStartErrorCode errorCode, String errorMessage) {
+                Log.e(TAG, "onWebRtcAudioTrackStartError: " + errorCode + ". " + errorMessage);
+                reportError(errorMessage);
+            }
+
+            @Override
+            public void onWebRtcAudioTrackError(String errorMessage) {
+                Log.e(TAG, "onWebRtcAudioTrackError: " + errorMessage);
+                reportError(errorMessage);
+            }
+        };
+
+        SharedAudioRecorderBuilder builder = new SharedAudioRecorderBuilder(appContext);
+        AudioDeviceModule audioDeviceModule = builder.setSamplesReadyCallback(saveRecordedAudioToFile)
+                .setUseHardwareAcousticEchoCanceler(!peerConnectionParameters.disableBuiltInAEC)
+                .setUseHardwareNoiseSuppressor(!peerConnectionParameters.disableBuiltInNS)
+                .setAudioRecordErrorCallback(audioRecordErrorCallback)
+                .setAudioTrackErrorCallback(audioTrackErrorCallback)
+                .createAudioDeviceModule();
+
+        webRtcAudioRecord = builder.getAudioInput();
+        sampleRate = builder.getSampleRate();
+
+
+        return audioDeviceModule;
+    }
+
+    public org.webrtc.audio.WebRtcAudioRecord getWebRtcAudioRecord() {
+        return webRtcAudioRecord;
+    }
+
+    public int getSampleRate() {
+        return sampleRate;
     }
 
     private void createMediaConstraintsInternal() {

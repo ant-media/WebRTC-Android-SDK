@@ -50,6 +50,7 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
+import org.webrtc.audio.WebRtcAudioRecord;
 
 import java.io.File;
 import java.io.IOException;
@@ -130,7 +131,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     private boolean recording;
     private CameraEnumerator cameraEnumerator;
 
-    private Surface persistentSurface;
     private HandlerThread handlerThread;
     private RecorderSurfaceDrawer recorderSurfaceDrawer;
     private VideoSink recorderVideoSink = new VideoSink() {
@@ -350,23 +350,10 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
                     Environment.DIRECTORY_MOVIES), "record" + System.currentTimeMillis() + ".mp4");
         }
 
-       // try {
-
-        /*
-            int minBufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-
-            AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, 16000,
-                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
-
-            if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
-                audioRecord.startRecording();
-            }
-            */
-
-        persistentSurface = MediaCodec.createPersistentInputSurface();
         handlerThread = new HandlerThread("recorder surface handler");
         handlerThread.start();
-        recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), persistentSurface, handlerThread.getLooper(), 1000000, file);
+        recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), handlerThread.getLooper(), 1000000, file, peerConnectionClient.getWebRtcAudioRecord()
+                                    ,peerConnectionClient.getSampleRate(), 1);
         recorderSurfaceDrawer.startRecording(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
 
         peerConnectionClient.getLocalVideoTrack().addSink(recorderVideoSink);
@@ -375,43 +362,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
 
         recording = true;
-        /*
-            mediaRecorder = new MediaRecorder();
 
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            //mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            //persistentSurface = MediaCodec.createPersistentInputSurface();
-
-         //   handlerThread = new HandlerThread("recorder surface handler");
-         //   handlerThread.start();
-         //   recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), persistentSurface, handlerThread.getLooper());
-
-
-            //mediaRecorder.setInputSurface(persistentSurface);
-
-            mediaRecorder.setAudioSamplingRate(16000);
-
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            //mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mediaRecorder.setOutputFile(file.getAbsolutePath());
-            //mediaRecorder.setVideoSize(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
-            //mediaRecorder.setVideoEncodingBitRate(videoBitrate);
-            //mediaRecorder.setAudioEncodingBitRate(audioBitrate);
-
-            mediaRecorder.prepare();
-
-            mediaRecorder.start();
-
-            //
-
-         */
-
-       /* } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
     }
 
     public void stopRecording() {
@@ -426,9 +377,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         if (recorderSurfaceDrawer != null) {
             recorderSurfaceDrawer.release();
         }
-        if (persistentSurface != null) {
-            persistentSurface.release();
-        }
+
         if (handlerThread != null) {
             handlerThread.quitSafely();
         }
@@ -664,6 +613,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
                     onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
                 }
             });
+
         }
     }
 

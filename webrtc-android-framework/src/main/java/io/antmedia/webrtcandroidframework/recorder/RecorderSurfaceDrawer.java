@@ -1,16 +1,12 @@
 package io.antmedia.webrtcandroidframework.recorder;
 
 import android.graphics.Matrix;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.media.MediaMuxer;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.os.Process;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
@@ -23,11 +19,10 @@ import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoFrameDrawer;
+import org.webrtc.audio.WebRtcAudioRecord;
 
 import java.io.File;
 import java.io.IOException;
-
-import io.antmedia.webrtcandroidframework.recorder.VideoEncoderCore;
 
 
 public class RecorderSurfaceDrawer extends Handler {
@@ -41,6 +36,7 @@ public class RecorderSurfaceDrawer extends Handler {
     private final EglBase eglBase;
     private final File file;
     private final int videoBitrate;
+    private final WebRtcAudioRecord webrtcAudioRecord;
     private Surface textureInputSurface;
 
     private final GlRectDrawer textureDrawer = new GlRectDrawer();
@@ -48,24 +44,27 @@ public class RecorderSurfaceDrawer extends Handler {
 
     public static final String TAG = "RecorderSurfaceDrawer";
 
-    public final static int SAMPLE_AUDIO_RATE_IN_HZ = 48000;
-
     @Nullable
     private EglBase14 textureEglBase;
     private ThreadUtils.ThreadChecker encodeThreadChecker = new ThreadUtils.ThreadChecker();
     private VideoEncoderCore mVideoEncoder;
     private MediaMuxer mMuxer;
-    private AudioRecorderThread audioThread;
+    private AudioRecordListener audioRecordListener;
     private boolean isStarted = false;
     private int frameCount = 0;
+    private int sampleRate;
+    private int channels;
 
 
-    public RecorderSurfaceDrawer(EglBase eglBase, Surface surface, Looper looper, int videoBitrate, File file) {
+    public RecorderSurfaceDrawer(EglBase eglBase, Looper looper, int videoBitrate, File file,
+                                 WebRtcAudioRecord audioRecord, int sampleRate, int channels) {
         super(looper);
         this.eglBase = eglBase;
-        this.textureInputSurface = surface;
         this.file = file;
         this.videoBitrate = videoBitrate;
+        this.webrtcAudioRecord = audioRecord;
+        this.sampleRate = sampleRate;
+        this.channels = channels;
     }
 
     public void startRecording(int width, int height) {
@@ -112,11 +111,10 @@ public class RecorderSurfaceDrawer extends Handler {
 
                     {
                         //audio encoder block
+                        audioRecordListener = new AudioRecordListener(System.currentTimeMillis(), mMuxer, sampleRate, channels);
 
-                        audioThread = new AudioRecorderThread(SAMPLE_AUDIO_RATE_IN_HZ, System.currentTimeMillis(), mMuxer);
-                        audioThread.start();
+                        webrtcAudioRecord.startRecordingJava(sampleRate, channels, audioRecordListener);
                     }
-
 
 
                 } catch (IOException e) {
@@ -126,11 +124,13 @@ public class RecorderSurfaceDrawer extends Handler {
                 break;
             case MSG_STOP_RECORDING:
                 mVideoEncoder.drainEncoder(true);
-                audioThread.stopAudioRecording();
+                webrtcAudioRecord.stopRecordingJava();
+                audioRecordListener.stopAudioRecording();
 
-                while (audioThread.isAlive()) {
+                while (!audioRecordListener.isFinished()) {
                     try {
-                        Thread.sleep(100);
+                        Log.i(TAG, "Waiting for Audio Recorder fully finish");
+                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -145,11 +145,11 @@ public class RecorderSurfaceDrawer extends Handler {
                     mVideoEncoder.drainEncoder(false);
                     _drawTextureBuffer((VideoFrame) inputMessage.obj);
                 }
-                if (!isStarted && mVideoEncoder.getTrackIndex() != -1 && audioThread.getTrackIndex() != -1) {
+                if (!isStarted && mVideoEncoder.getTrackIndex() != -1 && audioRecordListener.getTrackIndex() != -1) {
                     isStarted = true;
                     mMuxer.start();
                     mVideoEncoder.setMuxerStarted(true);
-                    audioThread.setMuxerStarted(true);
+                    audioRecordListener.setMuxerStarted(true);
                 }
                 frameCount++;
 

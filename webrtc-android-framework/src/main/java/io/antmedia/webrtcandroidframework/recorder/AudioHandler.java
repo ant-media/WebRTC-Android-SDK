@@ -15,6 +15,7 @@ public class AudioHandler extends Handler {
     public static final int END_OF_STREAM = 2;
 
     private AudioEncoder audioEncoder = null;
+    private boolean stopMessageProcessed = false;
 
     public AudioEncoder getAudioEncoder() {
         return audioEncoder;
@@ -25,12 +26,12 @@ public class AudioHandler extends Handler {
 
     }
 
-    public boolean startAudioEncoder(MediaMuxer mediaMuxer, int sampleRate, int bufferSize) {
+    public boolean startAudioEncoder(MediaMuxer mediaMuxer, int sampleRate,  int channels, int bufferSize) {
         boolean result = false;
 
         audioEncoder = new AudioEncoder();
         try {
-            result = audioEncoder.startAudioEncoder(sampleRate, 1, 64000, bufferSize, mediaMuxer);
+            result = audioEncoder.startAudioEncoder(sampleRate, channels, 64000, bufferSize, mediaMuxer);
         } catch (Exception e) {
             e.printStackTrace();
             audioEncoder = null;
@@ -59,6 +60,7 @@ public class AudioHandler extends Handler {
                     Log.d("audio handler", "stop audio encoding...");
                     audioEncoder.stopEncoding();
                     removeMessages(RECORD_AUDIO);
+                    stopMessageProcessed = true;
                 }
                 break;
             case RECORD_AUDIO:
@@ -73,5 +75,9 @@ public class AudioHandler extends Handler {
 
     public void setMuxerStarted(boolean muxerStarted) {
         this.audioEncoder.setMuxerStarted(muxerStarted);
+    }
+
+    public boolean isStopMessageProcessed() {
+        return stopMessageProcessed;
     }
 }
