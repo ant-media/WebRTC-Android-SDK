@@ -36,7 +36,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://10.2.32.135:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.20.2.204:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -158,10 +158,14 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void onDisconnected() {
-
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
         finish();
+    }
+
+    @Override
+    public void onConnected() {
+        //it is called when connected to ice
     }
 }

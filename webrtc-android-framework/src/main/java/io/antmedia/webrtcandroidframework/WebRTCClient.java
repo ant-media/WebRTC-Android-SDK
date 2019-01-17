@@ -968,6 +968,10 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
                 logAndToast("ICE connected, delay=" + delta + "ms");
                 iceConnected = true;
                 callConnected();
+
+                if (webRTCListener != null) {
+                    webRTCListener.onConnected();
+                }
             }
         });
     }
@@ -980,6 +984,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
                 logAndToast("ICE disconnected");
                 iceConnected = false;
                 disconnect();
+
             }
         });
     }

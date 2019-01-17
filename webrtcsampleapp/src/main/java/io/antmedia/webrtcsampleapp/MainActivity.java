@@ -135,5 +135,8 @@ public class MainActivity extends AppCompatActivity implements IWebRTCListener {
         finish();
     }
 
+    @Override
+    public void onConnected() {
 
+    }
 }
