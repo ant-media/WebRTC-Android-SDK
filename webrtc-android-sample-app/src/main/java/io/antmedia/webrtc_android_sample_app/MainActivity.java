@@ -122,22 +122,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
     public void onPublishFinished() {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
-
-        webRTCClient.stopStream();
-
-
-
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
-
-        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
-
-
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
-
-
-        webRTCClient.init(SERVER_URL, "stream1", IWebRTCClient.MODE_PUBLISH, "tokenId");
-
-        webRTCClient.startStream();
     }
 
     @Override
