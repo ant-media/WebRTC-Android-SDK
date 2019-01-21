@@ -119,7 +119,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     private Activity activity;
 
 
-    EglBase eglBase = EglBase.create();
+    EglBase eglBase; // = EglBase.create();
 
     private String saveRemoteVideoToFile = null;
     private int videoOutWidth, videoOutHeight;
@@ -170,8 +170,9 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
         this.streamMode = mode;
 
-
         remoteSinks.add(remoteProxyRenderer);
+
+        eglBase = EglBase.create();
 
         // Create video renderers.
         if (pipRenderer != null) {
@@ -341,47 +342,57 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
      */
     @RequiresApi(api = Build.VERSION_CODES.M)
     public void startRecording(String fullFilePath, int videoBitrate, int audioBitrate) {
-        File file;
-        if (fullFilePath != null) {
-            file = new File(fullFilePath);
-        }
-        else {
-            file = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_MOVIES), "record" + System.currentTimeMillis() + ".mp4");
+
+        if (peerConnectionClient.getSurfaceWidth() == 0 || peerConnectionClient.getSurfaceHeight() == 0) {
+            throw new IllegalArgumentException("Surface is not initialized. Surface width or height is zero. " +
+                    "Please try again a few milliseconds later next time");
         }
 
-        handlerThread = new HandlerThread("recorder surface handler");
-        handlerThread.start();
-        recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), handlerThread.getLooper(), 1000000, file, peerConnectionClient.getWebRtcAudioRecord()
-                                    ,peerConnectionClient.getSampleRate(), 1);
-        recorderSurfaceDrawer.startRecording(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
+        PeerConnectionClient.getExecutor().execute(()-> {
+            File file;
+            if (fullFilePath != null) {
+                file = new File(fullFilePath);
+            }
+            else {
+                file = new File(Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_MOVIES), "record" + System.currentTimeMillis() + ".mp4");
+            }
 
-        peerConnectionClient.getLocalVideoTrack().addSink(recorderVideoSink);
+            handlerThread = new HandlerThread("recorder surface handler");
+            handlerThread.start();
+            recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), handlerThread.getLooper(), videoBitrate, file, peerConnectionClient.getWebRtcAudioRecord()
+                    ,peerConnectionClient.getSampleRate(), 1);
 
 
+            recorderSurfaceDrawer.startRecording(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
 
+            peerConnectionClient.getLocalVideoTrack().addSink(recorderVideoSink);
 
-        recording = true;
+            recording = true;
+        });
+
 
     }
 
     public void stopRecording() {
-        peerConnectionClient.getLocalVideoTrack().removeSink(recorderVideoSink);
-        recorderSurfaceDrawer.stopRecording();
-        if (mediaRecorder != null) {
-            mediaRecorder.stop();
-            mediaRecorder.reset();
-            mediaRecorder.release();
-        }
+        PeerConnectionClient.getExecutor().execute(()-> {
+            peerConnectionClient.getLocalVideoTrack().removeSink(recorderVideoSink);
+            recorderSurfaceDrawer.stopRecording();
+            if (mediaRecorder != null) {
+                mediaRecorder.stop();
+                mediaRecorder.reset();
+                mediaRecorder.release();
+            }
 
-        if (recorderSurfaceDrawer != null) {
-            recorderSurfaceDrawer.release();
-        }
+            if (recorderSurfaceDrawer != null) {
+                recorderSurfaceDrawer.release();
+            }
 
-        if (handlerThread != null) {
-            handlerThread.quitSafely();
-        }
-        recording = false;
+            if (handlerThread != null) {
+                handlerThread.quitSafely();
+            }
+            recording = false;
+        });
     }
 
     public void startStream() {
@@ -668,7 +679,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
             audioManager.stop();
             audioManager = null;
         }
-
     }
 
     private void disconnectWithErrorMessage(final String errorMessage) {

@@ -203,6 +203,10 @@ public class PeerConnectionClient {
         });
     }
 
+    public static ExecutorService getExecutor() {
+        return executor;
+    }
+
     public SurfaceTexture getSurfaceTexture() {
         return surfaceTextureHelper.getSurfaceTexture();
     }

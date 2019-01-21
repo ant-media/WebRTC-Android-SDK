@@ -36,7 +36,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://172.20.2.204:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://10.2.40.89:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -92,8 +92,8 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     public void startRecording(View v) {
-        if (!webRTCClient.isRecording()) {
 
+        if (!webRTCClient.isRecording()) {
             ((Button)v).setText("Stop Recording");
             webRTCClient.startRecording(null, 800000, 64000);
         }
@@ -122,6 +122,22 @@ public class MainActivity extends Activity implements IWebRTCListener {
     public void onPublishFinished() {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
+
+        webRTCClient.stopStream();
+
+
+
+        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
+
+        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
+
+
+        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+
+
+        webRTCClient.init(SERVER_URL, "stream1", IWebRTCClient.MODE_PUBLISH, "tokenId");
+
+        webRTCClient.startStream();
     }
 
     @Override
