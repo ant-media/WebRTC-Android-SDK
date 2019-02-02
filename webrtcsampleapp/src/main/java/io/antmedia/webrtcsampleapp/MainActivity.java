@@ -139,4 +139,9 @@ public class MainActivity extends AppCompatActivity implements IWebRTCListener {
     public void onConnected() {
 
     }
+
+    @Override
+    public void onSurfaceInitialized() {
+
+    }
 }

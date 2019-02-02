@@ -39,6 +39,7 @@ public class RecorderSurfaceDrawer extends Handler {
     private final WebRtcAudioRecord webrtcAudioRecord;
     private Surface textureInputSurface;
 
+    private final Matrix drawMatrix = new Matrix();
     private final GlRectDrawer textureDrawer = new GlRectDrawer();
     private final VideoFrameDrawer videoFrameDrawer = new VideoFrameDrawer();
 
@@ -176,13 +177,35 @@ public class RecorderSurfaceDrawer extends Handler {
         try {
 
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
             VideoFrame derotatedFrame = new VideoFrame(videoFrame.getBuffer(), 0, videoFrame.getTimestampNs());
-            this.videoFrameDrawer.drawFrame(derotatedFrame, this.textureDrawer, (Matrix)null);
+
+            float frameAspectRatio = (float)derotatedFrame.getRotatedWidth() / (float)derotatedFrame.getRotatedHeight();
+
+            float drawnAspectRatio = (float)this.textureEglBase.surfaceWidth() / (float)this.textureEglBase.surfaceHeight();
+            float scaleY;
+            float scaleX;
+            if (frameAspectRatio > drawnAspectRatio) {
+                scaleX = drawnAspectRatio / frameAspectRatio;
+                scaleY = 1.0F;
+            } else {
+                scaleX = 1.0F;
+                scaleY = frameAspectRatio / drawnAspectRatio;
+            }
+            this.drawMatrix.reset();
+            this.drawMatrix.preTranslate(0.5F, 0.5F);
+            this.drawMatrix.preScale(scaleX, scaleY);
+            this.drawMatrix.preTranslate(-0.5F, -0.5F);
+
+
+
+            this.videoFrameDrawer.drawFrame(derotatedFrame, this.textureDrawer, this.drawMatrix, 0, 0, this.textureEglBase.surfaceWidth(), this.textureEglBase.surfaceHeight());
             derotatedFrame.release();
             videoFrame.release();
             this.textureEglBase.swapBuffers(videoFrame.getTimestampNs());
             Log.v("RecorderSurfaceDrawer", "surface width: " + this.textureEglBase.surfaceWidth() +
-                    "height: " + this.textureEglBase.surfaceHeight());
+                    " height: " + this.textureEglBase.surfaceHeight() + " frame width x height:" + derotatedFrame.getRotatedWidth()
+            + "x" + derotatedFrame.getRotatedHeight());
 
         } catch (RuntimeException var3) {
             Logging.e("HardwareVideoEncoder", "encodeTexture failed", var3);

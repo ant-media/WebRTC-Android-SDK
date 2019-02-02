@@ -36,7 +36,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://10.2.40.89:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.49:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -83,11 +83,19 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
-       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId);
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+    }
 
-        webRTCClient.startStream();
-
+    public void startStreaming(View v) {
+        if (!webRTCClient.isStreaming()) {
+            ((Button)v).setText("Stop Streaming");
+            webRTCClient.startStream();
+        }
+        else {
+            ((Button)v).setText("Start Streaming");
+            webRTCClient.stopStream();
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -134,7 +142,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
     public void noStreamExistsToPlay() {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        finish();
     }
 
     @Override
@@ -149,6 +156,9 @@ public class MainActivity extends Activity implements IWebRTCListener {
         if (webRTCClient.isRecording()) {
             webRTCClient.stopRecording();
         }
+
+        webRTCClient.releaseResources();
+
     }
 
     @Override
@@ -160,12 +170,18 @@ public class MainActivity extends Activity implements IWebRTCListener {
     public void onDisconnected() {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
-
-        finish();
     }
 
     @Override
     public void onConnected() {
         //it is called when connected to ice
     }
+
+    @Override
+    public void onSurfaceInitialized() {
+        Log.i(getClass().getSimpleName(), "Surface initialized");
+
+    }
+
+
 }

@@ -29,4 +29,9 @@ public interface IWebRTCListener {
   */
  void onConnected();
 
+ /**
+  * This method is called when WebRTCClient initializes the surface and ready to call startStream and startRecording
+  */
+ void onSurfaceInitialized();
+
 }

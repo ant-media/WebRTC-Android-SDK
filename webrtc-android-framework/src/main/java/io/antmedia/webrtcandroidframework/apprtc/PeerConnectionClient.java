@@ -200,6 +200,7 @@ public class PeerConnectionClient {
             createMediaConstraintsInternal();
             createVideoTrack(videoCapturer);
             createAudioTrack();
+
         });
     }
 
@@ -209,6 +210,17 @@ public class PeerConnectionClient {
 
     public SurfaceTexture getSurfaceTexture() {
         return surfaceTextureHelper.getSurfaceTexture();
+    }
+
+    public boolean isSurfaceInitialized() {
+        return surfaceTextureHelper != null
+                && surfaceTextureHelper.getTextureHeight() != 0
+                && surfaceTextureHelper.getTextureWidth() != 0;
+
+    }
+
+    public void setLocalVideoTrack(@Nullable VideoTrack localVideoTrack) {
+        this.localVideoTrack = localVideoTrack;
     }
 
     /**
@@ -410,7 +422,7 @@ public class PeerConnectionClient {
     }
 
     public void close() {
-        executor.execute(this ::closeInternal);
+        executor.execute(this::closeInternal);
     }
 
     private boolean isVideoCallEnabled() {
@@ -852,6 +864,7 @@ public class PeerConnectionClient {
     }
 
     private void closeInternal() {
+
         if (factory != null && peerConnectionParameters.aecDump) {
             factory.stopAecDump();
         }
@@ -866,6 +879,7 @@ public class PeerConnectionClient {
             rtcEventLog.stop();
             rtcEventLog = null;
         }
+
         if (peerConnection != null) {
             peerConnection.dispose();
             peerConnection = null;
@@ -875,26 +889,7 @@ public class PeerConnectionClient {
             audioSource.dispose();
             audioSource = null;
         }
-        Log.d(TAG, "Stopping capture.");
-        if (videoCapturer != null) {
-            try {
-                videoCapturer.stopCapture();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            videoCapturerStopped = true;
-            videoCapturer.dispose();
-            videoCapturer = null;
-        }
-        Log.d(TAG, "Closing video source.");
-        if (videoSource != null) {
-            videoSource.dispose();
-            videoSource = null;
-        }
-        if (surfaceTextureHelper != null) {
-            surfaceTextureHelper.dispose();
-            surfaceTextureHelper = null;
-        }
+
         if (saveRecordedAudioToFile != null) {
             Log.d(TAG, "Closing audio file for recorded input audio.");
             saveRecordedAudioToFile.stop();
@@ -902,16 +897,52 @@ public class PeerConnectionClient {
         }
         localRender = null;
         remoteSinks = null;
-        Log.d(TAG, "Closing peer connection factory.");
-        if (factory != null) {
-            factory.dispose();
-            factory = null;
-        }
-        rootEglBase.release();
+
+
         Log.d(TAG, "Closing peer connection done.");
         events.onPeerConnectionClosed();
-        PeerConnectionFactory.stopInternalTracingCapture();
-        PeerConnectionFactory.shutdownInternalTracer();
+
+
+    }
+
+    public void releaseResources() {
+        executor.execute(() -> {
+            if (videoCapturer != null) {
+                Log.d(TAG, "Stopping capture. ");
+                try {
+                    videoCapturer.stopCapture();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                videoCapturerStopped = true;
+                videoCapturer.dispose();
+                videoCapturer = null;
+            }
+
+
+            Log.d(TAG, "Closing video source.");
+            if (videoSource != null) {
+                videoSource.dispose();
+                videoSource = null;
+            }
+
+            if (surfaceTextureHelper != null) {
+                surfaceTextureHelper.dispose();
+                surfaceTextureHelper = null;
+            }
+
+
+            Log.d(TAG, "Closing peer connection factory.");
+
+            if (factory != null) {
+                factory.dispose();
+                factory = null;
+            }
+
+            rootEglBase.release();
+            PeerConnectionFactory.stopInternalTracingCapture();
+            PeerConnectionFactory.shutdownInternalTracer();
+        });
     }
 
     public boolean isHDVideo() {
@@ -1042,12 +1073,15 @@ public class PeerConnectionClient {
     public void stopVideoSource() {
         executor.execute(() -> {
             if (videoCapturer != null && !videoCapturerStopped) {
-                Log.d(TAG, "Stop video source.");
+                Log.d(TAG, "Stopping capture. ");
                 try {
                     videoCapturer.stopCapture();
                 } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
                 videoCapturerStopped = true;
+                videoCapturer.dispose();
+                videoCapturer = null;
             }
         });
     }
@@ -1484,10 +1518,10 @@ public class PeerConnectionClient {
     private class SDPObserver implements SdpObserver {
         @Override
         public void onCreateSuccess(final SessionDescription origSdp) {
-            if (localSdp != null) {
-                reportError("Multiple SDP create.");
-                return;
-            }
+            //if (localSdp != null) {
+            //    reportError("Multiple SDP create.");
+            //    return;
+            //}
             String sdpDescription = origSdp.description;
             if (preferIsac) {
                 sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);
