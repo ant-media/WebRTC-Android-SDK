@@ -36,7 +36,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.49:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.62:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
