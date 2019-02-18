@@ -126,6 +126,8 @@ class USBCameraCapturer implements CameraVideoCapturer {
 
     @Override
     public void stopCapture() throws InterruptedException {
+
+        Log.i(TAG, "stop Capture is called");
         if (mUVCCamera != null) {
             mUVCCamera.stopPreview();
         }
