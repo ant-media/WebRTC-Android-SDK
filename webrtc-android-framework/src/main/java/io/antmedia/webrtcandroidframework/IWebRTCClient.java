@@ -1,5 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
+import android.content.Intent;
+
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
@@ -47,8 +49,9 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @param streamId is the stream id in the server to process
      * @param mode one of the MODE_PUBLISH, MODE_PLAY, MODE_JOIN
      * @param token one time token string
+     * @param intent the intent to be
      */
-    void init(String url, String streamId, String mode, String token);
+    void init(String url, String streamId, String mode, String token, Intent intent);
 
 
     /**
