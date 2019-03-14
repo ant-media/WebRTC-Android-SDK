@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements IWebRTCListener {
 
         webRTCClient.setCameraEnumerator(new USBCameraEnumerator(this, true));
 
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId);
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId, this.getIntent());
 
        // webRTCClient.startStream();
 
