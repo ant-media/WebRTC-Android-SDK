@@ -36,6 +36,7 @@ import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
+import org.webrtc.JniHelper;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon;
@@ -1096,5 +1097,10 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
     public boolean isStreaming() {
         return iceConnected;
+    }
+
+    @Override
+    public void setCameraOrientationFix(int orientation) {
+        JniHelper.setCameraOrientation(orientation);
     }
 }

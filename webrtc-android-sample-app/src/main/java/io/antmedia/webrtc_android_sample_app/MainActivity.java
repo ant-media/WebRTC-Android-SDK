@@ -84,6 +84,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
+        //webRTCClient.setCameraOrientationFix(90);
         webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
     }

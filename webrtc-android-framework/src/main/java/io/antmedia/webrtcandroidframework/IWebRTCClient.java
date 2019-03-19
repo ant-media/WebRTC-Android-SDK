@@ -109,4 +109,7 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @return error or null if not
      */
     String getError();
+
+
+    void setCameraOrientationFix(int orientation);
 }
