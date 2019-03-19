@@ -30,6 +30,7 @@ public class AudioEncoder extends Thread {
     private static long roundOffset;
     private int trackIndex = -1;
     private boolean mMuxerStarted;
+    private volatile boolean threadIsAlive = false;
 
 
     /**
@@ -69,9 +70,9 @@ public class AudioEncoder extends Thread {
         return false;
     }
     /*
-    * @param data
-    * @param pts presentation time stamp in microseconds
-    */
+     * @param data
+     * @param pts presentation time stamp in microseconds
+     */
     public void encodeAudio(byte[] data, int length, long pts) {
         if (mAudioEncoder == null) {
             return;
@@ -106,6 +107,8 @@ public class AudioEncoder extends Thread {
 
     public void stopEncoding()
     {
+        Log.d("audio encoder", "starting stop audio encoding...");
+
         //////////////////////// Stop Signal For Audio Encoder ///////////////////////////
         for (int i = 0; i < 3; i++) {
             if (mAudioEncoder == null) {
@@ -115,15 +118,34 @@ public class AudioEncoder extends Thread {
             int inputBufferId = mAudioEncoder.dequeueInputBuffer(TIMEOUT_USEC);
 
             if (inputBufferId >= 0) {
+                Log.d("audio encoder", "inputBuffer is greater than 0");
+
                 mAudioEncoder.queueInputBuffer(inputBufferId, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 break;
             }
+
+            /**
+             * This waiting time ensures input buffer to be empty.
+             */
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        while (threadIsAlive) {
+            Log.d("audio encoder", "thread a live");
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
+        Log.d("audio encoder", "exiting stop audio encoding...");
+
     }
 
     private static long previousPresentationTimeUs;
@@ -132,6 +154,8 @@ public class AudioEncoder extends Thread {
     }
 
     public void run() {
+
+        threadIsAlive = true;
         //Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         roundTimes = 0;
@@ -196,6 +220,9 @@ public class AudioEncoder extends Thread {
             }
         }
         release();
+
+        threadIsAlive = false;
+        Log.d("audio encoder", "leaving audio writer thread");
     }
 
 

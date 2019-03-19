@@ -64,7 +64,9 @@ public class AudioHandler extends Handler {
                 }
                 break;
             case RECORD_AUDIO:
-                        /* msg.obj is the byte array buffer
+                Log.d("audio handler", "record audio encoding...");
+
+                /* msg.obj is the byte array buffer
                          * msg.arg1 is the length of the byte array
                          * msg.arg2 is the timestamp of frame in milliseconds
                          */
