@@ -25,7 +25,6 @@ import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
-import org.webrtc.MediaCodecVideoEncoder;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
@@ -130,7 +129,7 @@ public class PeerConnectionClient {
 
     private final PCObserver pcObserver = new PCObserver();
     private final SDPObserver sdpObserver = new SDPObserver();
-    private final Timer statsTimer = new Timer();
+    private Timer statsTimer;
     private final EglBase rootEglBase;
     private final Context appContext;
     private final PeerConnectionParameters peerConnectionParameters;
@@ -869,7 +868,7 @@ public class PeerConnectionClient {
             factory.stopAecDump();
         }
         Log.d(TAG, "Closing peer connection.");
-        statsTimer.cancel();
+        cancelTimer();
         if (dataChannel != null) {
             dataChannel.dispose();
             dataChannel = null;
@@ -968,6 +967,9 @@ public class PeerConnectionClient {
     public void enableStatsEvents(boolean enable, int periodMs) {
         if (enable) {
             try {
+                if (statsTimer == null) {
+                    statsTimer = new Timer();
+                }
                 statsTimer.schedule(new TimerTask() {
                     @Override
                     public void run() {
@@ -978,7 +980,14 @@ public class PeerConnectionClient {
                 Log.e(TAG, "Can not schedule statistics timer", e);
             }
         } else {
+            cancelTimer();
+        }
+    }
+
+    private void cancelTimer() {
+        if (statsTimer != null) {
             statsTimer.cancel();
+            statsTimer = null;
         }
     }
 

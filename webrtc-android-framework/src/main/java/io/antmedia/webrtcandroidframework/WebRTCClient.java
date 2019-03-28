@@ -16,7 +16,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -114,19 +113,14 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     private static int mediaProjectionPermissionResultCode;
     // True if local view is in the fullscreen renderer.
     private boolean isSwappedFeeds;
-
     private Context context;
-
-
     EglBase eglBase = EglBase.create();
-
     private String saveRemoteVideoToFile = null;
     private int videoOutWidth, videoOutHeight;
     private String errorString = null;
     private String streamMode;
     private boolean openFrontCamera = true;
     private VideoCapturer videoCapturer;
-    private MediaRecorder mediaRecorder;
     private boolean recording;
     private CameraEnumerator cameraEnumerator;
 
@@ -388,8 +382,9 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
             localVideoTrack.addSink(recorderVideoSink);
 
             recording = true;
-        });
 
+            Log.d(TAG, "*Recording Started");
+        });
 
     }
 
@@ -398,21 +393,19 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
             if (localVideoTrack != null) {
                 localVideoTrack.removeSink(recorderVideoSink);
             }
-            recorderSurfaceDrawer.stopRecording();
-            if (mediaRecorder != null) {
-                mediaRecorder.stop();
-                mediaRecorder.reset();
-                mediaRecorder.release();
-            }
 
             if (recorderSurfaceDrawer != null) {
+
+                recorderSurfaceDrawer.stopRecording();
                 recorderSurfaceDrawer.release();
+                recorderSurfaceDrawer = null;
             }
 
             if (handlerThread != null) {
                 handlerThread.quitSafely();
             }
             recording = false;
+            Log.d(TAG, "*Recording Stopped");
         });
     }
 
@@ -457,8 +450,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         }
     }
 
-
-
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != CallActivity.CAPTURE_PERMISSION_REQUEST_CODE)
             return;
@@ -471,9 +462,9 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         return Camera2Enumerator.isSupported(this.context) && this.intent.getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
     }
 
-  private boolean captureToTexture() {
-    return this.intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-  }
+    private boolean captureToTexture() {
+        return this.intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+    }
 
     public void setOpenFrontCamera(boolean openFrontCamera) {
         this.openFrontCamera = openFrontCamera;
@@ -563,7 +554,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
             peerConnectionClient.startVideoSource();
         }
     }
-
 
     @Override
     public void stopStream() {
@@ -687,7 +677,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         }
 
         if (peerConnectionClient != null) {
-         //   peerConnectionClient.close();
+            //   peerConnectionClient.close();
             peerConnectionClient.releaseResources();
             peerConnectionClient = null;
         }
@@ -767,36 +757,36 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         });
     }
 
-  public void setCameraEnumerator(CameraEnumerator cameraEnumerator) {
+    public void setCameraEnumerator(CameraEnumerator cameraEnumerator) {
 
-    this.cameraEnumerator = cameraEnumerator;
-  }
-
-  private @Nullable VideoCapturer createVideoCapturer() {
-    final VideoCapturer videoCapturer;
-    String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
-    if (videoFileAsCamera != null) {
-      try {
-        videoCapturer = new FileVideoCapturer(videoFileAsCamera);
-      } catch (IOException e) {
-        reportError("Failed to open video file for emulated camera");
-        return null;
-      }
-    } else if (screencaptureEnabled) {
-      return createScreenCapturer();
+        this.cameraEnumerator = cameraEnumerator;
     }
 
-    else if (cameraEnumerator != null)
-    {
-      Logging.d(TAG, "Creating capturer using USB  Camera .");
-      videoCapturer = createCameraCapturer(cameraEnumerator);
-    }
-    else if (useCamera2())
-    {
-      if (!captureToTexture()) {
-        reportError(this.context.getString(R.string.camera2_texture_only_error));
-        return null;
-      }
+    private @Nullable VideoCapturer createVideoCapturer() {
+        final VideoCapturer videoCapturer;
+        String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
+        if (videoFileAsCamera != null) {
+            try {
+                videoCapturer = new FileVideoCapturer(videoFileAsCamera);
+            } catch (IOException e) {
+                reportError("Failed to open video file for emulated camera");
+                return null;
+            }
+        } else if (screencaptureEnabled) {
+            return createScreenCapturer();
+        }
+
+        else if (cameraEnumerator != null)
+        {
+            Logging.d(TAG, "Creating capturer using USB  Camera .");
+            videoCapturer = createCameraCapturer(cameraEnumerator);
+        }
+        else if (useCamera2())
+        {
+            if (!captureToTexture()) {
+                reportError(this.context.getString(R.string.camera2_texture_only_error));
+                return null;
+            }
 
             Logging.d(TAG, "Creating capturer using camera2 API.");
             videoCapturer = createCameraCapturer(new Camera2Enumerator(this.context));
