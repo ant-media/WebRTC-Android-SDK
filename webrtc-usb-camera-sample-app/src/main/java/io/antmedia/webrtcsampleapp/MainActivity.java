@@ -2,17 +2,15 @@ package io.antmedia.webrtcsampleapp;
 
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
-
-import com.serenegiant.usb.CameraDialog;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
