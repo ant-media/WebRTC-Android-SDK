@@ -320,6 +320,25 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
         checkAndNotifySurfaceStatus(handler);
 
+        if (peerConnectionParameters.audioCallEnabled) {
+            // Create and audio manager that will take care of audio routing,
+            // audio modes, audio device enumeration etc.
+            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
+            // Store existing audio settings and change audio mode to
+            // MODE_IN_COMMUNICATION for best possible VoIP performance.
+            Log.d(TAG, "Starting the audio manager...");
+            audioManager.start(new AppRTCAudioManager.AudioManagerEvents() {
+                // This method will be called each time the number of available audio
+                // devices has changed.
+                @Override
+                public void onAudioDeviceChanged(
+                        AppRTCAudioManager.AudioDevice audioDevice, Set<AppRTCAudioManager.AudioDevice> availableAudioDevices) {
+                    onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
+                }
+            });
+
+        }
+
 
     }
 
@@ -410,6 +429,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     }
 
     public void startStream() {
+
         appRtcClient = new WebSocketRTCAntMediaClient(this);
         if (screencaptureEnabled) {
             startScreenCapture();
@@ -626,26 +646,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         // Start room connection.
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         appRtcClient.connectToRoom(roomConnectionParameters);
-
-
-        if (peerConnectionParameters.audioCallEnabled) {
-            // Create and audio manager that will take care of audio routing,
-            // audio modes, audio device enumeration etc.
-            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
-            // Store existing audio settings and change audio mode to
-            // MODE_IN_COMMUNICATION for best possible VoIP performance.
-            Log.d(TAG, "Starting the audio manager...");
-            audioManager.start(new AppRTCAudioManager.AudioManagerEvents() {
-                // This method will be called each time the number of available audio
-                // devices has changed.
-                @Override
-                public void onAudioDeviceChanged(
-                        AppRTCAudioManager.AudioDevice audioDevice, Set<AppRTCAudioManager.AudioDevice> availableAudioDevices) {
-                    onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
-                }
-            });
-
-        }
     }
 
     // Should be called from UI thread
@@ -681,6 +681,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
             peerConnectionClient.releaseResources();
             peerConnectionClient = null;
         }
+
+        if (audioManager != null) {
+            audioManager.stop();
+            audioManager = null;
+        }
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.
@@ -702,10 +707,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         }
         if (peerConnectionClient != null) {
             peerConnectionClient.close();
-        }
-        if (audioManager != null) {
-            audioManager.stop();
-            audioManager = null;
         }
     }
 

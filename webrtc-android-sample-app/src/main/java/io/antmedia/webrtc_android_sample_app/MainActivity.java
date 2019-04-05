@@ -27,7 +27,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://10.2.41.11:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://10.2.35.113:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -52,8 +52,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         //webRTCClient.setOpenFrontCamera(false);
 
-
-        //String streamId = "stream" + (int)(Math.random() * 999);
         String streamId = "stream36";
         String tokenId = "tokenId";
 
@@ -72,15 +70,16 @@ public class MainActivity extends Activity implements IWebRTCListener {
             }
         }
 
-
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
         //webRTCClient.setCameraOrientationFix(90);
         webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
-       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+
     }
 
     public void startStreaming(View v) {
+
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop Streaming");
             webRTCClient.startStream();
@@ -90,6 +89,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
             webRTCClient.stopStream();
         }
     }
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     public void startRecording(View v) {
@@ -102,7 +102,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
             webRTCClient.stopRecording();
             ((Button)v).setText("Start Recording");
         }
-
     }
 
     @Override
@@ -151,7 +150,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
         }
 
         webRTCClient.releaseResources();
-
     }
 
     @Override
@@ -175,6 +173,5 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.i(getClass().getSimpleName(), "Surface initialized");
 
     }
-
 
 }

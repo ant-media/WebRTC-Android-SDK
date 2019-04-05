@@ -164,7 +164,6 @@ public class RecorderSurfaceDrawer extends Handler {
     }
 
 
-
     public void drawTextureBuffer(VideoFrame videoFrame) {
         sendMessage(obtainMessage(
                 MSG_FRAME_AVAILABLE, videoFrame));
