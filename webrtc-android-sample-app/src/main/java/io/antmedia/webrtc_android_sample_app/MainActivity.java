@@ -57,7 +57,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
             @Override
             public void audioRecordStopped() {
-                Log.i("AudioStatus", "Audio recorder started");
+                Log.i("AudioStatus", "Audio recorder stopped");
             }
         });
 
