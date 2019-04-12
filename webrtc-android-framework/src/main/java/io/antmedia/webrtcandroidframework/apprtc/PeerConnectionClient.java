@@ -190,6 +190,7 @@ public class PeerConnectionClient {
     private RecordedAudioToFileController saveRecordedAudioToFile = null;
     private org.webrtc.audio.WebRtcAudioRecord webRtcAudioRecord;
     private int sampleRate;
+    private org.webrtc.audio.WebRtcAudioRecord.IAudioRecordStatusListener recordStatusListener;
 
 
     public void init(VideoCapturer videoCapturer, VideoSink localRender) {
@@ -220,6 +221,10 @@ public class PeerConnectionClient {
 
     public void setLocalVideoTrack(@Nullable VideoTrack localVideoTrack) {
         this.localVideoTrack = localVideoTrack;
+    }
+
+    public void setAudioRecordStatusListener(org.webrtc.audio.WebRtcAudioRecord.IAudioRecordStatusListener recordStatusListener) {
+        this.recordStatusListener = recordStatusListener;
     }
 
     /**
@@ -697,6 +702,7 @@ public class PeerConnectionClient {
                 .setUseHardwareNoiseSuppressor(!peerConnectionParameters.disableBuiltInNS)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
+                .setAudioRecordStatusListener(recordStatusListener)
                 .createAudioDeviceModule();
 
         webRtcAudioRecord = builder.getAudioInput();

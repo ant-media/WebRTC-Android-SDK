@@ -49,6 +49,7 @@ import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
+import org.webrtc.audio.WebRtcAudioRecord;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,6 +83,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
     private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
     private final IWebRTCListener webRTCListener;
+    private final WebRtcAudioRecord.IAudioRecordStatusListener audioRecordStatusListener;
     @Nullable
     private PeerConnectionClient peerConnectionClient = null;
     @Nullable
@@ -139,9 +141,16 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
+        this(webRTCListener, context, null);
+    }
+
+    public WebRTCClient(IWebRTCListener webRTCListener, Context context, WebRtcAudioRecord.IAudioRecordStatusListener audioRecordStatusListener) {
         this.webRTCListener = webRTCListener;
         this.context = context;
+        this.audioRecordStatusListener = audioRecordStatusListener;
     }
+
+
 
     @Nullable
     public SurfaceViewRenderer getPipRenderer() {
@@ -300,6 +309,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         // Create peer connection client.
         peerConnectionClient = new PeerConnectionClient(
                 this.context.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this);
+        peerConnectionClient.setAudioRecordStatusListener(audioRecordStatusListener);
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
         if (loopback) {
             options.networkIgnoreMask = 0;

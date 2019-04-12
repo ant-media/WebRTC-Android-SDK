@@ -26,6 +26,7 @@ public class SharedAudioRecorderBuilder  {
     private boolean useStereoInput;
     private boolean useStereoOutput;
     private WebRtcAudioRecord audioInput;
+    private WebRtcAudioRecord.IAudioRecordStatusListener recordStatusListener = null;
 
     public SharedAudioRecorderBuilder(Context context) {
         this.audioSource = 7;
@@ -92,6 +93,11 @@ public class SharedAudioRecorderBuilder  {
         return this;
     }
 
+    public SharedAudioRecorderBuilder setAudioRecordStatusListener(WebRtcAudioRecord.IAudioRecordStatusListener recordStatusListener) {
+        this.recordStatusListener = recordStatusListener;
+        return this;
+    }
+
     public AudioDeviceModule createAudioDeviceModule() {
         Logging.d("JavaAudioDeviceModule", "createAudioDeviceModule");
         if (this.useHardwareNoiseSuppressor) {
@@ -114,7 +120,8 @@ public class SharedAudioRecorderBuilder  {
             Logging.d("JavaAudioDeviceModule", "HW AEC will not be used.");
         }
 
-        audioInput = new WebRtcAudioRecord(this.context, this.audioManager, this.audioSource, this.audioRecordErrorCallback, this.samplesReadyCallback, this.useHardwareAcousticEchoCanceler, this.useHardwareNoiseSuppressor);
+        audioInput = new WebRtcAudioRecord(this.context, this.audioManager, this.audioSource, this.audioRecordErrorCallback,
+                this.samplesReadyCallback, this.useHardwareAcousticEchoCanceler, this.useHardwareNoiseSuppressor, this.recordStatusListener);
         WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(this.context, this.audioManager, this.audioTrackErrorCallback);
         return new JavaAudioDeviceModule(this.context, this.audioManager, audioInput, audioOutput, this.sampleRate, this.useStereoInput, this.useStereoOutput);
     }

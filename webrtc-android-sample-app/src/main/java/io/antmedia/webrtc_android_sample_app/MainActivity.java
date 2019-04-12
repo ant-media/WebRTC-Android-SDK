@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.audio.WebRtcAudioRecord;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
@@ -48,7 +49,17 @@ public class MainActivity extends Activity implements IWebRTCListener {
         setContentView(R.layout.activity_main);
 
 
-        webRTCClient = new WebRTCClient( this,this);
+        webRTCClient = new WebRTCClient(this, this, new WebRtcAudioRecord.IAudioRecordStatusListener() {
+            @Override
+            public void audioRecordStarted() {
+                Log.i("AudioStatus", "Audio recorder started");
+            }
+
+            @Override
+            public void audioRecordStopped() {
+                Log.i("AudioStatus", "Audio recorder started");
+            }
+        });
 
         //webRTCClient.setOpenFrontCamera(false);
 
@@ -77,7 +88,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
         // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
 
     }
-
     public void startStreaming(View v) {
 
         if (!webRTCClient.isStreaming()) {
