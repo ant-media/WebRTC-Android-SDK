@@ -1,7 +1,11 @@
 package io.antmedia.webrtc_android_sample_app;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.RequiresApi;
@@ -26,11 +30,13 @@ import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 
-public class MainActivity extends Activity implements IWebRTCListener {
+public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://10.2.42.61:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://54.149.35.25:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
+
+    public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
     private WebRTCClient webRTCClient;
 
@@ -64,9 +70,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        String streamId = "stream36";
-        String tokenId = "tokenId";
-
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
@@ -83,14 +86,17 @@ public class MainActivity extends Activity implements IWebRTCListener {
             }
         }
 
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1000);
-
+       // this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+       // this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1000);
+        this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
         //webRTCClient.setCameraOrientationFix(90);
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
-        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
 
+        startScreenCapture();
+
+
+        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
     }
+
     public void startStreaming(View v) {
 
         if (!webRTCClient.isStreaming()) {
@@ -127,7 +133,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
     @Override
     public void onPublishStarted() {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
-        Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        runOnUiThread(()-> {
+            Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        });
+
 
     }
 
@@ -157,6 +166,12 @@ public class MainActivity extends Activity implements IWebRTCListener {
     @Override
     protected void onStop() {
         super.onStop();
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         webRTCClient.stopStream();
         if (webRTCClient.isRecording()) {
             webRTCClient.stopRecording();
@@ -186,5 +201,31 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.i(getClass().getSimpleName(), "Surface initialized");
 
     }
+
+    @TargetApi(21)
+    private void startScreenCapture() {
+        MediaProjectionManager mediaProjectionManager =
+                (MediaProjectionManager) getApplication().getSystemService(
+                        Context.MEDIA_PROJECTION_SERVICE);
+        startActivityForResult(
+                mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
+            return;
+
+        webRTCClient.setMediaProjectionParams(resultCode, data);
+        String streamId = "stream36";
+        String tokenId = "tokenId";
+
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+
+        webRTCClient.startStream();
+    }
+
+
 
 }

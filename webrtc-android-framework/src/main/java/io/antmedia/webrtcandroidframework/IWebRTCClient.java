@@ -112,4 +112,6 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
 
 
     void setCameraOrientationFix(int orientation);
+
+    void setMediaProjectionParams(int resultCode, Intent data);
 }

@@ -441,11 +441,8 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     public void startStream() {
 
         appRtcClient = new WebSocketRTCAntMediaClient(this);
-        if (screencaptureEnabled) {
-            startScreenCapture();
-        } else {
-            startCall();
-        }
+
+        startCall();
     }
 
     @TargetApi(17)
@@ -1103,5 +1100,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     @Override
     public void setCameraOrientationFix(int orientation) {
         JniHelper.setCameraOrientation(orientation);
+    }
+
+    @Override
+    public void setMediaProjectionParams(int resultCode, Intent data) {
+        mediaProjectionPermissionResultCode = resultCode;
+        mediaProjectionPermissionResultData = data;
     }
 }
