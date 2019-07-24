@@ -116,7 +116,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     // True if local view is in the fullscreen renderer.
     private boolean isSwappedFeeds;
     private Context context;
-    EglBase eglBase = EglBase.create();
+    private EglBase eglBase ;
     private String saveRemoteVideoToFile = null;
     private int videoOutWidth, videoOutHeight;
     private String errorString = null;
@@ -166,6 +166,8 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
     @Override
     public void init(String url, String streamId, String mode, String token, Intent intent){
+
+        eglBase = EglBase.create();
 
         if (intent != null) {
             this.intent = intent;
