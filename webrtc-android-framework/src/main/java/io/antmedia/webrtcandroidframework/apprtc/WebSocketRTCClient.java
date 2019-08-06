@@ -88,6 +88,11 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
     });
   }
 
+  @Override
+  public void sendPingPongMessage() {
+      //no need to implement
+  }
+
   // Connects to room - function runs on a local looper thread.
   private void connectToRoomInternal() {
     String connectionUrl = getConnectionUrl(connectionParameters);

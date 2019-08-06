@@ -78,6 +78,11 @@ public interface AppRTCClient {
   void disconnectFromRoom();
 
   /**
+   * Send ping message to server
+   */
+  void sendPingPongMessage();
+
+  /**
    * Struct holding the signaling parameters of an AppRTC room.
    */
   class SignalingParameters {

@@ -119,7 +119,31 @@ public class WebSocketChannelAntMediaClient {
     }
   }
 
+  public void sendPingPong() {
 
+    handler.post(new Runnable() {
+      @Override
+      public void run() {
+
+        JSONObject json = new JSONObject();
+        try {
+          json.put(WebSocketRTCAntMediaClient.COMMAND, "ping");
+
+          Log.d(TAG, "Ping/Pong message send " + json.toString());
+
+          ws.sendTextMessage(json.toString());
+
+        } catch (JSONException e) {
+          Log.d(TAG, "Ping/Pong message error " + json.toString());
+
+          reportError("WebSocket send JSON error: " + e.getMessage());
+        }
+
+      }
+    });
+
+
+  }
   //send messages are sent directly via ws.sendmessage
 
   public void send(String message) {
@@ -307,10 +331,10 @@ public class WebSocketChannelAntMediaClient {
       handler.post(new Runnable() {
         @Override
         public void run() {
-        //  if (state == WebSocketConnectionState.CONNECTED
+          //  if (state == WebSocketConnectionState.CONNECTED
           //        || state == WebSocketConnectionState.REGISTERED) {
-            events.onWebSocketMessage(message);
-        //  }
+          events.onWebSocketMessage(message);
+          //  }
         }
       });
     }

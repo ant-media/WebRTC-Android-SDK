@@ -28,7 +28,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends AppCompatActivity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://10.2.41.11:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.20.10.5:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;

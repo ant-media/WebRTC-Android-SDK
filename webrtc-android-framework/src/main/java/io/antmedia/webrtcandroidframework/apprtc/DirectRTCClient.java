@@ -100,6 +100,11 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
     });
   }
 
+  @Override
+  public void sendPingPongMessage() {
+   // no need to implemet
+  }
+
   /**
    * Connects to the room.
    *

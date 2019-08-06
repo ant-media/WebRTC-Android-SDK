@@ -23,6 +23,8 @@ import org.webrtc.SessionDescription;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.WebSocketChannelAntMediaClient.WebSocketChannelEvents;
@@ -68,6 +70,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   private static final String COMMAND_PLAY = "play";
   public static final String COMMAND_JOIN = "join";
   public static final String ERROR_COMMAND = "error";
+  public static final String PONG = "pong";
   public static final String NO_STREAM_EXIST = "no_stream_exist";
   public static final String DEFINITION = "definition";
 
@@ -91,6 +94,9 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   private String serverName;
   private String leaveMessage;
   private String stunServerUri ="stun:stun.l.google.com:19302";
+  private Timer pingPongTimer;
+  private int pingPongTimoutCount = 0;
+
 
 
 
@@ -189,8 +195,50 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
       wsClient.disconnect(true);
     }
   }
+  public void sendPingPongMessage() {
+
+    if (wsClient != null) {
+
+      wsClient.sendPingPong();
+    }
+  }
 
 
+  public void startPingPongTimer(){
+    TimerTask timerTask = new TimerTask() {
+      @Override
+      public void run() {
+        handler.post(new Runnable() {
+          @Override
+          public void run() {
+
+            sendPingPongMessage();
+            pingPongTimoutCount++;
+            if (pingPongTimoutCount == 2){
+              Log.d(TAG, "PingPong websocket response not received for 4 seconds");
+              stopPingPongTimer();
+              onWebSocketClose(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification.CONNECTION_LOST);
+            }
+          }
+        });
+      }
+    };
+
+    pingPongTimer = new Timer();
+
+    pingPongTimer.schedule(timerTask,3000,2000);
+
+  }
+
+  public void stopPingPongTimer(){
+
+    if (pingPongTimer != null) {
+      pingPongTimer.cancel();
+      pingPongTimer = null;
+      pingPongTimoutCount = 0;
+    }
+
+  }
 
   // Helper functions to get connection, post message and leave message URLs
   private String getConnectionUrl(RoomConnectionParameters connectionParameters) {
@@ -466,10 +514,12 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
         Log.d(TAG, "notification:   "+ definition);
         if (definition.equals(PUBLISH_STARTED_DEFINITION)) {
           events.onPublishStarted();
+          startPingPongTimer();
         }
         else if (definition.equals(PUBLISH_FINISHED_DEFINITION)) {
           events.onPublishFinished();
           disConnectAndQuit();
+          stopPingPongTimer();
         }
         else if (definition.equals(PLAY_STARTED_DEFINITION)) {
           events.onPlayStarted();
@@ -482,7 +532,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
       }
       else if (commandText.equals(ERROR_COMMAND))
       {
-
+        stopPingPongTimer();
         String definition= json.getString(DEFINITION);
         if (definition.equals(NO_STREAM_EXIST))
         {
@@ -491,7 +541,14 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
         }
       }
 
+      else if (commandText.equals(PONG))
+      {
+        pingPongTimoutCount = 0;
+        Log.d(TAG, "pong reply is received");
+      }
+
       else {
+        stopPingPongTimer();
         reportError("Received offer for call receiver: " + msg);
       }
 
