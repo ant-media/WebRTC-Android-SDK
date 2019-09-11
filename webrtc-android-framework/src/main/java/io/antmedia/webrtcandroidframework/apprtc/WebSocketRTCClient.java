@@ -10,9 +10,6 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-import javax.annotation.Nullable;
-
-
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -22,6 +19,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
+
+import javax.annotation.Nullable;
 
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
 

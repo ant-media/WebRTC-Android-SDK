@@ -11,19 +11,22 @@
 package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.os.Handler;
-import javax.annotation.Nullable;
 import android.util.Log;
-import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
-import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
-import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONException;
-import org.json.JSONObject;
+
+import javax.annotation.Nullable;
+
+import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
 
 /**
  * WebSocket client implementation.

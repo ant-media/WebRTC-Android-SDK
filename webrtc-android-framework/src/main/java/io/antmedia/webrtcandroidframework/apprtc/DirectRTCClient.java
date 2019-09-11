@@ -10,14 +10,12 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-import javax.annotation.Nullable;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
-import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 
 import java.util.ArrayList;
@@ -25,6 +23,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.annotation.Nullable;
 
 /**
  * Implementation of AppRTCClient that uses direct TCP connection as the signaling channel.

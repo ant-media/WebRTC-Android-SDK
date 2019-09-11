@@ -33,10 +33,12 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-import java.util.ArrayList;
-import java.util.Random;
+
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import java.util.ArrayList;
+import java.util.Random;
 
 import io.antmedia.webrtcandroidframework.R;
 
