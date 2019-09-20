@@ -23,6 +23,9 @@ import org.webrtc.SessionDescription;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.WebSocketChannelAntMediaClient.WebSocketChannelEvents;
@@ -68,8 +71,11 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   private static final String COMMAND_PLAY = "play";
   public static final String COMMAND_JOIN = "join";
   public static final String ERROR_COMMAND = "error";
+  public static final String PONG = "pong";
   public static final String NO_STREAM_EXIST = "no_stream_exist";
   public static final String DEFINITION = "definition";
+  public static final  long TIMER_DELAY  = 3000L;
+  public static final  long TIMER_PERIOD = 2000L;
 
   private SignalingParameters signalingParameters;
   private enum ConnectionState { NEW, CONNECTED, CLOSED, ERROR }
@@ -91,6 +97,9 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   private String serverName;
   private String leaveMessage;
   private String stunServerUri ="stun:stun.l.google.com:19302";
+  public ScheduledExecutorService pingPongExecutor;
+  private int pingPongTimoutCount = 0;
+
 
 
 
@@ -189,8 +198,50 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
       wsClient.disconnect(true);
     }
   }
+  public void sendPingPongMessage() {
+
+    if (wsClient != null) {
+      Log.d(TAG, "Ping Pong message is sent");
+
+      wsClient.sendPingPong();
+    }
+  }
 
 
+  public void startPingPongTimer(){
+    Log.d(TAG, "Ping Pong timer is started");
+
+    Runnable timerTask = new Runnable() {
+      @Override
+      public void run() {
+        Log.d(TAG, "Ping Pong timer is executed");
+        sendPingPongMessage();
+        if (pingPongTimoutCount == 2){
+          Log.d(TAG, "Ping Pong websocket response not received for 4 seconds");
+          stopPingPongTimer();
+          onWebSocketClose(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification.CONNECTION_LOST);
+        }
+        pingPongTimoutCount++;
+
+      }
+    };
+
+    pingPongExecutor = Executors.newSingleThreadScheduledExecutor();
+    pingPongExecutor.scheduleAtFixedRate(timerTask, TIMER_DELAY, TIMER_PERIOD, TimeUnit.MILLISECONDS);
+
+  }
+
+  public void stopPingPongTimer(){
+
+    Log.d(TAG, "Ping Pong timer stop called");
+
+    if (pingPongExecutor != null) {
+      pingPongExecutor.shutdown();
+      pingPongExecutor = null;
+      pingPongTimoutCount = 0;
+    }
+
+  }
 
   // Helper functions to get connection, post message and leave message URLs
   private String getConnectionUrl(RoomConnectionParameters connectionParameters) {
@@ -466,10 +517,12 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
         Log.d(TAG, "notification:   "+ definition);
         if (definition.equals(PUBLISH_STARTED_DEFINITION)) {
           events.onPublishStarted();
+          startPingPongTimer();
         }
         else if (definition.equals(PUBLISH_FINISHED_DEFINITION)) {
           events.onPublishFinished();
           disConnectAndQuit();
+          stopPingPongTimer();
         }
         else if (definition.equals(PLAY_STARTED_DEFINITION)) {
           events.onPlayStarted();
@@ -484,6 +537,9 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
       {
 
         String definition= json.getString(DEFINITION);
+        Log.d(TAG, "error command received: "+ definition);
+        stopPingPongTimer();
+
         if (definition.equals(NO_STREAM_EXIST))
         {
           events.noStreamExistsToPlay();
@@ -491,7 +547,14 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
         }
       }
 
+      else if (commandText.equals(PONG))
+      {
+        pingPongTimoutCount = 0;
+        Log.d(TAG, "pong reply is received");
+      }
+
       else {
+
         reportError("Received offer for call receiver: " + msg);
       }
 

@@ -10,12 +10,13 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-import android.content.Context;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+
+import org.webrtc.PeerConnection;
+
 import java.io.File;
 import java.io.IOException;
-import org.webrtc.PeerConnection;
 
 public class RtcEventLog {
   private static final String TAG = "RtcEventLog";

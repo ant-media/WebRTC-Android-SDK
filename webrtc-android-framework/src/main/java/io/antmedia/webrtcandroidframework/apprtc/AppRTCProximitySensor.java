@@ -16,9 +16,11 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
-import javax.annotation.Nullable;
 import android.util.Log;
+
 import org.webrtc.ThreadUtils;
+
+import javax.annotation.Nullable;
 
 import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
 

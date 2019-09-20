@@ -21,11 +21,14 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import org.webrtc.ThreadUtils;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.annotation.Nullable;
-import org.webrtc.ThreadUtils;
 
 import io.antmedia.webrtcandroidframework.R;
 import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;

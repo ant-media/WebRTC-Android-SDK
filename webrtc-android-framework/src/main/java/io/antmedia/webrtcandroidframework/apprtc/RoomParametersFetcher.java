@@ -11,19 +11,21 @@
 package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.util.Log;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
 

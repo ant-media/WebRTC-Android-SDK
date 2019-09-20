@@ -12,11 +12,13 @@ package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 import io.antmedia.webrtcandroidframework.R;
 

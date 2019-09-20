@@ -24,12 +24,11 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://10.2.42.61:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://10.2.40.222:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -75,8 +74,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
         // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS)
-        {
+        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
             if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
                 return;
@@ -84,7 +82,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1000);
 
         //webRTCClient.setCameraOrientationFix(90);
         webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());

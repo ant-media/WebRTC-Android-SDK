@@ -167,7 +167,6 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     @Override
     public void init(String url, String streamId, String mode, String token, Intent intent){
 
-        eglBase = EglBase.create();
 
         if (intent != null) {
             this.intent = intent;
@@ -178,6 +177,7 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         this.streamMode = mode;
 
         remoteSinks.add(remoteProxyRenderer);
+        eglBase = EglBase.create();
 
         // Create video renderers.
         if (pipRenderer != null) {
