@@ -328,10 +328,12 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
 
         peerConnectionClient.init(videoCapturer, localProxyVideoSink);
 
-        final Handler handler = new Handler();
+        if (!mode.equals(MODE_PLAY)) {
+            //if it is not play mode run, check and notify surface status
+            final Handler handler = new Handler();
 
-        checkAndNotifySurfaceStatus(handler);
-
+            checkAndNotifySurfaceStatus(handler);
+        }
         if (peerConnectionParameters.audioCallEnabled) {
             // Create and audio manager that will take care of audio routing,
             // audio modes, audio device enumeration etc.
