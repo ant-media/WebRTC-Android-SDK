@@ -3,21 +3,39 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ConferenceActivity">
 
 
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/publish_view_renderer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="144dp"
+        android:layout_height="144dp"
 
         android:layout_gravity="center" />
 
 
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/pip_view_renderer"
+        android:id="@+id/play_view_renderer1"
         android:layout_height="144dp"
-        android:layout_width="wrap_content"
+        android:layout_width="144dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp" />
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/play_view_renderer2"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"/>
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/play_view_renderer3"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="16dp"/>
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/play_view_renderer4"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"/>
 
@@ -29,16 +47,8 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start Streaming"
-            android:onClick="startStreaming"
-           />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start Recording"
-            android:onClick="startRecording"
-
+            android:text="Join Conference"
+            android:onClick="joinConference"
            />
     </LinearLayout>
 

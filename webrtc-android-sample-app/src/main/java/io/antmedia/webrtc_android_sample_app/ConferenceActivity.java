@@ -12,26 +12,24 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.audio.WebRtcAudioRecord;
+
+import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
-public class MainActivity extends Activity implements IWebRTCListener {
+public class ConferenceActivity extends Activity implements IWebRTCListener {
 
 
     public static final String SERVER_URL = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
-
-    private WebRTCClient webRTCClient;
+    private ConferenceManager conferenceManager;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -46,32 +44,14 @@ public class MainActivity extends Activity implements IWebRTCListener {
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_conference);
 
-
-        webRTCClient = new WebRTCClient(this, this, new WebRtcAudioRecord.IAudioRecordStatusListener() {
-            @Override
-            public void audioRecordStarted() {
-                Log.i("AudioStatus", "Audio recorder started");
-            }
-
-            @Override
-            public void audioRecordStopped() {
-                Log.i("AudioStatus", "Audio recorder stopped");
-            }
-        });
-
-        //webRTCClient.setOpenFrontCamera(false);
-
-        String streamId = "stream36";
-        String tokenId = "tokenId";
-
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.publish_view_renderer);
-
-        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
-
-
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+        SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
+        ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
+        playViewRenderers.add(findViewById(R.id.play_view_renderer1));
+        playViewRenderers.add(findViewById(R.id.play_view_renderer2));
+        playViewRenderers.add(findViewById(R.id.play_view_renderer3));
+        playViewRenderers.add(findViewById(R.id.play_view_renderer4));
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -83,44 +63,32 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
-        //webRTCClient.setCameraOrientationFix(90);
-        //webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_JOIN, tokenId,  this.getIntent());
-
-        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-
+        conferenceManager = new ConferenceManager(
+                this,
+                this,
+                getIntent(),
+                SERVER_URL,
+                "room1",
+                publishViewRenderer,
+                playViewRenderers
+        );
     }
-    public void startStreaming(View v) {
-
-        if (!webRTCClient.isStreaming()) {
-            ((Button)v).setText("Stop Streaming");
-            webRTCClient.startStream();
+    public void joinConference(View v) {
+        if (!conferenceManager.isJoined()) {
+            ((Button)v).setText("Leave");
+            conferenceManager.joinTheConference();;
         }
         else {
-            ((Button)v).setText("Start Streaming");
-            webRTCClient.stopStream();
+            ((Button)v).setText("Join");
+            conferenceManager.leaveFromConference();
         }
     }
 
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    public void startRecording(View v) {
-
-        if (!webRTCClient.isRecording()) {
-            ((Button)v).setText("Stop Recording");
-            webRTCClient.startRecording(null, 800000, 64000);
-        }
-        else {
-            webRTCClient.stopRecording();
-            ((Button)v).setText("Start Recording");
-        }
-    }
 
     @Override
     public void onPlayStarted() {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
-        webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
     }
 
     @Override
@@ -156,12 +124,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
     @Override
     protected void onStop() {
         super.onStop();
-        webRTCClient.stopStream();
-        if (webRTCClient.isRecording()) {
-            webRTCClient.stopRecording();
-        }
-
-        webRTCClient.releaseResources();
     }
 
     @Override

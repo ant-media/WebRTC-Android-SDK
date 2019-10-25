@@ -27,9 +27,6 @@ import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
-
 public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
 
@@ -70,7 +67,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
+        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.publish_view_renderer);
 
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
