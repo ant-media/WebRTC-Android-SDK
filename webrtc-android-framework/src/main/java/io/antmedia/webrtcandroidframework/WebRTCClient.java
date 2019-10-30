@@ -323,7 +323,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         peerConnectionClient.init(videoCapturer, localProxyVideoSink);
 
-        if (!mode.equals(MODE_PLAY)) {
+        if (!mode.equals(MODE_PLAY) && videoCallEnabled) {
             //if it is not play mode run, check and notify surface status
             final Handler handler = new Handler();
 
@@ -607,7 +607,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onVideoScalingSwitch(ScalingType scalingType) {
-        fullscreenRenderer.setScalingType(scalingType);
+        if (fullscreenRenderer != null) {
+            fullscreenRenderer.setScalingType(scalingType);
+        }
     }
 
 
@@ -639,7 +641,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode == IWebRTCClient.MODE_PUBLISH) {
-            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token);
+            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
         }
         else if (roomConnectionParameters.mode == IWebRTCClient.MODE_PLAY) {
             wsHandler.startPlay(roomConnectionParameters.roomId, roomConnectionParameters.token);
@@ -694,7 +696,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);
-        if (wsHandler.getSignallingListener() == this && wsHandler != null) {
+        if (wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
             wsHandler.disconnect(true);
             wsHandler = null;
         }

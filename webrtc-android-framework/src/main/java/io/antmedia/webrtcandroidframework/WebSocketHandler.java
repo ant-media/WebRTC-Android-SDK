@@ -215,13 +215,15 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     }
 
-    public void startPublish(String streamId, String token){
+    public void startPublish(String streamId, String token, boolean videoEnabled){
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.PUBLISH_COMMAND);
             json.put(WebSocketRTCAntMediaClient.STREAM_ID, streamId);
             json.put(WebSocketRTCAntMediaClient.TOKEN_ID, token);
+            json.put(WebSocketRTCAntMediaClient.VIDEO, videoEnabled);
+            json.put(WebSocketRTCAntMediaClient.AUDIO, true);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();

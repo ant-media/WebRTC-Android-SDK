@@ -28,7 +28,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.16.110.53:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -61,9 +61,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
             }
         });
 
+
         //webRTCClient.setOpenFrontCamera(false);
 
-        String streamId = "stream36";
+        String streamId = "stream1";
         String tokenId = "tokenId";
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.publish_view_renderer);
@@ -83,11 +84,14 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
+
         //webRTCClient.setCameraOrientationFix(90);
         //webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_JOIN, tokenId,  this.getIntent());
 
-        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+
+         //this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
 
     }
     public void startStreaming(View v) {
