@@ -27,7 +27,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class ConferenceActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.16.110.53:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
     private ConferenceManager conferenceManager;
 
@@ -48,6 +48,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
 
         SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
         ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
+
         playViewRenderers.add(findViewById(R.id.play_view_renderer1));
         playViewRenderers.add(findViewById(R.id.play_view_renderer2));
         playViewRenderers.add(findViewById(R.id.play_view_renderer3));
@@ -62,6 +63,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+      //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
         conferenceManager = new ConferenceManager(
                 this,
@@ -76,7 +78,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     public void joinConference(View v) {
         if (!conferenceManager.isJoined()) {
             ((Button)v).setText("Leave");
-            conferenceManager.joinTheConference();;
+            conferenceManager.joinTheConference();
         }
         else {
             ((Button)v).setText("Join");

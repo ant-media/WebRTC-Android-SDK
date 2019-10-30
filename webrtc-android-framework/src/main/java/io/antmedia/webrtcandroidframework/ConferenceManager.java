@@ -33,8 +33,10 @@ public class ConferenceManager implements AntMediaSignallingEvents{
         this.context = context;
         this.intent = intent;
         this.publishViewRenderer = publishViewRenderer;
-        for (SurfaceViewRenderer svr : playViewRenderers) {
-            this.playRendererAllocationMap.put(svr, null);
+        if (playViewRenderers != null) {
+            for (SurfaceViewRenderer svr : playViewRenderers) {
+                this.playRendererAllocationMap.put(svr, null);
+            }
         }
         this.serverUrl = serverUrl;
         this.roomName = roomName;

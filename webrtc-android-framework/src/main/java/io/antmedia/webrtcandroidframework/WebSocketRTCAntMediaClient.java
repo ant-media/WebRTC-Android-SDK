@@ -43,10 +43,15 @@ import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
  * be sent after WebSocket connection is established.
  */
 public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChannelEvents {
+
   private static final String TAG = "WSRTCClient";
   private static final String ROOM_JOIN = "join";
   private static final String ROOM_MESSAGE = "message";
   private static final String ROOM_LEAVE = "leave";
+
+
+  public static final String VIDEO = "video";
+  public static final String AUDIO = "audio";
 
 
   /*
