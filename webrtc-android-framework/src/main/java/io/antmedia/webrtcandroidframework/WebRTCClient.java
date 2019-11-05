@@ -135,6 +135,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private WebSocketHandler wsHandler;
     private String stunServerUri = "stun:stun.l.google.com:19302";
     List<PeerConnection.IceServer> iceServers = new ArrayList();
+    private boolean videoOn = true;
+    private boolean audioOn = true;
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this(webRTCListener, context, null);
@@ -833,6 +835,34 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     @Override
     public String getError() {
         return errorString;
+    }
+
+    public void disableVideo() {
+        peerConnectionClient.setVideoEnabled(false);
+        videoOn = false;
+    }
+
+    public void enableVideo() {
+        peerConnectionClient.setVideoEnabled(true);
+        videoOn = true;
+    }
+
+    public void disableAudio() {
+        peerConnectionClient.setAudioEnabled(false);
+        audioOn = false;
+    }
+
+    public void enableAudio() {
+        peerConnectionClient.setAudioEnabled(true);
+        audioOn = true;
+    }
+
+    public boolean isVideoOn() {
+        return videoOn;
+    }
+
+    public boolean isAudioOn() {
+        return audioOn;
     }
 
     // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------

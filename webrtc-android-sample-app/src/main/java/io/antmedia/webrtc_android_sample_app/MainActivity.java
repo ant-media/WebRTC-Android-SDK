@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import org.webrtc.RendererCommon;
@@ -28,7 +30,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://172.16.110.53:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -190,4 +192,25 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
     }
 
+    public void onOffVideo(View view) {
+        if (webRTCClient.isVideoOn()) {
+            webRTCClient.disableVideo();
+            ((ImageView)view).setImageResource(R.drawable.video_off);
+        }
+        else {
+            webRTCClient.enableVideo();
+            ((ImageView)view).setImageResource(R.drawable.video_on);
+        }
+    }
+
+    public void onOffAudio(View view) {
+        if (webRTCClient.isAudioOn()) {
+            webRTCClient.disableAudio();
+            ((ImageButton)view).setImageResource(R.drawable.sound_off);
+        }
+        else {
+            webRTCClient.enableAudio();
+            ((ImageButton)view).setImageResource(R.drawable.sound_on);
+        }
+    }
 }
