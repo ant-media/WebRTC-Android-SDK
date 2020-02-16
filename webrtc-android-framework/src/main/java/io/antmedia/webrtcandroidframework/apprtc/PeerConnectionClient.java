@@ -12,6 +12,7 @@ package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.media.AudioAttributes;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -703,6 +704,7 @@ public class PeerConnectionClient {
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
                 .setAudioRecordStatusListener(recordStatusListener)
+                //.setAudioTrackContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .createAudioDeviceModule();
 
         webRtcAudioRecord = builder.getAudioInput();

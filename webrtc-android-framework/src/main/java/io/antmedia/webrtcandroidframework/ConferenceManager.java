@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import org.webrtc.IceCandidate;
+import org.webrtc.JniHelper;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.audio.WebRtcAudioRecord;
@@ -28,6 +29,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     private boolean joined = false;
 
     private int index = 0;
+    private boolean openFrontCamera = false;
 
     public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers) {
         this.context = context;
@@ -84,6 +86,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
         String tokenId = "tokenId";
 
         if(mode == IWebRTCClient.MODE_PUBLISH) {
+            webRTCClient.setOpenFrontCamera(openFrontCamera);
             webRTCClient.setVideoRenderers(null, publishViewRenderer);
         }
         else {
@@ -156,6 +159,15 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     @Override
     public void onStartStreaming(String streamId) {
         peers.get(streamId).onStartStreaming(streamId);
+    }
+
+
+    public void setOpenFrontCamera(boolean openFrontCamera) {
+        this.openFrontCamera = openFrontCamera;
+    }
+
+    public void setCameraOrientationFix(int cameraOrientationFix) {
+        JniHelper.setCameraOrientation(cameraOrientationFix);
     }
 
     @Override

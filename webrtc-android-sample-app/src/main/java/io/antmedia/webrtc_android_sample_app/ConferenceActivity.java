@@ -27,7 +27,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class ConferenceActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://172.16.110.53:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.16.110.71:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
     private ConferenceManager conferenceManager;
 
@@ -74,6 +74,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
                 publishViewRenderer,
                 playViewRenderers
         );
+
+        conferenceManager.setOpenFrontCamera(false);
     }
     public void joinConference(View v) {
         if (!conferenceManager.isJoined()) {
