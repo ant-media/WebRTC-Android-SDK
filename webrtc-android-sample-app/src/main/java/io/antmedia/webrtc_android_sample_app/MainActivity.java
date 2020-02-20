@@ -76,7 +76,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId);
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PLAY, tokenId);
 
         webRTCClient.startStream();
 

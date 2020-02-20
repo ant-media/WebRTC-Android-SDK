@@ -949,23 +949,27 @@ public class PeerConnectionClient {
 
   @Nullable
   private AudioTrack createAudioTrack() {
-    audioSource = factory.createAudioSource(audioConstraints);
-    localAudioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
-    localAudioTrack.setEnabled(enableAudio);
+    if (localAudioTrack == null) {
+      audioSource = factory.createAudioSource(audioConstraints);
+      localAudioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
+      localAudioTrack.setEnabled(enableAudio);
+    }
     return localAudioTrack;
   }
 
   @Nullable
   private VideoTrack createVideoTrack(VideoCapturer capturer) {
-    surfaceTextureHelper =
-        SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
-    videoSource = factory.createVideoSource(capturer.isScreencast());
-    capturer.initialize(surfaceTextureHelper, appContext, videoSource.getCapturerObserver());
-    capturer.startCapture(videoWidth, videoHeight, videoFps);
+    if (localVideoTrack == null && capturer != null) {
+      surfaceTextureHelper =
+              SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
+      videoSource = factory.createVideoSource(capturer.isScreencast());
+      capturer.initialize(surfaceTextureHelper, appContext, videoSource.getCapturerObserver());
+      capturer.startCapture(videoWidth, videoHeight, videoFps);
 
-    localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-    localVideoTrack.setEnabled(renderVideo);
-    localVideoTrack.addSink(localRender);
+      localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
+      localVideoTrack.setEnabled(renderVideo);
+      localVideoTrack.addSink(localRender);
+    }
     return localVideoTrack;
   }
 
@@ -1269,7 +1273,16 @@ public class PeerConnectionClient {
     }
 
     @Override
-    public void onAddStream(final MediaStream stream) {}
+    public void onAddStream(final MediaStream stream) {
+      if (!isVideoCallEnabled() && !isAudioEnabled())
+      {  // this is the case in play mode
+        VideoTrack remoteVideoTrack = getRemoteVideoTrack();
+        remoteVideoTrack.setEnabled(true);
+        for (VideoSink remoteSink : remoteSinks) {
+          remoteVideoTrack.addSink(remoteSink);
+        }
+      }
+    }
 
     @Override
     public void onRemoveStream(final MediaStream stream) {}
