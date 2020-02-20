@@ -10,12 +10,11 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-import javax.annotation.Nullable;
-
-
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -327,7 +326,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
             reportError("Received offer for call receiver: " + msg);
           }
         } else if (type.equals("bye")) {
-          events.onChannelClose(null);
+          events.onChannelClose();
         } else {
           reportError("Unexpected WebSocket message: " + msg);
         }
@@ -345,7 +344,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
 
   @Override
   public void onWebSocketClose() {
-    events.onChannelClose(null);
+    events.onChannelClose();
   }
 
   @Override

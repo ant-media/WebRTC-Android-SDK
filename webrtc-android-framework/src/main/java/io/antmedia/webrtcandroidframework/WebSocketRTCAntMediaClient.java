@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.WebSocketChannelAntMediaClient.WebSocketChannelEvents;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 
 
@@ -39,7 +38,7 @@ import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
  * Messages to other party (with local Ice candidates and answer SDP) can
  * be sent after WebSocket connection is established.
  */
-public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChannelEvents {
+public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChannelAntMediaClient.WebSocketChannelEvents {
   private static final String TAG = "WSRTCClient";
   private static final String ROOM_JOIN = "join";
   private static final String ROOM_MESSAGE = "message";
@@ -518,7 +517,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
 
   @Override
   public void onWebSocketClose(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code) {
-    events.onChannelClose(code);
+    events.onChannelClose();
   }
 
   @Override

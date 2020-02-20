@@ -24,13 +24,14 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.support.annotation.RequiresApi;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
 
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
@@ -59,7 +60,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
@@ -73,7 +73,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
  * Activity for peer connection call setup, call waiting
  * and call view.
  */
-public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents, PeerConnectionClient.PeerConnectionEvents
+public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvents, PeerConnectionClient.PeerConnectionEvents
 {
 
 
@@ -277,8 +277,10 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
                         intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, false),
                         intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false),
                         intent.getBooleanExtra(CallActivity.EXTRA_ENABLE_RTCEVENTLOG, false),
-                        intent.getBooleanExtra(CallActivity.EXTRA_USE_LEGACY_AUDIO_DEVICE, false), dataChannelParameters,
+                        dataChannelParameters,
                         audioCallEnabled);
+
+
         commandLineRun = intent.getBooleanExtra(CallActivity.EXTRA_CMDLINE, false);
         int runTimeMs = intent.getIntExtra(CallActivity.EXTRA_RUNTIME, 0);
 
@@ -365,10 +367,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
         persistentSurface = MediaCodec.createPersistentInputSurface();
         handlerThread = new HandlerThread("recorder surface handler");
         handlerThread.start();
-        recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), persistentSurface, handlerThread.getLooper(), 1000000, file);
-        recorderSurfaceDrawer.startRecording(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
+        //TODO: enable below mekya
+        //recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), persistentSurface, handlerThread.getLooper(), 1000000, file);
+        //recorderSurfaceDrawer.startRecording(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
 
-        peerConnectionClient.getLocalVideoTrack().addSink(recorderVideoSink);
+        //peerConnectionClient.getLocalVideoTrack().addSink(recorderVideoSink);
 
 
 
@@ -414,7 +417,8 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     }
 
     public void stopRecording() {
-        peerConnectionClient.getLocalVideoTrack().removeSink(recorderVideoSink);
+        //TODO: fix this - mekya
+        //peerConnectionClient.getLocalVideoTrack().removeSink(recorderVideoSink);
         recorderSurfaceDrawer.stopRecording();
         if (mediaRecorder != null) {
             mediaRecorder.stop();
@@ -922,13 +926,13 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
     }
 
     @Override
-    public void onChannelClose(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code) {
+    public void onChannelClose() {
         this.activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 logAndToast("Remote end hung up; dropping PeerConnection");
                 if (webRTCListener != null) {
-                    webRTCListener.onSignalChannelClosed(code);
+                    webRTCListener.onSignalChannelClosed(null);
                 }
                 disconnect();
             }
@@ -1013,6 +1017,11 @@ public class WebRTCClient implements IWebRTCClient ,AppRTCClient.SignalingEvents
                 disconnect();
             }
         });
+    }
+
+    @Override
+    public void onConnected() {
+
     }
 
     @Override

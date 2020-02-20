@@ -2,24 +2,19 @@ package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.media.MediaCodec;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.HandlerThread;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
-import android.view.Surface;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
-import org.webrtc.EglBase;
+import androidx.annotation.RequiresApi;
+
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoFrame;
-import org.webrtc.VideoSink;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
@@ -27,16 +22,13 @@ import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
-import io.antmedia.webrtcandroidframework.apprtc.UnhandledExceptionHandler;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.34:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -89,6 +81,8 @@ public class MainActivity extends Activity implements IWebRTCListener {
         webRTCClient.startStream();
 
     }
+
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     public void startRecording(View v) {

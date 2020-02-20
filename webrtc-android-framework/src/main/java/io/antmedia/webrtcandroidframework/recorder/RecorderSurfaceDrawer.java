@@ -1,20 +1,17 @@
 package io.antmedia.webrtcandroidframework.recorder;
 
 import android.graphics.Matrix;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
 import android.media.MediaMuxer;
 import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.os.Process;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.Surface;
+
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import org.webrtc.EglBase;
 import org.webrtc.EglBase14;
@@ -26,8 +23,6 @@ import org.webrtc.VideoFrameDrawer;
 
 import java.io.File;
 import java.io.IOException;
-
-import io.antmedia.webrtcandroidframework.recorder.VideoEncoderCore;
 
 
 public class RecorderSurfaceDrawer extends Handler {
@@ -101,7 +96,8 @@ public class RecorderSurfaceDrawer extends Handler {
                     {
                         //video encoder block
                         mVideoEncoder = new VideoEncoderCore(inputMessage.arg1, inputMessage.arg2, videoBitrate, mMuxer);
-                        this.textureEglBase = new EglBase14((EglBase14.Context) eglBase.getEglBaseContext(), EglBase.CONFIG_RECORDABLE);
+                        //TODO: below EglBase14Impl - mekya
+                        //this.textureEglBase = new EglBase14Impl((EglBase14.Context) eglBase.getEglBaseContext(), EglBase.CONFIG_RECORDABLE);
                         this.textureEglBase.createSurface(mVideoEncoder.getInputSurface());
 
                         Log.i("RecorderSurfaceDrawer", "init surface size: " + this.textureEglBase.surfaceWidth() + "x" + this.textureEglBase.surfaceHeight());

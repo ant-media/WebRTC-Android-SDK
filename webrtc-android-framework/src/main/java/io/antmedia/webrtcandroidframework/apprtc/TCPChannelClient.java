@@ -10,8 +10,12 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-import javax.annotation.Nullable;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
+
+import org.webrtc.ThreadUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -23,7 +27,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
-import org.webrtc.ThreadUtils;
 
 /**
  * Replacement for WebSocketChannelClient for direct communication between two IP addresses. Handles

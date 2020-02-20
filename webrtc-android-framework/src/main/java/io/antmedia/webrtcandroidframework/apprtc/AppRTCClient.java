@@ -16,8 +16,6 @@ import org.webrtc.SessionDescription;
 
 import java.util.List;
 
-import de.tavendo.autobahn.WebSocket;
-
 /**
  * AppRTCClient is the interface representing an AppRTC client.
  */
@@ -32,7 +30,6 @@ public interface AppRTCClient {
     public final String urlParameters;
     public final String mode;
     public final String token;
-
     public RoomConnectionParameters(
         String roomUrl, String roomId, boolean loopback, String urlParameters, String mode, String token) {
       this.roomUrl = roomUrl;
@@ -42,7 +39,9 @@ public interface AppRTCClient {
       this.mode = mode;
       this.token = token;
     }
-
+    //public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
+    //  this(roomUrl, roomId, loopback, null /* urlParameters */);
+    //}
   }
 
   /**
@@ -132,7 +131,7 @@ public interface AppRTCClient {
     /**
      * Callback fired once channel is closed.
      */
-    void onChannelClose(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code);
+    void onChannelClose();
 
     /**
      * Callback fired once channel error happened.
