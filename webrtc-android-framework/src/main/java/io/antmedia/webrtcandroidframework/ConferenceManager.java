@@ -20,6 +20,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     private final Intent intent;
     private final String serverUrl;
     private final String roomName;
+    private final String streamId;
     private HashMap<String, WebRTCClient> peers = new HashMap<>();
     private HashMap<SurfaceViewRenderer, WebRTCClient> playRendererAllocationMap = new HashMap<>();
     private SurfaceViewRenderer publishViewRenderer;
@@ -31,7 +32,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     private int index = 0;
     private boolean openFrontCamera = false;
 
-    public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers) {
+    public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId) {
         this.context = context;
         this.intent = intent;
         this.publishViewRenderer = publishViewRenderer;
@@ -43,6 +44,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
         this.serverUrl = serverUrl;
         this.roomName = roomName;
         this.webRTCListener = webRTCListener;
+        this.streamId = streamId;
     }
 
     public boolean isJoined() {
@@ -54,7 +56,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(serverUrl);
         }
-        wsHandler.joinToConferenceRoom(roomName);
+        wsHandler.joinToConferenceRoom(roomName, streamId);
     }
 
     public void leaveFromConference() {
