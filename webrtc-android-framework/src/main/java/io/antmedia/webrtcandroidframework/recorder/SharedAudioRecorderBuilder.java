@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework.recorder;
 
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 
 import org.webrtc.Logging;
@@ -27,6 +28,7 @@ public class SharedAudioRecorderBuilder  {
     private boolean useStereoOutput;
     private WebRtcAudioRecord audioInput;
     private WebRtcAudioRecord.IAudioRecordStatusListener recordStatusListener = null;
+    private int contentType = -1;
 
     public SharedAudioRecorderBuilder(Context context) {
         this.audioSource = 7;
@@ -98,6 +100,11 @@ public class SharedAudioRecorderBuilder  {
         return this;
     }
 
+    public SharedAudioRecorderBuilder setAudioTrackContentType(int contentType) {
+        this.contentType = contentType;
+        return this;
+    }
+
     public AudioDeviceModule createAudioDeviceModule() {
         Logging.d("JavaAudioDeviceModule", "createAudioDeviceModule");
         if (this.useHardwareNoiseSuppressor) {
@@ -122,7 +129,7 @@ public class SharedAudioRecorderBuilder  {
 
         audioInput = new WebRtcAudioRecord(this.context, this.audioManager, this.audioSource, this.audioRecordErrorCallback,
                 this.samplesReadyCallback, this.useHardwareAcousticEchoCanceler, this.useHardwareNoiseSuppressor, this.recordStatusListener);
-        WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(this.context, this.audioManager, this.audioTrackErrorCallback);
+        WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(this.context, this.audioManager, this.audioTrackErrorCallback, contentType);
         return new JavaAudioDeviceModule(this.context, this.audioManager, audioInput, audioOutput, this.sampleRate, this.useStereoInput, this.useStereoOutput);
     }
 

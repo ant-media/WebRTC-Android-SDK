@@ -5,19 +5,20 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/publish_view_renderer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center" />
 
-
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/pip_view_renderer"
         android:layout_height="144dp"
         android:layout_width="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"/>
+        android:layout_margin="16dp"
+        />
 
     <LinearLayout
         android:layout_width="match_parent"
