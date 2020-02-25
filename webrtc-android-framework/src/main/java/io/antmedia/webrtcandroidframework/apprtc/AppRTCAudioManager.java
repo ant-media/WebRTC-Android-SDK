@@ -274,6 +274,7 @@ public class AppRTCAudioManager {
     // best possible VoIP performance.
     audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
+
     // Always disable microphone mute during a WebRTC call.
     setMicrophoneMute(false);
 
