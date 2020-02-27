@@ -1,5 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
+import android.content.Intent;
+
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
@@ -48,7 +50,7 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @param mode one of the MODE_PUBLISH, MODE_PLAY, MODE_JOIN
      * @param token one time token string
      */
-    void init(String url, String streamId, String mode, String token);
+    void init(String url, String streamId, String mode, String token, Intent intent);
 
 
     /**
@@ -106,4 +108,8 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @return error or null if not
      */
     String getError();
+
+
+
+    void setMediaProjectionParams(int resultCode, Intent data);
 }

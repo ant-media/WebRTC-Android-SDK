@@ -190,6 +190,9 @@ public class PeerConnectionClient {
     });
   }
 
+  public void setLocalVideoTrack(@javax.annotation.Nullable VideoTrack localVideoTrack) {
+    this.localVideoTrack = localVideoTrack;
+  }
   /**
    * Peer connection parameters.
    */

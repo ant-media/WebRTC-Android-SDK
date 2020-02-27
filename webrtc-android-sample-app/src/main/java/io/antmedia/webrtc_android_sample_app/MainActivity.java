@@ -9,6 +9,8 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -32,6 +34,9 @@ public class MainActivity extends Activity implements IWebRTCListener {
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
+    private String webRTCMode;
+    private Button startStreamingButton;
+    private String operationName = "";
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -62,6 +67,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
+        startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
@@ -75,28 +81,34 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
-       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PLAY, tokenId);
+        webRTCMode = IWebRTCClient.MODE_JOIN;
 
-        webRTCClient.startStream();
+        if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
+            startStreamingButton.setText("Start Publishing");
+            operationName = "Publishing";
+        }
+        else  if (webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
+            startStreamingButton.setText("Start Playing");
+            operationName = "Playing";
+        }
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
 
     }
 
 
+    public void startStreaming(View v) {
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    public void startRecording(View v) {
-        if (!webRTCClient.isRecording()) {
-
-            ((Button)v).setText("Stop Recording");
-            webRTCClient.startRecording(null, 800000, 64000);
+        if (!webRTCClient.isStreaming()) {
+            ((Button)v).setText("Stop " + operationName);
+            webRTCClient.startStream();
         }
         else {
-            webRTCClient.stopRecording();
-            ((Button)v).setText("Start Recording");
+            ((Button)v).setText("Start " + operationName);
+            webRTCClient.stopStream();
         }
-
     }
+
 
     @Override
     public void onPlayStarted() {
@@ -140,9 +152,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
-        if (webRTCClient.isRecording()) {
-            webRTCClient.stopRecording();
-        }
+
     }
 
     @Override
@@ -157,5 +167,29 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
         finish();
+    }
+
+    @Override
+    public void onConnected() {
+        //it is called when connected to ice
+    }
+
+
+    public void onOffVideo(View view) {
+        if (webRTCClient.isVideoOn()) {
+            webRTCClient.disableVideo();
+        }
+        else {
+            webRTCClient.enableVideo();
+        }
+    }
+
+    public void onOffAudio(View view) {
+        if (webRTCClient.isAudioOn()) {
+            webRTCClient.disableAudio();
+        }
+        else {
+            webRTCClient.enableAudio();
+        }
     }
 }

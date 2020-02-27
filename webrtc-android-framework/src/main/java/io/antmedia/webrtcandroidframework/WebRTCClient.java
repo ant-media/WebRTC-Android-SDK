@@ -40,6 +40,7 @@ import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
+import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
@@ -51,6 +52,7 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
+import org.webrtc.VideoTrack;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +66,6 @@ import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
-import io.antmedia.webrtcandroidframework.recorder.RecorderSurfaceDrawer;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
 
@@ -73,10 +74,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
  * Activity for peer connection call setup, call waiting
  * and call view.
  */
-public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvents, PeerConnectionClient.PeerConnectionEvents
-{
-
-
+public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents {
     private static final String TAG = "WebRTCClient69";
 
 
@@ -114,36 +112,27 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     private static int mediaProjectionPermissionResultCode;
     // True if local view is in the fullscreen renderer.
     private boolean isSwappedFeeds;
-
-    private Activity activity;
-
-
-    EglBase eglBase = EglBase.create();
-
+    private Context context;
+    private EglBase eglBase;
     private String saveRemoteVideoToFile = null;
     private int videoOutWidth, videoOutHeight;
     private String errorString = null;
     private String streamMode;
     private boolean openFrontCamera = true;
     private VideoCapturer videoCapturer;
-    private MediaRecorder mediaRecorder;
-    private boolean recording;
 
-    private Surface persistentSurface;
-    private HandlerThread handlerThread;
-    private RecorderSurfaceDrawer recorderSurfaceDrawer;
-    private VideoSink recorderVideoSink = new VideoSink() {
-        @Override
-        public void onFrame(VideoFrame videoFrame) {
-            recorderSurfaceDrawer.drawTextureBuffer(videoFrame);
+    private VideoTrack localVideoTrack;
+    private Intent intent = new Intent();
+    private Handler handler = new Handler();
+    private WebSocketHandler wsHandler;
+    private String stunServerUri = "stun:stun.l.google.com:19302";
+    List<PeerConnection.IceServer> iceServers = new ArrayList();
+    private boolean videoOn = true;
+    private boolean audioOn = true;
 
-        }
-    };
-
-
-    public WebRTCClient(IWebRTCListener webRTCListener, Activity context) {
+    public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
-        this.activity = context;
+        this.context = context;
 
     }
 
@@ -162,15 +151,20 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
 
 
     @Override
-    public void init(String url, String streamId, String mode, String token){
-
+    public void init(String url, String streamId, String mode, String token, Intent intent) {
+        if (intent != null) {
+            this.intent = intent;
+        }
         iceConnected = false;
         signalingParameters = null;
+
+        iceServers.add(new PeerConnection.IceServer(stunServerUri));
 
         this.streamMode = mode;
 
 
         remoteSinks.add(remoteProxyRenderer);
+        eglBase = EglBase.create();
 
         // Create video renderers.
         if (pipRenderer != null) {
@@ -189,21 +183,26 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
                         "Failed to open video file for output: " + saveRemoteVideoToFile, e);
             }
         }
-        fullscreenRenderer.init(eglBase.getEglBaseContext(), null);
-        fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
+        if(fullscreenRenderer != null) {
+            fullscreenRenderer.init(eglBase.getEglBaseContext(), null);
+            fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
+        }
 
         if (pipRenderer != null) {
             pipRenderer.setZOrderMediaOverlay(true);
             pipRenderer.setEnableHardwareScaler(true /* enabled */);
         }
-        fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
+
+        if(fullscreenRenderer != null) {
+            fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
+        }
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
         setSwappedFeeds(true /* isSwappedFeeds */);
 
 
         //Uri roomUri = this.activity.getIntent().getData();
         if (url == null) {
-            logAndToast(this.activity.getString(R.string.missing_url));
+            logAndToast(this.context.getString(R.string.missing_url));
             Log.e(TAG, "Didn't get any URL in intent!");
             return;
         }
@@ -212,12 +211,11 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
         //String roomId = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_ROOMID);
         //Log.d(TAG, "Room ID: " + roomId);
         if (streamId == null || streamId.length() == 0) {
-            logAndToast(this.activity.getString(R.string.missing_url));
+            logAndToast(this.context.getString(R.string.missing_url));
             Log.e(TAG, "Incorrect room ID in intent!");
             return;
         }
 
-        Intent intent = this.activity.getIntent();
         boolean loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
         boolean tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
 
@@ -241,17 +239,17 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
 
         String videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
         if (videoCodec == null) {
-            videoCodec = this.activity.getString(R.string.pref_videocodec_default);
+            videoCodec = this.context.getString(R.string.pref_videocodec_default);
         }
-        int videoStartBitrate = this.activity.getIntent().getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
+        int videoStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
 
         if (videoStartBitrate == 0) {
-            videoStartBitrate = Integer.parseInt(this.activity.getString(R.string.pref_maxvideobitratevalue_default));
+            videoStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_maxvideobitratevalue_default));
         }
 
-        int audioStartBitrate = this.activity.getIntent().getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
+        int audioStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
         if (audioStartBitrate == 0) {
-            audioStartBitrate = Integer.parseInt(this.activity.getString(R.string.pref_startaudiobitratevalue_default));
+            audioStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_startaudiobitratevalue_default));
         }
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
@@ -286,17 +284,6 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
 
         Log.d(TAG, "VIDEO_FILE: '" + intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA) + "'");
 
-        // Create connection client. Use DirectRTCClient if room name is an IP otherwise use the
-        // standard WebSocketRTCClient.
-        //if (loopback || !DirectRTCClient.IP_PATTERN.matcher(roomId).matches()) {
-        //  appRtcClient = new WebSocketRTCClient(this);
-        //} else {
-        //  Log.i(TAG, "Using DirectRTCClient because room name looks like an IP.");
-        //  appRtcClient = new DirectRTCClient(this);
-        //}
-
-
-
         // Create connection parameters.
         String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
         roomConnectionParameters =
@@ -313,145 +300,61 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
             }, runTimeMs);
         }
 
-
-
         // Create peer connection client.
         peerConnectionClient = new PeerConnectionClient(
-                this.activity.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this);
+                this.context.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this);
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
         if (loopback) {
             options.networkIgnoreMask = 0;
         }
         peerConnectionClient.createPeerConnectionFactory(options);
 
-
-        videoCapturer = null;
-        if (peerConnectionParameters.videoCallEnabled) {
+        if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
             videoCapturer = createVideoCapturer();
+        }
+
+        if (localVideoTrack != null) {
+            peerConnectionClient.setLocalVideoTrack(localVideoTrack);
         }
 
         peerConnectionClient.init(videoCapturer, localProxyVideoSink);
 
+
+        if (peerConnectionParameters.audioCallEnabled) {
+            // Create and audio manager that will take care of audio routing,
+            // audio modes, audio device enumeration etc.
+            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
+            // Store existing audio settings and change audio mode to
+            // MODE_IN_COMMUNICATION for best possible VoIP performance.
+            Log.d(TAG, "Starting the audio manager...");
+            audioManager.start(new AppRTCAudioManager.AudioManagerEvents() {
+                // This method will be called each time the number of available audio
+                // devices has changed.
+                @Override
+                public void onAudioDeviceChanged(
+                        AppRTCAudioManager.AudioDevice audioDevice, Set<AppRTCAudioManager.AudioDevice> availableAudioDevices) {
+                    onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
+                }
+            });
+        }
+
     }
 
-    /**
-     * This method can be callable after init method
-     * @param fullFilePath
-     * @param videoBitrate
-     * @param audioBitrate
-     */
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    public void startRecording(String fullFilePath, int videoBitrate, int audioBitrate) {
-        File file;
-        if (fullFilePath != null) {
-            file = new File(fullFilePath);
-        }
-        else {
-            file = new File(Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_MOVIES), "record" + System.currentTimeMillis() + ".mp4");
-        }
 
-       // try {
-
-        /*
-            int minBufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-
-            AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, 16000,
-                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufferSize);
-
-            if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
-                audioRecord.startRecording();
-            }
-            */
-
-        persistentSurface = MediaCodec.createPersistentInputSurface();
-        handlerThread = new HandlerThread("recorder surface handler");
-        handlerThread.start();
-        //TODO: enable below mekya
-        //recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), persistentSurface, handlerThread.getLooper(), 1000000, file);
-        //recorderSurfaceDrawer.startRecording(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
-
-        //peerConnectionClient.getLocalVideoTrack().addSink(recorderVideoSink);
-
-
-
-
-        recording = true;
-        /*
-            mediaRecorder = new MediaRecorder();
-
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            //mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            //persistentSurface = MediaCodec.createPersistentInputSurface();
-
-         //   handlerThread = new HandlerThread("recorder surface handler");
-         //   handlerThread.start();
-         //   recorderSurfaceDrawer = new RecorderSurfaceDrawer(getEglBase(), persistentSurface, handlerThread.getLooper());
-
-
-            //mediaRecorder.setInputSurface(persistentSurface);
-
-            mediaRecorder.setAudioSamplingRate(16000);
-
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            //mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mediaRecorder.setOutputFile(file.getAbsolutePath());
-            //mediaRecorder.setVideoSize(peerConnectionClient.getSurfaceWidth(), peerConnectionClient.getSurfaceHeight());
-            //mediaRecorder.setVideoEncodingBitRate(videoBitrate);
-            //mediaRecorder.setAudioEncodingBitRate(audioBitrate);
-
-            mediaRecorder.prepare();
-
-            mediaRecorder.start();
-
-            //
-
-         */
-
-       /* } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
-    }
-
-    public void stopRecording() {
-        //TODO: fix this - mekya
-        //peerConnectionClient.getLocalVideoTrack().removeSink(recorderVideoSink);
-        recorderSurfaceDrawer.stopRecording();
-        if (mediaRecorder != null) {
-            mediaRecorder.stop();
-            mediaRecorder.reset();
-            mediaRecorder.release();
-        }
-
-        if (recorderSurfaceDrawer != null) {
-            recorderSurfaceDrawer.release();
-        }
-        if (persistentSurface != null) {
-            persistentSurface.release();
-        }
-        if (handlerThread != null) {
-            handlerThread.quitSafely();
-        }
-        recording = false;
-    }
 
     public void startStream() {
-        appRtcClient = new WebSocketRTCAntMediaClient(this);
-        if (screencaptureEnabled) {
-            startScreenCapture();
-        } else {
-            startCall();
+        if (wsHandler == null) {
+            wsHandler = new WebSocketHandler(this, handler);
+            wsHandler.connect(roomConnectionParameters.roomUrl);
         }
+        startCall();
     }
 
     @TargetApi(17)
     private DisplayMetrics getDisplayMetrics() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         WindowManager windowManager =
-                (WindowManager) this.activity.getApplication().getSystemService(Context.WINDOW_SERVICE);
+                (WindowManager) this.context.getSystemService(Context.WINDOW_SERVICE);
         windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
         return displayMetrics;
     }
@@ -468,10 +371,13 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     @TargetApi(21)
     private void startScreenCapture() {
         MediaProjectionManager mediaProjectionManager =
-                (MediaProjectionManager) this.activity.getApplication().getSystemService(
+                (MediaProjectionManager) this.context.getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
-        this.activity.startActivityForResult(
-                mediaProjectionManager.createScreenCaptureIntent(), CallActivity.CAPTURE_PERMISSION_REQUEST_CODE);
+
+        if (this.context instanceof Activity) {
+            ((Activity) this.context).startActivityForResult(
+                    mediaProjectionManager.createScreenCaptureIntent(), CallActivity.CAPTURE_PERMISSION_REQUEST_CODE);
+        }
     }
 
 
@@ -484,11 +390,11 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     }
 
     private boolean useCamera2() {
-        return Camera2Enumerator.isSupported(this.activity) && this.activity.getIntent().getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
+        return Camera2Enumerator.isSupported(this.context) && this.intent.getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
     }
 
     private boolean captureToTexture() {
-        return this.activity.getIntent().getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
+        return this.intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
     }
 
     public void setOpenFrontCamera(boolean openFrontCamera) {
@@ -567,6 +473,8 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
             peerConnectionClient.stopVideoSource();
         }
 
+        localProxyVideoSink.setTarget(null);
+
     }
 
     @Override
@@ -576,17 +484,17 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
         if (peerConnectionClient != null && !screencaptureEnabled) {
             peerConnectionClient.startVideoSource();
         }
-
     }
-
 
     @Override
     public void stopStream() {
+
         disconnect();
         if (logToast != null) {
             logToast.cancel();
         }
         activityRunning = false;
+
     }
 
     // CallFragment.OnCallEvents interface implementation.
@@ -610,7 +518,9 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
 
     @Override
     public void onVideoScalingSwitch(ScalingType scalingType) {
-        fullscreenRenderer.setScalingType(scalingType);
+        if (fullscreenRenderer != null) {
+            fullscreenRenderer.setScalingType(scalingType);
+        }
     }
 
 
@@ -640,33 +550,15 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     }
 
     private void startCall() {
-        if (appRtcClient == null) {
-            Log.e(TAG, "AppRTC client is not allocated for a call.");
-            return;
+        logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
+        if (roomConnectionParameters.mode == IWebRTCClient.MODE_PUBLISH) {
+            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
         }
-        callStartedTimeMs = System.currentTimeMillis();
-
-        // Start room connection.
-        logAndToast(this.activity.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
-        appRtcClient.connectToRoom(roomConnectionParameters);
-
-
-        if (peerConnectionParameters.audioCallEnabled) {
-            // Create and audio manager that will take care of audio routing,
-            // audio modes, audio device enumeration etc.
-            audioManager = AppRTCAudioManager.create(this.activity.getApplicationContext());
-            // Store existing audio settings and change audio mode to
-            // MODE_IN_COMMUNICATION for best possible VoIP performance.
-            Log.d(TAG, "Starting the audio manager...");
-            audioManager.start(new AppRTCAudioManager.AudioManagerEvents() {
-                // This method will be called each time the number of available audio
-                // devices has changed.
-                @Override
-                public void onAudioDeviceChanged(
-                        AppRTCAudioManager.AudioDevice audioDevice, Set<AppRTCAudioManager.AudioDevice> availableAudioDevices) {
-                    onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
-                }
-            });
+        else if (roomConnectionParameters.mode == IWebRTCClient.MODE_PLAY) {
+            wsHandler.startPlay(roomConnectionParameters.roomId, roomConnectionParameters.token);
+        }
+        else if (roomConnectionParameters.mode == IWebRTCClient.MODE_JOIN) {
+            wsHandler.joinToPeer(roomConnectionParameters.roomId, roomConnectionParameters.token);
         }
     }
 
@@ -695,23 +587,24 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     // Disconnect from remote resources, dispose of local resources, and exit.
     private void disconnect() {
         activityRunning = false;
+        iceConnected = false;
         remoteProxyRenderer.setTarget(null);
-        localProxyVideoSink.setTarget(null);
-        if (appRtcClient != null) {
-            appRtcClient.disconnectFromRoom();
-            appRtcClient = null;
+        if (wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
+            wsHandler.disconnect(true);
+            wsHandler = null;
         }
         if (pipRenderer != null) {
             pipRenderer.release();
             pipRenderer = null;
         }
+
+        if(fullscreenRenderer != null) {
+            fullscreenRenderer.release();
+            fullscreenRenderer = null;
+        }
         if (videoFileRenderer != null) {
             videoFileRenderer.release();
             videoFileRenderer = null;
-        }
-        if (fullscreenRenderer != null) {
-            fullscreenRenderer.release();
-            fullscreenRenderer = null;
         }
         if (peerConnectionClient != null) {
             peerConnectionClient.close();
@@ -729,8 +622,8 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
             Log.e(TAG, "Critical error: " + errorMessage);
             disconnect();
         } else {
-            new AlertDialog.Builder(this.activity)
-                    .setTitle(this.activity.getText(R.string.channel_error_title))
+            new AlertDialog.Builder(this.context)
+                    .setTitle(this.context.getText(R.string.channel_error_title))
                     .setMessage(errorMessage)
                     .setCancelable(false)
                     .setNeutralButton(R.string.ok,
@@ -757,7 +650,7 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     }
 
     private void reportError(final String description) {
-        this.activity.runOnUiThread(() -> {
+        this.handler.post(() -> {
 
             if (!isError) {
                 isError = true;
@@ -774,7 +667,7 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
 
     private @Nullable VideoCapturer createVideoCapturer() {
         final VideoCapturer videoCapturer;
-        String videoFileAsCamera = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
+        String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
         if (videoFileAsCamera != null) {
             try {
                 videoCapturer = new FileVideoCapturer(videoFileAsCamera);
@@ -786,12 +679,12 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
             return createScreenCapturer();
         } else if (useCamera2()) {
             if (!captureToTexture()) {
-                reportError(this.activity.getString(R.string.camera2_texture_only_error));
+                reportError(this.context.getString(R.string.camera2_texture_only_error));
                 return null;
             }
 
             Logging.d(TAG, "Creating capturer using camera2 API.");
-            videoCapturer = createCameraCapturer(new Camera2Enumerator(this.activity));
+            videoCapturer = createCameraCapturer(new Camera2Enumerator(this.context));
         } else {
             Logging.d(TAG, "Creating capturer using camera1 API.");
             videoCapturer = createCameraCapturer(new Camera1Enumerator(captureToTexture()));
@@ -820,6 +713,10 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
         }
     }
 
+    public void setWsHandler(WebSocketHandler wsHandler) {
+        this.wsHandler = wsHandler;
+    }
+
     @Override
     public void setVideoRenderers(SurfaceViewRenderer pipRenderer, SurfaceViewRenderer fullscreenRenderer) {
         this.pipRenderer = pipRenderer;
@@ -831,118 +728,35 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
         return errorString;
     }
 
-    // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
-    // All callbacks are invoked from websocket signaling looper thread and
-    // are routed to UI thread.
-    private void onConnectedToRoomInternal(final AppRTCClient.SignalingParameters params) {
-        final long delta = System.currentTimeMillis() - callStartedTimeMs;
-
-        signalingParameters = params;
-        logAndToast("Creating peer connection, delay=" + delta + "ms");
-
-        peerConnectionClient.createPeerConnection(
-                localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
-
-        if (signalingParameters.initiator) {
-            logAndToast("Creating OFFER...");
-            // Create offer. Offer SDP will be sent to answering client in
-            // PeerConnectionEvents.onLocalDescription event.
-            peerConnectionClient.createOffer();
-        } else {
-            if (params.offerSdp != null) {
-                peerConnectionClient.setRemoteDescription(params.offerSdp);
-                logAndToast("Creating ANSWER...");
-                // Create answer. Answer SDP will be sent to offering client in
-                // PeerConnectionEvents.onLocalDescription event.
-                peerConnectionClient.createAnswer();
-            }
-            if (params.iceCandidates != null) {
-                // Add remote ICE candidates from room.
-                for (IceCandidate iceCandidate : params.iceCandidates) {
-                    peerConnectionClient.addRemoteIceCandidate(iceCandidate);
-                }
-            }
-        }
+    public void disableVideo() {
+        peerConnectionClient.setVideoEnabled(false);
+        videoOn = false;
     }
 
-    @Override
-    public void onConnectedToRoom(final AppRTCClient.SignalingParameters params) {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                onConnectedToRoomInternal(params);
-            }
-        });
+    public void enableVideo() {
+        peerConnectionClient.setVideoEnabled(true);
+        videoOn = true;
     }
 
-    @Override
-    public void onRemoteDescription(final SessionDescription sdp) {
-        final long delta = System.currentTimeMillis() - callStartedTimeMs;
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (peerConnectionClient == null) {
-                    Log.e(TAG, "Received remote SDP for non-initilized peer connection.");
-                    return;
-                }
-                logAndToast("Received remote " + sdp.type + ", delay=" + delta + "ms");
-                peerConnectionClient.setRemoteDescription(sdp);
-                if (!signalingParameters.initiator) {
-                    logAndToast("Creating ANSWER...");
-                    // Create answer. Answer SDP will be sent to offering client in
-                    // PeerConnectionEvents.onLocalDescription event.
-                    peerConnectionClient.createAnswer();
-                }
-            }
-        });
+    public void disableAudio() {
+        peerConnectionClient.setAudioEnabled(false);
+        audioOn = false;
     }
 
-    @Override
-    public void onRemoteIceCandidate(final IceCandidate candidate) {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (peerConnectionClient == null) {
-                    Log.e(TAG, "Received ICE candidate for a non-initialized peer connection.");
-                    return;
-                }
-                peerConnectionClient.addRemoteIceCandidate(candidate);
-            }
-        });
+    public void enableAudio() {
+        peerConnectionClient.setAudioEnabled(true);
+        audioOn = true;
     }
 
-    @Override
-    public void onRemoteIceCandidatesRemoved(final IceCandidate[] candidates) {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (peerConnectionClient == null) {
-                    Log.e(TAG, "Received ICE candidate removals for a non-initialized peer connection.");
-                    return;
-                }
-                peerConnectionClient.removeRemoteIceCandidates(candidates);
-            }
-        });
+    public boolean isVideoOn() {
+        return videoOn;
     }
 
-    @Override
-    public void onChannelClose() {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                logAndToast("Remote end hung up; dropping PeerConnection");
-                if (webRTCListener != null) {
-                    webRTCListener.onSignalChannelClosed(null);
-                }
-                disconnect();
-            }
-        });
+    public boolean isAudioOn() {
+        return audioOn;
     }
 
-    @Override
-    public void onChannelError(final String description) {
-        reportError(description);
-    }
+
 
     // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
     // Send local peer connection SDP and ICE candidates to remote party.
@@ -951,71 +765,60 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     @Override
     public void onLocalDescription(final SessionDescription sdp) {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (appRtcClient != null) {
-                    logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
-                    if (signalingParameters.initiator) {
-                        appRtcClient.sendOfferSdp(sdp);
-                    } else {
-                        appRtcClient.sendAnswerSdp(sdp);
-                    }
+
+        this.handler.post(() -> {
+            if (wsHandler != null) {
+                logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
+                if (signalingParameters.initiator) {
+                    wsHandler.sendConfiguration(roomConnectionParameters.roomId, sdp, "offer");
+                } else {
+                    wsHandler.sendConfiguration(roomConnectionParameters.roomId, sdp, "answer");
                 }
-                if (peerConnectionParameters.videoMaxBitrate > 0) {
-                    Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);
-                    peerConnectionClient.setVideoMaxBitrate(peerConnectionParameters.videoMaxBitrate);
-                }
+            }
+            if (peerConnectionParameters.videoMaxBitrate > 0) {
+                Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);
+                peerConnectionClient.setVideoMaxBitrate(peerConnectionParameters.videoMaxBitrate);
             }
         });
     }
 
     @Override
     public void onIceCandidate(final IceCandidate candidate) {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (appRtcClient != null) {
-                    appRtcClient.sendLocalIceCandidate(candidate);
-                }
+        this.handler.post(() -> {
+            if (wsHandler != null) {
+                wsHandler.sendLocalIceCandidate(roomConnectionParameters.roomId, candidate);
             }
         });
     }
 
     @Override
     public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (appRtcClient != null) {
-                    appRtcClient.sendLocalIceCandidateRemovals(candidates);
-                }
-            }
+        this.handler.post(() -> {
+            //not implemented because there is no counterpart on AMS
         });
     }
 
     @Override
     public void onIceConnected() {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                logAndToast("ICE connected, delay=" + delta + "ms");
-                iceConnected = true;
-                callConnected();
+        this.handler.post(() -> {
+            logAndToast("ICE connected, delay=" + delta + "ms");
+            iceConnected = true;
+            callConnected();
+
+            if (webRTCListener != null) {
+                webRTCListener.onConnected();
             }
         });
     }
 
     @Override
     public void onIceDisconnected() {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                logAndToast("ICE disconnected");
-                iceConnected = false;
-                disconnect();
-            }
+        this.handler.post(() ->
+        {
+            logAndToast("ICE disconnected");
+            iceConnected = false;
+            disconnect();
         });
     }
 
@@ -1029,13 +832,10 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
 
     @Override
     public void onPeerConnectionStatsReady(final StatsReport[] reports) {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (!isError && iceConnected) {
-                    //hudFragment.updateEncoderStatistics(reports);
-                    Log.i(TAG, reports.toString());
-                }
+        this.handler.post(() -> {
+            if (!isError && iceConnected) {
+                //hudFragment.updateEncoderStatistics(reports);
+                Log.i(TAG, reports.toString());
             }
         });
     }
@@ -1045,30 +845,72 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
         reportError(description);
     }
 
-    @Override
-    public void onPublishFinished() {
+    public boolean isStreaming() {
+        return iceConnected;
+    }
 
-        this.activity.runOnUiThread(() -> {
+    @Override
+    public void setMediaProjectionParams(int resultCode, Intent data) {
+        mediaProjectionPermissionResultCode = resultCode;
+        mediaProjectionPermissionResultData = data;
+    }
+
+    @Override
+    public void onTakeConfiguration(String streamId, SessionDescription sdp) {
+        this.handler.post(() -> {
+            if (sdp.type == SessionDescription.Type.OFFER) {
+                if (peerConnectionClient != null) {
+                    signalingParameters = new AppRTCClient.SignalingParameters(iceServers, false, null, null, null, sdp, null);
+
+                    peerConnectionClient.createPeerConnection(
+                            localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+                }
+
+                peerConnectionClient.setRemoteDescription(sdp);
+
+                peerConnectionClient.createAnswer();
+
+                if (signalingParameters.iceCandidates != null) {
+                    // Add remote ICE candidates from room.
+                    for (IceCandidate iceCandidate : signalingParameters.iceCandidates) {
+                        peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                    }
+                }
+            }
+            else {
+                peerConnectionClient.setRemoteDescription(sdp);
+            }
+        });
+    }
+
+    @Override
+    public void onPublishFinished(String streamId) {
+        this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onPublishFinished();
             }
+            disconnect();
         });
 
     }
 
+
     @Override
-    public void onPlayFinished() {
-        this.activity.runOnUiThread(() -> {
+    public void onPlayFinished(String streamId) {
+        this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onPlayFinished();
             }
+            disconnect();
         });
-
     }
 
+
+
+
     @Override
-    public void onPublishStarted() {
-        this.activity.runOnUiThread(() -> {
+    public void onPublishStarted(String streamId) {
+        this.handler.post(() -> {
 
             if (webRTCListener != null) {
                 webRTCListener.onPublishStarted();
@@ -1079,8 +921,8 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     }
 
     @Override
-    public void onPlayStarted() {
-        this.activity.runOnUiThread(() -> {
+    public void onPlayStarted(String streamId) {
+        this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onPlayStarted();
             }
@@ -1089,8 +931,38 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     }
 
     @Override
-    public void noStreamExistsToPlay() {
-        this.activity.runOnUiThread(() -> {
+    public void onStartStreaming(String streamId) {
+        this.handler.post(() -> {
+            signalingParameters = new AppRTCClient.SignalingParameters(iceServers, true, null, null, null, null, null);
+
+            if (peerConnectionClient != null) {
+                peerConnectionClient.createPeerConnection(
+                        localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+
+                logAndToast("Creating OFFER...");
+                peerConnectionClient.createOffer();
+            }
+        });
+    }
+
+    @Override
+    public void onJoinedTheRoom(String streamId, String[] streams) {
+        //no need to implement here
+    }
+
+    @Override
+    public void onStreamJoined(String streamId) {
+        //no need to implement here
+    }
+
+    @Override
+    public void onStreamLeaved(String streamId) {
+        //no need to implement here
+    }
+
+    @Override
+    public void noStreamExistsToPlay(String streamId) {
+        this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.noStreamExistsToPlay();
             }
@@ -1098,16 +970,23 @@ public class WebRTCClient implements IWebRTCClient , AppRTCClient.SignalingEvent
     }
 
     @Override
+    public void onRemoteIceCandidate(String streamId, IceCandidate candidate) {
+        this.handler.post(() -> {
+            if (peerConnectionClient == null) {
+                Log.e(TAG, "Received ICE candidate for a non-initialized peer connection.");
+                return;
+            }
+            peerConnectionClient.addRemoteIceCandidate(candidate);
+        });
+    }
+
+    @Override
     public void onDisconnected() {
-        this.activity.runOnUiThread(() -> {
+        this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onDisconnected();
             }
         });
-    }
-
-    public boolean isRecording() {
-        return recording;
     }
 
     public EglBase getEglBase() {
