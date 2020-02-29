@@ -81,7 +81,8 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
-        webRTCMode = IWebRTCClient.MODE_JOIN;
+        //TODO make it more developer friendly
+        webRTCMode = IWebRTCClient.MODE_PUBLISH;
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
@@ -90,6 +91,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
         else  if (webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             startStreamingButton.setText("Start Playing");
             operationName = "Playing";
+        }
+        else if (webRTCMode.equals(IWebRTCClient.MODE_JOIN)) {
+            startStreamingButton.setText("Start P2P");
+            operationName = "P2P";
         }
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
@@ -191,5 +196,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
         else {
             webRTCClient.enableAudio();
         }
+    }
+
+    @Override
+    public void onTrackList(String[] tracks) {
+
     }
 }

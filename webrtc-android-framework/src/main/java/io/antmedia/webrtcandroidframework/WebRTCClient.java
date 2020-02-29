@@ -16,22 +16,15 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.media.MediaCodec;
-import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
-import android.os.Environment;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
@@ -42,19 +35,17 @@ import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
-import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
-import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +71,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
     private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
+    //private final List<CallActivity.ProxyVideoSink> remoteProxyRendererList = new ArrayList<>();
     private final IWebRTCListener webRTCListener;
     @Nullable
     private PeerConnectionClient peerConnectionClient = null;
@@ -129,6 +121,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     List<PeerConnection.IceServer> iceServers = new ArrayList();
     private boolean videoOn = true;
     private boolean audioOn = true;
+    private List<SurfaceViewRenderer> remoteRendererList = null;
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -149,6 +142,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
 
+    public void setRemoteRendererList(List<SurfaceViewRenderer> rendererList) {
+        this.remoteRendererList = rendererList;
+    }
 
     @Override
     public void init(String url, String streamId, String mode, String token, Intent intent) {
@@ -162,14 +158,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         this.streamMode = mode;
 
-
-        remoteSinks.add(remoteProxyRenderer);
+        if (remoteRendererList != null) {
+            int size = remoteRendererList.size();
+            for (int i = 0; i < size; i++)
+            {
+                CallActivity.ProxyVideoSink remoteVideoSink = new CallActivity.ProxyVideoSink();
+                remoteSinks.add(remoteVideoSink);
+            }
+        }
+        else {
+            remoteSinks.add(remoteProxyRenderer);
+        }
         eglBase = EglBase.create();
 
         // Create video renderers.
         if (pipRenderer != null) {
             pipRenderer.init(eglBase.getEglBaseContext(), null);
             pipRenderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+
         }
 
         // When saveRemoteVideoToFile is set we save the video from the remote to a file.
@@ -186,6 +192,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         if(fullscreenRenderer != null) {
             fullscreenRenderer.init(eglBase.getEglBaseContext(), null);
             fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
+            fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
         }
 
         if (pipRenderer != null) {
@@ -193,9 +200,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             pipRenderer.setEnableHardwareScaler(true /* enabled */);
         }
 
-        if(fullscreenRenderer != null) {
-            fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
+
+        if (remoteRendererList != null) {
+            for (SurfaceViewRenderer renderer : remoteRendererList) {
+                renderer.init(eglBase.getEglBaseContext(), null);
+                renderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+                renderer.setEnableHardwareScaler(true);
+            }
         }
+
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
         setSwappedFeeds(true /* isSwappedFeeds */);
 
@@ -254,7 +267,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
         boolean audioCallEnabled = true;
-        if (mode.equals(MODE_PLAY)) {
+        if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY)) {
             videoCallEnabled = false;
             audioCallEnabled = false;
         }
@@ -349,6 +362,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
         startCall();
     }
+
 
     @TargetApi(17)
     private DisplayMetrics getDisplayMetrics() {
@@ -551,15 +565,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
-        if (roomConnectionParameters.mode == IWebRTCClient.MODE_PUBLISH) {
+        if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
             wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
         }
-        else if (roomConnectionParameters.mode == IWebRTCClient.MODE_PLAY) {
-            wsHandler.startPlay(roomConnectionParameters.roomId, roomConnectionParameters.token);
+        else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
+            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null);
         }
-        else if (roomConnectionParameters.mode == IWebRTCClient.MODE_JOIN) {
+        else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_JOIN)) {
             wsHandler.joinToPeer(roomConnectionParameters.roomId, roomConnectionParameters.token);
         }
+        else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
+            wsHandler.getTrackList(roomConnectionParameters.roomId, roomConnectionParameters.token);
+        }
+    }
+
+    public void play(String streamId, String token, String[] tracks) {
+        wsHandler.startPlay(streamId, token, tracks);
+    }
+
+    public void enableTrack(String streamId, String trackId, boolean enabled) {
+        wsHandler.enableTrack(streamId,trackId, enabled);
     }
 
     // Should be called from UI thread
@@ -704,6 +729,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         else if (this.streamMode.equals(MODE_PLAY)) {
             remoteProxyRenderer.setTarget(fullscreenRenderer);
         }
+        else if (this.streamMode.equals(MODE_MULTI_TRACK_PLAY))
+        {
+            for (int i = 0; i < remoteSinks.size(); i++)
+            {
+                ((CallActivity.ProxyVideoSink)remoteSinks.get(i)).setTarget(remoteRendererList.get(i));
+            }
+        }
         else {
             this.isSwappedFeeds = isSwappedFeeds;
             localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
@@ -831,10 +863,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPeerConnectionClosed() {}
 
     @Override
-    public void onPeerConnectionStatsReady(final StatsReport[] reports) {
+    public void onPeerConnectionStatsReady(RTCStatsReport reports) {
         this.handler.post(() -> {
             if (!isError && iceConnected) {
                 //hudFragment.updateEncoderStatistics(reports);
+                Log.i(TAG, "onPeerConnectionStatsReady");
                 Log.i(TAG, reports.toString());
             }
         });
@@ -985,6 +1018,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onDisconnected();
+            }
+        });
+    }
+
+    @Override
+    public void onTrackList(String[] tracks) {
+        this.handler.post(()-> {
+            if (webRTCListener != null) {
+                webRTCListener.onTrackList(tracks);
             }
         });
     }

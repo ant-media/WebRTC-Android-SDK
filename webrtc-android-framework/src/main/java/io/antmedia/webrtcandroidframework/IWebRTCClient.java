@@ -29,6 +29,11 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      */
     String MODE_JOIN = "join";
 
+    /**
+     * Multi track play
+     */
+    String MODE_MULTI_TRACK_PLAY = "multi_track_play";
+
 
     /**
      * Camera open order

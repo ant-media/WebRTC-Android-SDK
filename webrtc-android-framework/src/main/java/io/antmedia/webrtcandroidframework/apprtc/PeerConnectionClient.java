@@ -34,6 +34,8 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.PeerConnectionState;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStatsCollectorCallback;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
@@ -327,7 +329,7 @@ public class PeerConnectionClient {
     /**
      * Callback fired once peer connection statistics is ready.
      */
-    void onPeerConnectionStatsReady(final StatsReport[] reports);
+    void onPeerConnectionStatsReady(RTCStatsReport reports);
 
     /**
      * Callback fired once peer connection error happened.
@@ -773,7 +775,14 @@ public class PeerConnectionClient {
     if (peerConnection == null || isError) {
       return;
     }
-    boolean success = peerConnection.getStats(new StatsObserver() {
+
+    peerConnection.getStats(new RTCStatsCollectorCallback() {
+      @Override
+      public void onStatsDelivered(RTCStatsReport report) {
+          events.onPeerConnectionStatsReady(report);
+      }
+    });
+    /*boolean success = peerConnection.getStats(new StatsObserver() {
       @Override
       public void onComplete(final StatsReport[] reports) {
         events.onPeerConnectionStatsReady(reports);
@@ -782,6 +791,8 @@ public class PeerConnectionClient {
     if (!success) {
       Log.e(TAG, "getStats() returns false!");
     }
+    */
+
   }
 
   public void enableStatsEvents(boolean enable, int periodMs) {
@@ -986,6 +997,18 @@ public class PeerConnectionClient {
         }
       }
     }
+  }
+
+  private List<VideoTrack> getRemoteVideoTrackList() {
+    List<VideoTrack> videoTrackList = new ArrayList<>();
+    for (RtpTransceiver transceiver : peerConnection.getTransceivers())
+    {
+      MediaStreamTrack track = transceiver.getReceiver().track();
+      if (track instanceof VideoTrack) {
+          videoTrackList.add((VideoTrack)track);
+      }
+    }
+    return videoTrackList;
   }
 
   // Returns the remote VideoTrack, assuming there is only one.
@@ -1278,11 +1301,25 @@ public class PeerConnectionClient {
     @Override
     public void onAddStream(final MediaStream stream) {
       if (!isVideoCallEnabled() && !isAudioEnabled())
-      {  // this is the case in play mode
-        VideoTrack remoteVideoTrack = getRemoteVideoTrack();
+      {
+        // this is the case in play mode
+        /*VideoTrack remoteVideoTrack = getRemoteVideoTrack();
         remoteVideoTrack.setEnabled(true);
         for (VideoSink remoteSink : remoteSinks) {
           remoteVideoTrack.addSink(remoteSink);
+        }
+        */
+
+
+        List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
+        for (int i = 0; i < remoteVideoTrackList.size(); i++)
+        {
+          if (i < remoteSinks.size()) {
+            remoteVideoTrackList.get(i).addSink(remoteSinks.get(i));
+          }
+          else {
+            Log.e(TAG, "There is no enough remote sinks to show video tracks");
+          }
         }
       }
     }

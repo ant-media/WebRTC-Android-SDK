@@ -11,6 +11,7 @@ import org.webrtc.SessionDescription;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -126,7 +127,6 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
                 signallingListener.onTakeConfiguration(streamId, sdp);
             }
-
             else if (commandText.equals(WebSocketConstants.TAKE_CANDIDATE_COMMAND)) {
                 String id = json.getString(WebSocketConstants.CANDIDATE_ID);
                 int label = json.getInt(WebSocketConstants.CANDIDATE_LABEL);
@@ -172,6 +172,16 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 else if (definition.equals(WebSocketConstants.STREAM_LEAVED)) {
                     signallingListener.onStreamLeaved(streamId);
                 }
+
+            }
+            else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
+                JSONArray trackList = json.getJSONArray(WebSocketConstants.TRACK_LIST);
+                String[] tracks = new String[trackList.length()];
+                for (int i = 0; i < trackList.length(); i++) {
+                    tracks[i] = trackList.getString(i);
+                }
+                signallingListener.onTrackList(tracks);
+
             }
             else if (commandText.equals(WebSocketConstants.ERROR_COMMAND))
             {
@@ -230,13 +240,22 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
-    public void startPlay(String streamId, String token){
+    public void startPlay(String streamId, String token, String[] tracks){
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.PLAY_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TOKEN, token);
+
+            JSONArray jsonArray = new JSONArray();
+            if (tracks != null) {
+                for (String trackId : tracks) {
+                    jsonArray.put(trackId);
+                }
+            }
+
+            json.put(WebSocketConstants.TRACK_LIST, jsonArray);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -283,6 +302,38 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+
+
+    public void getTrackList(String streamId, String token) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.GET_TRACK_LIST_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.TOKEN, token);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void enableTrack(String streamId, String trackId, boolean enabled) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.ENABLE_TRACK_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.TRACK_ID, trackId);
+            json.put(WebSocketConstants.ENABLED, enabled);
+            sendTextMessage(json.toString());
+
+        }
+        catch (JSONException e) {
+            e.printStackTrace();
+        }
+
     }
 
 

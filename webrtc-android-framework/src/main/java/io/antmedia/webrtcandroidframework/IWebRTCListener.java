@@ -29,4 +29,9 @@ public interface IWebRTCListener {
   */
  void onConnected();
 
+ /**
+  * It's called in multi track play mode and reports the tracks to the listener
+  * @param tracks
+  */
+ void onTrackList(String[] tracks);
 }

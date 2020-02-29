@@ -1,11 +1,7 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,12 +9,17 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
@@ -27,14 +28,23 @@ import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
-public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+
+public class MultiTrackPlayActivity extends Activity implements IWebRTCListener {
 
 
+    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
-    public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
-
     private WebRTCClient webRTCClient;
+    private String webRTCMode;
+    private Button startStreamingButton;
+    private String operationName = "";
+    private String streamId;
+    private String tokenId;
+    private ToggleButton track1Button;
+    private ToggleButton track2Button;
+    private String[] allTracks;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -49,55 +59,78 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_multitrack);
 
 
-        webRTCClient = new WebRTCClient(this, this);
+        webRTCClient = new WebRTCClient( this,this);
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
-        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
+        //String streamId = "stream" + (int)(Math.random() * 999);
+        streamId = "stream_multi_track";
+        tokenId = "tokenId";
 
+        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.player1);
 
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.player2);
+
+        List<SurfaceViewRenderer> rendererList = new ArrayList<>();
+        rendererList.add(cameraViewRenderer);
+        rendererList.add(pipViewRenderer);
+
+        startStreamingButton = findViewById(R.id.start_streaming_button);
+        
+        track1Button = findViewById(R.id.track_1_button);
+        track2Button = findViewById(R.id.track_2_button);
+
+        track1Button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                webRTCClient.enableTrack(streamId, allTracks[0], isChecked);
+            }
+        });
+
+        track2Button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                webRTCClient.enableTrack(streamId, allTracks[1], isChecked);
+            }
+        });
+
+        //webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+
+        webRTCClient.setRemoteRendererList(rendererList);
 
         // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS)
-        {
+        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
             if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
 
-        this.getIntent().putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        //this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 1000);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 360);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 640);
-        this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        //webRTCClient.setCameraOrientationFix(90);
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
-        startScreenCapture();
+        webRTCMode = IWebRTCClient.MODE_MULTI_TRACK_PLAY;
 
-
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
 
     }
+
 
     public void startStreaming(View v) {
 
         if (!webRTCClient.isStreaming()) {
-            ((Button)v).setText("Stop Streaming");
+            ((Button)v).setText("Stop " + operationName);
             webRTCClient.startStream();
         }
         else {
-            ((Button)v).setText("Start Streaming");
+            ((Button)v).setText("Start " + operationName);
             webRTCClient.stopStream();
         }
     }
-
 
 
     @Override
@@ -111,6 +144,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public void onPublishStarted() {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+
     }
 
     @Override
@@ -129,6 +163,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public void noStreamExistsToPlay() {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
+        finish();
     }
 
     @Override
@@ -139,15 +174,8 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     @Override
     protected void onStop() {
         super.onStop();
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
         webRTCClient.stopStream();
 
-        //webRTCClient.releaseResources();
     }
 
     @Override
@@ -157,8 +185,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void onDisconnected() {
+
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+
+        finish();
     }
 
     @Override
@@ -167,34 +198,34 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     }
 
 
-    @TargetApi(21)
-    private void startScreenCapture() {
-        MediaProjectionManager mediaProjectionManager =
-                (MediaProjectionManager) getApplication().getSystemService(
-                        Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(
-                mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
+    public void onOffVideo(View view) {
+        if (webRTCClient.isVideoOn()) {
+            webRTCClient.disableVideo();
+        }
+        else {
+            webRTCClient.enableVideo();
+        }
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
-            return;
-
-        webRTCClient.setMediaProjectionParams(resultCode, data);
-        String streamId = "stream36";
-        String tokenId = "tokenId";
-
-        webRTCClient.init(MainActivity.SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
-
+    public void onOffAudio(View view) {
+        if (webRTCClient.isAudioOn()) {
+            webRTCClient.disableAudio();
+        }
+        else {
+            webRTCClient.enableAudio();
+        }
     }
 
     @Override
     public void onTrackList(String[] tracks) {
+        allTracks = new String[tracks.length+1];
 
+        allTracks[0] = streamId;
+        for (int i = 0; i < tracks.length; i++) {
+            allTracks[i+1] = tracks[i];
+            Log.i(getClass().getSimpleName(), "track id: " + tracks[i]);
+        }
+
+        webRTCClient.play(streamId, tokenId, allTracks);
     }
-
-
 }
-

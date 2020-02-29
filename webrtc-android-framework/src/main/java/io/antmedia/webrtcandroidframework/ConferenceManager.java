@@ -188,4 +188,9 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     @Override
     public void onDisconnected() {
     }
+
+    @Override
+    public void onTrackList(String[] tracks) {
+
+    }
 }

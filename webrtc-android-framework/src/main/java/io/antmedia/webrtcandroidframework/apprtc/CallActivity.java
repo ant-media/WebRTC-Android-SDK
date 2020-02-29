@@ -42,6 +42,7 @@ import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
@@ -974,12 +975,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public void onPeerConnectionClosed() {}
 
   @Override
-  public void onPeerConnectionStatsReady(final StatsReport[] reports) {
+  public void onPeerConnectionStatsReady(RTCStatsReport reports) {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
         if (!isError && connected) {
-          hudFragment.updateEncoderStatistics(reports);
+          //hudFragment.updateEncoderStatistics(reports);
         }
       }
     });

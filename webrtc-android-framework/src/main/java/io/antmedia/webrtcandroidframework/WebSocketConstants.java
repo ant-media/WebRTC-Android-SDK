@@ -2,6 +2,7 @@ package io.antmedia.webrtcandroidframework;
 
 public class WebSocketConstants {
 
+
     private WebSocketConstants() {
     }
 
@@ -245,5 +246,30 @@ public class WebSocketConstants {
      * encoder incompatibilities
      */
     public static final Object NOT_SET_REMOTE_DESCRIPTION = "notSetRemoteDescription";
+
+    /**
+     * Get track list command
+     */
+    public static final String GET_TRACK_LIST_COMMAND = "getTrackList";
+
+    /**
+     * Tracklist notification in multi track play
+     */
+    public static final String TRACK_LIST = "trackList";
+
+    /**
+     * Enable track command to enable/disable track
+     */
+    public static final String ENABLE_TRACK_COMMAND = "enableTrack";
+
+    /**
+     * Track id parameter to send in messages
+     */
+    public static final String TRACK_ID = "trackId";
+
+    /**
+     * Enable parameter key
+     */
+    public static final String ENABLED = "enabled";
 
 }
