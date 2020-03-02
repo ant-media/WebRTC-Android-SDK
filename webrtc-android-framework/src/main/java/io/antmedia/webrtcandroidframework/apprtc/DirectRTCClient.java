@@ -10,14 +10,14 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-import javax.annotation.Nullable;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.IceCandidate;
-import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
   private static final int DEFAULT_PORT = 8888;
 
   // Regex pattern used for checking if room id looks like an IP.
-  public static final Pattern IP_PATTERN = Pattern.compile("("
+  static final Pattern IP_PATTERN = Pattern.compile("("
       // IPv4
       + "((\\d+\\.){3}\\d+)|"
       // IPv6
@@ -296,7 +296,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
 
   @Override
   public void onTCPClose() {
-    events.onChannelClose(null);
+    events.onChannelClose();
   }
 
   // --------------------------------------------------------------------

@@ -32,6 +32,8 @@ import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -40,6 +42,7 @@ import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
@@ -55,11 +58,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nullable;
-
-import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.R;
-
 
 /**
  * Activity for peer connection call setup, call waiting
@@ -120,8 +119,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_NEGOTIATED = "org.appspot.apprtc.NEGOTIATED";
   public static final String EXTRA_ID = "org.appspot.apprtc.ID";
   public static final String EXTRA_ENABLE_RTCEVENTLOG = "org.appspot.apprtc.ENABLE_RTCEVENTLOG";
-  public static final String EXTRA_USE_LEGACY_AUDIO_DEVICE =
-      "org.appspot.apprtc.USE_LEGACY_AUDIO_DEVICE";
 
   public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
@@ -152,14 +149,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
   private final ProxyVideoSink remoteProxyRenderer = new ProxyVideoSink();
   private final ProxyVideoSink localProxyVideoSink = new ProxyVideoSink();
-  @Nullable
-  private PeerConnectionClient peerConnectionClient = null;
+  @Nullable private PeerConnectionClient peerConnectionClient;
   @Nullable
   private AppRTCClient appRtcClient;
   @Nullable
   private AppRTCClient.SignalingParameters signalingParameters;
-  @Nullable
-  private AppRTCAudioManager audioManager = null;
+  @Nullable private AppRTCAudioManager audioManager;
   @Nullable
   private SurfaceViewRenderer pipRenderer;
   @Nullable
@@ -173,12 +168,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private AppRTCClient.RoomConnectionParameters roomConnectionParameters;
   @Nullable
   private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
-  private boolean iceConnected;
+  private boolean connected;
   private boolean isError;
   private boolean callControlFragmentVisible = true;
-  private long callStartedTimeMs = 0;
+  private long callStartedTimeMs;
   private boolean micEnabled = true;
-  private boolean screencaptureEnabled = false;
+  private boolean screencaptureEnabled;
   private static Intent mediaProjectionPermissionResultData;
   private static int mediaProjectionPermissionResultCode;
   // True if local view is in the fullscreen renderer.
@@ -188,7 +183,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private CallFragment callFragment;
   private HudFragment hudFragment;
   private CpuMonitor cpuMonitor;
-  private String tokenId;
 
   @Override
   // TODO(bugs.webrtc.org/8580): LayoutParams.FLAG_TURN_SCREEN_ON and
@@ -206,7 +200,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
     setContentView(R.layout.activity_call);
 
-    iceConnected = false;
+    connected = false;
     signalingParameters = null;
 
     // Create UI controls.
@@ -329,8 +323,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false),
             intent.getBooleanExtra(EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false),
-            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false),
-            intent.getBooleanExtra(EXTRA_USE_LEGACY_AUDIO_DEVICE, false), dataChannelParameters, true);
+            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false), dataChannelParameters, false);
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     int runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 
@@ -347,7 +340,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     // Create connection parameters.
     String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
     roomConnectionParameters =
-        new AppRTCClient.RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters, null, tokenId);
+        new AppRTCClient.RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters, null, null);
 
     // Create CPU monitor
     if (CpuMonitor.isSupported()) {
@@ -556,7 +549,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
   // Helper functions.
   private void toggleCallControlFragmentVisibility() {
-    if (!iceConnected || !callFragment.isAdded()) {
+    if (!connected || !callFragment.isAdded()) {
       return;
     }
     // Show/hide call control fragment
@@ -652,7 +645,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       audioManager.stop();
       audioManager = null;
     }
-    if (iceConnected && !isError) {
+    if (connected && !isError) {
       setResult(RESULT_OK);
     } else {
       setResult(RESULT_CANCELED);
@@ -842,7 +835,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   }
 
   @Override
-  public void onChannelClose(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code) {
+  public void onChannelClose() {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -939,8 +932,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       @Override
       public void run() {
         logAndToast("ICE connected, delay=" + delta + "ms");
-        iceConnected = true;
-        callConnected();
       }
     });
   }
@@ -951,7 +942,30 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       @Override
       public void run() {
         logAndToast("ICE disconnected");
-        iceConnected = false;
+      }
+    });
+  }
+
+  @Override
+  public void onConnected() {
+    final long delta = System.currentTimeMillis() - callStartedTimeMs;
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        logAndToast("DTLS connected, delay=" + delta + "ms");
+        connected = true;
+        callConnected();
+      }
+    });
+  }
+
+  @Override
+  public void onDisconnected() {
+    runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        logAndToast("DTLS disconnected");
+        connected = false;
         disconnect();
       }
     });
@@ -961,12 +975,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public void onPeerConnectionClosed() {}
 
   @Override
-  public void onPeerConnectionStatsReady(final StatsReport[] reports) {
+  public void onPeerConnectionStatsReady(RTCStatsReport reports) {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        if (!isError && iceConnected) {
-          hudFragment.updateEncoderStatistics(reports);
+        if (!isError && connected) {
+          //hudFragment.updateEncoderStatistics(reports);
         }
       }
     });
@@ -975,11 +989,5 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   @Override
   public void onPeerConnectionError(final String description) {
     reportError(description);
-  }
-
-
-  @Override
-  public void onDisconnected() {
-
   }
 }

@@ -1,11 +1,19 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
@@ -14,26 +22,26 @@ import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
+import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
-import io.antmedia.webrtcandroidframework.apprtc.UnhandledExceptionHandler;
+
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
+    private String webRTCMode;
+    private Button startStreamingButton;
+    private String operationName = "";
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
-
-        //below exception handler show the exception in a popup window
-        //it is better to use in development, do not use in production
-        Thread.setDefaultUncaughtExceptionHandler(new UnhandledExceptionHandler(this));
 
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
@@ -52,22 +60,60 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
 
         //String streamId = "stream" + (int)(Math.random() * 999);
-        String streamId = "stream136";
+        String streamId = "stream1";
         String tokenId = "tokenId";
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
+        startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId);
+        // Check for mandatory permissions.
+        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
+            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        }
 
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
-        webRTCClient.startStream();
+        //TODO make it more developer friendly
+        webRTCMode = IWebRTCClient.MODE_PUBLISH;
+
+        if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
+            startStreamingButton.setText("Start Publishing");
+            operationName = "Publishing";
+        }
+        else  if (webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
+            startStreamingButton.setText("Start Playing");
+            operationName = "Playing";
+        }
+        else if (webRTCMode.equals(IWebRTCClient.MODE_JOIN)) {
+            startStreamingButton.setText("Start P2P");
+            operationName = "P2P";
+        }
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
 
     }
+
+
+    public void startStreaming(View v) {
+
+        if (!webRTCClient.isStreaming()) {
+            ((Button)v).setText("Stop " + operationName);
+            webRTCClient.startStream();
+        }
+        else {
+            ((Button)v).setText("Start " + operationName);
+            webRTCClient.stopStream();
+        }
+    }
+
 
     @Override
     public void onPlayStarted() {
@@ -111,6 +157,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
+
     }
 
     @Override
@@ -127,5 +174,32 @@ public class MainActivity extends Activity implements IWebRTCListener {
         finish();
     }
 
+    @Override
+    public void onConnected() {
+        //it is called when connected to ice
+    }
 
+
+    public void onOffVideo(View view) {
+        if (webRTCClient.isVideoOn()) {
+            webRTCClient.disableVideo();
+        }
+        else {
+            webRTCClient.enableVideo();
+        }
+    }
+
+    public void onOffAudio(View view) {
+        if (webRTCClient.isAudioOn()) {
+            webRTCClient.disableAudio();
+        }
+        else {
+            webRTCClient.enableAudio();
+        }
+    }
+
+    @Override
+    public void onTrackList(String[] tracks) {
+
+    }
 }

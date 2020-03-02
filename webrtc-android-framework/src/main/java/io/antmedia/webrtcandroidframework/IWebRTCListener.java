@@ -22,4 +22,16 @@ public interface IWebRTCListener {
  void onError(String description);
 
  void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code);
+
+ /**
+  * This method is called every time, connection is established with the remote peer.
+  * It's called both p2p, play and publish modes.
+  */
+ void onConnected();
+
+ /**
+  * It's called in multi track play mode and reports the tracks to the listener
+  * @param tracks
+  */
+ void onTrackList(String[] tracks);
 }
