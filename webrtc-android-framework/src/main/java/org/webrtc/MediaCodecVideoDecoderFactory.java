@@ -97,6 +97,14 @@ class MediaCodecVideoDecoderFactory implements VideoDecoderFactory {
         Logging.e(TAG, "Cannot retrieve decoder codec info", e);
       }
 
+      Logging.d(TAG, "codec name: " + info.getName() + " supported types: ");
+
+
+      String[] supportedTypes = info.getSupportedTypes();
+      for (String typeName: supportedTypes) {
+        Logging.d(TAG, "type name: " + typeName);
+      }
+
       if (info == null || info.isEncoder()) {
         continue;
       }
@@ -125,10 +133,12 @@ class MediaCodecVideoDecoderFactory implements VideoDecoderFactory {
   }
 
   private boolean isCodecAllowed(MediaCodecInfo info) {
-    if (codecAllowedPredicate == null) {
+    /*if (codecAllowedPredicate == null) {
       return true;
     }
     return codecAllowedPredicate.test(info);
+    */
+    return true;
   }
 
   private boolean isH264HighProfileSupported(MediaCodecInfo info) {
