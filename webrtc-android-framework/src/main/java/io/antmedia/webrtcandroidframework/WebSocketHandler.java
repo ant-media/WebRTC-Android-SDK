@@ -11,7 +11,6 @@ import org.webrtc.SessionDescription;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -202,7 +201,14 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 pingPongTimoutCount = 0;
                 Log.d(TAG, "pong reply is received");
             }
-
+            else if (commandText.equals(WebSocketConstants.CONNECT_WITH_NEW_ID_COMMAND)) {
+                signallingListener.connectWithNewStreamId(streamId);
+            }
+            else if (commandText.equals(WebSocketConstants.PEER_MESSAGE_COMMAND)) {
+                String definition= json.getString(WebSocketConstants.DEFINITION);
+                String data= json.getString(WebSocketConstants.DATA);
+                signallingListener.peerMessageReceived(streamId, definition, data);
+            }
             else {
 
                 Log.e(TAG, "Received offer for call receiver: " + msg);
@@ -262,13 +268,15 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
-    public void joinToPeer(String streamId, String token) {
+    public void joinToPeer(String streamId, String token, boolean isMultiPeer) {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.JOIN_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TOKEN, token);
+            json.put(WebSocketConstants.ATTR_P2P_MULTIPEER, isMultiPeer);
+
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -408,7 +416,34 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
+    public void leavePeer(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Leave peer JSON error: " + e.getMessage());
+        }
+    }
+
     public AntMediaSignallingEvents getSignallingListener() {
         return signallingListener;
+    }
+
+    public void peerMessage(String streamId, String definition, String data) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.PEER_MESSAGE_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.DEFINITION, definition);
+            json.put(WebSocketConstants.DATA, data);
+
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Peer Message JSON error: " + e.getMessage());
+        }
     }
 }

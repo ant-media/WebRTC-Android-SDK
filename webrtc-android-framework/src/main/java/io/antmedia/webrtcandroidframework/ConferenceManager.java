@@ -193,4 +193,14 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     public void onTrackList(String[] tracks) {
 
     }
+
+    @Override
+    public void connectWithNewStreamId(String streamId) {
+
+    }
+
+    @Override
+    public void peerMessageReceived(String streamId, String definition, String data) {
+
+    }
 }

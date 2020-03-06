@@ -33,6 +33,7 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * Multi track play
      */
     String MODE_MULTI_TRACK_PLAY = "multi_track_play";
+    String MODE_MULTI_PEER_JOIN = "multi_peer_join";
 
 
     /**

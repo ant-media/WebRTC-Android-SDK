@@ -228,4 +228,9 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
 
         webRTCClient.play(streamId, tokenId, allTracks);
     }
+
+    @Override
+    public void peerMessageReceived(String streamId, String definition, String data) {
+
+    }
 }

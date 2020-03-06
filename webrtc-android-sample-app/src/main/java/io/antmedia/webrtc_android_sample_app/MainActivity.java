@@ -202,4 +202,9 @@ public class MainActivity extends Activity implements IWebRTCListener {
     public void onTrackList(String[] tracks) {
 
     }
+
+    @Override
+    public void peerMessageReceived(String streamId, String definition, String data) {
+
+    }
 }

@@ -34,4 +34,6 @@ public interface IWebRTCListener {
   * @param tracks
   */
  void onTrackList(String[] tracks);
+
+ void peerMessageReceived(String streamId, String definition, String data);
 }

@@ -195,6 +195,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     }
 
+    @Override
+    public void peerMessageReceived(String streamId, String definition, String data) {
 
+    }
 }
 

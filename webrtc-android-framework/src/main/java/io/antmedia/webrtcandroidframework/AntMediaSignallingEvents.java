@@ -79,4 +79,12 @@ public interface AntMediaSignallingEvents {
      * @param tracks
      */
     void onTrackList(String[] tracks);
+
+    /**
+     * It's called in responde the P2P join as multipeer
+     * @param streamId
+     */
+    void connectWithNewStreamId(String streamId);
+
+    void peerMessageReceived(String streamId, String definition, String data);
 }

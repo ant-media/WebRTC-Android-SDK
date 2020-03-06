@@ -2,31 +2,43 @@ package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
+import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
-import java.util.ArrayList;
-
+import androidx.annotation.RequiresApi;
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.ConferenceManager;
+import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
-public class ConferenceActivity extends Activity implements IWebRTCListener {
+public class MultiPeerActivity extends Activity implements IWebRTCListener {
 
 
-    private ConferenceManager conferenceManager;
+    public static final String SERVER_URL = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
+    private CallFragment callFragment;
 
+    private WebRTCClient webRTCClient;
+    private String webRTCMode;
+    private Button startStreamingButton;
+    private String operationName = "";
+    String streamId = "stream123";
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,15 +51,24 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_conference);
+        setContentView(R.layout.activity_multipeer);
 
-        SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
-        ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
 
-        playViewRenderers.add(findViewById(R.id.play_view_renderer1));
-        playViewRenderers.add(findViewById(R.id.play_view_renderer2));
-        playViewRenderers.add(findViewById(R.id.play_view_renderer3));
-        playViewRenderers.add(findViewById(R.id.play_view_renderer4));
+        webRTCClient = new WebRTCClient( this,this);
+
+        //webRTCClient.setOpenFrontCamera(false);
+
+
+        //String streamId = "stream" + (int)(Math.random() * 999);
+        String tokenId = "tokenId";
+
+        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
+
+        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
+
+        startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
+
+        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -58,32 +79,50 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
-        String streamId = null ;//"stream1";
-        String roomId = "room1";
-        conferenceManager = new ConferenceManager(
-                this,
-                this,
-                getIntent(),
-                MainActivity.SERVER_URL,
-                roomId,
-                publishViewRenderer,
-                playViewRenderers,
-                streamId
-        );
+        //TODO make it more developer friendly
+        webRTCMode = IWebRTCClient.MODE_MULTI_PEER_JOIN;
 
-        conferenceManager.setOpenFrontCamera(true);
+        if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
+            startStreamingButton.setText("Start Publishing");
+            operationName = "Publishing";
+        }
+        else  if (webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
+            startStreamingButton.setText("Start Playing");
+            operationName = "Playing";
+        }
+        else if (webRTCMode.equals(IWebRTCClient.MODE_JOIN)) {
+            startStreamingButton.setText("Start P2P");
+            operationName = "P2P";
+        }
+        else if (webRTCMode.equals(IWebRTCClient.MODE_MULTI_PEER_JOIN)) {
+            startStreamingButton.setText("Start P2P");
+            operationName = "P2P";
+        }
+       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
+
     }
-    public void joinConference(View v) {
-        if (!conferenceManager.isJoined()) {
-            ((Button)v).setText("Leave");
-            conferenceManager.joinTheConference();
+
+
+    public void startStreaming(View v) {
+
+        if (!webRTCClient.isStreaming()) {
+            ((Button)v).setText("Stop " + operationName);
+            webRTCClient.startStream();
+
         }
         else {
-            ((Button)v).setText("Join");
-            conferenceManager.leaveFromConference();
+            ((Button)v).setText("Start " + operationName);
+            webRTCClient.leave();
+            webRTCClient.stopStream();
         }
+    }
+
+    public void sendPeerMessage(View v) {
+        String definition = ((EditText) findViewById(R.id.peerMessageDef)).getText().toString();
+        String data = ((EditText) findViewById(R.id.peerMessageData)).getText().toString();
+        webRTCClient.peerMessage(definition, data);
     }
 
 
@@ -91,6 +130,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     public void onPlayStarted() {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
+        webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
     }
 
     @Override
@@ -116,6 +156,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     public void noStreamExistsToPlay() {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
+        finish();
     }
 
     @Override
@@ -126,6 +167,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     @Override
     protected void onStop() {
         super.onStop();
+        webRTCClient.stopStream();
+
     }
 
     @Override
@@ -135,13 +178,35 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void onDisconnected() {
+
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+
+        finish();
     }
 
     @Override
     public void onConnected() {
         //it is called when connected to ice
+    }
+
+
+    public void onOffVideo(View view) {
+        if (webRTCClient.isVideoOn()) {
+            webRTCClient.disableVideo();
+        }
+        else {
+            webRTCClient.enableVideo();
+        }
+    }
+
+    public void onOffAudio(View view) {
+        if (webRTCClient.isAudioOn()) {
+            webRTCClient.disableAudio();
+        }
+        else {
+            webRTCClient.enableAudio();
+        }
     }
 
     @Override
@@ -151,8 +216,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void peerMessageReceived(String streamId, String definition, String data) {
+        Toast.makeText(this, definition+"\n"+data, Toast.LENGTH_LONG).show();
 
     }
-
 }
-

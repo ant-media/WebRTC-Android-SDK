@@ -122,6 +122,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private boolean videoOn = true;
     private boolean audioOn = true;
     private List<SurfaceViewRenderer> remoteRendererList = null;
+    private String multiPeerStreamId = "TBD";
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -563,19 +564,31 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         return onToggleMic();
     }
 
+    private String getStreamId() {
+        String streamId = roomConnectionParameters.roomId;
+        if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_PEER_JOIN)
+                && !multiPeerStreamId.contentEquals("TBD")) {
+            streamId = multiPeerStreamId;
+        }
+        return streamId;
+    }
+
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
+            wsHandler.startPublish(getStreamId(), roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
-            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null);
+            play(getStreamId(), roomConnectionParameters.token, null);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_JOIN)) {
-            wsHandler.joinToPeer(roomConnectionParameters.roomId, roomConnectionParameters.token);
+            wsHandler.joinToPeer(getStreamId(), roomConnectionParameters.token, false);
+        }
+        else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_PEER_JOIN)) {
+            wsHandler.joinToPeer(getStreamId(), roomConnectionParameters.token, true);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
-            wsHandler.getTrackList(roomConnectionParameters.roomId, roomConnectionParameters.token);
+            wsHandler.getTrackList(getStreamId(), roomConnectionParameters.token);
         }
     }
 
@@ -585,6 +598,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void enableTrack(String streamId, String trackId, boolean enabled) {
         wsHandler.enableTrack(streamId,trackId, enabled);
+    }
+
+    public void peerMessage(String definition, String data) {
+        wsHandler.peerMessage(getStreamId(), definition, data);
     }
 
     // Should be called from UI thread
@@ -736,6 +753,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 ((CallActivity.ProxyVideoSink)remoteSinks.get(i)).setTarget(remoteRendererList.get(i));
             }
         }
+        else if (this.streamMode.equals(MODE_MULTI_PEER_JOIN)) {
+            remoteProxyRenderer.setTarget(pipRenderer);
+        }
         else {
             this.isSwappedFeeds = isSwappedFeeds;
             localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
@@ -802,9 +822,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             if (wsHandler != null) {
                 logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
                 if (signalingParameters.initiator) {
-                    wsHandler.sendConfiguration(roomConnectionParameters.roomId, sdp, "offer");
+                    wsHandler.sendConfiguration(getStreamId(), sdp, "offer");
                 } else {
-                    wsHandler.sendConfiguration(roomConnectionParameters.roomId, sdp, "answer");
+                    wsHandler.sendConfiguration(getStreamId(), sdp, "answer");
                 }
             }
             if (peerConnectionParameters.videoMaxBitrate > 0) {
@@ -818,7 +838,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onIceCandidate(final IceCandidate candidate) {
         this.handler.post(() -> {
             if (wsHandler != null) {
-                wsHandler.sendLocalIceCandidate(roomConnectionParameters.roomId, candidate);
+                wsHandler.sendLocalIceCandidate(getStreamId(), candidate);
             }
         });
     }
@@ -990,7 +1010,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onStreamLeaved(String streamId) {
-        //no need to implement here
+        if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
+            multiPeerStreamId = "TBD";
+        }
     }
 
     @Override
@@ -1031,7 +1053,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         });
     }
 
+    @Override
+    public void connectWithNewStreamId(String multiPeerStreamId) {
+        this.multiPeerStreamId = multiPeerStreamId;
+        wsHandler.joinToPeer(multiPeerStreamId, roomConnectionParameters.token, false);
+    }
+
+    @Override
+    public void peerMessageReceived(String streamId, String definition, String data) {
+        this.handler.post(()-> {
+            if (webRTCListener != null) {
+                webRTCListener.peerMessageReceived(streamId, definition, data);
+            }
+        });
+    }
+
     public EglBase getEglBase() {
         return eglBase;
+    }
+
+    public void leave() {
+        wsHandler.leavePeer(getStreamId());
     }
 }

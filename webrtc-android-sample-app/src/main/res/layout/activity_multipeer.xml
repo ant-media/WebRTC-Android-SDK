@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MultiPeerActivity">
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/camera_view_renderer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background= "#aaaaaa"
+        android:layout_gravity="center" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="top|center">
+
+        <EditText
+            android:id="@+id/peerMessageDef"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="playFile" />
+
+        <EditText
+            android:id="@+id/peerMessageData"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="camera" />
+
+        <Button
+            android:id="@+id/buttonPeerMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="sendPeerMessage"
+            android:text="send" />
+    </LinearLayout>
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/pip_view_renderer"
+        android:layout_height="144dp"
+        android:layout_width="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="16dp"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        android:id="@+id/start_streaming_button"
+        android:onClick="startStreaming"
+        android:layout_gravity="bottom|center"/>
+
+
+</FrameLayout>
