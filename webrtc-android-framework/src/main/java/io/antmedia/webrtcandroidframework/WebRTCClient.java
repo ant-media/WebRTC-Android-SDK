@@ -320,6 +320,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         if (loopback) {
             options.networkIgnoreMask = 0;
         }
+        //ptions.disableEncryption = true;
         peerConnectionClient.createPeerConnectionFactory(options);
 
         if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {

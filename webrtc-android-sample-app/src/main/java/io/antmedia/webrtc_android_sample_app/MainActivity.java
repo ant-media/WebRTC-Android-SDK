@@ -26,11 +26,13 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.59:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -80,6 +82,8 @@ public class MainActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
+        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 2500);
 
         //TODO make it more developer friendly
         webRTCMode = IWebRTCClient.MODE_PLAY;
