@@ -272,6 +272,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             videoCallEnabled = false;
             audioCallEnabled = false;
         }
+        else if(mode.equals(MODE_MULTI_PEER_JOIN)) {
+            audioCallEnabled = false;
+        }
 
         peerConnectionParameters =
                 new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, loopback,
@@ -1010,7 +1013,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onStreamLeaved(String streamId) {
-        if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
+        if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_PEER_JOIN)) {
             multiPeerStreamId = "TBD";
         }
     }

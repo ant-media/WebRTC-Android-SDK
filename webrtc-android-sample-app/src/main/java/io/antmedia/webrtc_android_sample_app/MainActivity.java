@@ -82,7 +82,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
         //TODO make it more developer friendly
-        webRTCMode = IWebRTCClient.MODE_PUBLISH;
+        webRTCMode = IWebRTCClient.MODE_PLAY;
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");

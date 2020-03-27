@@ -29,14 +29,14 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MultiPeerActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.0.22:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
     private String webRTCMode;
     private Button startStreamingButton;
     private String operationName = "";
-    String streamId = "stream123";
+    String streamId = "stream1";
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -71,13 +71,14 @@ public class MultiPeerActivity extends Activity implements IWebRTCListener {
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
         // Check for mandatory permissions.
+/*
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
             if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
                 return;
             }
         }
-
+*/
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 
         //TODO make it more developer friendly
