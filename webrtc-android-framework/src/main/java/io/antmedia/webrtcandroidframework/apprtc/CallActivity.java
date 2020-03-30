@@ -306,7 +306,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       dataChannelParameters = new PeerConnectionClient.DataChannelParameters(intent.getBooleanExtra(EXTRA_ORDERED, true),
           intent.getIntExtra(EXTRA_MAX_RETRANSMITS_MS, -1),
           intent.getIntExtra(EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(EXTRA_PROTOCOL),
-          intent.getBooleanExtra(EXTRA_NEGOTIATED, false), intent.getIntExtra(EXTRA_ID, -1));
+          intent.getBooleanExtra(EXTRA_NEGOTIATED, false), intent.getIntExtra(EXTRA_ID, -1), roomId, false);
     }
     peerConnectionParameters =
         new PeerConnectionClient.PeerConnectionParameters(intent.getBooleanExtra(EXTRA_VIDEO_CALL, true), loopback,
@@ -369,7 +369,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     // Create peer connection client.
     peerConnectionClient = new PeerConnectionClient(
-        getApplicationContext(), eglBase, peerConnectionParameters, CallActivity.this);
+        getApplicationContext(), eglBase, peerConnectionParameters, CallActivity.this, null);
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     if (loopback) {
       options.networkIgnoreMask = 0;

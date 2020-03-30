@@ -29,6 +29,7 @@ import android.widget.Toast;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
+import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
@@ -47,6 +48,7 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +58,7 @@ import javax.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
+import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
@@ -65,7 +68,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
  * Activity for peer connection call setup, call waiting
  * and call view.
  */
-public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents {
+public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents, IDataChannelMessageSender, IDataChannelObserver {
     private static final String TAG = "WebRTCClient69";
 
 
@@ -122,13 +125,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private boolean videoOn = true;
     private boolean audioOn = true;
     private List<SurfaceViewRenderer> remoteRendererList = null;
+    @Nullable
+    private IDataChannelObserver dataChannelObserver;
+
+
+    public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
+        this.dataChannelObserver = dataChannelObserver;
+    }
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
         this.context = context;
-
     }
-
 
     @Nullable
     public SurfaceViewRenderer getPipRenderer() {
@@ -247,7 +255,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             dataChannelParameters = new PeerConnectionClient.DataChannelParameters(intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(CallActivity.EXTRA_PROTOCOL),
-                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1));
+                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId, streamMode.equals(IWebRTCClient.MODE_PLAY) || streamMode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY));
         }
 
         String videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
@@ -315,7 +323,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         // Create peer connection client.
         peerConnectionClient = new PeerConnectionClient(
-                this.context.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this);
+                this.context.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this, WebRTCClient.this);
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
         if (loopback) {
             options.networkIgnoreMask = 0;
@@ -639,7 +647,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             audioManager.stop();
             audioManager = null;
         }
-
     }
 
     private void disconnectWithErrorMessage(final String errorMessage) {
@@ -1033,5 +1040,43 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public EglBase getEglBase() {
         return eglBase;
+    }
+
+    @Override
+    public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
+        peerConnectionClient.sendMessageViaDataChannel(buffer);
+    }
+
+    @Override
+    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
+        if(dataChannelObserver == null) return;
+        this.handler.post(() -> {
+            dataChannelObserver.onBufferedAmountChange(previousAmount, dataChannelLabel);
+        });
+    }
+
+    @Override
+    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
+        if(dataChannelObserver == null) return;
+        this.handler.post(() -> {
+            dataChannelObserver.onStateChange(state, dataChannelLabel);
+        });
+    }
+
+    @Override
+    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
+        if(dataChannelObserver == null) return;
+        // byte[] data = new byte[buffer.data.capacity()];
+        // buffer.data.get(data);
+        // ByteBuffer.wrap(data)
+        ByteBuffer copyByteBuffer = ByteBuffer.allocate(buffer.data.capacity());
+        copyByteBuffer.put(buffer.data);
+        copyByteBuffer.rewind();
+
+        boolean binary = buffer.binary;
+        DataChannel.Buffer bufferCopy = new DataChannel.Buffer(copyByteBuffer, binary);
+        this.handler.post(() -> {
+            dataChannelObserver.onMessage(bufferCopy, dataChannelLabel);
+        });
     }
 }
