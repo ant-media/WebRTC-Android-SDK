@@ -26,7 +26,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
-        <activity android:name=".DataChannelActivity">
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -40,6 +40,7 @@
         <activity android:name=".MultiTrackPlayActivity"/>
 
         <activity android:name=".MainActivity"/>
+        <activity android:name=".DataChannelActivity"/>
         -->
     </application>
 </manifest>
