@@ -13,6 +13,7 @@ package io.antmedia.webrtcandroidframework.apprtc;
 import android.content.Context;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
+import android.provider.ContactsContract;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -44,8 +45,6 @@ import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SoftwareVideoDecoderFactory;
 import org.webrtc.SoftwareVideoEncoderFactory;
-import org.webrtc.StatsObserver;
-import org.webrtc.StatsReport;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoDecoderFactory;
@@ -80,6 +79,8 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.antmedia.webrtcandroidframework.IDataChannelObserver;
+
 /**
  * Peer connection client implementation.
  *
@@ -87,7 +88,7 @@ import java.util.regex.Pattern;
  * All PeerConnectionEvents callbacks are invoked from the same looper thread.
  * This class is a singleton.
  */
-public class PeerConnectionClient {
+public class PeerConnectionClient implements IDataChannelMessageSender {
   public static final String VIDEO_TRACK_ID = "ARDAMSv0";
   public static final String AUDIO_TRACK_ID = "ARDAMSa0";
   public static final String VIDEO_TRACK_TYPE = "video";
@@ -181,6 +182,43 @@ public class PeerConnectionClient {
   // recorded audio samples to an output file.
   @Nullable private RecordedAudioToFileController saveRecordedAudioToFile;
 
+  @Nullable
+  IDataChannelObserver dataChannelObserver;
+
+  final DataChannel.Observer dataChannelInternalObserver= new DataChannel.Observer() {
+    @Override
+    public void onBufferedAmountChange(long previousAmount) {
+      if(dataChannelObserver == null) return;
+      Log.d(TAG, "Data channel buffered amount changed: " + dataChannel.label() + ": " + dataChannel.state());
+      dataChannelObserver.onBufferedAmountChange(previousAmount, dataChannel.label());
+    }
+
+    @Override
+    public void onStateChange() {
+      if(dataChannelObserver == null) return;
+      Log.d(TAG, "Data channel state changed: " + dataChannel.label() + ": " + dataChannel.state());
+      dataChannelObserver.onStateChange(dataChannel.state(), dataChannel.label());
+    }
+
+    @Override
+    public void onMessage(final DataChannel.Buffer buffer) {
+      if(dataChannelObserver == null) return;
+      Log.d(TAG, "Received Message: " + dataChannel.label() + ": " + dataChannel.state());
+      dataChannelObserver.onMessage(buffer,dataChannel.label());
+    }
+  };
+
+  @Override
+  public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
+    executor.execute(() -> {
+      try {
+        dataChannel.send(buffer);
+      } catch (Exception e) {
+        reportError("Failed to send Data via DataChannel: " + e.getMessage());
+        throw e;
+      }
+    });
+  }
 
   public void init(VideoCapturer videoCapturer, VideoSink localRender) {
     this.localRender = localRender;
@@ -195,6 +233,8 @@ public class PeerConnectionClient {
   public void setLocalVideoTrack(@javax.annotation.Nullable VideoTrack localVideoTrack) {
     this.localVideoTrack = localVideoTrack;
   }
+
+
   /**
    * Peer connection parameters.
    */
@@ -205,15 +245,19 @@ public class PeerConnectionClient {
     public final String protocol;
     public final boolean negotiated;
     public final int id;
+    public final String label;
+    public final boolean isPlayer;
 
     public DataChannelParameters(boolean ordered, int maxRetransmitTimeMs, int maxRetransmits,
-        String protocol, boolean negotiated, int id) {
+        String protocol, boolean negotiated, int id, String label, boolean isPlayer) {
       this.ordered = ordered;
       this.maxRetransmitTimeMs = maxRetransmitTimeMs;
       this.maxRetransmits = maxRetransmits;
-      this.protocol = protocol;
+      this.protocol = protocol == null ? "": protocol;
       this.negotiated = negotiated;
       this.id = id;
+      this.label = label;
+      this.isPlayer = isPlayer;
     }
   }
 
@@ -342,12 +386,13 @@ public class PeerConnectionClient {
    * ownership of |eglBase|.
    */
   public PeerConnectionClient(Context appContext, EglBase eglBase,
-      PeerConnectionParameters peerConnectionParameters, PeerConnectionEvents events) {
+      PeerConnectionParameters peerConnectionParameters, PeerConnectionEvents events, IDataChannelObserver dataChannelObserver) {
     this.rootEglBase = eglBase;
     this.appContext = appContext;
     this.events = events;
     this.peerConnectionParameters = peerConnectionParameters;
     this.dataChannelEnabled = peerConnectionParameters.dataChannelParameters != null;
+    this.dataChannelObserver = dataChannelObserver;
 
     Log.d(TAG, "Preferred video codec: " + getSdpVideoCodecName(peerConnectionParameters));
 
@@ -628,16 +673,6 @@ public class PeerConnectionClient {
 
     peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
 
-    if (dataChannelEnabled) {
-      DataChannel.Init init = new DataChannel.Init();
-      init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
-      init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;
-      init.maxRetransmits = peerConnectionParameters.dataChannelParameters.maxRetransmits;
-      init.maxRetransmitTimeMs = peerConnectionParameters.dataChannelParameters.maxRetransmitTimeMs;
-      init.id = peerConnectionParameters.dataChannelParameters.id;
-      init.protocol = peerConnectionParameters.dataChannelParameters.protocol;
-      dataChannel = peerConnection.createDataChannel("ApprtcDemo data", init);
-    }
     isInitiator = false;
 
     // Set INFO libjingle logging.
@@ -683,6 +718,21 @@ public class PeerConnectionClient {
     Log.d(TAG, "Peer connection created.");
   }
 
+  private void initDataChannel() {
+    if (dataChannelEnabled && !peerConnectionParameters.dataChannelParameters.isPlayer) {
+      DataChannel.Init init = new DataChannel.Init();
+      init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
+      init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;
+      init.maxRetransmits = peerConnectionParameters.dataChannelParameters.maxRetransmits;
+      init.maxRetransmitTimeMs = peerConnectionParameters.dataChannelParameters.maxRetransmitTimeMs;
+      init.id = peerConnectionParameters.dataChannelParameters.id;
+      init.protocol = peerConnectionParameters.dataChannelParameters.protocol;
+      dataChannel = peerConnection.createDataChannel(peerConnectionParameters.dataChannelParameters.label, init);
+      dataChannel.registerObserver(dataChannelInternalObserver);
+    }
+  }
+
+
   private File createRtcEventLogOutputFile() {
     DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_hhmm_ss", Locale.getDefault());
     Date date = new Date();
@@ -713,6 +763,8 @@ public class PeerConnectionClient {
       dataChannel.dispose();
       dataChannel = null;
     }
+    dataChannelObserver = null;
+
     if (rtcEventLog != null) {
       // RtcEventLog should stop before the peer connection is disposed.
       rtcEventLog.stop();
@@ -838,6 +890,7 @@ public class PeerConnectionClient {
       if (peerConnection != null && !isError) {
         Log.d(TAG, "PC Create OFFER");
         isInitiator = true;
+        initDataChannel();
         peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
       }
     });
@@ -1327,37 +1380,25 @@ public class PeerConnectionClient {
     @Override
     public void onRemoveStream(final MediaStream stream) {}
 
+  /*
+  * Not called for publisher mode
+  **/
     @Override
     public void onDataChannel(final DataChannel dc) {
+//      if(PeerConnectionClient.this.dataChannel.state() == DataChannel.State.OPEN) {
+//        dataChannel.unregisterObserver();
+//        dataChannel.close();
+//        dataChannel.dispose();
+//      }
+
+      PeerConnectionClient.this.dataChannel = dc;
+
       Log.d(TAG, "New Data channel " + dc.label());
 
       if (!dataChannelEnabled)
         return;
 
-      dc.registerObserver(new DataChannel.Observer() {
-        @Override
-        public void onBufferedAmountChange(long previousAmount) {
-          Log.d(TAG, "Data channel buffered amount changed: " + dc.label() + ": " + dc.state());
-        }
-
-        @Override
-        public void onStateChange() {
-          Log.d(TAG, "Data channel state changed: " + dc.label() + ": " + dc.state());
-        }
-
-        @Override
-        public void onMessage(final DataChannel.Buffer buffer) {
-          if (buffer.binary) {
-            Log.d(TAG, "Received binary msg over " + dc);
-            return;
-          }
-          ByteBuffer data = buffer.data;
-          final byte[] bytes = new byte[data.capacity()];
-          data.get(bytes);
-          String strData = new String(bytes, Charset.forName("UTF-8"));
-          Log.d(TAG, "Got msg: " + strData + " over " + dc);
-        }
-      });
+      dc.registerObserver(dataChannelInternalObserver);
     }
 
     @Override

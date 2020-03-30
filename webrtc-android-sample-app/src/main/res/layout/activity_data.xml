@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".DataChannelActivity">
+    <FrameLayout
+        android:id="@+id/publisher_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/camera_view_renderer"
+        android:layout_width="match_parent"
+        android:layout_height="350dp" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/call_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/pip_view_renderer"
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:layout_gravity="top"
+            android:layout_margin="1dp"/>
+        <TextView
+            android:id="@+id/message_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:background="#FF0"
+            android:text="@string/message"
+            android:maxLines="2"
+            android:lines="2"
+            android:layout_margin="1dp"/>
+
+        <EditText
+            android:id="@+id/message_text_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#6A3A3A"
+            android:cursorVisible="true"
+            android:textSize="16sp"
+            android:imeOptions="actionSend"
+            android:inputType="text"
+            android:lines="2"
+            android:maxLines="2"
+            android:layout_margin="1dp"/>
+        <Button
+            android:id="@+id/start_streaming_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center"
+            android:onClick="startStreaming"
+            android:text="@string/start"
+            android:layout_margin="2dp"/>
+
+    </LinearLayout>
+</LinearLayout>
