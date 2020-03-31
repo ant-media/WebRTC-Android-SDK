@@ -2,4 +2,5 @@
     <string name="app_name">webrtc-android-sample-app</string>
     <string name="message">No Message from Datachannel</string>
     <string name="start">Start</string>
+    <string name="write_something">write something</string>
 </resources>
