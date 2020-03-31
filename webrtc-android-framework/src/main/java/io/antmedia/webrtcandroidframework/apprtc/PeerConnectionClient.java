@@ -13,7 +13,6 @@ package io.antmedia.webrtcandroidframework.apprtc;
 import android.content.Context;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
-import android.provider.ContactsContract;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -61,8 +60,6 @@ import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStateCallback;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -246,10 +243,10 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     public final boolean negotiated;
     public final int id;
     public final String label;
-    public final boolean isPlayer;
+      public final boolean isDataChannelCreator;
 
     public DataChannelParameters(boolean ordered, int maxRetransmitTimeMs, int maxRetransmits,
-        String protocol, boolean negotiated, int id, String label, boolean isPlayer) {
+                                 String protocol, boolean negotiated, int id, String label, boolean isDataChannelCreator) {
       this.ordered = ordered;
       this.maxRetransmitTimeMs = maxRetransmitTimeMs;
       this.maxRetransmits = maxRetransmits;
@@ -257,7 +254,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       this.negotiated = negotiated;
       this.id = id;
       this.label = label;
-      this.isPlayer = isPlayer;
+        this.isDataChannelCreator = isDataChannelCreator;
     }
   }
 
@@ -719,7 +716,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   }
 
   private void initDataChannel() {
-    if (dataChannelEnabled && !peerConnectionParameters.dataChannelParameters.isPlayer) {
+      if (dataChannelEnabled && !peerConnectionParameters.dataChannelParameters.isDataChannelCreator) {
       DataChannel.Init init = new DataChannel.Init();
       init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
       init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;
