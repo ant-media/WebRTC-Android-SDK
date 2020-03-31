@@ -254,7 +254,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       this.negotiated = negotiated;
       this.id = id;
       this.label = label;
-        this.isDataChannelCreator = isDataChannelCreator;
+      this.isDataChannelCreator = isDataChannelCreator;
     }
   }
 
@@ -716,7 +716,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   }
 
   private void initDataChannel() {
-      if (dataChannelEnabled && !peerConnectionParameters.dataChannelParameters.isDataChannelCreator) {
+    if (dataChannelEnabled && peerConnectionParameters.dataChannelParameters.isDataChannelCreator) {
       DataChannel.Init init = new DataChannel.Init();
       init.ordered = peerConnectionParameters.dataChannelParameters.ordered;
       init.negotiated = peerConnectionParameters.dataChannelParameters.negotiated;

@@ -255,7 +255,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             dataChannelParameters = new PeerConnectionClient.DataChannelParameters(intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(CallActivity.EXTRA_PROTOCOL),
-                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId, streamMode.equals(IWebRTCClient.MODE_PLAY) || streamMode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY));
+                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId, streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN));
         }
 
         String videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
