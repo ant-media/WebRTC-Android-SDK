@@ -162,10 +162,14 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     }
 
     @Override
-    public void onConnected() {
+    public void onIceConnected() {
         //it is called when connected to ice
     }
 
+    @Override
+    public void onIceDisconnected() {
+
+    }
 
     @TargetApi(21)
     private void startScreenCapture() {

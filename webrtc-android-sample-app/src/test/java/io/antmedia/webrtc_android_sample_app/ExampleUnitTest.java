@@ -14,4 +14,17 @@ public class ExampleUnitTest {
     public void addition_isCorrect() {
         assertEquals(4, 2 + 2);
     }
+
+
+    /**
+     * Write test scenarios and implement it.
+     * Until that time, manuel test may be used
+     */
+    public void testStopStartStream() {
+        //1. start stream and check that it's playing
+
+        //2. stop stream and check that it's stopped
+
+        //3. start stream again and check it's is started
+    }
 }
