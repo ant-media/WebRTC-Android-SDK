@@ -140,8 +140,13 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     }
 
     @Override
-    public void onConnected() {
+    public void onIceConnected() {
         //it is called when connected to ice
+    }
+
+    @Override
+    public void onIceDisconnected() {
+
     }
 
     @Override

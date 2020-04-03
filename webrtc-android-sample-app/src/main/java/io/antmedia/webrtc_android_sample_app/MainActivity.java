@@ -36,7 +36,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
     private Button startStreamingButton;
     private String operationName = "";
 
@@ -54,24 +54,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
         setContentView(R.layout.activity_main);
-
-
-        webRTCClient = new WebRTCClient( this,this);
-
-        //webRTCClient.setOpenFrontCamera(false);
-
-
-        //String streamId = "stream" + (int)(Math.random() * 999);
-        String streamId = "stream1";
-        String tokenId = "tokenId";
-
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
-
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
         startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
-
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -81,9 +67,11 @@ public class MainActivity extends Activity implements IWebRTCListener {
             }
         }
 
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
-        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 2500);
+        /**
+         * You can overtide webRTCMode if you wish
+         */
+        //webRTCMode = IWebRTCClient.MODE_PLAY;
+
 
         //TODO make it more developer friendly
         webRTCMode = IWebRTCClient.MODE_PLAY;
@@ -100,6 +88,21 @@ public class MainActivity extends Activity implements IWebRTCListener {
             startStreamingButton.setText("Start P2P");
             operationName = "P2P";
         }
+
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
+        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 2500);
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+
+        webRTCClient = new WebRTCClient( this,this);
+
+        //webRTCClient.setOpenFrontCamera(false);
+
+        String streamId = "stream1";
+        String tokenId = "tokenId";
+
+        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
 
@@ -161,7 +164,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
-
     }
 
     @Override
@@ -175,14 +177,18 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
-        finish();
+        //finish();
     }
 
     @Override
-    public void onConnected() {
+    public void onIceConnected() {
         //it is called when connected to ice
     }
 
+    @Override
+    public void onIceDisconnected() {
+        //it's called when ice is disconnected
+    }
 
     public void onOffVideo(View view) {
         if (webRTCClient.isVideoOn()) {
