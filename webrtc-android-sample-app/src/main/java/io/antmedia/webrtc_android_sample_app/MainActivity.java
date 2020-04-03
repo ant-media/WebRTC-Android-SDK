@@ -30,11 +30,11 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.48:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
     private Button startStreamingButton;
     private String operationName = "";
 
@@ -52,24 +52,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
         setContentView(R.layout.activity_main);
-
-
-        webRTCClient = new WebRTCClient( this,this);
-
-        //webRTCClient.setOpenFrontCamera(false);
-
-
-        //String streamId = "stream" + (int)(Math.random() * 999);
-        String streamId = "stream1";
-        String tokenId = "tokenId";
-
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
-
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
         startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
-
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -79,10 +65,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
             }
         }
 
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-
-        //TODO make it more developer friendly
-        webRTCMode = IWebRTCClient.MODE_PLAY;
+        /**
+         * You can overtide webRTCMode if you wish
+         */
+        //webRTCMode = IWebRTCClient.MODE_PLAY;
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
@@ -96,6 +82,19 @@ public class MainActivity extends Activity implements IWebRTCListener {
             startStreamingButton.setText("Start P2P");
             operationName = "P2P";
         }
+
+
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+
+        webRTCClient = new WebRTCClient( this,this);
+
+        //webRTCClient.setOpenFrontCamera(false);
+
+        String streamId = "stream1";
+        String tokenId = "tokenId";
+
+        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
 
@@ -157,7 +156,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
-
     }
 
     @Override
@@ -171,14 +169,18 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
-        finish();
+        //finish();
     }
 
     @Override
-    public void onConnected() {
+    public void onIceConnected() {
         //it is called when connected to ice
     }
 
+    @Override
+    public void onIceDisconnected() {
+        //it's called when ice is disconnected
+    }
 
     public void onOffVideo(View view) {
         if (webRTCClient.isVideoOn()) {

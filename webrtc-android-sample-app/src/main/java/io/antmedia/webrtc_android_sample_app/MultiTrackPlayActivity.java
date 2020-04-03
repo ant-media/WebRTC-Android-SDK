@@ -193,10 +193,14 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     }
 
     @Override
-    public void onConnected() {
+    public void onIceConnected() {
         //it is called when connected to ice
     }
 
+    @Override
+    public void onIceDisconnected() {
+
+    }
 
     public void onOffVideo(View view) {
         if (webRTCClient.isVideoOn()) {

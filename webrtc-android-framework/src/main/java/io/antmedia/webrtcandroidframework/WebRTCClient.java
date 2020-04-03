@@ -122,6 +122,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private boolean videoOn = true;
     private boolean audioOn = true;
     private List<SurfaceViewRenderer> remoteRendererList = null;
+    private String streamId;
+    private String token;
+    private String url;
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -148,6 +151,39 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void init(String url, String streamId, String mode, String token, Intent intent) {
+        if (peerConnectionClient != null) {
+            Log.w(TAG, "There is already a active peerconnection client ");
+            return;
+        }
+
+        //Uri roomUri = this.activity.getIntent().getData();
+        if (url == null) {
+            logAndToast(this.context.getString(R.string.missing_url));
+            Log.e(TAG, "Didn't get any URL in intent!");
+            return;
+        }
+        this.url = url;
+
+        // Get Intent parameters.
+        //String roomId = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_ROOMID);
+        //Log.d(TAG, "Room ID: " + roomId);
+        if (streamId == null || streamId.length() == 0) {
+            logAndToast(this.context.getString(R.string.missing_stream_id));
+            Log.e(TAG, "Incorrect room ID in intent!");
+            return;
+        }
+
+        this.streamId = streamId;
+
+        if (mode == null || mode.length() == 0) {
+            logAndToast(this.context.getString(R.string.missing_stream_id));
+            Log.e(TAG, "Missing mode!");
+            return;
+        }
+        this.streamMode = mode;
+
+        this.token = token;
+
         if (intent != null) {
             this.intent = intent;
         }
@@ -156,7 +192,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
 
-        this.streamMode = mode;
+
 
         if (remoteRendererList != null) {
             int size = remoteRendererList.size();
@@ -212,22 +248,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
         setSwappedFeeds(true /* isSwappedFeeds */);
 
-
-        //Uri roomUri = this.activity.getIntent().getData();
-        if (url == null) {
-            logAndToast(this.context.getString(R.string.missing_url));
-            Log.e(TAG, "Didn't get any URL in intent!");
-            return;
-        }
-
-        // Get Intent parameters.
-        //String roomId = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_ROOMID);
-        //Log.d(TAG, "Room ID: " + roomId);
-        if (streamId == null || streamId.length() == 0) {
-            logAndToast(this.context.getString(R.string.missing_url));
-            Log.e(TAG, "Incorrect room ID in intent!");
-            return;
-        }
 
         boolean loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
         boolean tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
@@ -317,9 +337,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         peerConnectionClient = new PeerConnectionClient(
                 this.context.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this);
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-        if (loopback) {
-            options.networkIgnoreMask = 0;
-        }
+
         peerConnectionClient.createPeerConnectionFactory(options);
 
         if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
@@ -350,12 +368,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 }
             });
         }
-
     }
 
 
 
     public void startStream() {
+        init(this.url, this.streamId, this.streamMode, this.token, this.intent);
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
@@ -610,7 +628,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.
-    private void disconnect() {
+    private void release() {
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);
@@ -620,17 +638,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
         if (pipRenderer != null) {
             pipRenderer.release();
-            pipRenderer = null;
+           // pipRenderer = null; Do not make renderer null, we can re-use
         }
 
-        if(fullscreenRenderer != null) {
+        if (fullscreenRenderer != null) {
             fullscreenRenderer.release();
-            fullscreenRenderer = null;
+           // fullscreenRenderer = null; Do not make renderer null, we can re-use
         }
         if (videoFileRenderer != null) {
             videoFileRenderer.release();
-            videoFileRenderer = null;
+           // videoFileRenderer = null; Do not make renderer null, we can re-use
         }
+
         if (peerConnectionClient != null) {
             peerConnectionClient.close();
             peerConnectionClient = null;
@@ -641,6 +660,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
     }
+
+    public void disconnect() {
+        release();
+    }
+
+
+
+
 
     private void disconnectWithErrorMessage(final String errorMessage) {
         if (commandLineRun || !activityRunning) {
@@ -839,7 +866,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             callConnected();
 
             if (webRTCListener != null) {
-                webRTCListener.onConnected();
+                webRTCListener.onIceConnected();
             }
         });
     }
@@ -851,6 +878,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             logAndToast("ICE disconnected");
             iceConnected = false;
             disconnect();
+            if (webRTCListener != null) {
+                webRTCListener.onIceDisconnected();
+            }
+
         });
     }
 

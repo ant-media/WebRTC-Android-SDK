@@ -6,17 +6,34 @@ import de.tavendo.autobahn.WebSocket; /**
 
 public interface IWebRTCListener {
 
-
+ /**
+  * It's called when websocket connection has been disconnected
+  */
  void onDisconnected();
 
+ /**
+  * This method is fired when publishing(broadcasting) to the server has been finished
+  */
  void onPublishFinished();
 
+ /**
+  * This method is fired when playing stream has been finished
+  */
  void onPlayFinished();
 
+ /**
+  * This method is fired when publishing to the server has been started
+  */
  void onPublishStarted();
 
+ /**
+  * This method is fired when playing has been started
+  */
  void onPlayStarted();
 
+ /**
+  * This method is fired when client tries to play a stream that is not available in the server
+  */
  void noStreamExistsToPlay();
 
  void onError(String description);
@@ -27,7 +44,12 @@ public interface IWebRTCListener {
   * This method is called every time, connection is established with the remote peer.
   * It's called both p2p, play and publish modes.
   */
- void onConnected();
+ void onIceConnected();
+
+ /**
+  * This method is fired when Ice connection has been disconnected
+  */
+ void onIceDisconnected();
 
  /**
   * It's called in multi track play mode and reports the tracks to the listener
