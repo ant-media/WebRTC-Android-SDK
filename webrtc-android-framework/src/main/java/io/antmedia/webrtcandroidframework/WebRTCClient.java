@@ -126,11 +126,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private boolean audioOn = true;
     private List<SurfaceViewRenderer> remoteRendererList = null;
     @Nullable
-    private IDataChannelObserver dataChannelObserver;	
+    private IDataChannelObserver dataChannelObserver;
 
+    private String streamId;
 	private String url;
 	private String token;
-	private String url;
+
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
@@ -146,12 +147,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         return pipRenderer;
     }
 
-
     @Nullable
     public SurfaceViewRenderer getFullscreenRenderer() {
         return fullscreenRenderer;
     }
-
 
     public void setRemoteRendererList(List<SurfaceViewRenderer> rendererList) {
         this.remoteRendererList = rendererList;
@@ -1108,6 +1107,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         DataChannel.Buffer bufferCopy = new DataChannel.Buffer(copyByteBuffer, binary);
         this.handler.post(() -> {
             dataChannelObserver.onMessage(bufferCopy, dataChannelLabel);
+        });
+    }
+
+    @Override
+    public void onMessageSent(DataChannel.Buffer buffer) {
+        this.handler.post(() -> {
+            dataChannelObserver.onMessageSent(buffer);
         });
     }
 }

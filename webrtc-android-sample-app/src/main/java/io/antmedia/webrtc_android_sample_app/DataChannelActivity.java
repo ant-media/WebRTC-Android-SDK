@@ -12,6 +12,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,14 +24,17 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtc_android_sample_app.chat.Message;
+import io.antmedia.webrtc_android_sample_app.chat.MessageAdapter;
+import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
-import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
@@ -45,8 +49,10 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     private String webRTCMode;
     private Button startStreamingButton;
     private String operationName = "";
-    private TextView messageView;
     private EditText messageInput;
+    private MessageAdapter messageAdapter;
+    private ListView messagesView;
+    SurfaceViewRenderer cameraViewRenderer;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -63,9 +69,13 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
         setContentView(R.layout.activity_data);
 
-        messageView = (TextView) findViewById(R.id.message_view);
-        messageInput = (EditText) findViewById(R.id.message_text_input);
+        messageInput = findViewById(R.id.message_text_input);
         messageInput.setOnEditorActionListener(this);
+        messageInput.setEnabled(false);
+
+        messageAdapter = new MessageAdapter(this);
+        messagesView = findViewById(R.id.messages_view);
+        messagesView.setAdapter(messageAdapter);
 
         webRTCClient = new WebRTCClient( this,this);
 
@@ -73,13 +83,13 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         String streamId = "stream1";
         String tokenId = "tokenId";
 
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
+        cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
-        startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
-
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+        startStreamingButton = findViewById(R.id.start_streaming_button);
+        cameraViewRenderer.setZOrderOnTop(true);
+        webRTCClient.setVideoRenderers(cameraViewRenderer, pipViewRenderer);
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -111,7 +121,6 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
         // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
-
     }
 
 
@@ -142,13 +151,14 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
-
+        messageInput.setEnabled(true);
     }
 
     @Override
     public void onPublishStarted() {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+
 
     }
 
@@ -180,7 +190,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
-
+        messageInput.setEnabled(false);
     }
 
     @Override
@@ -189,17 +199,22 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     }
 
     @Override
-    public void onDisconnected() {
-
-        Log.w(getClass().getSimpleName(), "disconnected");
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
-
-        finish();
+    public void onIceDisconnected() {
     }
 
     @Override
-    public void onConnected() {
+    public void onDisconnected() {
+        messageInput.setEnabled(false);
+        Log.w(getClass().getSimpleName(), "disconnected");
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+
+        //finish();
+    }
+
+    @Override
+    public void onIceConnected() {
         //it is called when connected to ice
+        messageInput.setEnabled(true);
     }
 
 
@@ -245,11 +260,26 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         ByteBuffer data = buffer.data;
         final byte[] bytes = new byte[data.capacity()];
         data.get(bytes);
-        String strData = new String(bytes, Charset.forName("UTF-8"));
-        //Log.d(DataChannelActivity.class.getName(), "Got msg: " + strData + " over ");
+        String strData = new String(bytes, StandardCharsets.UTF_8);
 
-        messageView.setText(strData);
-        //Toast.makeText(this, "Message: " + strData, Toast.LENGTH_LONG).show();
+        final Message message = new Message(strData, true);
+        messageAdapter.add(message);
+        // scroll the ListView to the last added element
+        messagesView.setSelection(messagesView.getCount() - 1);
+
+    }
+
+    @Override
+    public void onMessageSent(DataChannel.Buffer buffer) {
+        ByteBuffer data = buffer.data;
+        final byte[] bytes = new byte[data.capacity()];
+        data.get(bytes);
+        String strData = new String(bytes, StandardCharsets.UTF_8);
+
+        final Message message = new Message(strData, false);
+        messageAdapter.add(message);
+        // scroll the ListView to the last added element
+        messagesView.setSelection(messagesView.getCount() - 1);
     }
 
     @Override
@@ -261,6 +291,13 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
             messageInput.setText("");
         }
         return handled;
+    }
+
+    public void sendMessage(View view) {
+        if (messageInput.isEnabled()) {
+            sendDataMessage();
+            messageInput.setText("");
+        }
     }
 }
 

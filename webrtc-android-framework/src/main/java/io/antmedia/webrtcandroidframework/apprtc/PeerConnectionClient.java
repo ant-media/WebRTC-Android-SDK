@@ -60,6 +60,7 @@ import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStateCallback;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -207,14 +208,25 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
   @Override
   public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
-    executor.execute(() -> {
-      try {
-        dataChannel.send(buffer);
-      } catch (Exception e) {
-        reportError("Failed to send Data via DataChannel: " + e.getMessage());
-        throw e;
+      if (dataChannel != null && dataChannel.state() == DataChannel.State.OPEN) {
+          executor.execute(() -> {
+              try {
+                  ByteBuffer copyByteBuffer = ByteBuffer.allocate(buffer.data.capacity());
+                  copyByteBuffer.put(buffer.data);
+                  copyByteBuffer.rewind();
+                  boolean binary = buffer.binary;
+                  DataChannel.Buffer bufferCopy = new DataChannel.Buffer(copyByteBuffer, binary);
+                  boolean success = dataChannel.send(buffer);
+                  if (dataChannelObserver != null && success) {
+                      dataChannelObserver.onMessageSent(bufferCopy);
+                  }
+              } catch (Exception e) {
+                  reportError("Failed to send Data via DataChannel: " + e.getMessage());
+              }
+          });
+      } else {
+          reportError("Data Channel is not ready for usage.");
       }
-    });
   }
 
   public void init(VideoCapturer videoCapturer, VideoSink localRender) {

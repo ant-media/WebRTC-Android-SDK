@@ -12,4 +12,6 @@ public interface IDataChannelObserver {
      * A data buffer was successfully received.
      */
     void onMessage(DataChannel.Buffer buffer, String dataChannelLabel);
+
+    void onMessageSent(DataChannel.Buffer buffer);
 }
