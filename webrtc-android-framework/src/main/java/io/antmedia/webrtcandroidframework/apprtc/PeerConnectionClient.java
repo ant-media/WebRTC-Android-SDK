@@ -214,6 +214,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
                   ByteBuffer copyByteBuffer = ByteBuffer.allocate(buffer.data.capacity());
                   copyByteBuffer.put(buffer.data);
                   copyByteBuffer.rewind();
+                  buffer.data.rewind();
                   boolean binary = buffer.binary;
                   DataChannel.Buffer bufferCopy = new DataChannel.Buffer(copyByteBuffer, binary);
                   boolean success = dataChannel.send(buffer);
