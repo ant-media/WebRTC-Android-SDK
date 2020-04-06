@@ -14,6 +14,13 @@
         android:inputType="number"
         app:isPreferenceVisible="true"
         android:defaultValue="5080" />
+    <ListPreference
+        android:key="@string/stream_mode"
+        android:title="Streaming mode"
+        app:summary="Mode for the application: publish, play or p2p"
+        android:entries="@array/stream_mode_entries"
+        android:entryValues="@array/stream_mode_values"
+        android:defaultValue="join" />
     <EditTextPreference
         app:key="@string/streamId"
         app:title="stream id"

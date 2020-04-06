@@ -1,10 +1,12 @@
-package io.antmedia.webrtc_android_sample_app;
+package io.antmedia.webrtc_android_sample_app.chat;
 
 import android.os.Bundle;
 
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceFragmentCompat;
+
+import io.antmedia.webrtc_android_sample_app.R;
 
 public class SettingsActivity extends AppCompatActivity {
 

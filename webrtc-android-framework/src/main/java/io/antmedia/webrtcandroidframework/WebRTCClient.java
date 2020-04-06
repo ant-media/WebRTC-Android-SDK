@@ -1111,9 +1111,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
-    public void onMessageSent(DataChannel.Buffer buffer) {
+    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
         this.handler.post(() -> {
-            dataChannelObserver.onMessageSent(buffer);
+            dataChannelObserver.onMessageSent(buffer, successful);
         });
     }
 }

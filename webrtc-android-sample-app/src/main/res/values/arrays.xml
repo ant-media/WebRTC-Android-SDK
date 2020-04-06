@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="stream_mode_entries">
+        <item>@string/publish_mode</item>
+        <item>@string/play_mode</item>
+        <item>@string/p2p_mode</item>
+    </string-array>
+    <string-array name="stream_mode_values">
+        <item>@string/publish_mode</item>
+        <item>@string/play_mode</item>
+        <item>@string/p2p_mode_alias</item>
+    </string-array>
+    <string name="publish_mode">publish</string>
+    <string name="play_mode">play</string>
+    <string name="p2p_mode">p2p</string>
+    <string name="p2p_mode_alias">join</string>
+</resources>

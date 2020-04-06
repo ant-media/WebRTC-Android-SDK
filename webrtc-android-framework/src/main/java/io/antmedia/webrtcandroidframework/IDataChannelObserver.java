@@ -13,5 +13,5 @@ public interface IDataChannelObserver {
      */
     void onMessage(DataChannel.Buffer buffer, String dataChannelLabel);
 
-    void onMessageSent(DataChannel.Buffer buffer);
+    void onMessageSent(DataChannel.Buffer buffer, boolean successful);
 }

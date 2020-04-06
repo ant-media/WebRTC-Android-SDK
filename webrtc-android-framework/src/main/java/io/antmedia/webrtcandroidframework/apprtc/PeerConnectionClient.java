@@ -213,11 +213,20 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
                   boolean success = dataChannel.send(buffer);
                   buffer.data.rewind();
-                  if (dataChannelObserver != null && success) {
-                      dataChannelObserver.onMessageSent(buffer);
+                if (dataChannelObserver != null) {
+                  if (success) {
+                    dataChannelObserver.onMessageSent(buffer, true);
+                  } else {
+                    dataChannelObserver.onMessageSent(buffer, false);
+                    reportError("Failed to send the message via Data Channel ");
+                  }
                   }
               } catch (Exception e) {
-                  reportError("Failed to send Data via DataChannel: " + e.getMessage());
+                reportError("An error occurred when sending the message via Data Channel " + e.getMessage());
+                if (dataChannelObserver != null) {
+                  buffer.data.rewind();
+                  dataChannelObserver.onMessageSent(buffer, false);
+                }
               }
           });
       } else {
