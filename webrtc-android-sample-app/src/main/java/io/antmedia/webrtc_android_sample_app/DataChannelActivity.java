@@ -1,6 +1,8 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.preference.PreferenceManager;
 
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
@@ -34,16 +37,11 @@ import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 
 public class DataChannelActivity extends Activity implements IWebRTCListener, IDataChannelObserver, TextView.OnEditorActionListener {
-
-
-    public static final String SERVER_URL = "ws://192.168.1.23:5080/WebRTCAppEE/websocket";
-    private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
     private String webRTCMode;
@@ -52,6 +50,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     private EditText messageInput;
     private MessageAdapter messageAdapter;
     private ListView messagesView;
+    private Button settingsButton;
     SurfaceViewRenderer cameraViewRenderer;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -79,15 +78,22 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
         webRTCClient = new WebRTCClient( this,this);
 
-        //String streamId = "stream" + (int)(Math.random() * 999);
-        String streamId = "stream1";
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+
+        String streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
         String tokenId = "tokenId";
+        String serverURL = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+
 
         cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
         SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
+        settingsButton = findViewById(R.id.settings);
         cameraViewRenderer.setZOrderOnTop(true);
         webRTCClient.setVideoRenderers(cameraViewRenderer, pipViewRenderer);
 
@@ -120,7 +126,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         webRTCClient.setDataChannelObserver(this);
 
         // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverURL, streamId, webRTCMode, tokenId, this.getIntent());
     }
 
 
@@ -191,6 +197,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         super.onStop();
         webRTCClient.stopStream();
         messageInput.setEnabled(false);
+        settingsButton.setEnabled(true);
     }
 
     @Override
@@ -205,6 +212,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     @Override
     public void onDisconnected() {
         messageInput.setEnabled(false);
+        settingsButton.setEnabled(true);
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
@@ -215,6 +223,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     public void onIceConnected() {
         //it is called when connected to ice
         messageInput.setEnabled(true);
+        settingsButton.setEnabled(false);
     }
 
 
@@ -298,6 +307,11 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
             sendDataMessage();
             messageInput.setText("");
         }
+    }
+
+    public void goToSettings(View view) {
+        Intent settingsIntent = new Intent(getApplicationContext(), SettingsActivity.class);
+        startActivity(settingsIntent);
     }
 }
 

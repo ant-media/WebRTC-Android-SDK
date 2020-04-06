@@ -87,11 +87,20 @@
                 android:id="@+id/start_streaming_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom|center"
-                android:layout_margin="2dp"
+                android:layout_gravity="bottom|left"
                 android:background="@drawable/button_background"
                 android:onClick="startStreaming"
-                android:text="@string/start" />
+                android:text="@string/start"
+                android:translationX="85dp" />
+
+            <Button
+                android:id="@+id/settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|right"
+                android:onClick="goToSettings"
+                android:text="@string/settings_button_name"
+                android:translationX="-85dp" />
         </FrameLayout>
 
     </LinearLayout>

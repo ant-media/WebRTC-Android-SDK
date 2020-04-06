@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">webrtc-android-sample-app</string>
-    <string name="message">No Message from Datachannel</string>
     <string name="start">Start</string>
     <string name="write_something">Write a Message!</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="serverAddress">server_address</string>
+    <string name="serverPort">server_port</string>
+    <string name="streamId">stream_id</string>
+    <string name="settings_button_name">Settings</string>
 </resources>
