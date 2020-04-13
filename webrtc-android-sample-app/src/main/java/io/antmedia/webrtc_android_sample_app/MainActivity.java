@@ -32,11 +32,11 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.59:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.48:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
+    private String webRTCMode = IWebRTCClient.MODE_PLAY;
     private Button startStreamingButton;
     private String operationName = "";
 
@@ -98,7 +98,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        String streamId = "stream1";
+        String streamId = "522205705955483243849353";
         String tokenId = "tokenId";
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
