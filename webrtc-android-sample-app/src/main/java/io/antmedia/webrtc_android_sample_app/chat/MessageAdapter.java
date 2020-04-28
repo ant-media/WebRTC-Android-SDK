@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -47,19 +48,43 @@ public class MessageAdapter extends BaseAdapter {
     // This is the backbone of the class, it handles the creation of single ListView row (chat bubble)
     @Override
     public View getView(int i, View convertView, ViewGroup viewGroup) {
-        TextView messageBody;
-        LayoutInflater messageInflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        Message message = messages.get(i);
 
-        if (message.isBelongsToCurrentUser()) { // this message was sent by us so let's create a basic chat bubble on the right
-            convertView = messageInflater.inflate(R.layout.my_message, null);
-            messageBody = convertView.findViewById(R.id.message_body);
-            messageBody.setText(message.getText());
-        } else { // this message was sent by someone else so let's create an advanced chat bubble on the left
-            convertView = messageInflater.inflate(R.layout.their_message, null);
-            messageBody = convertView.findViewById(R.id.message_body);
-            messageBody.setText(message.getText());
+        Message message = messages.get(i);
+        LayoutInflater messageInflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        if(message instanceof  TextMessage) {
+            TextView messageBody;
+
+            TextMessage textMessage = (TextMessage) message;
+            if (message.isBelongsToCurrentUser()) {
+                // this message was sent by us
+                convertView = messageInflater.inflate(R.layout.my_message, null);
+                messageBody = convertView.findViewById(R.id.message_body);
+                messageBody.setText(textMessage.getText());
+            } else {
+                // this message was sent by someone else
+                convertView = messageInflater.inflate(R.layout.their_message, null);
+                messageBody = convertView.findViewById(R.id.message_body);
+                messageBody.setText(textMessage.getText());
+            }
+        } else {
+
+            ImageMessage imageMessage = (ImageMessage) message;
+            ImageView imageBody;
+
+
+            if (message.isBelongsToCurrentUser()) {
+                convertView = messageInflater.inflate(R.layout.my_image_message, null);
+                // this message was sent by us
+                imageBody = convertView.findViewById(R.id.image_body_my);
+                imageBody.setImageBitmap(imageMessage.getImageBitmap());
+            } else {
+                convertView = messageInflater.inflate(R.layout.their_image_message, null);
+                // this message was sent by someone else
+                imageBody = convertView.findViewById(R.id.image_body_their);
+                imageBody.setImageBitmap(imageMessage.getImageBitmap());
+            }
         }
+
 
         return convertView;
     }

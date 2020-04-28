@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,18 +27,33 @@ import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtc_android_sample_app.chat.ImageMessage;
 import io.antmedia.webrtc_android_sample_app.chat.Message;
 import io.antmedia.webrtc_android_sample_app.chat.MessageAdapter;
 import io.antmedia.webrtc_android_sample_app.chat.SettingsActivity;
+import io.antmedia.webrtc_android_sample_app.chat.TextMessage;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
+
+import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.provider.MediaStore;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.UUID;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
@@ -53,8 +69,18 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     private MessageAdapter messageAdapter;
     private ListView messagesView;
     private Button settingsButton;
-    SurfaceViewRenderer cameraViewRenderer;
+    private Button sendImageButton;
+    private SurfaceViewRenderer cameraViewRenderer;
+    private SurfaceViewRenderer pipViewRenderer;
+    private static int REQUEST_GET_IMAGE = 1;
+    private BinaryDataSender imageSender = new BinaryDataSender();
+    private BinaryDataReceiver imageReceiver = new BinaryDataReceiver();
+    private String uniqueID = UUID.randomUUID().toString();
+    private int lastSentMessageNum = 0;
 
+    private String streamId;
+    private String tokenId;
+    private String serverURL;
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +100,9 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         messageInput.setOnEditorActionListener(this);
         messageInput.setEnabled(false);
 
+        sendImageButton = findViewById(R.id.send_image_button);
+        sendImageButton.setEnabled(false);
+
         messageAdapter = new MessageAdapter(this);
         messagesView = findViewById(R.id.messages_view);
         messagesView.setAdapter(messageAdapter);
@@ -84,16 +113,16 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+
+        streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
+        tokenId = "tokenId";
+        serverURL = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+
         webRTCMode = sharedPreferences.getString(getString(R.string.stream_mode), IWebRTCClient.MODE_JOIN);
-
-        String streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
-        String tokenId = "tokenId";
-        String serverURL = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
-
 
         cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
-        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
+        pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
         settingsButton = findViewById(R.id.settings);
@@ -126,8 +155,20 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         }
         webRTCClient.setDataChannelObserver(this);
 
-        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+    }
+
+    private void initStream() {
+        cameraViewRenderer = findViewById(R.id.camera_view_renderer);
+        pipViewRenderer = findViewById(R.id.pip_view_renderer);
+        webRTCClient.setVideoRenderers(cameraViewRenderer, pipViewRenderer);
         webRTCClient.init(serverURL, streamId, webRTCMode, tokenId, this.getIntent());
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        initStream();
     }
 
 
@@ -136,7 +177,6 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop " + operationName);
             webRTCClient.startStream();
-            //final ByteBuffer buffer = ByteBuffer.allocate(5);
         }
         else {
             ((Button)v).setText("Start " + operationName);
@@ -151,12 +191,65 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         webRTCClient.sendMessageViaDataChannel(buf);
     }
 
+    public void sendImage(View view) {
+        if(messageInput.isEnabled()) {
+            Intent i = new Intent(
+                    Intent.ACTION_PICK,
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+            startActivityForResult(i, REQUEST_GET_IMAGE);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        webRTCClient.setDataChannelObserver(null);
+        webRTCClient = null;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_GET_IMAGE && resultCode == RESULT_OK && null != data) {
+            Uri selectedImage = data.getData();
+            String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+            Cursor cursor = getContentResolver().query(selectedImage,
+                    filePathColumn, null, null, null);
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String picturePath = cursor.getString(columnIndex);
+            cursor.close();
+
+            File imageFile = new File(picturePath);
+            int size = (int) imageFile.length();
+            byte[] imageBytes = new byte[size];
+            try {
+                FileInputStream inputStream = new FileInputStream(imageFile);
+                inputStream.read(imageBytes, 0, imageBytes.length);
+                inputStream.close();
+
+                imageSender.startSending(imageBytes);
+            } catch (FileNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+
     @Override
     public void onPlayStarted() {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
         messageInput.setEnabled(true);
+        sendImageButton.setEnabled(true);
     }
 
     @Override
@@ -183,7 +276,6 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     public void noStreamExistsToPlay() {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        finish();
     }
 
     @Override
@@ -194,9 +286,11 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     @Override
     protected void onStop() {
         super.onStop();
-        webRTCClient.stopStream();
-        messageInput.setEnabled(false);
-        settingsButton.setEnabled(true);
+        //webRTCClient.stopStream();
+        //messageInput.setEnabled(false);
+        //settingsButton.setEnabled(true);
+        imageReceiver.clear();
+        imageSender.clear();
     }
 
     @Override
@@ -210,18 +304,24 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
     @Override
     public void onDisconnected() {
+        sendImageButton.setEnabled(false);
         messageInput.setEnabled(false);
         settingsButton.setEnabled(true);
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
-
+        startStreamingButton.setText("Start " + operationName);
         //finish();
+        webRTCClient.stopStream();
+        imageReceiver.clear();
+        imageSender.clear();
+        initStream();
     }
 
     @Override
     public void onIceConnected() {
         //it is called when connected to ice
         messageInput.setEnabled(true);
+        sendImageButton.setEnabled(true);
         settingsButton.setEnabled(false);
     }
 
@@ -263,13 +363,25 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     public void onMessage(final DataChannel.Buffer buffer, String dataChannelLabel) {
         if (buffer.binary) {
             Log.d(DataChannelActivity.class.getName(), "Received binary msg over " );
+
+            imageReceiver.receiveDataChunk(buffer.data);
+
+            if(imageReceiver.isAllDataReceived()) {
+                Bitmap bmp=BitmapFactory.decodeByteArray(imageReceiver.receivedData.array(),0,imageReceiver.receivedData.capacity());
+                final Message message = new ImageMessage(uniqueID+lastSentMessageNum, false, bmp);
+                messageAdapter.add(message);
+                // scroll the ListView to the last added element
+                messagesView.setSelection(messagesView.getCount() - 1);
+
+                imageReceiver.clear();
+            }
+
         } else {
             ByteBuffer data = buffer.data;
-            final byte[] bytes = new byte[data.capacity()];
-            data.get(bytes);
-            String strData = new String(bytes, StandardCharsets.UTF_8);
+            String strData = new String(data.array(), StandardCharsets.UTF_8);
 
-            final Message message = new Message(strData, true);
+            // TODO get id from strData as JSON
+            final Message message = new TextMessage(uniqueID+lastSentMessageNum, false, strData);
             messageAdapter.add(message);
             // scroll the ListView to the last added element
             messagesView.setSelection(messagesView.getCount() - 1);
@@ -278,18 +390,40 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
     @Override
     public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-        if (!buffer.binary) {
-            ByteBuffer data = buffer.data;
-            final byte[] bytes = new byte[data.capacity()];
-            data.get(bytes);
-            String strData = new String(bytes, StandardCharsets.UTF_8);
+        if(successful) {
+            if (!buffer.binary) {
+                ByteBuffer data = buffer.data;
+                final byte[] bytes = new byte[data.capacity()];
+                data.get(bytes);
+                String strData = new String(bytes, StandardCharsets.UTF_8);
+                lastSentMessageNum = lastSentMessageNum+1;
+                final Message message = new TextMessage(uniqueID+lastSentMessageNum, true, strData);
+                messageAdapter.add(message);
+                // scroll the ListView to the last added element
+                messagesView.setSelection(messagesView.getCount() - 1);
+            } else {
+                imageSender.updateLastChunkSent();
+                if(!imageSender.isDataSendingComplete()) {
+                    imageSender.sendLastChunk();
+                } else {
+                    Bitmap bmp=BitmapFactory.decodeByteArray(imageSender.dataBytes,0,imageSender.dataBytes.length);
 
-            final Message message = new Message(strData, false);
-            messageAdapter.add(message);
-            // scroll the ListView to the last added element
-            messagesView.setSelection(messagesView.getCount() - 1);
+                    lastSentMessageNum = lastSentMessageNum+1;
+                    final Message message = new ImageMessage(uniqueID+lastSentMessageNum, true, bmp);
+                    messageAdapter.add(message);
+                    // scroll the ListView to the last added element
+                    messagesView.setSelection(messagesView.getCount() - 1);
+
+                    imageSender.clear();
+                }
+            }
         } else {
-            //TODO
+            if(!buffer.binary) {
+                Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Could not send the image", Toast.LENGTH_LONG).show();
+                imageSender.clear();
+            }
         }
     }
 
@@ -316,6 +450,100 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         startActivity(settingsIntent);
     }
 
+    private class BinaryDataSender {
+
+        boolean sending = false;
+        int endChunk = 0;
+        int lastOffset = 0;
+        byte[] dataBytes = null;
+
+        final static int CHUNK_SIZE_IN_BYTES = 10000;
+
+        boolean isDataSendingComplete() {
+            return lastOffset >= dataBytes.length;
+        }
+
+        void updateLastChunkSent() {
+            lastOffset = endChunk;
+        }
+
+        void clear() {
+            sending= false;
+            lastOffset = 0;
+            endChunk = 0;
+            dataBytes = null;
+        }
+
+        void startSending(final byte[] imageBytes ) {
+            sending = true;
+            lastOffset = 0;
+            this.dataBytes = imageBytes;
+
+            sendFirstChunk();
+        }
+
+        void sendFirstChunk() {
+            endChunk = (lastOffset+CHUNK_SIZE_IN_BYTES)> dataBytes.length? dataBytes.length: (lastOffset+CHUNK_SIZE_IN_BYTES);
+
+            // put length how much data will be sent in total
+            ByteBuffer imageChunkData = ByteBuffer.allocate(4+endChunk);
+            imageChunkData.putInt(dataBytes.length);
+
+            byte[] chunkBytes = Arrays.copyOfRange(dataBytes,lastOffset, endChunk);
+            imageChunkData.put(chunkBytes);
+            imageChunkData.rewind();
+
+            DataChannel.Buffer buf = new DataChannel.Buffer(imageChunkData, true);
+
+            webRTCClient.sendMessageViaDataChannel(buf);
+        }
+
+        void sendLastChunk() {
+
+            endChunk = (lastOffset+CHUNK_SIZE_IN_BYTES)> dataBytes.length? dataBytes.length: (lastOffset+CHUNK_SIZE_IN_BYTES);
+            byte[] chunkBytes = Arrays.copyOfRange(dataBytes,lastOffset, endChunk);
+
+            ByteBuffer imageChunkData = ByteBuffer.wrap(chunkBytes);
+            DataChannel.Buffer buf = new DataChannel.Buffer(imageChunkData, true);
+
+            webRTCClient.sendMessageViaDataChannel(buf);
+
+        }
+    }
+
+    private class BinaryDataReceiver {
+        ByteBuffer receivedData = null;
+        int toBeReceivedTotalLength = 0;
+
+        private void clear() {
+            receivedData = null;
+            toBeReceivedTotalLength = 0;
+        }
+
+        private boolean isFirstPart() {
+            return receivedData == null;
+        }
+
+        private boolean isAllDataReceived() {
+            return receivedData.capacity()>=toBeReceivedTotalLength;
+        }
+
+        private void receiveDataChunk(ByteBuffer dataChunk) {
+            if(!isFirstPart()) {
+                // append two buffers if not first chunk
+                receivedData = ByteBuffer.allocate(receivedData.capacity()+dataChunk.capacity()).put(receivedData);
+                receivedData.put(dataChunk);
+                receivedData.rewind();
+            } else {
+                dataChunk.order(ByteOrder.LITTLE_ENDIAN);
+                toBeReceivedTotalLength = dataChunk.getInt();
+                Log.w(getClass().getSimpleName(), "Total Data to receive "+toBeReceivedTotalLength);
+                receivedData = ByteBuffer.allocate(dataChunk.capacity()-4);
+                receivedData.put(dataChunk);
+                receivedData.rewind();
+            }
+        }
+    }
 }
 
 

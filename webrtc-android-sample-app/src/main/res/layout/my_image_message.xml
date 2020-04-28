@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingVertical="4dp"
+    android:clipToPadding="false">
+
+    <ImageView
+        android:id="@+id/image_body_my"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_gravity="right"
+        android:layout_marginVertical="1dp"
+        android:layout_marginLeft="50dp"
+        android:adjustViewBounds="true"
+        android:visibility="visible" />
+
+</FrameLayout>

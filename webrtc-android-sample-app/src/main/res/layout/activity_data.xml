@@ -82,12 +82,23 @@
             android:layout_width="match_parent"
             android:layout_height="45dp"
             android:background="#F3EEE4">
+            <Button
+                android:id="@+id/send_image_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|left"
+                android:layout_marginTop="3dp"
+                android:layout_marginLeft="4dp"
+                android:background="@drawable/button_background"
+                android:onClick="sendImage"
+                android:text="@string/send_image_button_name" />
 
             <Button
                 android:id="@+id/start_streaming_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|center"
+                android:layout_marginTop="3dp"
                 android:background="@drawable/button_background"
                 android:onClick="startStreaming"
                 android:text="@string/start" />
@@ -97,6 +108,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|right"
+                android:layout_marginTop="3dp"
+                android:layout_marginRight="4dp"
+                android:background="@drawable/button_background"
                 android:onClick="goToSettings"
                 android:text="@string/settings_button_name" />
         </FrameLayout>
