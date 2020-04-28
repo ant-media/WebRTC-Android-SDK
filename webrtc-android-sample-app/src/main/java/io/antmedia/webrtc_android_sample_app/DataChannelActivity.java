@@ -53,6 +53,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.UUID;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
@@ -81,6 +82,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     private String streamId;
     private String tokenId;
     private String serverURL;
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -184,11 +186,23 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         }
     }
 
-    public void sendDataMessage() {
+    public void sendTextMessage() {
         String messageToSend = messageInput.getText().toString();
-        final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(Charset.defaultCharset()));
+
+        String messageToSendJson = Message.createJsonTextMessage(computeMessageId(), new Date(), messageToSend);
+
+        final ByteBuffer buffer = ByteBuffer.wrap(messageToSendJson.getBytes(Charset.defaultCharset()));
         DataChannel.Buffer buf= new DataChannel.Buffer(buffer,false);
         webRTCClient.sendMessageViaDataChannel(buf);
+    }
+
+
+    private String computeMessageId() {
+        return uniqueID+lastSentMessageNum;
+    }
+
+    private void increaseMessageId() {
+        lastSentMessageNum++;
     }
 
     public void sendImage(View view) {
@@ -231,14 +245,12 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
                 FileInputStream inputStream = new FileInputStream(imageFile);
                 inputStream.read(imageBytes, 0, imageBytes.length);
                 inputStream.close();
-
-                imageSender.startSending(imageBytes);
+                String messageToSendJson = Message.createJsonMessage(computeMessageId(), new Date());
+                imageSender.startSending(imageBytes, messageToSendJson);
             } catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Log.e(getClass().getSimpleName(), e.getMessage());
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Log.e(getClass().getSimpleName(), e.getMessage());
             }
         }
     }
@@ -368,7 +380,10 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
             if(imageReceiver.isAllDataReceived()) {
                 Bitmap bmp=BitmapFactory.decodeByteArray(imageReceiver.receivedData.array(),0,imageReceiver.receivedData.capacity());
-                final Message message = new ImageMessage(uniqueID+lastSentMessageNum, false, bmp);
+                final ImageMessage message = new ImageMessage();
+                message.parseJson(imageReceiver.header.text);
+                message.setImageBitmap(bmp);
+
                 messageAdapter.add(message);
                 // scroll the ListView to the last added element
                 messagesView.setSelection(messagesView.getCount() - 1);
@@ -378,10 +393,11 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
         } else {
             ByteBuffer data = buffer.data;
-            String strData = new String(data.array(), StandardCharsets.UTF_8);
+            String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
 
-            // TODO get id from strData as JSON
-            final Message message = new TextMessage(uniqueID+lastSentMessageNum, false, strData);
+            final Message message = new TextMessage();
+            message.parseJson(strDataJson);
+
             messageAdapter.add(message);
             // scroll the ListView to the last added element
             messagesView.setSelection(messagesView.getCount() - 1);
@@ -391,13 +407,17 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     @Override
     public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
         if(successful) {
+            increaseMessageId();
             if (!buffer.binary) {
                 ByteBuffer data = buffer.data;
                 final byte[] bytes = new byte[data.capacity()];
                 data.get(bytes);
-                String strData = new String(bytes, StandardCharsets.UTF_8);
-                lastSentMessageNum = lastSentMessageNum+1;
-                final Message message = new TextMessage(uniqueID+lastSentMessageNum, true, strData);
+                String strDataJson = new String(bytes, StandardCharsets.UTF_8);
+
+                final Message message = new TextMessage();
+                message.parseJson(strDataJson);
+                message.setBelongsToCurrentUser(true);
+
                 messageAdapter.add(message);
                 // scroll the ListView to the last added element
                 messagesView.setSelection(messagesView.getCount() - 1);
@@ -408,8 +428,10 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
                 } else {
                     Bitmap bmp=BitmapFactory.decodeByteArray(imageSender.dataBytes,0,imageSender.dataBytes.length);
 
-                    lastSentMessageNum = lastSentMessageNum+1;
-                    final Message message = new ImageMessage(uniqueID+lastSentMessageNum, true, bmp);
+                    final ImageMessage message = new ImageMessage();
+                    message.parseJson(imageSender.header.text);
+                    message.setImageBitmap(bmp);
+
                     messageAdapter.add(message);
                     // scroll the ListView to the last added element
                     messagesView.setSelection(messagesView.getCount() - 1);
@@ -431,7 +453,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
         boolean handled = false;
         if (actionId == EditorInfo.IME_ACTION_SEND) {
-            sendDataMessage();
+            sendTextMessage();
             handled = true;
             messageInput.setText("");
         }
@@ -440,7 +462,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
     public void sendMessage(View view) {
         if (messageInput.isEnabled()) {
-            sendDataMessage();
+            sendTextMessage();
             messageInput.setText("");
         }
     }
@@ -450,12 +472,18 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         startActivity(settingsIntent);
     }
 
+    private class BinaryMessageHeader {
+        int length;
+        String text;
+    }
+
     private class BinaryDataSender {
 
         boolean sending = false;
         int endChunk = 0;
         int lastOffset = 0;
         byte[] dataBytes = null;
+        BinaryMessageHeader header;
 
         final static int CHUNK_SIZE_IN_BYTES = 10000;
 
@@ -472,22 +500,33 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
             lastOffset = 0;
             endChunk = 0;
             dataBytes = null;
+            header = null;
         }
 
-        void startSending(final byte[] imageBytes ) {
+        void startSending(final byte[] imageBytes, String messageHeader ) {
             sending = true;
             lastOffset = 0;
             this.dataBytes = imageBytes;
 
-            sendFirstChunk();
+            sendFirstChunk(messageHeader);
         }
 
-        void sendFirstChunk() {
-            endChunk = (lastOffset+CHUNK_SIZE_IN_BYTES)> dataBytes.length? dataBytes.length: (lastOffset+CHUNK_SIZE_IN_BYTES);
+        void sendFirstChunk(String messageHeader) {
+            header = new BinaryMessageHeader();
+            header.text = messageHeader;
+
+            byte[]  messageHeaderBytes = messageHeader.getBytes(Charset.defaultCharset());
+            header.length  = messageHeaderBytes.length;
+            int totalMessageHeaderLength = header.length +8;
+
+            int remainingChunkSize = CHUNK_SIZE_IN_BYTES-(totalMessageHeaderLength);
+            endChunk = (lastOffset+remainingChunkSize)> dataBytes.length? dataBytes.length: (lastOffset+remainingChunkSize);
 
             // put length how much data will be sent in total
-            ByteBuffer imageChunkData = ByteBuffer.allocate(4+endChunk);
+            ByteBuffer imageChunkData = ByteBuffer.allocate(totalMessageHeaderLength+endChunk);
             imageChunkData.putInt(dataBytes.length);
+            imageChunkData.putInt(header.length);
+            imageChunkData.put(messageHeaderBytes);
 
             byte[] chunkBytes = Arrays.copyOfRange(dataBytes,lastOffset, endChunk);
             imageChunkData.put(chunkBytes);
@@ -513,11 +552,13 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
     private class BinaryDataReceiver {
         ByteBuffer receivedData = null;
-        int toBeReceivedTotalLength = 0;
+        int toBeReceivedBinaryDataLength = 0;
+        BinaryMessageHeader header = null;
 
         private void clear() {
             receivedData = null;
-            toBeReceivedTotalLength = 0;
+            toBeReceivedBinaryDataLength = 0;
+            header = null;
         }
 
         private boolean isFirstPart() {
@@ -525,7 +566,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         }
 
         private boolean isAllDataReceived() {
-            return receivedData.capacity()>=toBeReceivedTotalLength;
+            return receivedData.capacity()>= toBeReceivedBinaryDataLength;
         }
 
         private void receiveDataChunk(ByteBuffer dataChunk) {
@@ -535,10 +576,18 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
                 receivedData.put(dataChunk);
                 receivedData.rewind();
             } else {
+                header = new BinaryMessageHeader();
                 dataChunk.order(ByteOrder.LITTLE_ENDIAN);
-                toBeReceivedTotalLength = dataChunk.getInt();
-                Log.w(getClass().getSimpleName(), "Total Data to receive "+toBeReceivedTotalLength);
-                receivedData = ByteBuffer.allocate(dataChunk.capacity()-4);
+                toBeReceivedBinaryDataLength = dataChunk.getInt();
+                header.length = dataChunk.getInt();
+                int totalHeaderLength = header.length+8;
+
+                byte[] headerMessageByte = new byte[header.length];
+                dataChunk.get(headerMessageByte);
+                header.text = new String(headerMessageByte, StandardCharsets.UTF_8);
+
+                Log.w(getClass().getSimpleName(), "Total Data to receive "+ toBeReceivedBinaryDataLength);
+                receivedData = ByteBuffer.allocate(dataChunk.capacity()-totalHeaderLength);
                 receivedData.put(dataChunk);
                 receivedData.rewind();
             }

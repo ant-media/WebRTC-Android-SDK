@@ -51,6 +51,7 @@ public class MessageAdapter extends BaseAdapter {
 
         Message message = messages.get(i);
         LayoutInflater messageInflater = (LayoutInflater) context.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        TextView messageDate;
         if(message instanceof  TextMessage) {
             TextView messageBody;
 
@@ -59,12 +60,16 @@ public class MessageAdapter extends BaseAdapter {
                 // this message was sent by us
                 convertView = messageInflater.inflate(R.layout.my_message, null);
                 messageBody = convertView.findViewById(R.id.message_body);
-                messageBody.setText(textMessage.getText());
+                messageDate = convertView.findViewById(R.id.message_date);
+                messageDate.setText(textMessage.getMessageDate());
+                messageBody.setText(textMessage.getMessageBody());
             } else {
                 // this message was sent by someone else
                 convertView = messageInflater.inflate(R.layout.their_message, null);
                 messageBody = convertView.findViewById(R.id.message_body);
-                messageBody.setText(textMessage.getText());
+                messageDate = convertView.findViewById(R.id.message_date);
+                messageDate.setText(textMessage.getMessageDate());
+                messageBody.setText(textMessage.getMessageBody());
             }
         } else {
 
@@ -76,11 +81,15 @@ public class MessageAdapter extends BaseAdapter {
                 convertView = messageInflater.inflate(R.layout.my_image_message, null);
                 // this message was sent by us
                 imageBody = convertView.findViewById(R.id.image_body_my);
+                messageDate = convertView.findViewById(R.id.message_date);
+                messageDate.setText(imageMessage.getMessageDate());
                 imageBody.setImageBitmap(imageMessage.getImageBitmap());
             } else {
                 convertView = messageInflater.inflate(R.layout.their_image_message, null);
                 // this message was sent by someone else
                 imageBody = convertView.findViewById(R.id.image_body_their);
+                messageDate = convertView.findViewById(R.id.message_date);
+                messageDate.setText(imageMessage.getMessageDate());
                 imageBody.setImageBitmap(imageMessage.getImageBitmap());
             }
         }

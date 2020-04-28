@@ -1,17 +1,27 @@
 package io.antmedia.webrtc_android_sample_app.chat;
 
+import android.util.Log;
+
+import org.json.JSONObject;
+
 public class TextMessage extends Message {
-    private String text; // message body
-    public TextMessage(String id, boolean belongsToCurrentUser, String text) {
-        super(id, belongsToCurrentUser);
-        this.text = text;
+    private String messageBody; // message body
+
+
+    public String getMessageBody() {
+        return messageBody;
     }
 
-    public String getText() {
-        return text;
+    @Override
+    public void parseJson(String jsonText) {
+        try {
+            JSONObject json = new JSONObject(jsonText);
+            super.getValuesFromJson(json);
+            messageBody = json.getString("messageBody");
+
+        } catch (Exception e) {
+            Log.e(getClass().getSimpleName(), e.getMessage() );
+        }
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
 }

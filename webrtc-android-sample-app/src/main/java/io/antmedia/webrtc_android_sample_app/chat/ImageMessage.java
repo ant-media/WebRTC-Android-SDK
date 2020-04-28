@@ -1,12 +1,15 @@
 package io.antmedia.webrtc_android_sample_app.chat;
 
 import android.graphics.Bitmap;
+import android.util.Log;
+
+import org.json.JSONObject;
 
 public class ImageMessage extends Message {
     private Bitmap imageBitmap;
 
-    public ImageMessage(String text, boolean belongsToCurrentUser, Bitmap imageBitmap) {
-        super(text, belongsToCurrentUser);
+
+    public void setImageBitmap(Bitmap imageBitmap) {
         this.imageBitmap = imageBitmap;
     }
 
@@ -14,7 +17,15 @@ public class ImageMessage extends Message {
         return imageBitmap;
     }
 
-    public void setImageBitmap(Bitmap imageBitmap) {
-        this.imageBitmap = imageBitmap;
+    @Override
+    public void parseJson(String jsonText) {
+        try {
+            JSONObject json = new JSONObject(jsonText);
+            super.getValuesFromJson(json);
+        } catch (Exception e) {
+            Log.e(getClass().getSimpleName(), e.getMessage() );
+        }
     }
+
+
 }
