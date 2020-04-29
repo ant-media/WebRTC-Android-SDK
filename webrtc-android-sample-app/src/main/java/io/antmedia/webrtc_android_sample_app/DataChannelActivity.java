@@ -4,9 +4,13 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -26,10 +30,17 @@ import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.UUID;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtc_android_sample_app.chat.ImageMessage;
@@ -42,19 +53,6 @@ import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-
-import android.database.Cursor;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
-import android.provider.MediaStore;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.UUID;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
@@ -245,8 +243,8 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
                 FileInputStream inputStream = new FileInputStream(imageFile);
                 inputStream.read(imageBytes, 0, imageBytes.length);
                 inputStream.close();
-                String messageToSendJson = Message.createJsonMessage(computeMessageId(), new Date());
-                imageSender.startSending(imageBytes, messageToSendJson);
+                String imageHeaderInJson = Message.createJsonMessage(computeMessageId(), new Date());
+                imageSender.startSending(imageBytes, imageHeaderInJson);
             } catch (FileNotFoundException e) {
                 Log.e(getClass().getSimpleName(), e.getMessage());
             } catch (IOException e) {
@@ -429,6 +427,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
                     Bitmap bmp=BitmapFactory.decodeByteArray(imageSender.dataBytes,0,imageSender.dataBytes.length);
 
                     final ImageMessage message = new ImageMessage();
+                    message.setBelongsToCurrentUser(true);
                     message.parseJson(imageSender.header.text);
                     message.setImageBitmap(bmp);
 
