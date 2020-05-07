@@ -891,7 +891,13 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     executor.execute(() -> {
       renderVideo = enable;
       if (localVideoTrack != null) {
-        localVideoTrack.setEnabled(renderVideo);
+          if (enable) {
+              startVideoSourceInternal();
+              localVideoTrack.setEnabled(renderVideo);
+          } else {
+              stopVideoSourceInternal();
+              localVideoTrack.setEnabled(renderVideo);
+          }
       }
       if (remoteVideoTrack != null) {
         remoteVideoTrack.setEnabled(renderVideo);
@@ -969,26 +975,35 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
   public void stopVideoSource() {
     executor.execute(() -> {
-      if (videoCapturer != null && !videoCapturerStopped) {
-        Log.d(TAG, "Stop video source.");
-        try {
-          videoCapturer.stopCapture();
-        } catch (InterruptedException e) {
-        }
-        videoCapturerStopped = true;
-      }
+        stopVideoSourceInternal();
     });
   }
 
+    private void stopVideoSourceInternal() {
+        if (videoCapturer != null && !videoCapturerStopped) {
+            Log.d(TAG, "Stop video source.");
+            try {
+                videoCapturer.stopCapture();
+            } catch (InterruptedException e) {
+            }
+            videoCapturerStopped = true;
+        }
+    }
+
   public void startVideoSource() {
     executor.execute(() -> {
-      if (videoCapturer != null && videoCapturerStopped) {
-        Log.d(TAG, "Restart video source.");
-        videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
-        videoCapturerStopped = false;
-      }
+        startVideoSourceInternal();
     });
   }
+
+    private void startVideoSourceInternal() {
+        if (videoCapturer != null && videoCapturerStopped) {
+            Log.d(TAG, "Restart video source.");
+            videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
+            videoCapturerStopped = false;
+        }
+    }
+
 
   public void setVideoMaxBitrate(@Nullable final Integer maxBitrateKbps) {
     executor.execute(() -> {
