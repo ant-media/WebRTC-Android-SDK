@@ -3,24 +3,36 @@ package io.antmedia.webrtcandroidframework;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceViewRenderer;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ConferenceManager implements AntMediaSignallingEvents{
+import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
+
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
+
+public class ConferenceManager implements AntMediaSignallingEvents, IDataChannelMessageSender {
     private final Context context;
     private final Intent intent;
     private final String serverUrl;
     private final String roomName;
-    private final String streamId;
+    private String streamId;
     private HashMap<String, WebRTCClient> peers = new HashMap<>();
     private HashMap<SurfaceViewRenderer, WebRTCClient> playRendererAllocationMap = new HashMap<>();
     private SurfaceViewRenderer publishViewRenderer;
     private final IWebRTCListener webRTCListener;
+    private final IDataChannelObserver dataChannelObserver;
     private WebSocketHandler wsHandler;
     private Handler handler = new Handler();
     private boolean joined = false;
@@ -28,7 +40,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     private int index = 0;
     private boolean openFrontCamera = false;
 
-    public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId) {
+    public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId, IDataChannelObserver dataChannelObserver) {
         this.context = context;
         this.intent = intent;
         this.publishViewRenderer = publishViewRenderer;
@@ -41,6 +53,10 @@ public class ConferenceManager implements AntMediaSignallingEvents{
         this.roomName = roomName;
         this.webRTCListener = webRTCListener;
         this.streamId = streamId;
+        this.dataChannelObserver = dataChannelObserver;
+        if (dataChannelObserver != null) {
+            this.intent.putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
+        }
     }
 
     public boolean isJoined() {
@@ -71,7 +87,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
 
         webRTCClient.setWsHandler(wsHandler);
 
-        String tokenId = "tokenId";
+        String tokenId = "";
 
         if(mode == IWebRTCClient.MODE_PUBLISH) {
             webRTCClient.setOpenFrontCamera(openFrontCamera);
@@ -79,6 +95,10 @@ public class ConferenceManager implements AntMediaSignallingEvents{
         }
         else {
             webRTCClient.setVideoRenderers(null, allocateRenderer(webRTCClient));
+        }
+
+        if (dataChannelObserver != null) {
+            webRTCClient.setDataChannelObserver(dataChannelObserver);
         }
 
         webRTCClient.init(serverUrl, streamId, mode, tokenId, intent);
@@ -157,6 +177,7 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     @Override
     public void onJoinedTheRoom(String streamId, String[] streams) {
         WebRTCClient publisher = createPeer(streamId, IWebRTCClient.MODE_PUBLISH);
+        this.streamId = streamId;
         peers.put(streamId, publisher);
         publisher.startStream();
 
@@ -192,5 +213,106 @@ public class ConferenceManager implements AntMediaSignallingEvents{
     @Override
     public void onTrackList(String[] tracks) {
 
+    }
+
+    @Override
+    public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
+        WebRTCClient publishStream = peers.get(streamId);
+
+        if (publishStream != null) {
+            publishStream.sendMessageViaDataChannel(buffer);
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+        }
+    }
+
+    private void sendNotificationEvent(String eventType) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("streamId", streamId);
+            jsonObject.put("eventType", eventType);
+
+            String notificationEventText = jsonObject.toString();
+
+            final ByteBuffer buffer = ByteBuffer.wrap(notificationEventText.getBytes(StandardCharsets.UTF_8));
+            DataChannel.Buffer buf = new DataChannel.Buffer(buffer, false);
+            sendMessageViaDataChannel(buf);
+        } catch (JSONException e) {
+            Log.e(this.getClass().getSimpleName(), "JSON write error when creating notification event");
+        }
+    }
+
+    public void disableVideo() {
+        WebRTCClient publishStream = peers.get(streamId);
+
+        if (publishStream != null) {
+            if (publishStream.isStreaming()) {
+                publishStream.disableVideo();
+            }
+
+            sendNotificationEvent("CAM_TURNED_OFF");
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+        }
+    }
+
+    public void enableVideo() {
+        WebRTCClient publishStream = peers.get(streamId);
+
+        if (publishStream != null) {
+            if (publishStream.isStreaming()) {
+                publishStream.enableVideo();
+            }
+            sendNotificationEvent("CAM_TURNED_ON");
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+        }
+    }
+
+    public void disableAudio() {
+        WebRTCClient publishStream = peers.get(streamId);
+
+        if (publishStream != null) {
+            if (publishStream.isStreaming()) {
+                publishStream.disableAudio();
+            }
+
+            sendNotificationEvent("MIC_MUTED");
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+        }
+    }
+
+    public void enableAudio() {
+        WebRTCClient publishStream = peers.get(streamId);
+
+        if (publishStream != null) {
+            if (publishStream.isStreaming()) {
+                publishStream.enableAudio();
+            }
+            sendNotificationEvent("MIC_UNMUTED");
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+        }
+    }
+
+    public boolean isPublisherAudioOn() {
+        WebRTCClient publishStream = peers.get(streamId);
+        if (publishStream != null) {
+            return publishStream.isAudioOn();
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+            return false;
+        }
+    }
+
+    public boolean isPublisherVideoOn() {
+        WebRTCClient publishStream = peers.get(streamId);
+        if (publishStream != null) {
+            return publishStream.isVideoOn();
+        } else {
+            Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
+            return false;
+        }
     }
 }

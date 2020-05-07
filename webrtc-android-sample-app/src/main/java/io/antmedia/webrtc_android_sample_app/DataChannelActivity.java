@@ -189,7 +189,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
         String messageToSendJson = Message.createJsonTextMessage(computeMessageId(), new Date(), messageToSend);
 
-        final ByteBuffer buffer = ByteBuffer.wrap(messageToSendJson.getBytes(Charset.defaultCharset()));
+        final ByteBuffer buffer = ByteBuffer.wrap(messageToSendJson.getBytes(StandardCharsets.UTF_8));
         DataChannel.Buffer buf= new DataChannel.Buffer(buffer,false);
         webRTCClient.sendMessageViaDataChannel(buf);
     }
