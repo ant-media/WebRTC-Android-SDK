@@ -48,8 +48,11 @@ import org.webrtc.VideoTrack;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 
@@ -125,6 +128,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String streamId;
     private String token;
     private String url;
+
+    private static Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -1067,5 +1072,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public EglBase getEglBase() {
         return eglBase;
+    }
+
+    public static void insertFrameId(long captureTimeMs) {
+        captureTimeMsMap.put(captureTimeMs, System.currentTimeMillis());
+    }
+
+    public static Map<Long, Long> getCaptureTimeMsMapList() {
+        return captureTimeMsMap;
     }
 }

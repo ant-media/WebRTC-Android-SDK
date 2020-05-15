@@ -15,8 +15,22 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
@@ -32,13 +46,18 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.48:5080/WebRTCAppEE/websocket";
+
+    public static final String SERVER_ADDRESS = "192.168.1.46:5080";
+    public static final String SERVER_URL = "ws://"+ SERVER_ADDRESS +"/WebRTCAppEE/websocket";
+    public static final String REST_URL = "http://"+SERVER_ADDRESS+"/WebRTCAppEE/rest/v2";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
     private String webRTCMode = IWebRTCClient.MODE_PLAY;
     private Button startStreamingButton;
     private String operationName = "";
+    private Timer timer;
+    private String streamId;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -98,13 +117,15 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        String streamId = "522205705955483243849353";
+        streamId = "stream1";
         String tokenId = "tokenId";
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
+
+
 
     }
 
@@ -114,11 +135,28 @@ public class MainActivity extends Activity implements IWebRTCListener {
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop " + operationName);
             webRTCClient.startStream();
+            if (timer != null) {
+                timer.cancel();
+                timer = null;
+            }
+            timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    calculateAbsoluteLatency(streamId);
+
+                }
+            }, 5000, 5000);
         }
         else {
             ((Button)v).setText("Start " + operationName);
+            timer.cancel();
+            timer = null;
             webRTCClient.stopStream();
+
         }
+
+
     }
 
 
@@ -210,6 +248,55 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void onTrackList(String[] tracks) {
+
+    }
+
+    public void calculateAbsoluteLatency(String streamId) {
+        String url = REST_URL + "/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            Log.i("MainActivity", "recevied response " + response);
+                            JSONObject jsonObject = new JSONObject(response);
+                            long absoluteStartTimeMs = jsonObject.getLong("absoluteTimeMs");
+                            //this is the frame id in sending the rtp packet. Actually it's rtp timestamp
+                            long frameId = jsonObject.getLong("frameId");
+                            long relativeCaptureTimeMs = jsonObject.getLong("captureTimeMs");
+                            long captureTimeMs = frameId / 90;
+                            Map<Long, Long> captureTimeMsList = WebRTCClient.getCaptureTimeMsMapList();
+
+                            long absoluteDecodeTimeMs = 0;
+                            if (captureTimeMsList.containsKey(captureTimeMs)) {
+                                absoluteDecodeTimeMs = captureTimeMsList.get(captureTimeMs);
+                            }
+
+                            long absoluteLatency = absoluteDecodeTimeMs - relativeCaptureTimeMs - absoluteStartTimeMs;
+                            Log.i("MainActivity", "recevied absolute start time: " + absoluteStartTimeMs
+                                                        + " frameId: " + frameId + " relativeLatencyMs : " + relativeCaptureTimeMs
+                                                        + " absoluteDecodeTimeMs: " + absoluteDecodeTimeMs
+                                                        + " absoluteLatency: " + absoluteLatency);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("MainActivity","That didn't work!");
+
+            }
+        });
+
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
 
     }
 }
