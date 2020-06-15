@@ -30,11 +30,11 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.48:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://192.168.1.38:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
+    private String webRTCMode = IWebRTCClient.MODE_JOIN;
     private Button startStreamingButton;
     private String operationName = "";
 
@@ -169,6 +169,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
+        startStreamingButton.setText("Start " + operationName);
         //finish();
     }
 
