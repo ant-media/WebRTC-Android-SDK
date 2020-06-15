@@ -11,7 +11,6 @@ import org.webrtc.SessionDescription;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,8 +57,12 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     }
 
     public void sendTextMessage(String message) {
-        Log.e(TAG, "sent websocket message:" + message);
-        ws.sendTextMessage(message);
+        if (ws.isConnected()) {
+            ws.sendTextMessage(message);
+            Log.e(TAG, "sent websocket message:" + message);
+        } else {
+            Log.d(TAG, "Web Socket is not connected");
+        }
     }
 
     public void disconnect(boolean waitForComplete) {

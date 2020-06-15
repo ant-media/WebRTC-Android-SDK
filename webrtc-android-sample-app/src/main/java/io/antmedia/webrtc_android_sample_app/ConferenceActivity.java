@@ -85,7 +85,9 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
         conferenceManager.setOpenFrontCamera(true);
     }
     public void joinConference(View v) {
+
         if (!conferenceManager.isJoined()) {
+            Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");
             conferenceManager.joinTheConference();
         }
@@ -135,6 +137,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     @Override
     protected void onStop() {
         super.onStop();
+        audioButton.setText("Disable Audio");
+        videoButton.setText("Disable Video");
     }
 
     @Override
@@ -146,6 +150,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     public void onDisconnected() {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+        audioButton.setText("Disable Audio");
+        videoButton.setText("Disable Video");
     }
 
     @Override

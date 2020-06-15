@@ -57,6 +57,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         if (dataChannelObserver != null) {
             this.intent.putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
         }
+        initWebSocketHandler();
     }
 
     public boolean isJoined() {
@@ -64,11 +65,15 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     public void joinTheConference() {
+        initWebSocketHandler();
+        wsHandler.joinToConferenceRoom(roomName, streamId);
+    }
+
+    private void initWebSocketHandler() {
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(serverUrl);
         }
-        wsHandler.joinToConferenceRoom(roomName, streamId);
     }
 
     public void leaveFromConference() {
@@ -176,6 +181,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
 
     @Override
     public void onJoinedTheRoom(String streamId, String[] streams) {
+        Log.w(this.getClass().getSimpleName(), "On Joined the Room ");
         WebRTCClient publisher = createPeer(streamId, IWebRTCClient.MODE_PUBLISH);
         this.streamId = streamId;
         peers.put(streamId, publisher);
