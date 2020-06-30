@@ -384,6 +384,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
+        } else if (!wsHandler.isConnected()) {
+            wsHandler.disconnect(true);
+            wsHandler = new WebSocketHandler(this, handler);
+            wsHandler.connect(roomConnectionParameters.roomUrl);
         }
         startCall();
     }
@@ -893,7 +897,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onConnected() {
-
+        Log.w(getClass().getSimpleName(), "onConnected");
     }
 
     @Override
