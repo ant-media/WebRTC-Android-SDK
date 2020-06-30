@@ -424,4 +424,8 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     public AntMediaSignallingEvents getSignallingListener() {
         return signallingListener;
     }
+
+    public boolean isConnected() {
+        return ws.isConnected();
+    }
 }
