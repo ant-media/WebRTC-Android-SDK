@@ -170,6 +170,11 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     }
 
     @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
 
     }

@@ -360,6 +360,11 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     }
 
     @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         Log.d(DataChannelActivity.class.getName(), "Data channel buffered amount changed: " );
     }

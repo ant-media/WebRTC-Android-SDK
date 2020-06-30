@@ -175,6 +175,16 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 else if (definition.equals(WebSocketConstants.STREAM_LEAVED)) {
                     signallingListener.onStreamLeaved(streamId);
                 }
+                else if (definition.equals(WebSocketConstants.BITRATE_MEASUREMENT)) {
+                    int targetBitrate = json.getInt(WebSocketConstants.TARGET_BITRATE);
+                    int videoBitrate = json.getInt(WebSocketConstants.VIDEO_BITRATE);
+                    int audioBitrate = json.getInt(WebSocketConstants.AUDIO_BITRATE);
+
+                    signallingListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
+                }
+
+
+
 
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {

@@ -30,11 +30,11 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 public class MainActivity extends Activity implements IWebRTCListener {
 
 
-    public static final String SERVER_URL = "ws://192.168.1.48:5080/WebRTCAppEE/websocket";
+    public static final String SERVER_URL = "ws://52.230.18.223:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
+    private String webRTCMode = IWebRTCClient.MODE_PLAY;
     private Button startStreamingButton;
     private String operationName = "";
 
@@ -90,7 +90,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        String streamId = "stream1";
+        String streamId = "231561563369244329471572";
         String tokenId = "tokenId";
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
@@ -203,5 +203,13 @@ public class MainActivity extends Activity implements IWebRTCListener {
     @Override
     public void onTrackList(String[] tracks) {
 
+    }
+
+    @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+        Log.e(getClass().getSimpleName(), "st:"+streamId+" tb:"+targetBitrate+" vb:"+videoBitrate+" ab:"+audioBitrate);
+        if(targetBitrate < (videoBitrate+audioBitrate)) {
+            Toast.makeText(this, "low bandwidth", Toast.LENGTH_SHORT).show();
+        }
     }
 }

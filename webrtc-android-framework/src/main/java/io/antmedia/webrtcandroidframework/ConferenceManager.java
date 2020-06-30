@@ -222,6 +222,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
+    @Override
     public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
         WebRTCClient publishStream = peers.get(streamId);
 

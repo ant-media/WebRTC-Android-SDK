@@ -199,6 +199,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     }
 
+    @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
 
 }
 

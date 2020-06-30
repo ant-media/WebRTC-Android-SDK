@@ -79,4 +79,13 @@ public interface AntMediaSignallingEvents {
      * @param tracks
      */
     void onTrackList(String[] tracks);
+
+    /**
+     * It's called when bitrate measurements received fron serves
+     * @param streamId
+     * @param targetBitrate
+     * @param videoBitrate
+     * @param audioBitrate
+     */
+    void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate);
 }

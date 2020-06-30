@@ -378,6 +378,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
 
+    public void setBitrate(int bitrate) {
+        peerConnectionClient.setVideoMaxBitrate(bitrate);
+    }
 
     public void startStream() {
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
@@ -1064,6 +1067,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         this.handler.post(()-> {
             if (webRTCListener != null) {
                 webRTCListener.onTrackList(tracks);
+            }
+        });
+    }
+
+    @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+        this.handler.post(()-> {
+            if (webRTCListener != null) {
+                webRTCListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
             }
         });
     }

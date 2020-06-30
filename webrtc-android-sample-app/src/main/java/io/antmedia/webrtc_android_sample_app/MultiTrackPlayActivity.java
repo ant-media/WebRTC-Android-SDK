@@ -232,4 +232,9 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
 
         webRTCClient.play(streamId, tokenId, allTracks);
     }
+
+    @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
 }
