@@ -10,23 +10,28 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.ConferenceManager;
+import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
-public class ConferenceActivity extends Activity implements IWebRTCListener {
+public class ConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
 
     private ConferenceManager conferenceManager;
-
+    private Button audioButton;
+    private Button videoButton;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,6 +54,9 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
         playViewRenderers.add(findViewById(R.id.play_view_renderer3));
         playViewRenderers.add(findViewById(R.id.play_view_renderer4));
 
+        audioButton = findViewById(R.id.control_audio_button);
+        videoButton = findViewById(R.id.control_video_button);
+
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
             if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
@@ -70,13 +78,16 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
                 roomId,
                 publishViewRenderer,
                 playViewRenderers,
-                streamId
+                streamId,
+                this
         );
 
         conferenceManager.setOpenFrontCamera(true);
     }
     public void joinConference(View v) {
+
         if (!conferenceManager.isJoined()) {
+            Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");
             conferenceManager.joinTheConference();
         }
@@ -126,6 +137,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     @Override
     protected void onStop() {
         super.onStop();
+        audioButton.setText("Disable Audio");
+        videoButton.setText("Disable Video");
     }
 
     @Override
@@ -137,6 +150,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
     public void onDisconnected() {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+        audioButton.setText("Disable Audio");
+        videoButton.setText("Disable Video");
     }
 
     @Override
@@ -154,5 +169,63 @@ public class ConferenceActivity extends Activity implements IWebRTCListener {
 
     }
 
+    @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
+    @Override
+    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
+
+    }
+
+    @Override
+    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
+
+    }
+
+    @Override
+    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
+        ByteBuffer data = buffer.data;
+        String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
+
+        try {
+            JSONObject json = new JSONObject(strDataJson);
+            String eventType = json.getString("eventType");
+            String streamId = json.getString("streamId");
+            Toast.makeText(this, eventType + " : " + streamId, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Log.e(getClass().getSimpleName(), e.getMessage());
+        }
+    }
+
+    @Override
+    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
+        ByteBuffer data = buffer.data;
+        String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
+
+        Log.e(getClass().getSimpleName(), "SentEvent: " + strDataJson);
+    }
+
+    public void controlAudio(View view) {
+        if (conferenceManager.isPublisherAudioOn()) {
+            conferenceManager.disableAudio();
+            audioButton.setText("Enable Audio");
+        } else {
+            conferenceManager.enableAudio();
+            audioButton.setText("Disable Audio");
+        }
+    }
+
+    public void controlVideo(View view) {
+        if (conferenceManager.isPublisherVideoOn()) {
+            conferenceManager.disableVideo();
+            videoButton.setText("Enable Video");
+
+        } else {
+            conferenceManager.enableVideo();
+            videoButton.setText("Disable Video");
+        }
+    }
 }
 

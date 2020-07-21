@@ -11,7 +11,6 @@ import org.webrtc.SessionDescription;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,8 +57,12 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     }
 
     public void sendTextMessage(String message) {
-        Log.e(TAG, "sent websocket message:" + message);
-        ws.sendTextMessage(message);
+        if (ws.isConnected()) {
+            ws.sendTextMessage(message);
+            Log.e(TAG, "sent websocket message:" + message);
+        } else {
+            Log.d(TAG, "Web Socket is not connected");
+        }
     }
 
     public void disconnect(boolean waitForComplete) {
@@ -172,6 +175,16 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 else if (definition.equals(WebSocketConstants.STREAM_LEAVED)) {
                     signallingListener.onStreamLeaved(streamId);
                 }
+                else if (definition.equals(WebSocketConstants.BITRATE_MEASUREMENT)) {
+                    int targetBitrate = json.getInt(WebSocketConstants.TARGET_BITRATE);
+                    int videoBitrate = json.getInt(WebSocketConstants.VIDEO_BITRATE);
+                    int audioBitrate = json.getInt(WebSocketConstants.AUDIO_BITRATE);
+
+                    signallingListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
+                }
+
+
+
 
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
@@ -412,5 +425,9 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     public AntMediaSignallingEvents getSignallingListener() {
         return signallingListener;
+    }
+
+    public boolean isConnected() {
+        return ws.isConnected();
     }
 }

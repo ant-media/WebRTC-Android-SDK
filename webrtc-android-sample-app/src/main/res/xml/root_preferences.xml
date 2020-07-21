@@ -1,0 +1,30 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <EditTextPreference
+        app:key="@string/serverAddress"
+        app:title="Address"
+        app:summary="Address of the Antmedia server for webrtc connection (without http)"
+        app:isPreferenceVisible="true"
+        android:defaultValue="192.168.1.23" />
+    <EditTextPreference
+        app:key="@string/serverPort"
+        app:title="Port"
+        app:summary="Port of Antmedia server for webrtc connection"
+        android:inputType="number"
+        app:isPreferenceVisible="true"
+        android:defaultValue="5080" />
+    <ListPreference
+        android:key="@string/stream_mode"
+        android:title="Streaming mode"
+        app:summary="Mode for the application: publish, play or p2p"
+        android:entries="@array/stream_mode_entries"
+        android:entryValues="@array/stream_mode_values"
+        android:defaultValue="join" />
+    <EditTextPreference
+        app:key="@string/streamId"
+        app:title="stream id"
+        app:summary="Id of the stream that will be connected"
+        app:isPreferenceVisible="true"
+        android:defaultValue="stream1" />
+</PreferenceScreen>

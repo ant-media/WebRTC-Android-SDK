@@ -6,6 +6,7 @@ public class WebSocketConstants {
     private WebSocketConstants() {
     }
 
+
     public static final String ATTR_STREAM_NAME = "ATTR_STREAM_NAME";
 
     public static final String ATTR_ROOM_NAME = "ATTR_ROOM_NAME";
@@ -189,6 +190,11 @@ public class WebSocketConstants {
     public static final String AUDIO_BITRATE = "audioBitrate";
 
     /**
+     * Field to specify the measured bitrate for a WebRTCClient
+     */
+    public static final String TARGET_BITRATE = "targetBitrate";
+
+    /**
      * video field that defines if there is video
      */
     public static final String VIDEO = "video";
@@ -272,4 +278,8 @@ public class WebSocketConstants {
      */
     public static final String ENABLED = "enabled";
 
+    /**
+     * Notification to send measured bitrate
+     */
+    public static final String BITRATE_MEASUREMENT = "bitrateMeasurement";
 }

@@ -45,7 +45,8 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
-    public static final String SERVER_ADDRESS = "192.168.1.46:5080";
+    public static final String SERVER_ADDRESS = "172.16.110.227:5080";
+
     public static final String SERVER_URL = "ws://"+ SERVER_ADDRESS +"/WebRTCAppEE/websocket";
     public static final String REST_URL = "http://"+SERVER_ADDRESS+"/WebRTCAppEE/rest/v2";
     private CallFragment callFragment;
@@ -248,6 +249,14 @@ public class MainActivity extends Activity implements IWebRTCListener {
     @Override
     public void onTrackList(String[] tracks) {
 
+    }
+
+    @Override
+    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+        Log.e(getClass().getSimpleName(), "st:"+streamId+" tb:"+targetBitrate+" vb:"+videoBitrate+" ab:"+audioBitrate);
+        if(targetBitrate < (videoBitrate+audioBitrate)) {
+            Toast.makeText(this, "low bandwidth", Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void calculateAbsoluteLatency(String streamId) {

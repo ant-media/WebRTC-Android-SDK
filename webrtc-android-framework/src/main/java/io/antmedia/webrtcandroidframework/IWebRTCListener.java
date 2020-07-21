@@ -56,4 +56,14 @@ public interface IWebRTCListener {
   * @param tracks
   */
  void onTrackList(String[] tracks);
+
+ /**
+  * It's called when bitrate measurements received from serves.
+  * targetBitrate should be greater than (videoBitrate + audioBitrate) for a good quality stream
+  * @param streamId
+  * @param targetBitrate
+  * @param videoBitrate
+  * @param audioBitrate
+  */
+ void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate);
 }

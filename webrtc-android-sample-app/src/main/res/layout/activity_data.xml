@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".DataChannelActivity">
+    <FrameLayout
+        android:id="@+id/publisher_container"
+        android:layout_width="match_parent"
+        android:layout_height="350dp">
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/pip_view_renderer"
+            android:layout_width="match_parent"
+            android:layout_height="350dp"
+            android:layout_gravity="top"
+            android:layout_margin="1dp" />
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/camera_view_renderer"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_gravity="bottom|right"
+            android:layout_margin="5dp"
+            android:paddingHorizontal="5dp"
+            android:paddingVertical="4dp" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/call_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingVertical="4dp">
+
+        <ListView
+            android:id="@+id/messages_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:background="#F3EEE4"
+            android:divider="#fff" />
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#fff"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/message_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#00E91E1E"
+                android:cursorVisible="true"
+                android:ems="10"
+                android:hint="@string/write_something"
+                android:imeOptions="actionSend"
+                android:inputType="text"
+                android:lines="2"
+                android:maxLines="3"
+                android:selectAllOnFocus="false"
+                android:textSize="22sp"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="10dp"
+                android:layout_weight="2" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:scaleType="fitCenter"
+                android:padding="20dp"
+                android:layout_marginHorizontal="10dp"
+                android:background="@drawable/ic_send_black_24dp"
+                android:onClick="sendMessage" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/button_frame"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:background="#F3EEE4">
+            <Button
+                android:id="@+id/send_image_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|left"
+                android:layout_marginTop="3dp"
+                android:layout_marginLeft="4dp"
+                android:background="@drawable/button_background"
+                android:onClick="sendImage"
+                android:text="@string/send_image_button_name" />
+
+            <Button
+                android:id="@+id/start_streaming_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/button_background"
+                android:onClick="startStreaming"
+                android:text="@string/start" />
+
+            <Button
+                android:id="@+id/settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|right"
+                android:layout_marginTop="3dp"
+                android:layout_marginRight="4dp"
+                android:background="@drawable/button_background"
+                android:onClick="goToSettings"
+                android:text="@string/settings_button_name" />
+        </FrameLayout>
+
+    </LinearLayout>
+</LinearLayout>
