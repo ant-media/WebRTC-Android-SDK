@@ -142,8 +142,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     private static Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
 
-    private static Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
-
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
         this.context = context;

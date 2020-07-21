@@ -134,25 +134,9 @@ public class MainActivity extends Activity implements IWebRTCListener {
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop " + operationName);
             webRTCClient.startStream();
-            if (timer != null) {
-                timer.cancel();
-                timer = null;
-            }
-            timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    calculateAbsoluteLatency(streamId);
-
-                }
-            }, 5000, 5000);
         }
         else {
             ((Button)v).setText("Start " + operationName);
-            timer.cancel();
-            timer = null;
-            webRTCClient.stopStream();
-
         }
 
 
@@ -259,6 +243,10 @@ public class MainActivity extends Activity implements IWebRTCListener {
         }
     }
 
+    /**
+     * This method is used in an experiment. It's not for production
+     * @param streamId
+     */
     public void calculateAbsoluteLatency(String streamId) {
         String url = REST_URL + "/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
 
