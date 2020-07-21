@@ -167,15 +167,12 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   // Connects to room - function runs on a local looper thread.
   private void connectToRoomInternal() {
 
-    //  setServerName("192.168.1.4");
-
 
     setWsURL(connectionParameters.roomUrl);
 
     Log.d(TAG, "Connect to room: " + connectionParameters.roomId);
 
     roomState = ConnectionState.NEW;
-
 
     wsClient = new WebSocketChannelAntMediaClient(handler, this, connectionParameters.roomId, connectionParameters.mode, connectionParameters.token);
 
@@ -481,17 +478,13 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
 
       String commandText = json.getString(COMMAND);
 
-      if (commandText.equals("start")) {
+      if (commandText.equals(COMMAND_START)) {
 
         signalingParametersReady(getSignalingParameters(true, null));
-
         Log.d(TAG, "websocket server first reply: "+ commandText);
-
         initiator=true;
       }
-
       else if (commandText.equals(TAKE_CONFIGURATION_COMMAND)) {
-
 
         SessionDescription.Type type = SessionDescription.Type.fromCanonicalForm(json.getString("type"));
         SessionDescription sdp = new SessionDescription(
@@ -551,13 +544,14 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
           disConnectAndQuit();
         }
       }
-
       else if (commandText.equals(PONG))
       {
         pingPongTimoutCount = 0;
         Log.d(TAG, "pong reply is received");
       }
-
+      else if (commandText.equals(COMMAND_STOP)) {
+        disConnectAndQuit();
+      }
       else {
 
         reportError("Received offer for call receiver: " + msg);

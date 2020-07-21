@@ -215,6 +215,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
+        startStreamingButton.setText("Start " + operationName);
         //finish();
     }
 
