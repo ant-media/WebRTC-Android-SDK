@@ -16,6 +16,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.SystemClock;
 
+import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.Nullable;
@@ -27,6 +28,8 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.ThreadUtils.ThreadChecker;
+
+import io.antmedia.webrtcandroidframework.WebRTCClient;
 
 /**
  * Android hardware video decoder.
@@ -217,6 +220,9 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
       Logging.d(TAG, "decode uninitalized, codec: " + (codec != null) + ", callback: " + callback);
       return VideoCodecStatus.UNINITIALIZED;
     }
+    Log.i(TAG, "Capture time Ms: " + frame.captureTimeMs + " system time: " + System.currentTimeMillis());
+
+    WebRTCClient.insertFrameId(frame.captureTimeMs);
 
     if (frame.buffer == null) {
       Logging.e(TAG, "decode() - no input data");
