@@ -50,8 +50,11 @@ import org.webrtc.VideoTrack;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Nullable;
 
@@ -136,6 +139,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
     }
+
+    private static Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -344,7 +349,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         peerConnectionClient = new PeerConnectionClient(
                 this.context.getApplicationContext(), eglBase, peerConnectionParameters, WebRTCClient.this, WebRTCClient.this);
         PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-
+        if (loopback) {
+            options.networkIgnoreMask = 0;
+        }
+        //options.disableEncryption = true;
         peerConnectionClient.createPeerConnectionFactory(options);
 
         if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
@@ -1131,5 +1139,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         this.handler.post(() -> {
             dataChannelObserver.onMessageSent(buffer, successful);
         });
+    }
+
+    public static void insertFrameId(long captureTimeMs) {
+        captureTimeMsMap.put(captureTimeMs, System.currentTimeMillis());
+    }
+
+    public static Map<Long, Long> getCaptureTimeMsMapList() {
+        return captureTimeMsMap;
     }
 }

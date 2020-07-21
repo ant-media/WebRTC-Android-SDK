@@ -52,6 +52,10 @@ public class DefaultVideoEncoderFactory implements VideoEncoderFactory {
     supportedCodecInfos.addAll(Arrays.asList(softwareVideoEncoderFactory.getSupportedCodecs()));
     supportedCodecInfos.addAll(Arrays.asList(hardwareVideoEncoderFactory.getSupportedCodecs()));
 
+    //this is just a hack. there is no h265 encoder in the device
+    supportedCodecInfos.add(new VideoCodecInfo(
+            VideoCodecType.H265.name(), MediaCodecUtils.getCodecProperties( VideoCodecType.H265, /* highProfile= */ false)));
+
     return supportedCodecInfos.toArray(new VideoCodecInfo[supportedCodecInfos.size()]);
   }
 }

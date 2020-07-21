@@ -209,7 +209,9 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     disconnect(true);
                 }
             }
-
+            else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
+                disconnect(true);
+            }
             else if (commandText.equals(WebSocketConstants.PONG_COMMAND))
             {
                 pingPongTimoutCount = 0;
