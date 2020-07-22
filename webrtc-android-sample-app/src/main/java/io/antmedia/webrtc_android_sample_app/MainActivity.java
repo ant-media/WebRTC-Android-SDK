@@ -45,14 +45,23 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 
 public class MainActivity extends Activity implements IWebRTCListener {
 
-    public static final String SERVER_ADDRESS = "172.16.110.227:5080";
+    /**
+     * Change this address with your Ant Media Server address
+     */
+    public static final String SERVER_ADDRESS = "172.16.110.252:5080";
+
+    /**
+     * Mode can Publish, Play or P2P
+     */
+    private String webRTCMode = IWebRTCClient.MODE_PLAY;
+
 
     public static final String SERVER_URL = "ws://"+ SERVER_ADDRESS +"/WebRTCAppEE/websocket";
     public static final String REST_URL = "http://"+SERVER_ADDRESS+"/WebRTCAppEE/rest/v2";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode = IWebRTCClient.MODE_PLAY;
+
     private Button startStreamingButton;
     private String operationName = "";
     private Timer timer;
@@ -84,15 +93,6 @@ public class MainActivity extends Activity implements IWebRTCListener {
                 return;
             }
         }
-
-        /**
-         * You can overtide webRTCMode if you wish
-         */
-        //webRTCMode = IWebRTCClient.MODE_PLAY;
-
-
-        //TODO make it more developer friendly
-        webRTCMode = IWebRTCClient.MODE_PLAY;
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
