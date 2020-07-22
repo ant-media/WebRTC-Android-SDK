@@ -137,6 +137,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         }
         else {
             ((Button)v).setText("Start " + operationName);
+            webRTCClient.stopStream();
         }
 
 

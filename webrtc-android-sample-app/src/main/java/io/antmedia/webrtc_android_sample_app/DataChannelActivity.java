@@ -57,6 +57,11 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 
+/********************
+ * Take a look at the blog posts
+ * https://antmedia.io/webrtc-chat-and-file-transfer-2/
+ * https://antmedia.io/webrtc-chat-and-file-transfer/
+ ********************/
 public class DataChannelActivity extends Activity implements IWebRTCListener, IDataChannelObserver, TextView.OnEditorActionListener {
 
 

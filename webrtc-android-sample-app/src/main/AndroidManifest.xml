@@ -43,6 +43,7 @@
         <activity android:name=".MultiTrackPlayActivity"/>
 
         <activity android:name=".MainActivity"/>
+
         <activity android:name=".DataChannelActivity"/>
         <activity android:name=".chat.SettingsActivity"
             android:parentActivityName=".DataChannelActivity">

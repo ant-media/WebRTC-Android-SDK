@@ -34,7 +34,6 @@ android {
 
 dependencies {
     api project(":webrtc-android-framework")
-
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
