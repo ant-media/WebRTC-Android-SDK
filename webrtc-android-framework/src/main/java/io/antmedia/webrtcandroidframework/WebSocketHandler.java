@@ -104,6 +104,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         synchronized (closeEventLock) {
             closeEvent = true;
             closeEventLock.notify();
+            stopPingPongTimer();
         }
     }
 
@@ -118,7 +119,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             JSONObject json = new JSONObject(msg);
 
             String commandText = json.getString(WebSocketConstants.COMMAND);
-            String streamId = json.getString(WebSocketConstants.STREAM_ID);
+            String streamId = null;
+            if (json.has(WebSocketConstants.STREAM_ID)) {
+                streamId = json.getString(WebSocketConstants.STREAM_ID);
+            }
             if (commandText.equals(WebSocketConstants.START_COMMAND)) {
                 signallingListener.onStartStreaming(streamId);
             }
@@ -182,10 +186,6 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
                     signallingListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
                 }
-
-
-
-
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
                 JSONArray trackList = json.getJSONArray(WebSocketConstants.TRACK_LIST);
@@ -215,7 +215,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             else if (commandText.equals(WebSocketConstants.PONG_COMMAND))
             {
                 pingPongTimoutCount = 0;
-                Log.d(TAG, "pong reply is received");
+                Log.i(TAG, "pong reply is received");
             }
 
             else {
