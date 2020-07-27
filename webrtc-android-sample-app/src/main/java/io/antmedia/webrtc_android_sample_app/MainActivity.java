@@ -4,13 +4,16 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -24,31 +27,32 @@ import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
-public class MainActivity extends Activity implements IWebRTCListener {
+public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver, TextView.OnEditorActionListener {
 
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "172.16.110.252:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.23:5080";
 
     /**
      * Mode can Publish, Play or P2P
@@ -56,16 +60,20 @@ public class MainActivity extends Activity implements IWebRTCListener {
     private String webRTCMode = IWebRTCClient.MODE_PLAY;
 
 
-    public static final String SERVER_URL = "ws://"+ SERVER_ADDRESS +"/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://"+SERVER_ADDRESS+"/WebRTCAppEE/rest/v2";
-    private CallFragment callFragment;
+    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
+    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
 
     private Button startStreamingButton;
     private String operationName = "";
-    private Timer timer;
     private String streamId;
+
+    private SurfaceViewRenderer cameraViewRenderer;
+    private SurfaceViewRenderer pipViewRenderer;
+
+    private EditText messageInput;
+    private TextView messageView;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -81,10 +89,18 @@ public class MainActivity extends Activity implements IWebRTCListener {
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
         setContentView(R.layout.activity_main);
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
-        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
-        startStreamingButton = (Button)findViewById(R.id.start_streaming_button);
+        messageInput = findViewById(R.id.message_text_input);
+        messageInput.setOnEditorActionListener(this);
+        messageInput.setEnabled(false);
+
+        messageView = findViewById(R.id.messageView);
+        messageView.setMovementMethod(new ScrollingMovementMethod());
+
+        cameraViewRenderer = findViewById(R.id.camera_view_renderer);
+        pipViewRenderer = findViewById(R.id.pip_view_renderer);
+
+        startStreamingButton = findViewById(R.id.start_streaming_button);
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -111,6 +127,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
         this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 2500);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+        this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
 
         webRTCClient = new WebRTCClient( this,this);
 
@@ -118,13 +135,11 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         streamId = "stream1";
         String tokenId = "tokenId";
-
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
-
-
+        webRTCClient.setDataChannelObserver(this);
 
     }
 
@@ -132,14 +147,16 @@ public class MainActivity extends Activity implements IWebRTCListener {
     public void startStreaming(View v) {
 
         if (!webRTCClient.isStreaming()) {
-            ((Button)v).setText("Stop " + operationName);
+            ((Button) v).setText("Stop " + operationName);
             webRTCClient.startStream();
+            if (webRTCMode == IWebRTCClient.MODE_JOIN) {
+                pipViewRenderer.setZOrderOnTop(true);
+            }
         }
         else {
             ((Button)v).setText("Start " + operationName);
             webRTCClient.stopStream();
         }
-
 
     }
 
@@ -149,12 +166,14 @@ public class MainActivity extends Activity implements IWebRTCListener {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+        messageInput.setEnabled(true);
     }
 
     @Override
     public void onPublishStarted() {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        messageInput.setEnabled(true);
 
     }
 
@@ -201,6 +220,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
 
         startStreamingButton.setText("Start " + operationName);
         //finish();
+        messageInput.setEnabled(false);
     }
 
     @Override
@@ -287,7 +307,7 @@ public class MainActivity extends Activity implements IWebRTCListener {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Log.e("MainActivity","That didn't work!");
+                Log.e("MainActivity", "That didn't work!");
 
             }
         });
@@ -296,4 +316,72 @@ public class MainActivity extends Activity implements IWebRTCListener {
         queue.add(stringRequest);
 
     }
+
+    @Override
+    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
+        Log.d(MainActivity.class.getName(), "Data channel buffered amount changed: ");
+    }
+
+    @Override
+    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
+        Log.d(MainActivity.class.getName(), "Data channel state changed: ");
+    }
+
+    @Override
+    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
+        ByteBuffer data = buffer.data;
+        String messageText = new String(data.array(), StandardCharsets.UTF_8);
+
+        String messageViewText = messageView.getText().toString();
+        messageView.setText(new StringBuilder().append(messageViewText).append("\nReceived: ").append(messageText).toString());
+
+        //final Message message = new TextMessage();
+        //message.parseJson(strDataJson);
+
+        //messageAdapter.add(message);
+        // scroll the ListView to the last added element
+        //messagesView.setSelection(messagesView.getCount() - 1);
+    }
+
+    @Override
+    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
+        if (successful) {
+            ByteBuffer data = buffer.data;
+            final byte[] bytes = new byte[data.capacity()];
+            data.get(bytes);
+            String messageText = new String(bytes, StandardCharsets.UTF_8);
+
+            String messageViewText = messageView.getText().toString();
+            messageView.setText(new StringBuilder().append(messageViewText).append("\nSent: ").append(messageText).toString());
+        } else {
+            Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void sendMessage(View view) {
+        if (messageInput.isEnabled()) {
+            sendTextMessage();
+            messageInput.setText("");
+        }
+    }
+
+    public void sendTextMessage() {
+        String messageToSend = messageInput.getText().toString();
+
+        final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
+        DataChannel.Buffer buf = new DataChannel.Buffer(buffer, false);
+        webRTCClient.sendMessageViaDataChannel(buf);
+    }
+
+    @Override
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        boolean handled = false;
+        if (actionId == EditorInfo.IME_ACTION_SEND) {
+            sendTextMessage();
+            handled = true;
+            messageInput.setText("");
+        }
+        return handled;
+    }
+
 }
