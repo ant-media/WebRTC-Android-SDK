@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/send_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="5dp"
+    >
+
+        <EditText
+            android:id="@+id/message_text_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:cursorVisible="true"
+            android:hint="@string/write_something"
+            android:inputType="text"
+            android:lines="2"
+            android:maxLines="3"
+            android:layout_weight="2" />
+
+</LinearLayout>

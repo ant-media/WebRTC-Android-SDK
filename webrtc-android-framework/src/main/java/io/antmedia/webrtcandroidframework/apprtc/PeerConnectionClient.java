@@ -205,6 +205,11 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
   };
 
+  @Nullable
+  public DataChannel getDataChannel() {
+    return dataChannel;
+  }
+
   @Override
   public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
       if (dataChannel != null && dataChannel.state() == DataChannel.State.OPEN) {
