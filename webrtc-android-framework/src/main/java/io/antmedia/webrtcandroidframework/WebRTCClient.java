@@ -1102,6 +1102,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
+    public boolean isDataChannelEnabled() {
+        if (peerConnectionClient != null ) {
+            DataChannel dataChannel = peerConnectionClient.getDataChannel();
+            return dataChannel != null && dataChannel.state() == DataChannel.State.OPEN;
+        }
+        return false;
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         if(dataChannelObserver == null) return;
         this.handler.post(() -> {

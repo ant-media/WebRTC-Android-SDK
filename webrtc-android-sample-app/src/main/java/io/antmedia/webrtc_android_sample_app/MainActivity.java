@@ -1,6 +1,7 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -47,17 +49,19 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
-public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver, TextView.OnEditorActionListener {
+public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.23:5080";
+    public static final String SERVER_ADDRESS = "ovh36.antmedia.io:5080";
 
     /**
      * Mode can Publish, Play or P2P
      */
     private String webRTCMode = IWebRTCClient.MODE_PLAY;
+
+    private boolean enableDataChannel = true;
 
 
     public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
@@ -71,9 +75,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
-
-    private EditText messageInput;
-    private TextView messageView;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -89,13 +90,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
         setContentView(R.layout.activity_main);
-
-        messageInput = findViewById(R.id.message_text_input);
-        messageInput.setOnEditorActionListener(this);
-        messageInput.setEnabled(false);
-
-        messageView = findViewById(R.id.messageView);
-        messageView.setMovementMethod(new ScrollingMovementMethod());
 
         cameraViewRenderer = findViewById(R.id.camera_view_renderer);
         pipViewRenderer = findViewById(R.id.pip_view_renderer);
@@ -125,9 +119,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
-        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 2500);
+        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
+        this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, enableDataChannel);
 
         webRTCClient = new WebRTCClient( this,this);
 
@@ -166,15 +160,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
-        messageInput.setEnabled(true);
     }
 
     @Override
     public void onPublishStarted() {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
-        messageInput.setEnabled(true);
-
     }
 
     @Override
@@ -220,7 +211,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         startStreamingButton.setText("Start " + operationName);
         //finish();
-        messageInput.setEnabled(false);
     }
 
     @Override
@@ -331,16 +321,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
         ByteBuffer data = buffer.data;
         String messageText = new String(data.array(), StandardCharsets.UTF_8);
-
-        String messageViewText = messageView.getText().toString();
-        messageView.setText(new StringBuilder().append(messageViewText).append("\nReceived: ").append(messageText).toString());
-
-        //final Message message = new TextMessage();
-        //message.parseJson(strDataJson);
-
-        //messageAdapter.add(message);
-        // scroll the ListView to the last added element
-        //messagesView.setSelection(messagesView.getCount() - 1);
+        Toast.makeText(this, "New Message: " + messageText, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -351,37 +332,48 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             data.get(bytes);
             String messageText = new String(bytes, StandardCharsets.UTF_8);
 
-            String messageViewText = messageView.getText().toString();
-            messageView.setText(new StringBuilder().append(messageViewText).append("\nSent: ").append(messageText).toString());
+            Toast.makeText(this, "Message is sent", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
         }
     }
 
-    public void sendMessage(View view) {
-        if (messageInput.isEnabled()) {
-            sendTextMessage();
-            messageInput.setText("");
-        }
-    }
-
-    public void sendTextMessage() {
-        String messageToSend = messageInput.getText().toString();
-
+    public void sendTextMessage(String messageToSend) {
         final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
         DataChannel.Buffer buf = new DataChannel.Buffer(buffer, false);
         webRTCClient.sendMessageViaDataChannel(buf);
     }
 
-    @Override
-    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        boolean handled = false;
-        if (actionId == EditorInfo.IME_ACTION_SEND) {
-            sendTextMessage();
-            handled = true;
-            messageInput.setText("");
-        }
-        return handled;
-    }
+    public void showSendDataChannelMessageDialog(View view) {
+        if (webRTCClient != null && webRTCClient.isDataChannelEnabled()) {
+            // create an alert builder
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Send Message via Data Channel");
+            // set the custom layout
+            final View customLayout = getLayoutInflater().inflate(R.layout.send_message_data_channel, null);
+            builder.setView(customLayout);
+            // add a button
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // send data from the AlertDialog to the Activity
+                    EditText editText = customLayout.findViewById(R.id.message_text_input);
+                    sendTextMessage(editText.getText().toString());
+                   // sendDialogDataToActivity(editText.getText().toString());
+                }
+            });
+            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
 
+                }
+            });
+            // create and show the alert dialog
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+        else {
+            Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
+        }
+    }
 }

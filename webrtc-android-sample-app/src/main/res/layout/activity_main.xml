@@ -9,7 +9,7 @@
     <FrameLayout
         android:id="@+id/publisher_container"
         android:layout_width="match_parent"
-        android:layout_height="450dp"
+        android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true">
 
@@ -29,68 +29,23 @@
             android:paddingVertical="4dp" />
     </FrameLayout>
 
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/sym_action_chat"
+        android:layout_alignParentLeft="true"
+        android:layout_margin="3dp"
+        android:onClick="showSendDataChannelMessageDialog"
+        android:layout_centerVertical="true"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Start"
         android:id="@+id/start_streaming_button"
         android:onClick="startStreaming"
-        android:layout_below="@id/publisher_container"
-        android:layout_gravity="center_vertical"
-        android:layout_centerInParent="true" />
-
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        android:layout_below="@id/start_streaming_button">
-
-        <TextView
-            android:id="@+id/messageView"
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:text="Data Channel Messages:"
-            android:layout_margin="3dp"
-            android:layout_alignParentTop="true"
-            android:layout_above="@id/send_text"
-            android:scrollbars="vertical" />
-
-        <LinearLayout
-            android:id="@+id/send_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#fff"
-            android:orientation="horizontal"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentBottom="true">
-
-            <EditText
-                android:id="@+id/message_text_input"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:background="#00E91E1E"
-                android:cursorVisible="true"
-                android:ems="10"
-                android:hint="@string/write_something"
-                android:imeOptions="actionSend"
-                android:inputType="text"
-                android:lines="2"
-                android:maxLines="3"
-                android:selectAllOnFocus="false"
-                android:textSize="22sp"
-                android:paddingVertical="4dp"
-                android:paddingHorizontal="10dp"
-                android:layout_weight="2" />
-
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:scaleType="fitCenter"
-                android:padding="20dp"
-                android:layout_marginHorizontal="10dp"
-                android:background="@drawable/ic_send_black_24dp"
-                android:onClick="sendMessage" />
-        </LinearLayout>
-    </RelativeLayout>
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="3dp"
+        />
 </RelativeLayout>

@@ -117,4 +117,11 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
 
 
     void setMediaProjectionParams(int resultCode, Intent data);
+
+    /**
+     * Return if data channel is enabled and open
+     * @return true if data channel is available
+     * false if it's not opened either by mobile or server side
+     */
+    boolean isDataChannelEnabled();
 }

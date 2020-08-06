@@ -9,4 +9,5 @@
     <string name="settings_button_name">Settings</string>
     <string name="stream_mode">streaming_mode</string>
     <string name="send_image_button_name">Send Image</string>
+    <string name="data_channel_not_available">"Data channel is not available. Enable data channel in both Android and Server side and then restart Streaming</string>
 </resources>
