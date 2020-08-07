@@ -5,16 +5,13 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
+import android.os.Handler;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -54,12 +51,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "ovh36.antmedia.io:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.23:5080";
 
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_PLAY;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
 
     private boolean enableDataChannel = true;
 
@@ -76,11 +73,26 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
 
+    // variables for handling reconnection attempts after disconnected
+    final int RECONNECTION_PERIOD_MLS = 100;
+    private boolean stoppedStream = false;
+    Handler reconnectionHandler = new Handler();
+    Runnable reconnectionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!webRTCClient.isStreaming()) {
+                attempt2Reconnect();
+                // call the handler again in case startStreaming is not successful
+                reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
+            }
+        }
+    };
+
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -146,14 +158,23 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
                 pipViewRenderer.setZOrderOnTop(true);
             }
-        }
-        else {
-            ((Button)v).setText("Start " + operationName);
+        } else {
+            ((Button) v).setText("Start " + operationName);
             webRTCClient.stopStream();
+            stoppedStream = true;
         }
 
     }
 
+    private void attempt2Reconnect() {
+        Log.w(getClass().getSimpleName(), "Attempt2Reconnect called");
+        if (!webRTCClient.isStreaming()) {
+            webRTCClient.startStream();
+            if (webRTCMode == IWebRTCClient.MODE_JOIN) {
+                pipViewRenderer.setZOrderOnTop(true);
+            }
+        }
+    }
 
     @Override
     public void onPlayStarted() {
@@ -205,17 +226,37 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     @Override
     public void onDisconnected() {
-
         Log.w(getClass().getSimpleName(), "disconnected");
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
         startStreamingButton.setText("Start " + operationName);
-        //finish();
+        // handle reconnection attempt
+        if (!stoppedStream) {
+            Toast.makeText(this, "Disconnected Attempting to reconnect", Toast.LENGTH_LONG).show();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
+                    reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+                }
+            } else {
+                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+            }
+        } else {
+            Toast.makeText(this, "Stopped the stream", Toast.LENGTH_LONG).show();
+            stoppedStream = false;
+        }
     }
 
     @Override
     public void onIceConnected() {
         //it is called when connected to ice
+        startStreamingButton.setText("Stop " + operationName);
+        // remove scheduled reconnection attempts
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
+                reconnectionHandler.removeCallbacks(reconnectionRunnable, null);
+            }
+        } else {
+            reconnectionHandler.removeCallbacks(reconnectionRunnable, null);
+        }
     }
 
     @Override
