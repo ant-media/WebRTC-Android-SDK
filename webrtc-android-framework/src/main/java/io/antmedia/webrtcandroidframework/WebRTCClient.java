@@ -949,16 +949,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
                     peerConnectionClient.createPeerConnection(
                             localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+
+
+                    peerConnectionClient.setRemoteDescription(sdp);
+
+                    peerConnectionClient.createAnswer();
+
+                    if (signalingParameters.iceCandidates != null) {
+                        // Add remote ICE candidates from room.
+                        for (IceCandidate iceCandidate : signalingParameters.iceCandidates) {
+                            peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                        }
+                    }
                 }
-
-                peerConnectionClient.setRemoteDescription(sdp);
-
-                peerConnectionClient.createAnswer();
-
-                if (signalingParameters.iceCandidates != null) {
-                    // Add remote ICE candidates from room.
-                    for (IceCandidate iceCandidate : signalingParameters.iceCandidates) {
-                        peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                else {
+                    if (webRTCListener != null) {
+                        webRTCListener.onError("peerConnectionClient is null when offer sdp received");
                     }
                 }
             }
