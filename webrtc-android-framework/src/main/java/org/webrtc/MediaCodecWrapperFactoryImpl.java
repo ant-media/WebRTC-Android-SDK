@@ -17,12 +17,13 @@ import android.media.MediaCrypto;
 import android.media.MediaFormat;
 import android.os.Bundle;
 import android.view.Surface;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
  * Implementation of MediaCodecWrapperFactory that returns MediaCodecInterfaces wrapping
- * {@link MediaCodec} objects.
+ * {@link android.media.MediaCodec} objects.
  */
 class MediaCodecWrapperFactoryImpl implements MediaCodecWrapperFactory {
   private static class MediaCodecWrapperImpl implements MediaCodecWrapper {

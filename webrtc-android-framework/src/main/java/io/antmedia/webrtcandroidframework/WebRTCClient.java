@@ -50,7 +50,6 @@ import org.webrtc.VideoTrack;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -298,7 +297,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
-        boolean audioCallEnabled = true;
+        boolean audioCallEnabled = false;
         if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY)) {
             videoCallEnabled = false;
             audioCallEnabled = false;

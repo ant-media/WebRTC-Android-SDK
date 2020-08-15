@@ -11,16 +11,13 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.webrtc.CandidatePairChangeEvent;
-import org.webrtc.DataChannel;
-import org.webrtc.MediaStreamTrack;
-import org.webrtc.RtpTransceiver;
 
 /**
  * Java-land version of the PeerConnection APIs; wraps the C++ API
@@ -93,27 +90,35 @@ public class PeerConnection {
     }
   }
 
-  /** Java version of PeerConnectionObserver. */
-  public static interface Observer {
+  /**
+   * Java version of PeerConnectionObserver.
+   */
+  public interface Observer {
     /** Triggered when the SignalingState changes. */
-    @CalledByNative("Observer") void onSignalingChange(SignalingState newState);
+    @CalledByNative("Observer")
+    void onSignalingChange(SignalingState newState);
 
     /** Triggered when the IceConnectionState changes. */
-    @CalledByNative("Observer") void onIceConnectionChange(IceConnectionState newState);
+    @CalledByNative("Observer")
+    void onIceConnectionChange(IceConnectionState newState);
 
     /* Triggered when the standard-compliant state transition of IceConnectionState happens. */
     @CalledByNative("Observer")
-    default void onStandardizedIceConnectionChange(IceConnectionState newState) {}
+    default void onStandardizedIceConnectionChange(IceConnectionState newState) {
+    }
 
     /** Triggered when the PeerConnectionState changes. */
     @CalledByNative("Observer")
-    default void onConnectionChange(PeerConnectionState newState) {}
+    default void onConnectionChange(PeerConnectionState newState) {
+    }
 
     /** Triggered when the ICE connection receiving status changes. */
-    @CalledByNative("Observer") void onIceConnectionReceivingChange(boolean receiving);
+    @CalledByNative("Observer")
+    void onIceConnectionReceivingChange(boolean receiving);
 
     /** Triggered when the IceGatheringState changes. */
-    @CalledByNative("Observer") void onIceGatheringChange(IceGatheringState newState);
+    @CalledByNative("Observer")
+    void onIceGatheringChange(IceGatheringState newState);
 
     /** Triggered when a new ICE candidate has been found. */
     @CalledByNative("Observer") void onIceCandidate(IceCandidate candidate);
@@ -134,21 +139,27 @@ public class PeerConnection {
     /** Triggered when a remote peer opens a DataChannel. */
     @CalledByNative("Observer") void onDataChannel(DataChannel dataChannel);
 
-    /** Triggered when renegotiation is necessary. */
-    @CalledByNative("Observer") void onRenegotiationNeeded();
+    /**
+     * Triggered when renegotiation is necessary.
+     */
+    @CalledByNative("Observer")
+    void onRenegotiationNeeded();
 
     /**
      * Triggered when a new track is signaled by the remote peer, as a result of
      * setRemoteDescription.
      */
-    @CalledByNative("Observer") void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
+    @CalledByNative("Observer")
+    void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
 
     /**
      * Triggered when the signaling from SetRemoteDescription indicates that a transceiver
      * will be receiving media from a remote endpoint. This is only called if UNIFIED_PLAN
      * semantics are specified. The transceiver will be disposed automatically.
      */
-    @CalledByNative("Observer") default void onTrack(RtpTransceiver transceiver){};
+    @CalledByNative("Observer")
+    default void onTrack(RtpTransceiver transceiver) {
+    }
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */
@@ -363,16 +374,22 @@ public class PeerConnection {
   public enum IceTransportsType { NONE, RELAY, NOHOST, ALL }
 
   /** Java version of PeerConnectionInterface.BundlePolicy */
-  public enum BundlePolicy { BALANCED, MAXBUNDLE, MAXCOMPAT }
+  public enum BundlePolicy {BALANCED, MAXBUNDLE, MAXCOMPAT}
 
-  /** Java version of PeerConnectionInterface.RtcpMuxPolicy */
-  public enum RtcpMuxPolicy { NEGOTIATE, REQUIRE }
+  /**
+   * Java version of PeerConnectionInterface.RtcpMuxPolicy
+   */
+  public enum RtcpMuxPolicy {NEGOTIATE, REQUIRE}
 
-  /** Java version of PeerConnectionInterface.TcpCandidatePolicy */
-  public enum TcpCandidatePolicy { ENABLED, DISABLED }
+  /**
+   * Java version of PeerConnectionInterface.TcpCandidatePolicy
+   */
+  public enum TcpCandidatePolicy {ENABLED, DISABLED}
 
-  /** Java version of PeerConnectionInterface.CandidateNetworkPolicy */
-  public enum CandidateNetworkPolicy { ALL, LOW_COST }
+  /**
+   * Java version of PeerConnectionInterface.CandidateNetworkPolicy
+   */
+  public enum CandidateNetworkPolicy {ALL, LOW_COST}
 
   // Keep in sync with webrtc/rtc_base/network_constants.h.
   public enum AdapterType {
@@ -382,23 +399,31 @@ public class PeerConnection {
     CELLULAR(1 << 2),
     VPN(1 << 3),
     LOOPBACK(1 << 4),
-    ADAPTER_TYPE_ANY(1 << 5);
+    ADAPTER_TYPE_ANY(1 << 5),
+    CELLULAR_2G(1 << 6),
+    CELLULAR_3G(1 << 7),
+    CELLULAR_4G(1 << 8),
+    CELLULAR_5G(1 << 9);
 
     public final Integer bitMask;
-    private AdapterType(Integer bitMask) {
+
+    AdapterType(Integer bitMask) {
       this.bitMask = bitMask;
     }
+
     private static final Map<Integer, AdapterType> BY_BITMASK = new HashMap<>();
+
     static {
       for (AdapterType t : values()) {
         BY_BITMASK.put(t.bitMask, t);
       }
     }
 
+    @Nullable
     @CalledByNative("AdapterType")
     static AdapterType fromNativeIndex(int nativeIndex) {
       return BY_BITMASK.get(nativeIndex);
-    }
+        }
   }
 
   /** Java version of rtc::KeyType */
@@ -412,27 +437,6 @@ public class PeerConnection {
     NO_PRUNE, // Do not prune turn port.
     PRUNE_BASED_ON_PRIORITY, // Prune turn port based the priority on the same network
     KEEP_FIRST_READY // Keep the first ready port and prune the rest on the same network.
-  }
-
-  /** Java version of rtc::IntervalRange */
-  public static class IntervalRange {
-    private final int min;
-    private final int max;
-
-    public IntervalRange(int min, int max) {
-      this.min = min;
-      this.max = max;
-    }
-
-    @CalledByNative("IntervalRange")
-    public int getMin() {
-      return min;
-    }
-
-    @CalledByNative("IntervalRange")
-    public int getMax() {
-      return max;
-    }
   }
 
   /**
@@ -524,7 +528,6 @@ public class PeerConnection {
     //
     // Can be set to Integer.MAX_VALUE to effectively disable the limit.
     public int maxIPv6Networks;
-    @Nullable public IntervalRange iceRegatherIntervalRange;
 
     // These values will be overridden by MediaStream constraints if deprecated constraints-based
     // create peerconnection interface is used.
@@ -533,46 +536,46 @@ public class PeerConnection {
     public boolean enableCpuOveruseDetection;
     public boolean enableRtpDataChannel;
     public boolean suspendBelowMinBitrate;
-    @Nullable public Integer screencastMinBitrate;
-    @Nullable public Boolean combinedAudioVideoBwe;
-    @Nullable public Boolean enableDtlsSrtp;
+    @Nullable
+    public Integer screencastMinBitrate;
+    @Nullable
+    public Boolean combinedAudioVideoBwe;
+    @Nullable
+    public Boolean enableDtlsSrtp;
     // Use "Unknown" to represent no preference of adapter types, not the
     // preference of adapters of unknown types.
     public AdapterType networkPreference;
     public SdpSemantics sdpSemantics;
 
     // This is an optional wrapper for the C++ webrtc::TurnCustomizer.
-    @Nullable public TurnCustomizer turnCustomizer;
+    @Nullable
+    public TurnCustomizer turnCustomizer;
 
     // Actively reset the SRTP parameters whenever the DTLS transports underneath are reset for
     // every offer/answer negotiation.This is only intended to be a workaround for crbug.com/835958
     public boolean activeResetSrtpParams;
 
-    /*
-     * Experimental flag that enables a use of media transport. If this is true, the media transport
-     * factory MUST be provided to the PeerConnectionFactory.
-     */
-    public boolean useMediaTransport;
-
-    /*
-     * Experimental flag that enables a use of media transport for data channels. If this is true,
-     * the media transport factory MUST be provided to the PeerConnectionFactory.
-     */
-    public boolean useMediaTransportForDataChannels;
+    // Whether this client is allowed to switch encoding codec mid-stream. This is a workaround for
+    // a WebRTC bug where the receiver could get confussed if a codec switch happened mid-call.
+    // Null indicates no change to currently configured value.
+    @Nullable
+    public Boolean allowCodecSwitching;
 
     /**
      * Defines advanced optional cryptographic settings related to SRTP and
      * frame encryption for native WebRTC. Setting this will overwrite any
      * options set through the PeerConnectionFactory (which is deprecated).
      */
-    @Nullable public CryptoOptions cryptoOptions;
+    @Nullable
+    public CryptoOptions cryptoOptions;
 
     /**
      * An optional string that if set will be attached to the
      * TURN_ALLOCATE_REQUEST which can be used to correlate client
      * logs with backend logs
      */
-    @Nullable public String turnLoggingId;
+    @Nullable
+    public String turnLoggingId;
 
     // TODO(deadbeef): Instead of duplicating the defaults here, we should do
     // something to pick up the defaults from C++. The Objective-C equivalent
@@ -603,7 +606,6 @@ public class PeerConnection {
       stunCandidateKeepaliveIntervalMs = null;
       disableIPv6OnWifi = false;
       maxIPv6Networks = 5;
-      iceRegatherIntervalRange = null;
       disableIpv6 = false;
       enableDscp = false;
       enableCpuOveruseDetection = true;
@@ -615,10 +617,9 @@ public class PeerConnection {
       networkPreference = AdapterType.UNKNOWN;
       sdpSemantics = SdpSemantics.PLAN_B;
       activeResetSrtpParams = false;
-      useMediaTransport = false;
-      useMediaTransportForDataChannels = false;
-      cryptoOptions = null;
-      turnLoggingId = null;
+        cryptoOptions = null;
+        turnLoggingId = null;
+      allowCodecSwitching = null;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -760,12 +761,6 @@ public class PeerConnection {
 
     @Nullable
     @CalledByNative("RTCConfiguration")
-    IntervalRange getIceRegatherIntervalRange() {
-      return iceRegatherIntervalRange;
-    }
-
-    @Nullable
-    @CalledByNative("RTCConfiguration")
     TurnCustomizer getTurnCustomizer() {
       return turnCustomizer;
     }
@@ -828,14 +823,10 @@ public class PeerConnection {
       return activeResetSrtpParams;
     }
 
+    @Nullable
     @CalledByNative("RTCConfiguration")
-    boolean getUseMediaTransport() {
-      return useMediaTransport;
-    }
-
-    @CalledByNative("RTCConfiguration")
-    boolean getUseMediaTransportForDataChannels() {
-      return useMediaTransportForDataChannels;
+    Boolean getAllowCodecSwitching() {
+      return allowCodecSwitching;
     }
 
     @Nullable
@@ -849,7 +840,7 @@ public class PeerConnection {
     String getTurnLoggingId() {
       return turnLoggingId;
     }
-  };
+  }
 
   private final List<MediaStream> localStreams = new ArrayList<>();
   private final long nativePeerConnection;

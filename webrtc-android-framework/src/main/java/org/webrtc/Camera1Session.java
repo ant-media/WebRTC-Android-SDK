@@ -11,16 +11,15 @@
 package org.webrtc;
 
 import android.content.Context;
-import android.graphics.Matrix;
 import android.os.Handler;
 import android.os.SystemClock;
-import androidx.annotation.Nullable;
-import android.view.Surface;
+
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @SuppressWarnings("deprecation")
 class Camera1Session implements CameraSession {
@@ -34,7 +33,7 @@ class Camera1Session implements CameraSession {
   private static final Histogram camera1ResolutionHistogram = Histogram.createEnumeration(
       "WebRTC.Android.Camera1.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
 
-  private static enum SessionState { RUNNING, STOPPED }
+  private enum SessionState {RUNNING, STOPPED}
 
   private final Handler cameraThreadHandler;
   private final Events events;

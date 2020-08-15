@@ -18,8 +18,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import androidx.annotation.Nullable;
 import android.view.Surface;
+
+import androidx.annotation.Nullable;
+
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -35,11 +37,17 @@ public class EglRenderer implements VideoSink {
   private static final String TAG = "EglRenderer";
   private static final long LOG_INTERVAL_SEC = 4;
 
-  public interface FrameListener { void onFrame(Bitmap frame); }
+  public interface FrameListener {
+    void onFrame(Bitmap frame);
+  }
 
-  /** Callback for clients to be notified about errors encountered during rendering. */
-  public static interface ErrorCallback {
-    /** Called if GLES20.GL_OUT_OF_MEMORY is encountered during rendering. */
+  /**
+   * Callback for clients to be notified about errors encountered during rendering.
+   */
+  public interface ErrorCallback {
+    /**
+     * Called if GLES20.GL_OUT_OF_MEMORY is encountered during rendering.
+     */
     void onGlOutOfMemory();
   }
 
@@ -50,7 +58,7 @@ public class EglRenderer implements VideoSink {
     public final boolean applyFpsReduction;
 
     public FrameListenerAndParams(FrameListener listener, float scale,
-        RendererCommon.GlDrawer drawer, boolean applyFpsReduction) {
+                                  RendererCommon.GlDrawer drawer, boolean applyFpsReduction) {
       this.listener = listener;
       this.scale = scale;
       this.drawer = drawer;
@@ -114,7 +122,8 @@ public class EglRenderer implements VideoSink {
   // |renderThreadHandler| is a handler for communicating with |renderThread|, and is synchronized
   // on |handlerLock|.
   private final Object handlerLock = new Object();
-  @Nullable private Handler renderThreadHandler;
+  @Nullable
+  private Handler renderThreadHandler;
 
   private final ArrayList<FrameListenerAndParams> frameListeners = new ArrayList<>();
 
@@ -128,17 +137,20 @@ public class EglRenderer implements VideoSink {
   // paused.
   private long minRenderPeriodNs;
 
-  // EGL and GL resources for drawing YUV/OES textures. After initilization, these are only accessed
-  // from the render thread.
-  @Nullable private EglBase eglBase;
+  // EGL and GL resources for drawing YUV/OES textures. After initialization, these are only
+  // accessed from the render thread.
+  @Nullable
+  private EglBase eglBase;
   private final VideoFrameDrawer frameDrawer;
-  @Nullable private RendererCommon.GlDrawer drawer;
+  @Nullable
+  private RendererCommon.GlDrawer drawer;
   private boolean usePresentationTimeStamp;
   private final Matrix drawMatrix = new Matrix();
 
   // Pending frame to render. Serves as a queue with size 1. Synchronized on |frameLock|.
   private final Object frameLock = new Object();
-  @Nullable private VideoFrame pendingFrame;
+  @Nullable
+  private VideoFrame pendingFrame;
 
   // These variables are synchronized on |layoutLock|.
   private final Object layoutLock = new Object();
@@ -290,7 +302,9 @@ public class EglRenderer implements VideoSink {
       // Release EGL and GL resources on render thread.
       renderThreadHandler.postAtFrontOfQueue(() -> {
         // Detach current shader program.
-        GLES20.glUseProgram(/* program= */ 0);
+        synchronized (EglBase.lock) {
+          GLES20.glUseProgram(/* program= */ 0);
+        }
         if (drawer != null) {
           drawer.release();
           drawer = null;
@@ -755,7 +769,7 @@ public class EglRenderer implements VideoSink {
     final long currentTimeNs = System.nanoTime();
     synchronized (statisticsLock) {
       final long elapsedTimeNs = currentTimeNs - statisticsStartTimeNs;
-      if (elapsedTimeNs <= 0) {
+      if (elapsedTimeNs <= 0 || (minRenderPeriodNs == Long.MAX_VALUE && framesReceived == 0)) {
         return;
       }
       final float renderFps = framesRendered * TimeUnit.SECONDS.toNanos(1) / (float) elapsedTimeNs;

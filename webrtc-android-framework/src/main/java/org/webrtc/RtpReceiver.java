@@ -11,21 +11,25 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
-import org.webrtc.MediaStreamTrack;
 
-/** Java wrapper for a C++ RtpReceiverInterface. */
+/**
+ * Java wrapper for a C++ RtpReceiverInterface.
+ */
 public class RtpReceiver {
-  /** Java wrapper for a C++ RtpReceiverObserverInterface*/
-  public static interface Observer {
+  /**
+   * Java wrapper for a C++ RtpReceiverObserverInterface
+   */
+  public interface Observer {
     // Called when the first audio or video packet is received.
     @CalledByNative("Observer")
-    public void onFirstPacketReceived(MediaStreamTrack.MediaType media_type);
+    void onFirstPacketReceived(MediaStreamTrack.MediaType media_type);
   }
 
   private long nativeRtpReceiver;
   private long nativeObserver;
 
-  @Nullable private MediaStreamTrack cachedTrack;
+  @Nullable
+  private MediaStreamTrack cachedTrack;
 
   @CalledByNative
   public RtpReceiver(long nativeRtpReceiver) {
@@ -37,11 +41,6 @@ public class RtpReceiver {
   @Nullable
   public MediaStreamTrack track() {
     return cachedTrack;
-  }
-
-  public boolean setParameters(@Nullable RtpParameters parameters) {
-    checkRtpReceiverExists();
-    return parameters == null ? false : nativeSetParameters(nativeRtpReceiver, parameters);
   }
 
   public RtpParameters getParameters() {
@@ -89,10 +88,9 @@ public class RtpReceiver {
   // This should increment the reference count of the track.
   // Will be released in dispose().
   private static native long nativeGetTrack(long rtpReceiver);
-  private static native boolean nativeSetParameters(long rtpReceiver, RtpParameters parameters);
   private static native RtpParameters nativeGetParameters(long rtpReceiver);
   private static native String nativeGetId(long rtpReceiver);
   private static native long nativeSetObserver(long rtpReceiver, Observer observer);
   private static native void nativeUnsetObserver(long rtpReceiver, long nativeObserver);
   private static native void nativeSetFrameDecryptor(long rtpReceiver, long nativeFrameDecryptor);
-};
+}

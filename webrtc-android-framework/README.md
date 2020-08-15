@@ -22,3 +22,15 @@ rtc_use_h264=true
 rtc_include_tests=false
 is_debug=false
 
+# Java source files that needs to be copied from branch:
+
+src/sdk/android/api
+src/sdk/android/src
+src/examples/androidapp
+src/modules/audio_device/android/java/src/org/webrtc/voiceengine
+src/rtc_base/java/src/org/webrtc
+Generated Java files that needs to be copied:
+build_directory/gen/api/priority_enums.srcjar
+
+# Modifications to the Copied source:
+- replace all import android.support.annotation.Nullable; with import androidx.annotation.Nullable;

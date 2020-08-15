@@ -17,11 +17,14 @@ import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+
 import androidx.annotation.Nullable;
-import java.util.concurrent.Callable;
+
 import org.webrtc.EglBase.Context;
 import org.webrtc.TextureBufferImpl.RefCountMonitor;
 import org.webrtc.VideoFrame.TextureBuffer;
+
+import java.util.concurrent.Callable;
 
 /**
  * Helper class for using a SurfaceTexture to create WebRTC VideoFrames. In order to create WebRTC
@@ -47,6 +50,7 @@ public class SurfaceTextureHelper {
   }
 
   private static final String TAG = "SurfaceTextureHelper";
+
   /**
    * Construct a new SurfaceTextureHelper sharing OpenGL resources with |sharedContext|. A dedicated
    * thread and handler is created for handling the SurfaceTexture. May return null if EGL fails to
@@ -57,8 +61,8 @@ public class SurfaceTextureHelper {
    * closer to actual creation time.
    */
   public static SurfaceTextureHelper create(final String threadName,
-      final Context sharedContext, boolean alignTimestamps, final YuvConverter yuvConverter,
-      FrameRefMonitor frameRefMonitor) {
+                                            final EglBase.Context sharedContext, boolean alignTimestamps, final YuvConverter yuvConverter,
+                                            FrameRefMonitor frameRefMonitor) {
     final HandlerThread thread = new HandlerThread(threadName);
     thread.start();
     final Handler handler = new Handler(thread.getLooper());
@@ -85,34 +89,34 @@ public class SurfaceTextureHelper {
   /**
    * Same as above with alignTimestamps set to false and yuvConverter set to new YuvConverter.
    *
-   * @see #create(String, Context, boolean, YuvConverter, FrameRefMonitor)
+   * @see #create(String, EglBase.Context, boolean, YuvConverter, FrameRefMonitor)
    */
   public static SurfaceTextureHelper create(
-      final String threadName, final Context sharedContext) {
+          final String threadName, final EglBase.Context sharedContext) {
     return create(threadName, sharedContext, /* alignTimestamps= */ false, new YuvConverter(),
-        /*frameRefMonitor=*/null);
+            /*frameRefMonitor=*/null);
   }
 
   /**
    * Same as above with yuvConverter set to new YuvConverter.
    *
-   * @see #create(String, Context, boolean, YuvConverter, FrameRefMonitor)
+   * @see #create(String, EglBase.Context, boolean, YuvConverter, FrameRefMonitor)
    */
   public static SurfaceTextureHelper create(
-      final String threadName, final Context sharedContext, boolean alignTimestamps) {
+          final String threadName, final EglBase.Context sharedContext, boolean alignTimestamps) {
     return create(
-        threadName, sharedContext, alignTimestamps, new YuvConverter(), /*frameRefMonitor=*/null);
+            threadName, sharedContext, alignTimestamps, new YuvConverter(), /*frameRefMonitor=*/null);
   }
 
   /**
    * Create a SurfaceTextureHelper without frame ref monitor.
    *
-   * @see #create(String, Context, boolean, YuvConverter, FrameRefMonitor)
+   * @see #create(String, EglBase.Context, boolean, YuvConverter, FrameRefMonitor)
    */
   public static SurfaceTextureHelper create(final String threadName,
-      final Context sharedContext, boolean alignTimestamps, YuvConverter yuvConverter) {
+                                            final EglBase.Context sharedContext, boolean alignTimestamps, YuvConverter yuvConverter) {
     return create(
-        threadName, sharedContext, alignTimestamps, yuvConverter, /*frameRefMonitor=*/null);
+            threadName, sharedContext, alignTimestamps, yuvConverter, /*frameRefMonitor=*/null);
   }
 
   private final RefCountMonitor textureRefCountMonitor = new RefCountMonitor() {
@@ -253,7 +257,7 @@ public class SurfaceTextureHelper {
     }
     if (textureHeight <= 0) {
       throw new IllegalArgumentException(
-          "Texture height must be positive, but was " + textureHeight);
+              "Texture height must be positive, but was " + textureHeight);
     }
     surfaceTexture.setDefaultBufferSize(textureWidth, textureHeight);
     handler.post(() -> {
@@ -263,7 +267,20 @@ public class SurfaceTextureHelper {
     });
   }
 
-  /** Set the rotation of the delivered frames. */
+  /**
+   * Forces a frame to be produced. If no new frame is available, the last frame is sent to the
+   * listener again.
+   */
+  public void forceFrame() {
+    handler.post(() -> {
+      hasPendingTexture = true;
+      tryDeliverTextureFrame();
+    });
+  }
+
+  /**
+   * Set the rotation of the delivered frames.
+   */
   public void setFrameRotation(int rotation) {
     handler.post(() -> this.frameRotation = rotation);
   }

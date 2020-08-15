@@ -16,5 +16,5 @@ public interface NetworkControllerFactoryFactory {
    * Dynamically allocates a webrtc::NetworkControllerFactory instance and returns a pointer to
    * it. The caller takes ownership of the object.
    */
-  public long createNativeNetworkControllerFactory();
+  long createNativeNetworkControllerFactory();
 }

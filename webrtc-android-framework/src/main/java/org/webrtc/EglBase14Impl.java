@@ -19,9 +19,9 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.os.Build;
-import androidx.annotation.Nullable;
 import android.view.Surface;
-import org.webrtc.EglBase;
+
+import androidx.annotation.Nullable;
 
 /**
  * Holds EGL state and utility methods for handling an EGL14 EGLContext, an EGLDisplay,
@@ -60,10 +60,10 @@ class EglBase14Impl implements EglBase14 {
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public long getNativeEglContext() {
       return CURRENT_SDK_VERSION >= Build.VERSION_CODES.LOLLIPOP ? egl14Context.getNativeHandle()
-                                                                 : egl14Context.getHandle();
+              : egl14Context.getHandle();
     }
 
-    public Context(EGLContext eglContext) {
+    public Context(android.opengl.EGLContext eglContext) {
       this.egl14Context = eglContext;
     }
   }
@@ -138,14 +138,14 @@ class EglBase14Impl implements EglBase14 {
 
   @Override
   public int surfaceWidth() {
-    final int widthArray[] = new int[1];
+    final int[] widthArray = new int[1];
     EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL14.EGL_WIDTH, widthArray, 0);
     return widthArray[0];
   }
 
   @Override
   public int surfaceHeight() {
-    final int heightArray[] = new int[1];
+    final int[] heightArray = new int[1];
     EGL14.eglQuerySurface(eglDisplay, eglSurface, EGL14.EGL_HEIGHT, heightArray, 0);
     return heightArray[0];
   }
@@ -170,7 +170,9 @@ class EglBase14Impl implements EglBase14 {
     checkIsNotReleased();
     releaseSurface();
     detachCurrent();
-    EGL14.eglDestroyContext(eglDisplay, eglContext);
+    synchronized (EglBase.lock) {
+      EGL14.eglDestroyContext(eglDisplay, eglContext);
+    }
     EGL14.eglReleaseThread();
     EGL14.eglTerminate(eglDisplay);
     eglContext = EGL14.EGL_NO_CONTEXT;

@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
+
 import java.util.List;
 
 /** Java wrapper for a C++ RtpSenderInterface. */
@@ -143,4 +144,4 @@ public class RtpSender {
   private static native String nativeGetId(long rtpSender);
 
   private static native void nativeSetFrameEncryptor(long rtpSender, long nativeFrameEncryptor);
-};
+}

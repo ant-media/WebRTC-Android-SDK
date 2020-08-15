@@ -15,13 +15,15 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.os.Process;
+
 import androidx.annotation.Nullable;
-import java.lang.System;
+
+import org.webrtc.Logging;
+import org.webrtc.ThreadUtils;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import org.webrtc.Logging;
-import org.webrtc.ThreadUtils;
 
 public class WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -68,13 +70,16 @@ public class WebRtcAudioRecord {
     AUDIO_RECORD_START_STATE_MISMATCH,
   }
 
-  public static interface WebRtcAudioRecordErrorCallback {
+  public interface WebRtcAudioRecordErrorCallback {
     void onWebRtcAudioRecordInitError(String errorMessage);
+
     void onWebRtcAudioRecordStartError(AudioRecordStartErrorCode errorCode, String errorMessage);
+
     void onWebRtcAudioRecordError(String errorMessage);
   }
 
-  private static @Nullable WebRtcAudioRecordErrorCallback errorCallback;
+  private static @Nullable
+  WebRtcAudioRecordErrorCallback errorCallback;
 
   public static void setErrorCallback(WebRtcAudioRecordErrorCallback errorCallback) {
     Logging.d(TAG, "Set error callback");
@@ -83,7 +88,7 @@ public class WebRtcAudioRecord {
 
   /**
    * Contains audio sample information. Object is passed using {@link
-   * WebRtcAudioRecordSamplesReadyCallback}
+   * WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback}
    */
   public static class AudioSamples {
     /** See {@link AudioRecord#getAudioFormat()} */
@@ -119,12 +124,15 @@ public class WebRtcAudioRecord {
     }
   }
 
-  /** Called when new audio samples are ready. This should only be set for debug purposes */
-  public static interface WebRtcAudioRecordSamplesReadyCallback {
+  /**
+   * Called when new audio samples are ready. This should only be set for debug purposes
+   */
+  public interface WebRtcAudioRecordSamplesReadyCallback {
     void onWebRtcAudioRecordSamplesReady(AudioSamples samples);
   }
 
-  private static @Nullable WebRtcAudioRecordSamplesReadyCallback audioSamplesReadyCallback;
+  private static @Nullable
+  WebRtcAudioRecordSamplesReadyCallback audioSamplesReadyCallback;
 
   public static void setOnAudioSamplesReady(WebRtcAudioRecordSamplesReadyCallback callback) {
     audioSamplesReadyCallback = callback;
