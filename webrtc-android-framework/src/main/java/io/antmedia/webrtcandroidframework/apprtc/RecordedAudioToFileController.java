@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.media.AudioFormat;
 import android.os.Environment;
 import android.util.Log;
@@ -36,9 +37,9 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
 
   private final Object lock = new Object();
   private final ExecutorService executor;
-  @Nullable
-  private OutputStream rawAudioFileOutputStream;
-  private boolean isRunning;
+    @Nullable
+    private OutputStream rawAudioFileOutputStream;
+    private boolean isRunning;
   private long fileSizeInBytes;
 
   public RecordedAudioToFileController(ExecutorService executor) {
@@ -85,10 +86,7 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
   // Checks if external storage is available for read and write.
   private boolean isExternalStorageWritable() {
     String state = Environment.getExternalStorageState();
-    if (Environment.MEDIA_MOUNTED.equals(state)) {
-      return true;
-    }
-    return false;
+      return Environment.MEDIA_MOUNTED.equals(state);
   }
 
   // Utilizes audio parameters to create a file name which contains sufficient
@@ -96,8 +94,8 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
   // Example: /sdcard/recorded_audio_16bits_48000Hz_mono.pcm.
   private void openRawAudioOutputFile(int sampleRate, int channelCount) {
     final String fileName = Environment.getExternalStorageDirectory().getPath() + File.separator
-        + "recorded_audio_16bits_" + String.valueOf(sampleRate) + "Hz"
-        + ((channelCount == 1) ? "_mono" : "_stereo") + ".pcm";
+            + "recorded_audio_16bits_" + sampleRate + "Hz"
+            + ((channelCount == 1) ? "_mono" : "_stereo") + ".pcm";
     final File outputFile = new File(fileName);
     try {
       rawAudioFileOutputStream = new FileOutputStream(outputFile);

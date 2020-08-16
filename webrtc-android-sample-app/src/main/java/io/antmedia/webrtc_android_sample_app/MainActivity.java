@@ -5,16 +5,12 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -54,12 +50,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "ovh36.antmedia.io:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.161:5080";
 
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_PLAY;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
 
     private boolean enableDataChannel = true;
 
@@ -127,7 +123,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        streamId = "stream1";
+        streamId = "stream15";
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 

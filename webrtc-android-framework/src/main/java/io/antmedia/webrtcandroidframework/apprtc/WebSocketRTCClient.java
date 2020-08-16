@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -22,7 +23,11 @@ import org.json.JSONObject;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
+import io.antmedia.webrtcandroidframework.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
+import io.antmedia.webrtcandroidframework.apprtc.WebSocketChannelClient.WebSocketChannelEvents;
+import io.antmedia.webrtcandroidframework.apprtc.WebSocketChannelClient.WebSocketConnectionState;
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 
 /**
  * Negotiates signaling for chatting with https://appr.tc "rooms".
@@ -34,15 +39,15 @@ import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
  * Messages to other party (with local Ice candidates and answer SDP) can
  * be sent after WebSocket connection is established.
  */
-public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.WebSocketChannelEvents {
+public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelEvents {
   private static final String TAG = "WSRTCClient";
   private static final String ROOM_JOIN = "join";
   private static final String ROOM_MESSAGE = "message";
   private static final String ROOM_LEAVE = "leave";
 
-  private enum ConnectionState { NEW, CONNECTED, CLOSED, ERROR }
+  private enum ConnectionState {NEW, CONNECTED, CLOSED, ERROR}
 
-  private enum MessageType { MESSAGE, LEAVE }
+  private enum MessageType {MESSAGE, LEAVE}
 
   private final Handler handler;
   private boolean initiator;
@@ -94,7 +99,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
     roomState = ConnectionState.NEW;
     wsClient = new WebSocketChannelClient(handler, this);
 
-    RoomParametersFetcher.RoomParametersFetcherEvents callbacks = new RoomParametersFetcher.RoomParametersFetcherEvents() {
+    RoomParametersFetcherEvents callbacks = new RoomParametersFetcherEvents() {
       @Override
       public void onSignalingParametersReady(final SignalingParameters params) {
         WebSocketRTCClient.this.handler.post(new Runnable() {
@@ -289,7 +294,7 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
   // (passed to WebSocket client constructor).
   @Override
   public void onWebSocketMessage(final String msg) {
-    if (wsClient.getState() != WebSocketChannelClient.WebSocketConnectionState.REGISTERED) {
+    if (wsClient.getState() != WebSocketConnectionState.REGISTERED) {
       Log.e(TAG, "Got WebSocket message in non registered state.");
       return;
     }
@@ -385,17 +390,17 @@ public class WebSocketRTCClient implements AppRTCClient, WebSocketChannelClient.
     }
     Log.d(TAG, "C->GAE: " + logInfo);
     AsyncHttpURLConnection httpConnection =
-        new AsyncHttpURLConnection("POST", url, message, new AsyncHttpURLConnection.AsyncHttpEvents() {
-          @Override
-          public void onHttpError(String errorMessage) {
-            reportError("GAE POST error: " + errorMessage);
-          }
+            new AsyncHttpURLConnection("POST", url, message, new AsyncHttpEvents() {
+              @Override
+              public void onHttpError(String errorMessage) {
+                reportError("GAE POST error: " + errorMessage);
+              }
 
-          @Override
-          public void onHttpComplete(String response) {
-            if (messageType == MessageType.MESSAGE) {
-              try {
-                JSONObject roomJson = new JSONObject(response);
+              @Override
+              public void onHttpComplete(String response) {
+                if (messageType == MessageType.MESSAGE) {
+                  try {
+                    JSONObject roomJson = new JSONObject(response);
                 String result = roomJson.getString("result");
                 if (!result.equals("SUCCESS")) {
                   reportError("GAE POST error: " + result);

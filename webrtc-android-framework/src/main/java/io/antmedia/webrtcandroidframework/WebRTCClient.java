@@ -36,11 +36,11 @@ import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
+import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
@@ -297,7 +297,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
-        boolean audioCallEnabled = true;
+        boolean audioCallEnabled = false;
         if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY)) {
             videoCallEnabled = false;
             audioCallEnabled = false;
@@ -914,7 +914,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPeerConnectionClosed() {}
 
     @Override
-    public void onPeerConnectionStatsReady(RTCStatsReport reports) {
+    public void onPeerConnectionStatsReady(StatsReport[] reports) {
         this.handler.post(() -> {
             if (!isError && iceConnected) {
                 //hudFragment.updateEncoderStatistics(reports);

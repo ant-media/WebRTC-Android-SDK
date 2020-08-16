@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.os.Handler;
 import android.util.Log;
 
@@ -27,6 +28,7 @@ import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 
 /**
  * WebSocket client implementation.
@@ -220,15 +222,16 @@ public class WebSocketChannelClient {
     String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
     Log.d(TAG, "WS " + method + " : " + postUrl + " : " + message);
     AsyncHttpURLConnection httpConnection =
-        new AsyncHttpURLConnection(method, postUrl, message, new AsyncHttpURLConnection.AsyncHttpEvents() {
-          @Override
-          public void onHttpError(String errorMessage) {
-            reportError("WS " + method + " error: " + errorMessage);
-          }
+            new AsyncHttpURLConnection(method, postUrl, message, new AsyncHttpEvents() {
+              @Override
+              public void onHttpError(String errorMessage) {
+                reportError("WS " + method + " error: " + errorMessage);
+              }
 
-          @Override
-          public void onHttpComplete(String response) {}
-        });
+              @Override
+              public void onHttpComplete(String response) {
+              }
+            });
     httpConnection.send();
   }
 

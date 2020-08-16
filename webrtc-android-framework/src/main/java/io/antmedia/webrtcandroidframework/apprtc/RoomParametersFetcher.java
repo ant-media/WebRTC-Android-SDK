@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -27,7 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient.SignalingParameters;
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 
 /**
  * AsyncTask that converts an AppRTC room URL into the set of signaling
@@ -44,11 +47,11 @@ public class RoomParametersFetcher {
    * Room parameters fetcher callbacks.
    */
   public interface RoomParametersFetcherEvents {
-    /**
-     * Callback fired once the room's signaling parameters
-     * SignalingParameters are extracted.
-     */
-    void onSignalingParametersReady(final AppRTCClient.SignalingParameters params);
+      /**
+       * Callback fired once the room's signaling parameters
+       * SignalingParameters are extracted.
+       */
+      void onSignalingParametersReady(final SignalingParameters params);
 
     /**
      * Callback for room parameters extraction error.
@@ -66,16 +69,16 @@ public class RoomParametersFetcher {
   public void makeRequest() {
     Log.d(TAG, "Connecting to room: " + roomUrl);
     AsyncHttpURLConnection httpConnection =
-        new AsyncHttpURLConnection("POST", roomUrl, roomMessage, new AsyncHttpURLConnection.AsyncHttpEvents() {
-          @Override
-          public void onHttpError(String errorMessage) {
-            Log.e(TAG, "Room connection error: " + errorMessage);
-            events.onSignalingParametersError(errorMessage);
-          }
+            new AsyncHttpURLConnection("POST", roomUrl, roomMessage, new AsyncHttpEvents() {
+                @Override
+                public void onHttpError(String errorMessage) {
+                    Log.e(TAG, "Room connection error: " + errorMessage);
+                    events.onSignalingParametersError(errorMessage);
+                }
 
-          @Override
-          public void onHttpComplete(String response) {
-            roomHttpResponseParse(response);
+                @Override
+                public void onHttpComplete(String response) {
+                    roomHttpResponseParse(response);
           }
         });
     httpConnection.send();
@@ -148,8 +151,8 @@ public class RoomParametersFetcher {
         }
       }
 
-      AppRTCClient.SignalingParameters params = new AppRTCClient.SignalingParameters(
-          iceServers, initiator, clientId, wssUrl, wssPostUrl, offerSdp, iceCandidates);
+        SignalingParameters params = new SignalingParameters(
+                iceServers, initiator, clientId, wssUrl, wssPostUrl, offerSdp, iceCandidates);
       events.onSignalingParametersReady(params);
     } catch (JSONException e) {
       events.onSignalingParametersError("Room JSON parsing error: " + e.toString());

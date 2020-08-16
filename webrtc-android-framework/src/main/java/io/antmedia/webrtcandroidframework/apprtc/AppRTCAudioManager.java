@@ -32,7 +32,6 @@ import java.util.Set;
 
 import io.antmedia.webrtcandroidframework.R;
 import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
-
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
  */
@@ -92,6 +91,7 @@ public class AppRTCAudioManager {
   private AudioDevice userSelectedAudioDevice;
 
   // Contains speakerphone setting: auto, true or false
+  @Nullable
   private final String useSpeakerphone;
 
   // Proximity sensor object. It measures the proximity of an object in cm
@@ -125,16 +125,16 @@ public class AppRTCAudioManager {
 
     // The proximity sensor should only be activated when there are exactly two
     // available audio devices.
-    if (audioDevices.size() == 2 && audioDevices.contains(AudioDevice.EARPIECE)
-        && audioDevices.contains(AudioDevice.SPEAKER_PHONE)) {
+    if (audioDevices.size() == 2 && audioDevices.contains(AppRTCAudioManager.AudioDevice.EARPIECE)
+            && audioDevices.contains(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
       if (proximitySensor.sensorReportsNearState()) {
         // Sensor reports that a "handset is being held up to a person's ear",
         // or "something is covering the light sensor".
-        setAudioDeviceInternal(AudioDevice.EARPIECE);
+        setAudioDeviceInternal(AppRTCAudioManager.AudioDevice.EARPIECE);
       } else {
         // Sensor reports that a "handset is removed from a person's ear", or
         // "the light sensor is no longer covered".
-        setAudioDeviceInternal(AudioDevice.SPEAKER_PHONE);
+        setAudioDeviceInternal(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
       }
     }
   }
@@ -189,10 +189,10 @@ public class AppRTCAudioManager {
     // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
     // Note that, the sensor will not be active until start() has been called.
     proximitySensor = AppRTCProximitySensor.create(context,
-        // This method will be called each time a state change is detected.
-        // Example: user holds his hand over the device (closer than ~5 cm),
-        // or removes his hand from the device.
-        this ::onProximitySensorChangedState);
+            // This method will be called each time a state change is detected.
+            // Example: user holds their hand over the device (closer than ~5 cm),
+            // or removes their hand from the device.
+            this::onProximitySensorChangedState);
 
     Log.d(TAG, "defaultAudioDevice: " + defaultAudioDevice);
     AppRTCUtils.logDeviceInfo(TAG);

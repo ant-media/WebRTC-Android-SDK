@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -25,7 +26,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -174,9 +175,9 @@ public class TCPChannelClient {
 
         try {
           out = new PrintWriter(
-              new OutputStreamWriter(rawSocket.getOutputStream(), Charset.forName("UTF-8")), true);
+                  new OutputStreamWriter(rawSocket.getOutputStream(), StandardCharsets.UTF_8), true);
           in = new BufferedReader(
-              new InputStreamReader(rawSocket.getInputStream(), Charset.forName("UTF-8")));
+                  new InputStreamReader(rawSocket.getInputStream(), StandardCharsets.UTF_8));
         } catch (IOException e) {
           reportError("Failed to open IO on rawSocket: " + e.getMessage());
           return;
@@ -285,7 +286,7 @@ public class TCPChannelClient {
     @Nullable
     @Override
     public Socket connect() {
-      Log.d(TAG, "Listening on [" + address.getHostAddress() + "]:" + Integer.toString(port));
+      Log.d(TAG, "Listening on [" + address.getHostAddress() + "]:" + port);
 
       final ServerSocket tempSocket;
       try {
@@ -347,7 +348,7 @@ public class TCPChannelClient {
     @Nullable
     @Override
     public Socket connect() {
-      Log.d(TAG, "Connecting to [" + address.getHostAddress() + "]:" + Integer.toString(port));
+      Log.d(TAG, "Connecting to [" + address.getHostAddress() + "]:" + port);
 
       try {
         return new Socket(address, port);
