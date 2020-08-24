@@ -227,6 +227,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+
+    }
+
+    @Override
     public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
         WebRTCClient publishStream = peers.get(streamId);
 

@@ -5,16 +5,15 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -35,12 +34,14 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Map;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
@@ -54,7 +55,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "ovh36.antmedia.io:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.29:5080";
 
     /**
      * Mode can Publish, Play or P2P
@@ -75,6 +76,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
+    private Spinner streamInfoListSpinner;
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -96,6 +99,25 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
+        streamInfoListSpinner = findViewById(R.id.stream_info_list);
+
+        if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
+            streamInfoListSpinner.setVisibility(View.INVISIBLE);
+        }
+        else {
+            streamInfoListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    webRTCClient.forceStreamQuality(Integer.parseInt((String) adapterView.getSelectedItem()));
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> adapterView) {
+
+                }
+            });
+        }
+
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
             if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
@@ -103,6 +125,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 return;
             }
         }
+
+
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
@@ -160,6 +184,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+
+        webRTCClient.getStreamInfoList();
     }
 
     @Override
@@ -252,6 +278,17 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         if(targetBitrate < (videoBitrate+audioBitrate)) {
             Toast.makeText(this, "low bandwidth", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+        String[] stringArray = new String[streamInfoList.size()];
+        int i = 0;
+        for (StreamInfo si : streamInfoList) {
+            stringArray[i++] = si.getHeight()+"";
+        }
+        ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
+        streamInfoListSpinner.setAdapter(modeAdapter);
     }
 
     /**
