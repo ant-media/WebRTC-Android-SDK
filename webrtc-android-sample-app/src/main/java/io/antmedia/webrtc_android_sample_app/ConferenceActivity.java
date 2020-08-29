@@ -22,6 +22,7 @@ import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
@@ -171,6 +172,11 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
     @Override
     public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
+    @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
 
     }
 

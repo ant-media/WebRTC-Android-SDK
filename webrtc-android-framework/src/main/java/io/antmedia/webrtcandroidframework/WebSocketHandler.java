@@ -11,6 +11,7 @@ import org.webrtc.SessionDescription;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -141,6 +142,22 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
                 IceCandidate candidate = new IceCandidate(id, label, sdp);
                 signallingListener.onRemoteIceCandidate(streamId, candidate);
+            }
+            else if (commandText.equals(WebSocketConstants.STREAM_INFORMATION_NOTIFICATION)) {
+                JSONArray jsonArray = json.getJSONArray(WebSocketConstants.STREAM_INFO);
+                ArrayList<StreamInfo> streamInfos = new ArrayList<>();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject streamJSON = (JSONObject) jsonArray.get(i);
+                    StreamInfo streamInfo = new StreamInfo();
+                    streamInfo.setWidth(streamJSON.getInt(WebSocketConstants.STREAM_WIDTH));
+                    streamInfo.setHeight(streamJSON.getInt(WebSocketConstants.STREAM_HEIGHT));
+                    streamInfo.setVideoBitrate(streamJSON.getInt(WebSocketConstants.VIDEO_BITRATE));
+                    streamInfo.setAudioBitrate(streamJSON.getInt(WebSocketConstants.AUDIO_BITRATE));
+                    streamInfo.setCodec(streamJSON.getString(WebSocketConstants.VIDEO_CODEC));
+
+                    streamInfos.add(streamInfo);
+                }
+                signallingListener.onStreamInfoList(streamId, streamInfos);
             }
             else if (commandText.equals(NOTIFICATION_COMMAND)) {
 
@@ -423,11 +440,36 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
+    public void getStreamInfoList(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.GET_STREAM_INFO_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public AntMediaSignallingEvents getSignallingListener() {
         return signallingListener;
     }
 
     public boolean isConnected() {
         return ws.isConnected();
+    }
+
+    public void forceStreamQuality(String streamId, int height) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.STREAM_HEIGHT, height+"");
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }

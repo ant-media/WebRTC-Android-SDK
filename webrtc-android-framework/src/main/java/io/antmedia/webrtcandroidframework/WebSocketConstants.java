@@ -7,6 +7,7 @@ public class WebSocketConstants {
     }
 
 
+
     public static final String ATTR_STREAM_NAME = "ATTR_STREAM_NAME";
 
     public static final String ATTR_ROOM_NAME = "ATTR_ROOM_NAME";
@@ -282,4 +283,14 @@ public class WebSocketConstants {
      * Notification to send measured bitrate
      */
     public static final String BITRATE_MEASUREMENT = "bitrateMeasurement";
+
+    /**
+     * Field to specify the stream video codec
+     */
+    public static final String VIDEO_CODEC = "videoCodec";
+
+    /**
+     * Command that stream set resolution request.
+     */
+    public static final String FORCE_STREAM_QUALITY = "forceStreamQuality";
 }

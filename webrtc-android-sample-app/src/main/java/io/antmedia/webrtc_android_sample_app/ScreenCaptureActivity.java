@@ -20,9 +20,12 @@ import androidx.annotation.RequiresApi;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
+import java.util.ArrayList;
+
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
@@ -201,6 +204,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
+
+    }
+
+    @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
 
     }
 
