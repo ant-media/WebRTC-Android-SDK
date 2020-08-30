@@ -63,16 +63,11 @@ public interface AntMediaSignallingEvents {
     void onJoinedTheRoom(String streamId, String[] streams);
 
     /**
-     * It's called when client is connected to the server for P2P
-     * @param streamId
+     * It's called when room information is received
+     *
+     * @param streams
      */
-    void onStreamJoined(String streamId);
-
-    /**
-     * It's called when client is disconnected from the server for P2P
-     * @param streamId
-     */
-    void onStreamLeaved(String streamId);
+    void onRoomInformation(String[] streams);
 
     void onDisconnected();
 

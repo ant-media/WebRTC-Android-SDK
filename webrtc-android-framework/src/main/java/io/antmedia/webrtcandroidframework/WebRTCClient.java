@@ -50,7 +50,6 @@ import org.webrtc.VideoTrack;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1042,12 +1041,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
-    public void onStreamJoined(String streamId) {
-        //no need to implement here
-    }
-
-    @Override
-    public void onStreamLeaved(String streamId) {
+    public void onRoomInformation(String[] streams) {
         //no need to implement here
     }
 
