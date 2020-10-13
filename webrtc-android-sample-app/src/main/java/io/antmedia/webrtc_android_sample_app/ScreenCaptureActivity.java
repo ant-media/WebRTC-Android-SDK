@@ -135,6 +135,12 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     }
 
     @Override
+    public void streamIdInUse() {
+        Log.w(getClass().getSimpleName(), "streamIdInUse");
+        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
     public void onError(String description) {
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
     }

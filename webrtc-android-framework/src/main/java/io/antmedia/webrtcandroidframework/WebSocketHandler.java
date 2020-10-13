@@ -225,6 +225,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     signallingListener.noStreamExistsToPlay(streamId);
                     disconnect(true);
                 }
+                if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
+                signallingListener.streamIdInUse(streamId);
+                disconnect(true);
+            }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
                 disconnect(true);

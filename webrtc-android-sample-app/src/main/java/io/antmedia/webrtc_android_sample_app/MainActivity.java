@@ -55,14 +55,14 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.29:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.2:5080";
 
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_PLAY;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
 
-    private boolean enableDataChannel = true;
+    private boolean enableDataChannel = false;
 
 
     public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
@@ -211,6 +211,13 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
         finish();
+    }
+
+    @Override
+    public void streamIdInUse() {
+        Log.w(getClass().getSimpleName(), "streamIdInUse");
+        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+        //finish();
     }
 
     @Override

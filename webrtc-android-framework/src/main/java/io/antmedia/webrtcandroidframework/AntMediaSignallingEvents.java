@@ -52,6 +52,12 @@ public interface AntMediaSignallingEvents {
      */
     void noStreamExistsToPlay(String streamId);
 
+    /**
+     * It's called if client tried to stream with a stream id that is currently used in another stream.
+     * @param streamId
+     */
+    void streamIdInUse(String streamId);
+
 
     void onStartStreaming(String streamId);
 
