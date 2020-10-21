@@ -80,7 +80,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     public final long handle;
     public final IPAddress[] ipAddresses;
     public NetworkInformation(String name, ConnectionType type, ConnectionType underlyingTypeForVpn,
-        long handle, IPAddress[] addresses) {
+                              long handle, IPAddress[] addresses) {
       this.name = name;
       this.type = type;
       this.underlyingTypeForVpn = underlyingTypeForVpn;
@@ -128,7 +128,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     private final int underlyingNetworkSubtypeForVpn;
 
     public NetworkState(boolean connected, int type, int subtype, int underlyingNetworkTypeForVpn,
-        int underlyingNetworkSubtypeForVpn) {
+                        int underlyingNetworkSubtypeForVpn) {
       this.connected = connected;
       this.type = type;
       this.subtype = subtype;
@@ -190,7 +190,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       // Tell the network is going to lose in MaxMsToLive milliseconds.
       // We may use this signal later.
       Logging.d(
-          TAG, "Network " + network.toString() + " is about to lose in " + maxMsToLive + "ms");
+              TAG, "Network " + network.toString() + " is about to lose in " + maxMsToLive + "ms");
     }
 
     @Override
@@ -217,7 +217,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
     ConnectivityManagerDelegate(Context context) {
       connectivityManager =
-          (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+              (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 
     // For testing.
@@ -270,16 +270,16 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       if (networkInfo.getType() != ConnectivityManager.TYPE_VPN) {
         // Note that getNetworkCapabilities returns null if the network is unknown.
         NetworkCapabilities networkCapabilities =
-            connectivityManager.getNetworkCapabilities(network);
+                connectivityManager.getNetworkCapabilities(network);
         if (networkCapabilities == null
-            || !networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                || !networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
           return getNetworkState(networkInfo);
         }
         // When |network| is in fact a VPN after querying its capability but |networkInfo| is not of
         // type TYPE_VPN, |networkInfo| contains the info for the underlying network, and we return
         // a NetworkState constructed from it.
         return new NetworkState(networkInfo.isConnected(), ConnectivityManager.TYPE_VPN, -1,
-            networkInfo.getType(), networkInfo.getSubtype());
+                networkInfo.getType(), networkInfo.getSubtype());
       }
 
       // When |networkInfo| is of type TYPE_VPN, which implies |network| is a VPN, we return the
@@ -291,20 +291,20 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       // currently active.
       if (networkInfo.getType() == ConnectivityManager.TYPE_VPN) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-            && network.equals(connectivityManager.getActiveNetwork())) {
+                && network.equals(connectivityManager.getActiveNetwork())) {
           // If a VPN network is in place, we can find the underlying network type via querying the
           // active network info thanks to
           // https://android.googlesource.com/platform/frameworks/base/+/d6a7980d
           NetworkInfo underlyingActiveNetworkInfo = connectivityManager.getActiveNetworkInfo();
           // We use the NetworkInfo of the underlying network if it is not of TYPE_VPN itself.
           if (underlyingActiveNetworkInfo != null
-              && underlyingActiveNetworkInfo.getType() != ConnectivityManager.TYPE_VPN) {
+                  && underlyingActiveNetworkInfo.getType() != ConnectivityManager.TYPE_VPN) {
             return new NetworkState(networkInfo.isConnected(), ConnectivityManager.TYPE_VPN, -1,
-                underlyingActiveNetworkInfo.getType(), underlyingActiveNetworkInfo.getSubtype());
+                    underlyingActiveNetworkInfo.getType(), underlyingActiveNetworkInfo.getSubtype());
           }
         }
         return new NetworkState(
-            networkInfo.isConnected(), ConnectivityManager.TYPE_VPN, -1, -1, -1);
+                networkInfo.isConnected(), ConnectivityManager.TYPE_VPN, -1, -1, -1);
       }
 
       return getNetworkState(networkInfo);
@@ -384,7 +384,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
           // available with Android Marshmallow.
           if (defaultNetId != INVALID_NET_ID) {
             throw new RuntimeException(
-                "Multiple connected networks of same type are not supported.");
+                    "Multiple connected networks of same type are not supported.");
           }
           defaultNetId = networkToNetId(network);
         }
@@ -420,7 +420,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       // Some android device may return a CONNECTION_UNKNOWN_CELLULAR or CONNECTION_UNKNOWN type,
       // which appears to be usable. Just log them here.
       if (connectionType == ConnectionType.CONNECTION_UNKNOWN
-          || connectionType == ConnectionType.CONNECTION_UNKNOWN_CELLULAR) {
+              || connectionType == ConnectionType.CONNECTION_UNKNOWN_CELLULAR) {
         Logging.d(TAG, "Network " + network.toString() + " connection type is " + connectionType
                 + " because it has type " + networkState.getNetworkType() + " and subtype "
                 + networkState.getNetworkSubType());
@@ -428,11 +428,11 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       // ConnectionType.CONNECTION_UNKNOWN if the network is not a VPN or the underlying network is
       // unknown.
       ConnectionType underlyingConnectionTypeForVpn =
-          getUnderlyingConnectionTypeForVpn(networkState);
+              getUnderlyingConnectionTypeForVpn(networkState);
 
       NetworkInformation networkInformation = new NetworkInformation(
-          linkProperties.getInterfaceName(), connectionType, underlyingConnectionTypeForVpn,
-          networkToNetId(network), getIPAddresses(linkProperties));
+              linkProperties.getInterfaceName(), connectionType, underlyingConnectionTypeForVpn,
+              networkToNetId(network), getIPAddresses(linkProperties));
       return networkInformation;
     }
 
@@ -447,17 +447,17 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       }
       final NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
       return capabilities != null
-          && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
+              && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
     }
 
     /** Only callable on Lollipop and newer releases. */
     @SuppressLint("NewApi")
     public void registerNetworkCallback(NetworkCallback networkCallback) {
       connectivityManager.registerNetworkCallback(
-          new NetworkRequest.Builder()
-              .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-              .build(),
-          networkCallback);
+              new NetworkRequest.Builder()
+                      .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                      .build(),
+              networkCallback);
     }
 
     /** Only callable on Lollipop and newer releases. */
@@ -465,12 +465,13 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     public void requestMobileNetwork(NetworkCallback networkCallback) {
       NetworkRequest.Builder builder = new NetworkRequest.Builder();
       builder.addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-          .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
+              .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR);
       connectivityManager.requestNetwork(builder.build(), networkCallback);
     }
 
     @SuppressLint("NewApi")
     IPAddress[] getIPAddresses(LinkProperties linkProperties) {
+      /*
       IPAddress[] ipAddresses = new IPAddress[linkProperties.getLinkAddresses().size()];
       int i = 0;
       for (LinkAddress linkAddress : linkProperties.getLinkAddresses()) {
@@ -478,6 +479,51 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
         ++i;
       }
       return ipAddresses;
+      */
+
+      ArrayList<IPAddress> retVal = new ArrayList<>();
+      for (LinkAddress linkAddress : linkProperties.getLinkAddresses()) {
+        retVal.add(new IPAddress(linkAddress.getAddress().getAddress()));
+      }
+
+      // IP address(es) from any "stacked" 464XLAT interface not yet included
+      // see: https://bugs.chromium.org/p/webrtc/issues/detail?id=9925
+
+      addStackedIPAddresses(linkProperties,retVal);
+
+      return retVal.toArray(new IPAddress[0]);
+    }
+
+
+    private void addStackedIPAddresses(LinkProperties linkProperties, ArrayList<IPAddress> addTo) {
+      // required info from the "stacked" interface only available via @hide methods in LinkProperties
+      // but *is* available from LinkProperties.toString(): not ideal, but only option w/o radical change
+      String str = linkProperties.toString();
+      int startSearch = str.indexOf("Stacked");
+      if (-1 != startSearch) {
+        // LinkAddresses: [192.0.0.4/32,]
+        int linkAddressesIdx;
+        do {
+          linkAddressesIdx = str.indexOf("LinkAddresses", startSearch);
+          if (-1 != linkAddressesIdx) {
+            int start = str.indexOf('[', linkAddressesIdx);
+            if (-1 != start) {
+              int end = str.indexOf(']', start);
+              if (-1 != end) {
+                for (String ipStr : str.substring(start+1, end).split(",")) {
+                  try {
+                    addTo.add(new IPAddress(
+                            InetAddress.getByName(ipStr.replaceAll("/32", "").trim()).getAddress()));
+                  } catch (Exception e) {
+                    Logging.e(TAG, "Stacked Link InetAddress could not be parsed from " + ipStr, e);
+                  }
+                }
+              }
+            }
+            startSearch = linkAddressesIdx + 1;
+          }
+        } while (-1 != linkAddressesIdx);
+      }
     }
 
     @SuppressLint("NewApi")
@@ -508,7 +554,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
     String getWifiSSID() {
       final Intent intent = context.registerReceiver(
-          null, new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
+              null, new IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION));
       if (intent != null) {
         final WifiInfo wifiInfo = intent.getParcelableExtra(WifiManager.EXTRA_WIFI_INFO);
         if (wifiInfo != null) {
@@ -589,8 +635,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       }
 
       wifiP2pNetworkInfo =
-          new NetworkInformation(wifiP2pGroup.getInterface(), ConnectionType.CONNECTION_WIFI,
-              ConnectionType.CONNECTION_NONE, WIFI_P2P_NETWORK_HANDLE, ipAddresses);
+              new NetworkInformation(wifiP2pGroup.getInterface(), ConnectionType.CONNECTION_WIFI,
+                      ConnectionType.CONNECTION_NONE, WIFI_P2P_NETWORK_HANDLE, ipAddresses);
       observer.onNetworkConnect(wifiP2pNetworkInfo);
     }
 
@@ -704,12 +750,12 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   @Nullable
   List<NetworkInformation> getActiveNetworkList() {
     List<NetworkInformation> connectivityManagerList =
-        connectivityManagerDelegate.getActiveNetworkList();
+            connectivityManagerDelegate.getActiveNetworkList();
     if (connectivityManagerList == null) {
       return null;
     }
     ArrayList<NetworkInformation> result =
-        new ArrayList<NetworkInformation>(connectivityManagerList);
+            new ArrayList<NetworkInformation>(connectivityManagerList);
     if (wifiDirectManagerDelegate != null) {
       result.addAll(wifiDirectManagerDelegate.getActiveNetworkList());
     }
@@ -766,7 +812,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   }
 
   private static ConnectionType getConnectionType(
-      boolean isConnected, int networkType, int networkSubtype) {
+          boolean isConnected, int networkType, int networkSubtype) {
     if (!isConnected) {
       return ConnectionType.CONNECTION_NONE;
     }
@@ -813,7 +859,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
   public static ConnectionType getConnectionType(NetworkState networkState) {
     return getConnectionType(networkState.isConnected(), networkState.getNetworkType(),
-        networkState.getNetworkSubType());
+            networkState.getNetworkSubType());
   }
 
   private static ConnectionType getUnderlyingConnectionTypeForVpn(NetworkState networkState) {
@@ -821,8 +867,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return ConnectionType.CONNECTION_NONE;
     }
     return getConnectionType(networkState.isConnected(),
-        networkState.getUnderlyingNetworkTypeForVpn(),
-        networkState.getUnderlyingNetworkSubtypeForVpn());
+            networkState.getUnderlyingNetworkTypeForVpn(),
+            networkState.getUnderlyingNetworkSubtypeForVpn());
   }
 
   private String getWifiSSID(NetworkState networkState) {

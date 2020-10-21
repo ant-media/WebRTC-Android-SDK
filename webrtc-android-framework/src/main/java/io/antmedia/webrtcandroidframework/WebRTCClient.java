@@ -123,7 +123,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private Intent intent = new Intent();
     private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
-    private String stunServerUri = "stun:stun.l.google.com:19302";
+    private String stunServerUri = "stun:stun1.l.google.com:19302";
     List<PeerConnection.IceServer> iceServers = new ArrayList();
     private boolean videoOn = true;
     private boolean audioOn = true;
