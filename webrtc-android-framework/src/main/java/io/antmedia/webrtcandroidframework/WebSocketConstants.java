@@ -72,6 +72,10 @@ public class WebSocketConstants {
 
     public static final String JOIN_COMMAND = "join";
 
+    public static final String GET_ROOM_INFO = "getRoomInfo";
+
+    public static final String ROOM_INFORMATION = "roomInformation";
+
     public static final String SERVER_WILL_STOP = "server_will_stop";
 
     /**

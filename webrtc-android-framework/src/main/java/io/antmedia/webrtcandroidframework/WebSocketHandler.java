@@ -143,6 +143,33 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 IceCandidate candidate = new IceCandidate(id, label, sdp);
                 signallingListener.onRemoteIceCandidate(streamId, candidate);
             }
+            else if (commandText.equals(WebSocketConstants.ROOM_INFORMATION)) {
+                String[] streams = null;
+                if (json.has(WebSocketConstants.STREAMS_IN_ROOM) && !json.isNull(WebSocketConstants.STREAMS_IN_ROOM)) {
+                    JSONArray streamsArray = json.getJSONArray(WebSocketConstants.STREAMS_IN_ROOM);
+                    streams = new String[streamsArray.length()];
+                    for (int i = 0; i < streamsArray.length(); i++) {
+                        streams[i] = streamsArray.getString(i);
+                    }
+                }
+                signallingListener.onRoomInformation(streams);
+            }
+            else if (commandText.equals(WebSocketConstants.STREAM_INFORMATION_NOTIFICATION)) {
+                JSONArray jsonArray = json.getJSONArray(WebSocketConstants.STREAM_INFO);
+                ArrayList<StreamInfo> streamInfos = new ArrayList<>();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject streamJSON = (JSONObject) jsonArray.get(i);
+                    StreamInfo streamInfo = new StreamInfo();
+                    streamInfo.setWidth(streamJSON.getInt(WebSocketConstants.STREAM_WIDTH));
+                    streamInfo.setHeight(streamJSON.getInt(WebSocketConstants.STREAM_HEIGHT));
+                    streamInfo.setVideoBitrate(streamJSON.getInt(WebSocketConstants.VIDEO_BITRATE));
+                    streamInfo.setAudioBitrate(streamJSON.getInt(WebSocketConstants.AUDIO_BITRATE));
+                    streamInfo.setCodec(streamJSON.getString(WebSocketConstants.VIDEO_CODEC));
+
+                    streamInfos.add(streamInfo);
+                }
+                signallingListener.onStreamInfoList(streamId, streamInfos);
+            }
             else if (commandText.equals(WebSocketConstants.STREAM_INFORMATION_NOTIFICATION)) {
                 JSONArray jsonArray = json.getJSONArray(WebSocketConstants.STREAM_INFO);
                 ArrayList<StreamInfo> streamInfos = new ArrayList<>();
@@ -161,9 +188,9 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             }
             else if (commandText.equals(NOTIFICATION_COMMAND)) {
 
-                String definition= json.getString(DEFINITION);
+                String definition = json.getString(DEFINITION);
 
-                Log.d(TAG, "notification:   "+ definition);
+                Log.d(TAG, "notification:   " + definition);
                 if (definition.equals(WebSocketConstants.PUBLISH_STARTED)) {
                     signallingListener.onPublishStarted(streamId);
                     startPingPongTimer();
@@ -189,12 +216,6 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                         }
                     }
                     signallingListener.onJoinedTheRoom(streamId, streams);
-                }
-                else if (definition.equals(WebSocketConstants.STREAM_JOINED)) {
-                    signallingListener.onStreamJoined(streamId);
-                }
-                else if (definition.equals(WebSocketConstants.STREAM_LEAVED)) {
-                    signallingListener.onStreamLeaved(streamId);
                 }
                 else if (definition.equals(WebSocketConstants.BITRATE_MEASUREMENT)) {
                     int targetBitrate = json.getInt(WebSocketConstants.TARGET_BITRATE);
@@ -436,7 +457,20 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             json.put(WebSocketConstants.ROOM, roomName);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
-            Log.e(TAG, "Connect to conference room JSON error: " + e.getMessage());
+            Log.e(TAG, "Leave from conference room JSON error: " + e.getMessage());
+        }
+    }
+
+    public void getRoomInfo(String roomName, String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_ROOM_INFO);
+            json.put(WebSocketConstants.ROOM, roomName);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Room Info conference room JSON error: " + e.getMessage());
         }
     }
 

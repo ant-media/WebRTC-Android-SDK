@@ -2,6 +2,7 @@ package io.antmedia.webrtcandroidframework;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
@@ -15,8 +16,11 @@ import org.webrtc.SurfaceViewRenderer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
 
@@ -37,8 +41,18 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     private Handler handler = new Handler();
     private boolean joined = false;
 
-    private int index = 0;
     private boolean openFrontCamera = false;
+
+    private int ROOM_INFO_POLLING_MILLIS = 5000;
+    private Runnable getRoomInfoRunnable = new Runnable() {
+
+        @Override
+        public void run() {
+            getRoomInfo();
+            handler.postDelayed(this, ROOM_INFO_POLLING_MILLIS);
+        }
+    };
+
 
     public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId, IDataChannelObserver dataChannelObserver) {
         this.context = context;
@@ -77,14 +91,18 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     public void leaveFromConference() {
+
         for (WebRTCClient peer : peers.values()) {
             peer.stopStream();
             deallocateRenderer(peer);
         }
 
         wsHandler.leaveFromTheConferenceRoom(roomName);
-
         joined = false;
+
+        // remove periodic room information polling
+        clearGetRoomInfoSchedule();
+
     }
 
     private WebRTCClient createPeer(String streamId, String mode) {
@@ -187,7 +205,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         peers.put(streamId, publisher);
         publisher.startStream();
 
-        if(streams != null) {
+        if (streams != null) {
             for (String id : streams) {
                 WebRTCClient player = createPeer(id, IWebRTCClient.MODE_PLAY);
                 peers.put(id, player);
@@ -196,17 +214,54 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         }
 
         joined = true;
+        // start periodic polling of room info
+        scheduleGetRoomInfo();
     }
 
     @Override
-    public void onStreamJoined(String streamId) {
+    public void onRoomInformation(String[] streams) {
+        Set<String> streamSet = new HashSet<>();
+        Collections.addAll(streamSet, streams);
+        Set<String> oldStreams = new HashSet<>(peers.keySet());
+        // remove publisher stream id
+        oldStreams.remove(streamId);
+
+        // find newly removed streams
+        ArrayList<String> streamsLeft = new ArrayList<>();
+        for (String oldStream : oldStreams) {
+            // old stream has left now
+            if (!streamSet.contains(oldStream)) {
+                streamsLeft.add(oldStream);
+            }
+        }
+
+        // find newly added streams
+        ArrayList<String> streamsJoined = new ArrayList<>();
+        for (String stream : streams) {
+            // a new stream joined now
+            if (!oldStreams.contains(stream)) {
+                streamsJoined.add(stream);
+            }
+        }
+
+        // remove them
+        for (String leftStream : streamsLeft) {
+            streamLeft(leftStream);
+        }
+        // add them
+        for (String joinedStream : streamsJoined) {
+            streamJoined(joinedStream);
+        }
+    }
+
+
+    private void streamJoined(String streamId) {
         WebRTCClient player = createPeer(streamId, IWebRTCClient.MODE_PLAY);
         peers.put(streamId, player);
         player.startStream();
     }
 
-    @Override
-    public void onStreamLeaved(String streamId) {
+    private void streamLeft(String streamId) {
         WebRTCClient peer = peers.remove(streamId);
         deallocateRenderer(peer);
         peer.stopStream();
@@ -214,6 +269,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
 
     @Override
     public void onDisconnected() {
+        clearGetRoomInfoSchedule();
     }
 
     @Override
@@ -329,6 +385,28 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
             return false;
+        }
+    }
+
+    private void scheduleGetRoomInfo() {
+        handler.postDelayed(getRoomInfoRunnable, ROOM_INFO_POLLING_MILLIS);
+    }
+
+    private void clearGetRoomInfoSchedule() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (handler.hasCallbacks(getRoomInfoRunnable)) {
+                handler.removeCallbacks(getRoomInfoRunnable);
+            }
+        } else {
+            handler.removeCallbacks(getRoomInfoRunnable);
+        }
+
+    }
+
+    private void getRoomInfo() {
+        // call getRoomInfo in web socket handler
+        if (wsHandler.isConnected()) {
+            wsHandler.getRoomInfo(roomName, streamId);
         }
     }
 }
