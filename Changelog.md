@@ -1,6 +1,3 @@
-Aug 8 2020
-- Reconnect after MainActivity is disconnected => https://github.com/ant-media/Ant-Media-Server/issues/2370
-
 Aug 5 2020
 - Make Android SDK DataChannel compatible with Web. MainActivity can be used to send text messages through data channel to web https://github.com/ant-media/Ant-Media-Server/issues/2354
 

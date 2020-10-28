@@ -50,7 +50,6 @@ import org.webrtc.VideoTrack;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -949,16 +948,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
                     peerConnectionClient.createPeerConnection(
                             localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+
+
+                    peerConnectionClient.setRemoteDescription(sdp);
+
+                    peerConnectionClient.createAnswer();
+
+                    if (signalingParameters.iceCandidates != null) {
+                        // Add remote ICE candidates from room.
+                        for (IceCandidate iceCandidate : signalingParameters.iceCandidates) {
+                            peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                        }
+                    }
                 }
-
-                peerConnectionClient.setRemoteDescription(sdp);
-
-                peerConnectionClient.createAnswer();
-
-                if (signalingParameters.iceCandidates != null) {
-                    // Add remote ICE candidates from room.
-                    for (IceCandidate iceCandidate : signalingParameters.iceCandidates) {
-                        peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                else {
+                    if (webRTCListener != null) {
+                        webRTCListener.onError("peerConnectionClient is null when offer sdp received");
                     }
                 }
             }
@@ -1036,12 +1041,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
-    public void onStreamJoined(String streamId) {
-        //no need to implement here
-    }
-
-    @Override
-    public void onStreamLeaved(String streamId) {
+    public void onRoomInformation(String[] streams) {
         //no need to implement here
     }
 
@@ -1092,6 +1092,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         });
     }
 
+    @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+        this.handler.post(()-> {
+            if (webRTCListener != null) {
+                webRTCListener.onStreamInfoList(streamId, streamInfoList);
+            }
+        });
+    }
+
     public EglBase getEglBase() {
         return eglBase;
     }
@@ -1108,6 +1117,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             return dataChannel != null && dataChannel.state() == DataChannel.State.OPEN;
         }
         return false;
+    }
+
+    @Override
+    public void getStreamInfoList() {
+        wsHandler.getStreamInfoList(streamId);
+    }
+
+    @Override
+    public void forceStreamQuality(int height) {
+        wsHandler.forceStreamQuality(streamId, height);
     }
 
     @Override

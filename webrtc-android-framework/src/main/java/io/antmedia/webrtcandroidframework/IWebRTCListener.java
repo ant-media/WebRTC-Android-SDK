@@ -1,5 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
+import java.util.ArrayList;
+
 import de.tavendo.autobahn.WebSocket; /**
  * Created by karinca on 23.10.2017.
  */
@@ -58,7 +60,7 @@ public interface IWebRTCListener {
  void onTrackList(String[] tracks);
 
  /**
-  * It's called when bitrate measurements received from serves.
+  * It's called when bitrate measurements received from server.
   * targetBitrate should be greater than (videoBitrate + audioBitrate) for a good quality stream
   * @param streamId
   * @param targetBitrate
@@ -66,4 +68,11 @@ public interface IWebRTCListener {
   * @param audioBitrate
   */
  void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate);
+
+ /**
+  * It's called when stream info list received from server.
+  * @param streamId
+  * @param streamInfoList
+  */
+ void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList);
 }

@@ -124,4 +124,15 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * false if it's not opened either by mobile or server side
      */
     boolean isDataChannelEnabled();
+
+    /**
+     * This is used to get stream info list
+     */
+    void getStreamInfoList();
+
+    /**
+     * This is used to play the specified resolution
+     * @param height
+     */
+    void forceStreamQuality(int height);
 }

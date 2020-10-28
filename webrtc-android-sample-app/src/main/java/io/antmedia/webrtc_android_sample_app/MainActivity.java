@@ -5,13 +5,16 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -72,6 +75,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
+    private Spinner streamInfoListSpinner;
+
 
     // variables for handling reconnection attempts after disconnected
     final int RECONNECTION_PERIOD_MLS = 100;
@@ -88,11 +93,11 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         }
     };
 
-
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -107,6 +112,25 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         pipViewRenderer = findViewById(R.id.pip_view_renderer);
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
+
+        streamInfoListSpinner = findViewById(R.id.stream_info_list);
+
+        if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
+            streamInfoListSpinner.setVisibility(View.INVISIBLE);
+        }
+        else {
+            streamInfoListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    webRTCClient.forceStreamQuality(Integer.parseInt((String) adapterView.getSelectedItem()));
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> adapterView) {
+
+                }
+            });
+        }
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -158,8 +182,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
                 pipViewRenderer.setZOrderOnTop(true);
             }
-        } else {
-            ((Button) v).setText("Start " + operationName);
+        }
+        else {
+            ((Button)v).setText("Start " + operationName);
             webRTCClient.stopStream();
             stoppedStream = true;
         }
@@ -181,6 +206,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+        webRTCClient.getStreamInfoList();
     }
 
     @Override
@@ -227,6 +253,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     @Override
     public void onDisconnected() {
         Log.w(getClass().getSimpleName(), "disconnected");
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
         startStreamingButton.setText("Start " + operationName);
         // handle reconnection attempt
@@ -293,6 +320,17 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         if(targetBitrate < (videoBitrate+audioBitrate)) {
             Toast.makeText(this, "low bandwidth", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+        String[] stringArray = new String[streamInfoList.size()];
+        int i = 0;
+        for (StreamInfo si : streamInfoList) {
+            stringArray[i++] = si.getHeight()+"";
+        }
+        ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
+        streamInfoListSpinner.setAdapter(modeAdapter);
     }
 
     /**
