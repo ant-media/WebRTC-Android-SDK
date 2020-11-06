@@ -1041,12 +1041,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
-    public void onStreamJoined(String streamId) {
-        //no need to implement here
-    }
-
-    @Override
-    public void onStreamLeaved(String streamId) {
+    public void onRoomInformation(String[] streams) {
         //no need to implement here
     }
 
@@ -1097,6 +1092,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         });
     }
 
+    @Override
+    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+        this.handler.post(()-> {
+            if (webRTCListener != null) {
+                webRTCListener.onStreamInfoList(streamId, streamInfoList);
+            }
+        });
+    }
+
     public EglBase getEglBase() {
         return eglBase;
     }
@@ -1113,6 +1117,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             return dataChannel != null && dataChannel.state() == DataChannel.State.OPEN;
         }
         return false;
+    }
+
+    @Override
+    public void getStreamInfoList() {
+        wsHandler.getStreamInfoList(streamId);
+    }
+
+    @Override
+    public void forceStreamQuality(int height) {
+        wsHandler.forceStreamQuality(streamId, height);
     }
 
     @Override

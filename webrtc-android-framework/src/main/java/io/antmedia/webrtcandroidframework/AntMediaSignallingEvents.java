@@ -4,6 +4,8 @@ package io.antmedia.webrtcandroidframework;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
+import java.util.ArrayList;
+
 public interface AntMediaSignallingEvents {
 
     /**
@@ -61,16 +63,11 @@ public interface AntMediaSignallingEvents {
     void onJoinedTheRoom(String streamId, String[] streams);
 
     /**
-     * It's called when client is connected to the server for P2P
-     * @param streamId
+     * It's called when room information is received
+     *
+     * @param streams
      */
-    void onStreamJoined(String streamId);
-
-    /**
-     * It's called when client is disconnected from the server for P2P
-     * @param streamId
-     */
-    void onStreamLeaved(String streamId);
+    void onRoomInformation(String[] streams);
 
     void onDisconnected();
 
@@ -81,11 +78,18 @@ public interface AntMediaSignallingEvents {
     void onTrackList(String[] tracks);
 
     /**
-     * It's called when bitrate measurements received fron serves
+     * It's called when bitrate measurements received from server
      * @param streamId
      * @param targetBitrate
      * @param videoBitrate
      * @param audioBitrate
      */
     void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate);
+
+    /**
+     * It's called when stream info list received from server
+     * @param streamId
+     * @param streamInfoList
+     */
+    void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList);
 }
