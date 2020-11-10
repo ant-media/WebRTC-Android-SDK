@@ -500,7 +500,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         try {
             json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
             json.put(WebSocketConstants.STREAM_ID, streamId);
-            json.put(WebSocketConstants.STREAM_HEIGHT, height+"");
+            json.put(WebSocketConstants.STREAM_HEIGHT, height);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();

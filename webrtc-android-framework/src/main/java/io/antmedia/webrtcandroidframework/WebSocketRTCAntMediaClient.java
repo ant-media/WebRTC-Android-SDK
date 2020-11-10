@@ -101,7 +101,7 @@ public class WebSocketRTCAntMediaClient implements AppRTCClient, WebSocketChanne
   private String wsURL;
   private String serverName;
   private String leaveMessage;
-  private String stunServerUri ="stun:stun.l.google.com:19302";
+  private String stunServerUri ="stun:stun1.l.google.com:19302";
   public ScheduledExecutorService pingPongExecutor;
   private int pingPongTimoutCount = 0;
 
