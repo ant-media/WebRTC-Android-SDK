@@ -5,16 +5,16 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
+import android.os.Handler;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -35,12 +35,14 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Map;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
@@ -54,12 +56,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.23:5080";
+    public static final String SERVER_ADDRESS = "172.16.110.178:5080";
 
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
+    private String webRTCMode = IWebRTCClient.MODE_PLAY;
 
     private boolean enableDataChannel = true;
 
@@ -119,10 +121,20 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
         }
         else {
+
             streamInfoListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                boolean firstCall = true;
                 @Override
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    //for some reason in android onItemSelected is called automatically at first.
+                    //there are some discussions about it in stackoverflow
+                    //so we just have simple check
+                    if (firstCall) {
+                        firstCall = false;
+                        return;
+                    }
                     webRTCClient.forceStreamQuality(Integer.parseInt((String) adapterView.getSelectedItem()));
+                    Log.i("MainActivity", "Spinner onItemSelected");
                 }
 
                 @Override
