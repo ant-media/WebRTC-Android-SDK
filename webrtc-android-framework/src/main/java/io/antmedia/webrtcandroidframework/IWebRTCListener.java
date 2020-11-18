@@ -43,6 +43,12 @@ public interface IWebRTCListener {
  void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code);
 
  /**
+  * It's called if client tried to stream with a stream id that is currently used in another stream.
+  *
+  */
+ void streamIdInUse();
+
+ /**
   * This method is called every time, connection is established with the remote peer.
   * It's called both p2p, play and publish modes.
   */

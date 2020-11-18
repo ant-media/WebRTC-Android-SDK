@@ -1053,6 +1053,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             }
         });
     }
+    @Override
+    public void streamIdInUse(String streamId){
+        this.handler.post(() -> {
+            if (webRTCListener != null) {
+                webRTCListener.streamIdInUse();
+            }
+        });
+    }
 
     @Override
     public void onRemoteIceCandidate(String streamId, IceCandidate candidate) {

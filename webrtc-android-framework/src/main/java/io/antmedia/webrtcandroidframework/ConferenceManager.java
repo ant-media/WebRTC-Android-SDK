@@ -188,6 +188,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     @Override
+    public void streamIdInUse(String streamId){
+        peers.get(streamId).streamIdInUse(streamId);
+    }
+
+    @Override
     public void onStartStreaming(String streamId) {
         peers.get(streamId).onStartStreaming(streamId);
     }
