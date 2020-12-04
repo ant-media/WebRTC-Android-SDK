@@ -170,22 +170,6 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }
                 signallingListener.onStreamInfoList(streamId, streamInfos);
             }
-            else if (commandText.equals(WebSocketConstants.STREAM_INFORMATION_NOTIFICATION)) {
-                JSONArray jsonArray = json.getJSONArray(WebSocketConstants.STREAM_INFO);
-                ArrayList<StreamInfo> streamInfos = new ArrayList<>();
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject streamJSON = (JSONObject) jsonArray.get(i);
-                    StreamInfo streamInfo = new StreamInfo();
-                    streamInfo.setWidth(streamJSON.getInt(WebSocketConstants.STREAM_WIDTH));
-                    streamInfo.setHeight(streamJSON.getInt(WebSocketConstants.STREAM_HEIGHT));
-                    streamInfo.setVideoBitrate(streamJSON.getInt(WebSocketConstants.VIDEO_BITRATE));
-                    streamInfo.setAudioBitrate(streamJSON.getInt(WebSocketConstants.AUDIO_BITRATE));
-                    streamInfo.setCodec(streamJSON.getString(WebSocketConstants.VIDEO_CODEC));
-
-                    streamInfos.add(streamInfo);
-                }
-                signallingListener.onStreamInfoList(streamId, streamInfos);
-            }
             else if (commandText.equals(NOTIFICATION_COMMAND)) {
 
                 String definition = json.getString(DEFINITION);
@@ -240,6 +224,8 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 String definition= json.getString(DEFINITION);
                 Log.d(TAG, "error command received: "+ definition);
                 stopPingPongTimer();
+
+                signallingListener.onError(streamId, definition);
 
                 if (definition.equals(WebSocketConstants.NO_STREAM_EXIST))
                 {

@@ -1101,6 +1101,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         });
     }
 
+    @Override
+    public void onError(String streamId, String definition) {
+        this.handler.post(()-> {
+            if (webRTCListener != null) {
+                webRTCListener.onError(definition);
+            }
+        });
+    }
+
     public EglBase getEglBase() {
         return eglBase;
     }

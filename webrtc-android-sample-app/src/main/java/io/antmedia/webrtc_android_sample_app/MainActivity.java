@@ -55,12 +55,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.29:5080";
+    public static final String SERVER_ADDRESS = "test.antmedia.io:5080";
 
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_PLAY;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
 
     private boolean enableDataChannel = true;
 
