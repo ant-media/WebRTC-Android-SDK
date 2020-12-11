@@ -240,6 +240,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             fullscreenRenderer.init(eglBase.getEglBaseContext(), null);
             fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
             fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
+            Log.i(getClass().getSimpleName(), "Initializing the full screen renderer");
         }
 
         if (pipRenderer != null) {
@@ -663,6 +664,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         if (fullscreenRenderer != null) {
+            Log.i(getClass().getSimpleName(), "Releasing full screen renderer");
             fullscreenRenderer.release();
            // fullscreenRenderer = null; Do not make renderer null, we can re-use
         }
@@ -681,13 +683,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
-    public void disconnect() {
+    private void disconnect() {
         release();
     }
-
-
-
-
 
     private void disconnectWithErrorMessage(final String errorMessage) {
         if (commandLineRun || !activityRunning) {
@@ -730,7 +728,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
                 disconnectWithErrorMessage(description);
                 if (webRTCListener != null) {
-                    webRTCListener.onError(description);
+                    webRTCListener.onError(description, streamId);
                 }
             }
 
@@ -886,7 +884,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             callConnected();
 
             if (webRTCListener != null) {
-                webRTCListener.onIceConnected();
+                webRTCListener.onIceConnected(streamId);
             }
         });
     }
@@ -899,7 +897,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             iceConnected = false;
             disconnect();
             if (webRTCListener != null) {
-                webRTCListener.onIceDisconnected();
+                webRTCListener.onIceDisconnected(streamId);
             }
 
         });
@@ -963,7 +961,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 }
                 else {
                     if (webRTCListener != null) {
-                        webRTCListener.onError("peerConnectionClient is null when offer sdp received");
+                        webRTCListener.onError("peerConnectionClient is null when offer sdp received", streamId);
                     }
                 }
             }
@@ -977,7 +975,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPublishFinished(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onPublishFinished();
+                webRTCListener.onPublishFinished(streamId);
             }
             disconnect();
         });
@@ -989,7 +987,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPlayFinished(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onPlayFinished();
+                webRTCListener.onPlayFinished(streamId);
             }
             disconnect();
         });
@@ -1003,7 +1001,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         this.handler.post(() -> {
 
             if (webRTCListener != null) {
-                webRTCListener.onPublishStarted();
+                webRTCListener.onPublishStarted(streamId);
             }
 
         });
@@ -1014,7 +1012,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPlayStarted(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onPlayStarted();
+                webRTCListener.onPlayStarted(streamId);
             }
         });
 
@@ -1049,7 +1047,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void noStreamExistsToPlay(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.noStreamExistsToPlay();
+                webRTCListener.noStreamExistsToPlay(streamId);
             }
         });
     }
@@ -1057,7 +1055,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void streamIdInUse(String streamId){
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.streamIdInUse();
+                webRTCListener.streamIdInUse(streamId);
             }
         });
     }
@@ -1077,7 +1075,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onDisconnected() {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onDisconnected();
+                webRTCListener.onDisconnected(streamId);
             }
         });
     }

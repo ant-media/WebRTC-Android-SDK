@@ -69,7 +69,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
-        String streamId = null ;//"stream1";
+        String streamId = null; //"stream1";
         String roomId = "room1";
         conferenceManager = new ConferenceManager(
                 this,
@@ -83,6 +83,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
                 this
         );
 
+        conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
     }
     public void joinConference(View v) {
@@ -100,44 +101,44 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
 
     @Override
-    public void onPlayStarted() {
+    public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onPublishStarted() {
+    public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
 
     }
 
     @Override
-    public void onPublishFinished() {
+    public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onPlayFinished() {
+    public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void noStreamExistsToPlay() {
+    public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void streamIdInUse() {
+    public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
         Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onError(String description) {
+    public void onError(String description, String streamId) {
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
     }
 
@@ -149,12 +150,12 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     }
 
     @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code) {
+    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
         Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onDisconnected() {
+    public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
         audioButton.setText("Disable Audio");
@@ -162,13 +163,13 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     }
 
     @Override
-    public void onIceConnected() {
+    public void onIceConnected(String streamId) {
         //it is called when connected to ice
     }
 
     @Override
-    public void onIceDisconnected() {
-
+    public void onIceDisconnected(String streamId) {
+        Log.w(getClass().getSimpleName(), "Conference manager publish stream id left" + streamId);
     }
 
     @Override
