@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,7 +34,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     private final String roomName;
     private String streamId;
     private HashMap<String, WebRTCClient> peers = new HashMap<>();
-    private HashMap<SurfaceViewRenderer, WebRTCClient> playRendererAllocationMap = new HashMap<>();
+    private LinkedHashMap<SurfaceViewRenderer, WebRTCClient> playRendererAllocationMap = new LinkedHashMap<>();
     private SurfaceViewRenderer publishViewRenderer;
     private final IWebRTCListener webRTCListener;
     private final IDataChannelObserver dataChannelObserver;
@@ -52,6 +53,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
             handler.postDelayed(this, ROOM_INFO_POLLING_MILLIS);
         }
     };
+    private boolean playOnlyMode = false;
 
 
     public ConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId, IDataChannelObserver dataChannelObserver) {
@@ -72,6 +74,10 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
             this.intent.putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
         }
         initWebSocketHandler();
+    }
+
+    public void setPlayOnlyMode(boolean playOnlyMode) {
+        this.playOnlyMode = playOnlyMode;
     }
 
     public boolean isJoined() {
@@ -130,10 +136,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     private SurfaceViewRenderer allocateRenderer(WebRTCClient peer) {
+
         for (Map.Entry<SurfaceViewRenderer, WebRTCClient> entry : playRendererAllocationMap.entrySet()) {
             if(entry.getValue() == null) {
                 entry.setValue(peer);
-                return entry.getKey();
+               return entry.getKey();
             }
         }
         return null;
@@ -169,6 +176,10 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         peers.get(streamId).onPublishFinished(streamId);
     }
 
+    public String getStreamId() {
+        return streamId;
+    }
+
     @Override
     public void onPlayStarted(String streamId) {
         peers.get(streamId).onPlayStarted(streamId);
@@ -180,6 +191,8 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         if(peers.containsKey(streamId)) {
             peers.get(streamId).onPlayFinished(streamId);
         }
+
+        streamLeft(streamId);
     }
 
     @Override
@@ -202,15 +215,26 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         this.openFrontCamera = openFrontCamera;
     }
 
+
+    public void publishStream(String streamId) {
+        if (!this.playOnlyMode) {
+            WebRTCClient publisher = createPeer(streamId, IWebRTCClient.MODE_PUBLISH);
+            this.streamId = streamId;
+            peers.put(streamId, publisher);
+            publisher.startStream();
+        }
+        else {
+            Log.i(getClass().getSimpleName(), "Play only mode. No publishing");
+        }
+    }
+
     @Override
     public void onJoinedTheRoom(String streamId, String[] streams) {
         Log.w(this.getClass().getSimpleName(), "On Joined the Room ");
-        WebRTCClient publisher = createPeer(streamId, IWebRTCClient.MODE_PUBLISH);
-        this.streamId = streamId;
-        peers.put(streamId, publisher);
-        publisher.startStream();
+        publishStream(streamId);
 
-        if (streams != null) {
+        if (streams != null)
+        {
             for (String id : streams) {
                 WebRTCClient player = createPeer(id, IWebRTCClient.MODE_PLAY);
                 peers.put(id, player);
@@ -252,10 +276,17 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         // remove them
         for (String leftStream : streamsLeft) {
             streamLeft(leftStream);
+            Log.i("ConferenceManager", "left stream: " + leftStream);
         }
         // add them
         for (String joinedStream : streamsJoined) {
             streamJoined(joinedStream);
+            Log.i("ConferenceManager", "joined stream: " + joinedStream);
+        }
+
+        WebRTCClient publisherClient = peers.get(streamId);
+        if (publisherClient != null && !publisherClient.isStreaming()) {
+            publishStream(streamId);
         }
     }
 
@@ -268,13 +299,20 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
 
     private void streamLeft(String streamId) {
         WebRTCClient peer = peers.remove(streamId);
-        deallocateRenderer(peer);
-        peer.stopStream();
+        if (peer != null) {
+            deallocateRenderer(peer);
+            peer.stopStream();
+            Log.i(ConferenceManager.class.getSimpleName(), "Stream left: " + streamId);
+        }
+        else {
+            Log.w(ConferenceManager.class.getSimpleName(), "Stream left (" + streamId +") but there is no associated peer ");
+        }
     }
 
     @Override
     public void onDisconnected() {
         clearGetRoomInfoSchedule();
+
     }
 
     @Override
@@ -413,5 +451,9 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         if (wsHandler.isConnected()) {
             wsHandler.getRoomInfo(roomName, streamId);
         }
+    }
+
+    public HashMap<String, WebRTCClient> getPeers() {
+        return peers;
     }
 }
