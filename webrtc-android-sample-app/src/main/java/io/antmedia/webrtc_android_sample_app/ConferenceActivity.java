@@ -3,6 +3,7 @@ package io.antmedia.webrtc_android_sample_app;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -21,8 +22,10 @@ import java.util.ArrayList;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
+import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
+import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
@@ -33,6 +36,25 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     private ConferenceManager conferenceManager;
     private Button audioButton;
     private Button videoButton;
+
+    final int RECONNECTION_PERIOD_MLS = 1000;
+    private boolean stoppedStream = false;
+    Handler reconnectionHandler = new Handler();
+    Runnable reconnectionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            WebRTCClient webRTCClient = conferenceManager.getPeers().get(conferenceManager.getStreamId());
+            if (webRTCClient != null && !stoppedStream && !webRTCClient.isStreaming()) {
+                webRTCClient.startStream();
+            }
+            if (!stoppedStream) {
+                reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
+            }
+
+        }
+    };
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -92,10 +114,14 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
             Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");
             conferenceManager.joinTheConference();
+            if (!conferenceManager.isPlayOnlyMode()) {
+                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+            }
         }
         else {
             ((Button)v).setText("Join");
             conferenceManager.leaveFromConference();
+            stoppedStream = true;
         }
     }
 
@@ -103,38 +129,38 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     @Override
     public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
-        Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Play started", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
-        Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
 
     }
 
     @Override
     public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
-        Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
-        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -147,6 +173,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
         super.onStop();
         audioButton.setText("Disable Audio");
         videoButton.setText("Disable Video");
+        stoppedStream = true;
     }
 
     @Override
@@ -157,7 +184,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     @Override
     public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
         audioButton.setText("Disable Audio");
         videoButton.setText("Disable Video");
     }
@@ -239,6 +266,10 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
             conferenceManager.enableVideo();
             videoButton.setText("Disable Video");
         }
+    }
+
+    public void switchCamera(View view) {
+        conferenceManager.switchCamera();
     }
 }
 

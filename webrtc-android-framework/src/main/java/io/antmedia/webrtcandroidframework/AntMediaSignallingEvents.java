@@ -75,6 +75,9 @@ public interface AntMediaSignallingEvents {
      */
     void onRoomInformation(String[] streams);
 
+    /**
+     * It's called when websocket connection is disconnected
+     */
     void onDisconnected();
 
     /**

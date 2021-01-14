@@ -134,7 +134,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 	private String url;
 	private String token;
 
-
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
     }
@@ -542,7 +541,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void stopStream() {
-
         disconnect();
         if (logToast != null) {
             logToast.cancel();
@@ -654,6 +652,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);
+
+        //signalling listener is not ConferenceManager in Conference mode so that
+        // below method does not disconnect websocket connection in ConferenceManager
         if (wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
             wsHandler.disconnect(true);
             wsHandler = null;
@@ -1078,6 +1079,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 webRTCListener.onDisconnected(streamId);
             }
         });
+
     }
 
     @Override
@@ -1182,4 +1184,5 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public static Map<Long, Long> getCaptureTimeMsMapList() {
         return captureTimeMsMap;
     }
+
 }

@@ -52,8 +52,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             ws.connect(new URI(wsServerUrl), this);
         } catch (WebSocketException e) {
             e.printStackTrace();
+            disconnect(false);
         } catch (URISyntaxException e) {
             e.printStackTrace();
+            disconnect(false);
         }
     }
 
@@ -84,7 +86,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }
             }
         }
-        signallingListener.onDisconnected();
+
         Log.d(TAG, "Disconnecting WebSocket done.");
     }
 
@@ -102,6 +104,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     @Override
     public void onClose(WebSocketCloseNotification webSocketCloseNotification, String s) {
         Log.d(TAG, "WebSocket connection closed.");
+        signallingListener.onDisconnected();
         synchronized (closeEventLock) {
             closeEvent = true;
             closeEventLock.notify();
