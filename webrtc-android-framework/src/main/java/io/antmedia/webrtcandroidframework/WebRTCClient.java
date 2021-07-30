@@ -298,7 +298,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
-        boolean audioCallEnabled = true;
+        boolean audioCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_AUDIO_CALL, true);
         if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY)) {
             videoCallEnabled = false;
             audioCallEnabled = false;
