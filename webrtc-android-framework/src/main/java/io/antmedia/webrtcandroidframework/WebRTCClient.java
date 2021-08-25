@@ -133,6 +133,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String streamId;
 	private String url;
 	private String token;
+	private boolean dataChannelOnly = false;
 
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
@@ -279,7 +280,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             dataChannelParameters = new PeerConnectionClient.DataChannelParameters(intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(CallActivity.EXTRA_PROTOCOL),
-                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId, streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN));
+                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId,
+                    streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN));
         }
 
         String videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
@@ -298,8 +300,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
-        boolean audioCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_AUDIO_CALL, true);
-        if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY)) {
+        boolean audioCallEnabled = true;
+        if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY) || isDataChannelOnly()) {
             videoCallEnabled = false;
             audioCallEnabled = false;
         }
@@ -606,7 +608,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
+            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
             play(roomConnectionParameters.roomId, roomConnectionParameters.token, null);
@@ -1181,5 +1183,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public static Map<Long, Long> getCaptureTimeMsMapList() {
         return captureTimeMsMap;
+    }
+
+    public boolean isDataChannelOnly() {
+        return dataChannelOnly;
+    }
+
+    public void setDataChannelOnly(boolean dataChannelOnly) {
+        this.dataChannelOnly = dataChannelOnly;
     }
 }
