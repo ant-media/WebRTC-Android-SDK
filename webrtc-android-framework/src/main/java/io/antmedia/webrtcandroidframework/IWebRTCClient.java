@@ -135,4 +135,25 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @param height
      */
     void forceStreamQuality(int height);
+
+    /**
+     * This is used to set subscriber parameters for TOTP (time-based one time password)
+     * @param subscriberId: Id for publisher or player
+     * @param subscriberCode
+     */
+    void setSubscriberParams(String subscriberId, String subscriberCode);
+
+    /**
+     * This is used to set any metadata for WebRTC player
+     * @param viewerInfo: metadata e.g name, location or anything
+     */
+    void setViewerInfo(String viewerInfo);
+
+    /**
+     * This is used to set the name of WebRTC stream
+     * @param streamName: any name
+     */
+    void setStreamName(String streamName);
+
+
 }
