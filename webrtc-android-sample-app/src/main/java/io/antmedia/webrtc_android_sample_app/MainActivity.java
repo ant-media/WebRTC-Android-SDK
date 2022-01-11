@@ -66,8 +66,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
+    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCApp/websocket";
+    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCApp/rest/v2";
 
     private WebRTCClient webRTCClient;
 
@@ -175,7 +175,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        streamId = "stream1";
+        streamId = "myStream";
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 

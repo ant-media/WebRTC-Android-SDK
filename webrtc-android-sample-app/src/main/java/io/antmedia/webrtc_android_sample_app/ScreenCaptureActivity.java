@@ -1,11 +1,8 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,15 +10,15 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.RadioGroup;
 import android.widget.Toast;
-
-import androidx.annotation.RequiresApi;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 
+import androidx.annotation.RequiresApi;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
@@ -38,6 +35,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
     private WebRTCClient webRTCClient;
+    private RadioGroup bg;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -52,7 +50,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_screenshare);
 
 
         webRTCClient = new WebRTCClient(this, this);
@@ -79,14 +77,40 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         //this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 1000);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 360);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 640);
-        this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
+        //this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         //webRTCClient.setCameraOrientationFix(90);
 
-        startScreenCapture();
+        bg = findViewById(R.id.rbGroup);
+        bg.check(R.id.rbFront);
+        bg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                String newSource = "";
+                if(checkedId == R.id.rbScreen) {
+                    newSource = WebRTCClient.SOURCE_SCREEN;
+                }
+                else if(checkedId == R.id.rbFront) {
+                    newSource = WebRTCClient.SOURCE_FRONT;
+                }
+                else if(checkedId == R.id.rbRear) {
+                    newSource = WebRTCClient.SOURCE_REAR;
+                }
+                webRTCClient.changeVideoSource(newSource);
+            }
+        });
 
+        String streamId = "stream36";
+        String tokenId = "tokenId";
+        String url = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
 
+        webRTCClient.init(url, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+    }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        webRTCClient.onActivityResult(requestCode, resultCode, data);
     }
 
     public void startStreaming(View v) {
@@ -101,7 +125,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         }
     }
 
-
+    public void switchCamera(View v) {
+        webRTCClient.switchCamera();
+    }
 
     @Override
     public void onPlayStarted(String streamId) {
@@ -148,7 +174,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     @Override
     protected void onStop() {
         super.onStop();
-
     }
 
     @Override
@@ -177,29 +202,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     @Override
     public void onIceDisconnected(String streamId) {
-
-    }
-
-    @TargetApi(21)
-    private void startScreenCapture() {
-        MediaProjectionManager mediaProjectionManager =
-                (MediaProjectionManager) getApplication().getSystemService(
-                        Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(
-                mediaProjectionManager.createScreenCaptureIntent(), CAPTURE_PERMISSION_REQUEST_CODE);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
-            return;
-
-        webRTCClient.setMediaProjectionParams(resultCode, data);
-        String streamId = "stream36";
-        String tokenId = "tokenId";
-
-        webRTCClient.init(MainActivity.SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
 
     }
 
