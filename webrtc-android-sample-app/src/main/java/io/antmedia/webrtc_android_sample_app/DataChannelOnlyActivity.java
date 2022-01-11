@@ -4,48 +4,71 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CompoundButton;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
-import androidx.annotation.RequiresApi;
-
+import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 
+import androidx.annotation.RequiresApi;
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 
-public class MultiTrackPlayActivity extends Activity implements IWebRTCListener {
+/**
+ * This Activity is for demonstrating the data channel usage without video and audio
+ * Steps:
+ * set dataChannelOnly parameter of WebRTCClient
+ * start WebRTC Cilent with play mode
+ * if no stream exist is called start it in publish mode
+ */
+public class DataChannelOnlyActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+
+    /**
+     * Change this address with your Ant Media Server address
+     */
+    public static final String SERVER_ADDRESS = "192.168.1.31:5080";
+
+    private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
-    private CallFragment callFragment;
+    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
+    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
-    private String webRTCMode;
+
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId;
-    private String tokenId;
-    private ToggleButton track1Button;
-    private ToggleButton track2Button;
-    private String[] allTracks;
+    private String streamId = "stream1";
+    String tokenId = "tokenId";
+
+    private SurfaceViewRenderer cameraViewRenderer;
+    private SurfaceViewRenderer pipViewRenderer;
+
+    // variables for handling reconnection attempts after disconnected
+    final int RECONNECTION_PERIOD_MLS = 100;
+    private boolean stoppedStream = false;
+    Handler reconnectionHandler = new Handler();
+    private EditText messageInput;
+    private TextView messages;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -60,49 +83,11 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_multitrack);
-
-
-        webRTCClient = new WebRTCClient( this,this);
-
-        //webRTCClient.setOpenFrontCamera(false);
-
-
-        //String streamId = "stream" + (int)(Math.random() * 999);
-        streamId = "stream_multi_track";
-        tokenId = "tokenId";
-
-        SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.player1);
-
-        SurfaceViewRenderer pipViewRenderer = findViewById(R.id.player2);
-
-        List<SurfaceViewRenderer> rendererList = new ArrayList<>();
-        rendererList.add(cameraViewRenderer);
-        rendererList.add(pipViewRenderer);
+        setContentView(R.layout.activity_data_channel_only);
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
-        
-        track1Button = findViewById(R.id.track_1_button);
-        track2Button = findViewById(R.id.track_2_button);
-
-        track1Button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                webRTCClient.enableTrack(streamId, allTracks[0], isChecked);
-            }
-        });
-
-        track2Button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                webRTCClient.enableTrack(streamId, allTracks[1], isChecked);
-            }
-        });
-
-        //webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
-
-        webRTCClient.setRemoteRendererList(rendererList);
-
+        messageInput = findViewById(R.id.message_text_input);
+        messages = findViewById(R.id.messages_view);
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
             if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
@@ -111,41 +96,50 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
             }
         }
 
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+        startStreamingButton.setText("Connect Data Channel");
+        operationName = "DataChannel";
 
-        webRTCMode = IWebRTCClient.MODE_MULTI_TRACK_PLAY;
+        this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, enableDataChannel);
 
-       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
-
+        webRTCClient = new WebRTCClient( this,this);
+        webRTCClient.setDataChannelOnly(true);
+        webRTCClient.setDataChannelObserver(this);
+        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
     }
 
-
     public void startStreaming(View v) {
-
         if (!webRTCClient.isStreaming()) {
-            ((Button)v).setText("Stop " + operationName);
+            ((Button) v).setText("Stop " + operationName);
             webRTCClient.startStream();
         }
         else {
             ((Button)v).setText("Start " + operationName);
             webRTCClient.stopStream();
+            stoppedStream = true;
         }
     }
 
+    public void sendMessage(View v) {
+        String messageToSend = messageInput.getText().toString();
+
+        final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
+        DataChannel.Buffer buf= new DataChannel.Buffer(buffer,false);
+        webRTCClient.sendMessageViaDataChannel(buf);
+    }
 
     @Override
     public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
+        webRTCClient.getStreamInfoList();
     }
 
     @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
-
     }
 
     @Override
@@ -164,7 +158,14 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        finish();
+
+        webRTCClient = new WebRTCClient( this,this);
+        webRTCClient.setDataChannelOnly(true);
+        webRTCClient.setDataChannelObserver(this);
+        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId, this.getIntent());
+
+        startStreaming(startStreamingButton);
     }
 
     @Override
@@ -182,7 +183,6 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
-
     }
 
     @Override
@@ -192,21 +192,19 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
 
     @Override
     public void onDisconnected(String streamId) {
-
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
-
-        finish();
     }
 
     @Override
     public void onIceConnected(String streamId) {
         //it is called when connected to ice
+        startStreamingButton.setText("Stop " + operationName);
     }
 
     @Override
     public void onIceDisconnected(String streamId) {
-
+        //it's called when ice is disconnected
     }
 
     public void onOffVideo(View view) {
@@ -229,24 +227,45 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
 
     @Override
     public void onTrackList(String[] tracks) {
-        allTracks = new String[tracks.length+1];
-
-        allTracks[0] = streamId;
-        for (int i = 0; i < tracks.length; i++) {
-            allTracks[i+1] = tracks[i];
-            Log.i(getClass().getSimpleName(), "track id: " + tracks[i]);
-        }
-
-        webRTCClient.play(streamId, tokenId, allTracks);
     }
 
     @Override
     public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-
     }
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+    }
 
+    @Override
+    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
+        Log.d(DataChannelOnlyActivity.class.getName(), "Data channel buffered amount changed: ");
+    }
+
+    @Override
+    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
+        Log.d(DataChannelOnlyActivity.class.getName(), "Data channel state changed: ");
+    }
+
+    @Override
+    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
+        ByteBuffer data = buffer.data;
+        String messageText = new String(data.array(), StandardCharsets.UTF_8);
+        messages.append("received:"+messageText+"\n");
+        Toast.makeText(this, "New Message: " + messageText, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
+        if (successful) {
+            ByteBuffer data = buffer.data;
+            final byte[] bytes = new byte[data.capacity()];
+            data.get(bytes);
+            String messageText = new String(bytes, StandardCharsets.UTF_8);
+            messages.append("sent:"+messageText+"\n");
+            Toast.makeText(this, "Message is sent", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
+        }
     }
 }

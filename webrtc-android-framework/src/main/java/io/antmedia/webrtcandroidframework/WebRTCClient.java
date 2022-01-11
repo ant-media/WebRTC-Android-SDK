@@ -73,6 +73,11 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents, IDataChannelMessageSender, IDataChannelObserver {
     private static final String TAG = "WebRTCClient69";
 
+    public static final String SOURCE_FILE = "FILE";
+    public static final String SOURCE_SCREEN = "SCREEN";
+    public static final String SOURCE_FRONT = "FRONT";
+    public static final String SOURCE_REAR = "REAR";
+
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
     private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
@@ -133,6 +138,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String streamId;
 	private String url;
 	private String token;
+	private boolean dataChannelOnly = false;
+    private String subscriberId = "";
+    private String subscriberCode = "";
+    private String streamName = "";
+    private String viewerInfo = "";
+    private String currentSource;
+    private boolean screenPersmisonNeeded = true;
 
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
@@ -240,6 +252,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             fullscreenRenderer.init(eglBase.getEglBaseContext(), null);
             fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
             fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
+            Log.i(getClass().getSimpleName(), "Initializing the full screen renderer");
         }
 
         if (pipRenderer != null) {
@@ -278,7 +291,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             dataChannelParameters = new PeerConnectionClient.DataChannelParameters(intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1),
                     intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(CallActivity.EXTRA_PROTOCOL),
-                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId, streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN));
+                    intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false), intent.getIntExtra(CallActivity.EXTRA_ID, -1), streamId,
+                    streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN));
         }
 
         String videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
@@ -298,7 +312,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         boolean videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
         boolean audioCallEnabled = true;
-        if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY)) {
+        if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY) || isDataChannelOnly()) {
             videoCallEnabled = false;
             audioCallEnabled = false;
         }
@@ -330,6 +344,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         // Create connection parameters.
         String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
+
+
+
         roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode ,token);
 
@@ -355,7 +372,23 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         peerConnectionClient.createPeerConnectionFactory(options);
 
         if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
-            videoCapturer = createVideoCapturer();
+
+            String source = SOURCE_REAR;
+            String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
+
+            if (videoFileAsCamera != null) {
+                source = SOURCE_FILE;
+            }
+            else if(screencaptureEnabled) {
+                source = SOURCE_SCREEN;
+            }
+            else if(useCamera2()) {
+                source = SOURCE_FRONT;
+            }
+
+            videoCapturer = createVideoCapturer(source);
+            
+            currentSource = source;
         }
 
         if (localVideoTrack != null) {
@@ -422,7 +455,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @TargetApi(21)
-    private void startScreenCapture() {
+    public void startScreenCapture() {
         MediaProjectionManager mediaProjectionManager =
                 (MediaProjectionManager) this.context.getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
@@ -439,7 +472,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             return;
         mediaProjectionPermissionResultCode = resultCode;
         mediaProjectionPermissionResultData = data;
-        startCall();
+
+        screenPersmisonNeeded = false;
+        changeVideoSource(SOURCE_SCREEN);
     }
 
     private boolean useCamera2() {
@@ -605,10 +640,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled);
+            publish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled, subscriberId, subscriberCode, streamName);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
-            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null);
+            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null, subscriberId, subscriberCode, viewerInfo);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_JOIN)) {
             wsHandler.joinToPeer(roomConnectionParameters.roomId, roomConnectionParameters.token);
@@ -618,8 +653,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
+    private void publish(String roomId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName) {
+        wsHandler.startPublish(roomId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName);
+    }
+
     public void play(String streamId, String token, String[] tracks) {
-        wsHandler.startPlay(streamId, token, tracks);
+        play(streamId, token, tracks, "", "", "");
+    }
+
+    public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
+        wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
     }
 
     public void enableTrack(String streamId, String trackId, boolean enabled) {
@@ -663,6 +706,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         if (fullscreenRenderer != null) {
+            Log.i(getClass().getSimpleName(), "Releasing full screen renderer");
             fullscreenRenderer.release();
            // fullscreenRenderer = null; Do not make renderer null, we can re-use
         }
@@ -681,13 +725,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
-    public void disconnect() {
+    private void disconnect() {
         release();
     }
-
-
-
-
 
     private void disconnectWithErrorMessage(final String errorMessage) {
         if (commandLineRun || !activityRunning) {
@@ -730,35 +770,60 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
                 disconnectWithErrorMessage(description);
                 if (webRTCListener != null) {
-                    webRTCListener.onError(description);
+                    webRTCListener.onError(description, streamId);
                 }
             }
 
         });
     }
 
-    private @Nullable VideoCapturer createVideoCapturer() {
+    public void changeVideoSource(String newSource) {
+        if(!currentSource.equals(newSource)) {
+            if(newSource.equals(SOURCE_SCREEN) && screenPersmisonNeeded) {
+                startScreenCapture();
+                return;
+            }
+            videoCapturer = createVideoCapturer(newSource);
+
+            int videoWidth = intent.getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
+            int videoHeight = intent.getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
+
+            // If capturing format is not specified for screencapture, use screen resolution.
+            if (videoWidth == 0 || videoWidth == 0) {
+                DisplayMetrics displayMetrics = getDisplayMetrics();
+                videoWidth = displayMetrics.widthPixels;
+                videoHeight = displayMetrics.heightPixels;
+            }
+
+            peerConnectionClient.changeVideoCapturer(videoCapturer, videoWidth, videoHeight);
+            currentSource = newSource;
+        }
+    }
+
+    private @Nullable VideoCapturer createVideoCapturer(String source) {
         final VideoCapturer videoCapturer;
-        String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
-        if (videoFileAsCamera != null) {
+        if (source.equals(SOURCE_FILE)) {
+            String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
             try {
                 videoCapturer = new FileVideoCapturer(videoFileAsCamera);
             } catch (IOException e) {
                 reportError("Failed to open video file for emulated camera");
                 return null;
             }
-        } else if (screencaptureEnabled) {
+        } else if (source.equals(SOURCE_SCREEN)) {
             return createScreenCapturer();
-        } else if (useCamera2()) {
+        } else if (source.equals(SOURCE_FRONT)) {
             if (!captureToTexture()) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
                 return null;
             }
 
             Logging.d(TAG, "Creating capturer using camera2 API.");
+            openFrontCamera = true;
             videoCapturer = createCameraCapturer(new Camera2Enumerator(this.context));
         } else {
             Logging.d(TAG, "Creating capturer using camera1 API.");
+            openFrontCamera = false;
             videoCapturer = createCameraCapturer(new Camera1Enumerator(captureToTexture()));
         }
         if (videoCapturer == null) {
@@ -835,6 +900,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         return audioOn;
     }
 
+    public static int getMediaProjectionPermissionResultCode() {
+        return mediaProjectionPermissionResultCode;
+    }
+
 
 
     // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
@@ -886,7 +955,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             callConnected();
 
             if (webRTCListener != null) {
-                webRTCListener.onIceConnected();
+                webRTCListener.onIceConnected(streamId);
             }
         });
     }
@@ -899,7 +968,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             iceConnected = false;
             disconnect();
             if (webRTCListener != null) {
-                webRTCListener.onIceDisconnected();
+                webRTCListener.onIceDisconnected(streamId);
             }
 
         });
@@ -963,7 +1032,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 }
                 else {
                     if (webRTCListener != null) {
-                        webRTCListener.onError("peerConnectionClient is null when offer sdp received");
+                        webRTCListener.onError("peerConnectionClient is null when offer sdp received", streamId);
                     }
                 }
             }
@@ -977,7 +1046,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPublishFinished(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onPublishFinished();
+                webRTCListener.onPublishFinished(streamId);
             }
             disconnect();
         });
@@ -989,7 +1058,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPlayFinished(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onPlayFinished();
+                webRTCListener.onPlayFinished(streamId);
             }
             disconnect();
         });
@@ -1003,7 +1072,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         this.handler.post(() -> {
 
             if (webRTCListener != null) {
-                webRTCListener.onPublishStarted();
+                webRTCListener.onPublishStarted(streamId);
             }
 
         });
@@ -1014,7 +1083,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPlayStarted(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onPlayStarted();
+                webRTCListener.onPlayStarted(streamId);
             }
         });
 
@@ -1049,7 +1118,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void noStreamExistsToPlay(String streamId) {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.noStreamExistsToPlay();
+                webRTCListener.noStreamExistsToPlay(streamId);
+            }
+        });
+    }
+    @Override
+    public void streamIdInUse(String streamId){
+        this.handler.post(() -> {
+            if (webRTCListener != null) {
+                webRTCListener.streamIdInUse(streamId);
             }
         });
     }
@@ -1069,7 +1146,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onDisconnected() {
         this.handler.post(() -> {
             if (webRTCListener != null) {
-                webRTCListener.onDisconnected();
+                webRTCListener.onDisconnected(streamId);
             }
         });
     }
@@ -1139,6 +1216,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
+    public void setSubscriberParams(String subscriberId, String subscriberCode) {
+        this.subscriberId = subscriberId;
+        this.subscriberCode = subscriberCode;
+    }
+
+    @Override
+    public void setViewerInfo(String viewerInfo) {
+        this.viewerInfo = viewerInfo;
+    }
+
+    @Override
+    public void setStreamName(String streamName) {
+        this.streamName = streamName;
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         if(dataChannelObserver == null) return;
         this.handler.post(() -> {
@@ -1184,5 +1277,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public static Map<Long, Long> getCaptureTimeMsMapList() {
         return captureTimeMsMap;
+    }
+
+    public boolean isDataChannelOnly() {
+        return dataChannelOnly;
+    }
+
+    public void setDataChannelOnly(boolean dataChannelOnly) {
+        this.dataChannelOnly = dataChannelOnly;
+    }
+
+    public void setRoomConnectionParametersForTest(AppRTCClient.RoomConnectionParameters roomConnectionParameters) {
+        this.roomConnectionParameters = roomConnectionParameters;
+    }
+
+    public void setPeerConnectionParametersForTest(@Nullable PeerConnectionClient.PeerConnectionParameters peerConnectionParameters) {
+        this.peerConnectionParameters = peerConnectionParameters;
     }
 }

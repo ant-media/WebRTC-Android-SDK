@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -55,7 +56,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "test.antmedia.io:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.3:5080";
 
     /**
      * Mode can Publish, Play or P2P
@@ -65,8 +66,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
+    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCApp/websocket";
+    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCApp/rest/v2";
 
     private WebRTCClient webRTCClient;
 
@@ -78,6 +79,21 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
 
+
+    // variables for handling reconnection attempts after disconnected
+    final int RECONNECTION_PERIOD_MLS = 100;
+    private boolean stoppedStream = false;
+    Handler reconnectionHandler = new Handler();
+    Runnable reconnectionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!webRTCClient.isStreaming()) {
+                attempt2Reconnect();
+                // call the handler again in case startStreaming is not successful
+                reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
+            }
+        }
+    };
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -105,10 +121,20 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
         }
         else {
+
             streamInfoListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                boolean firstCall = true;
                 @Override
                 public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                    //for some reason in android onItemSelected is called automatically at first.
+                    //there are some discussions about it in stackoverflow
+                    //so we just have simple check
+                    if (firstCall) {
+                        firstCall = false;
+                        return;
+                    }
                     webRTCClient.forceStreamQuality(Integer.parseInt((String) adapterView.getSelectedItem()));
+                    Log.i("MainActivity", "Spinner onItemSelected");
                 }
 
                 @Override
@@ -125,8 +151,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 return;
             }
         }
-
-
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
@@ -151,7 +175,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        streamId = "stream1";
+        streamId = "myStream";
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
@@ -170,51 +194,67 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
                 pipViewRenderer.setZOrderOnTop(true);
             }
+            stoppedStream = false;
         }
         else {
             ((Button)v).setText("Start " + operationName);
             webRTCClient.stopStream();
+            stoppedStream = true;
         }
 
     }
 
+    private void attempt2Reconnect() {
+        Log.w(getClass().getSimpleName(), "Attempt2Reconnect called");
+        if (!webRTCClient.isStreaming()) {
+            webRTCClient.startStream();
+            if (webRTCMode == IWebRTCClient.MODE_JOIN) {
+                pipViewRenderer.setZOrderOnTop(true);
+            }
+        }
+    }
 
     @Override
-    public void onPlayStarted() {
+    public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
-
         webRTCClient.getStreamInfoList();
     }
 
     @Override
-    public void onPublishStarted() {
+    public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onPublishFinished() {
+    public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onPlayFinished() {
+    public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void noStreamExistsToPlay() {
+    public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
         finish();
     }
 
     @Override
-    public void onError(String description) {
+    public void streamIdInUse(String streamId) {
+        Log.w(getClass().getSimpleName(), "streamIdInUse");
+        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onError(String description, String streamId) {
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
     }
 
@@ -225,27 +265,47 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     }
 
     @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code) {
+    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
         Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
     }
 
     @Override
-    public void onDisconnected() {
-
+    public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
         startStreamingButton.setText("Start " + operationName);
-        //finish();
+        // handle reconnection attempt
+        if (!stoppedStream) {
+            Toast.makeText(this, "Disconnected Attempting to reconnect", Toast.LENGTH_LONG).show();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
+                    reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+                }
+            } else {
+                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+            }
+        } else {
+            Toast.makeText(this, "Stopped the stream", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
-    public void onIceConnected() {
+    public void onIceConnected(String streamId) {
         //it is called when connected to ice
+        startStreamingButton.setText("Stop " + operationName);
+        // remove scheduled reconnection attempts
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
+                reconnectionHandler.removeCallbacks(reconnectionRunnable, null);
+            }
+        } else {
+            reconnectionHandler.removeCallbacks(reconnectionRunnable, null);
+        }
     }
 
     @Override
-    public void onIceDisconnected() {
+    public void onIceDisconnected(String streamId) {
         //it's called when ice is disconnected
     }
 
