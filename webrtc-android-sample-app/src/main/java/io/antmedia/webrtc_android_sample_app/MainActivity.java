@@ -56,7 +56,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "172.16.110.178:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.3:5080";
 
     /**
      * Mode can Publish, Play or P2P
@@ -66,8 +66,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
+    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCApp/websocket";
+    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCApp/rest/v2";
 
     private WebRTCClient webRTCClient;
 
@@ -175,7 +175,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        streamId = "stream1";
+        streamId = "myStream";
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
@@ -194,11 +194,11 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
                 pipViewRenderer.setZOrderOnTop(true);
             }
+            stoppedStream = false;
         }
         else {
             ((Button)v).setText("Start " + operationName);
             webRTCClient.stopStream();
-            webRTCClient.startStream();
             stoppedStream = true;
         }
 
@@ -287,7 +287,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             }
         } else {
             Toast.makeText(this, "Stopped the stream", Toast.LENGTH_LONG).show();
-            stoppedStream = false;
         }
     }
 
