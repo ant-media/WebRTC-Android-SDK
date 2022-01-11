@@ -139,6 +139,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 	private String url;
 	private String token;
 	private boolean dataChannelOnly = false;
+    private String subscriberId = "";
+    private String subscriberCode = "";
+    private String streamName = "";
+    private String viewerInfo = "";
     private String currentSource;
     private boolean screenPersmisonNeeded = true;
 
@@ -340,6 +344,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         // Create connection parameters.
         String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
+
+
+
         roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode ,token);
 
@@ -633,10 +640,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            wsHandler.startPublish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled);
+            publish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled, subscriberId, subscriberCode, streamName);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
-            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null);
+            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null, subscriberId, subscriberCode, viewerInfo);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_JOIN)) {
             wsHandler.joinToPeer(roomConnectionParameters.roomId, roomConnectionParameters.token);
@@ -646,8 +653,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
+    private void publish(String roomId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName) {
+        wsHandler.startPublish(roomId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName);
+    }
+
     public void play(String streamId, String token, String[] tracks) {
-        wsHandler.startPlay(streamId, token, tracks);
+        play(streamId, token, tracks, "", "", "");
+    }
+
+    public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
+        wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
     }
 
     public void enableTrack(String streamId, String trackId, boolean enabled) {
@@ -1192,6 +1207,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @Override
+    public void setSubscriberParams(String subscriberId, String subscriberCode) {
+        this.subscriberId = subscriberId;
+        this.subscriberCode = subscriberCode;
+    }
+
+    @Override
+    public void setViewerInfo(String viewerInfo) {
+        this.viewerInfo = viewerInfo;
+    }
+
+    @Override
+    public void setStreamName(String streamName) {
+        this.streamName = streamName;
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         if(dataChannelObserver == null) return;
         this.handler.post(() -> {
@@ -1245,5 +1276,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void setDataChannelOnly(boolean dataChannelOnly) {
         this.dataChannelOnly = dataChannelOnly;
+    }
+
+    public void setRoomConnectionParametersForTest(AppRTCClient.RoomConnectionParameters roomConnectionParameters) {
+        this.roomConnectionParameters = roomConnectionParameters;
+    }
+
+    public void setPeerConnectionParametersForTest(@Nullable PeerConnectionClient.PeerConnectionParameters peerConnectionParameters) {
+        this.peerConnectionParameters = peerConnectionParameters;
     }
 }
