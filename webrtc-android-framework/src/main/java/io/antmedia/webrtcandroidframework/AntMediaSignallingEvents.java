@@ -98,4 +98,11 @@ public interface AntMediaSignallingEvents {
      * @param streamInfoList
      */
     void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList);
+
+    /**
+     * It's called when error message is received
+     * @param streamId
+     * @param definition
+     */
+    void onError(String streamId, String definition);
 }
