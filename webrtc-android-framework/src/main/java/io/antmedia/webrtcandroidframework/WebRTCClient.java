@@ -1182,7 +1182,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onError(String streamId, String definition) {
         this.handler.post(()-> {
             if (webRTCListener != null) {
-                webRTCListener.onError(definition);
+                webRTCListener.onError(definition, streamId);
             }
         });
     }
@@ -1193,7 +1193,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
-        peerConnectionClient.sendMessageViaDataChannel(buffer);
+        if(isDataChannelEnabled()) {
+            peerConnectionClient.sendMessageViaDataChannel(buffer);
+        }
     }
 
     @Override
