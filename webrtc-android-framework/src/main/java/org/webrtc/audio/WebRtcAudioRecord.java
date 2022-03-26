@@ -419,16 +419,15 @@ class WebRtcAudioRecord {
   private static AudioRecord createAudioRecordOnMOrHigher(
       int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
     Logging.d(TAG, "createAudioRecordOnMOrHigher");
-
-      return new AudioRecord.Builder()
-              .setAudioSource(audioSource)
-              .setAudioFormat(new AudioFormat.Builder()
-                      .setEncoding(audioFormat)
-                      .setSampleRate(sampleRate)
-                      .setChannelMask(channelConfig)
-                      .build())
-              .setBufferSizeInBytes(bufferSizeInBytes)
-              .build();
+    return new AudioRecord.Builder()
+        .setAudioSource(audioSource)
+        .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(audioFormat)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(channelConfig)
+                            .build())
+        .setBufferSizeInBytes(bufferSizeInBytes)
+        .build();
   }
 
   private static AudioRecord createAudioRecordOnLowerThanM(

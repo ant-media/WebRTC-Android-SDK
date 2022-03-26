@@ -179,8 +179,6 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   // recorded audio samples to an output file.
   @Nullable private RecordedAudioToFileController saveRecordedAudioToFile;
 
-  @Nullable public MediaProjection mediaProjection;
-
   @Nullable
   IDataChannelObserver dataChannelObserver;
 
@@ -275,7 +273,6 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   }
 
 public void setMediaProjection(MediaProjection mediaProjection){
-    this.mediaProjection = mediaProjection;
    adm.setMediaProjection(mediaProjection);
 }
     /**

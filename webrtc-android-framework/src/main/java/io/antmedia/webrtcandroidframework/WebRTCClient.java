@@ -77,8 +77,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public static final String SOURCE_SCREEN = "SCREEN";
     public static final String SOURCE_FRONT = "FRONT";
     public static final String SOURCE_REAR = "REAR";
-    private MediaProjection mediaProjection;
-
     public MediaProjectionManager mediaProjectionManager;
 
     ScreenCapturerAndroid screenCapturer;
@@ -423,7 +421,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     public void setMediaProjection(MediaProjection mediaProjection){
-        this.mediaProjection = mediaProjection;
         peerConnectionClient.setMediaProjection(mediaProjection);
     };
 
@@ -484,6 +481,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         screenPersmisonNeeded = false;
         changeVideoSource(SOURCE_SCREEN);
+
+        if(screenCapturer.getMediaProjection() != null){
+            this.setMediaProjection(screenCapturer.getMediaProjection());
+        }
     }
 
     private boolean useCamera2() {
@@ -807,9 +808,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
             peerConnectionClient.changeVideoCapturer(videoCapturer, videoWidth, videoHeight);
             currentSource = newSource;
-            if(screenCapturer.getMediaProjection() != null){
-                this.setMediaProjection(screenCapturer.getMediaProjection());
-            }
         }
     }
 

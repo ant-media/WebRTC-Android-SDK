@@ -1,13 +1,8 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import static org.webrtc.VideoFrameDrawer.TAG;
-
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -42,7 +37,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
 
-    @RequiresApi(api = Build.VERSION_CODES.Q)
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,7 +84,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         bg = findViewById(R.id.rbGroup);
         bg.check(R.id.rbFront);
         bg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @RequiresApi(api = Build.VERSION_CODES.Q)
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
                 String newSource = "";
@@ -103,44 +97,22 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                     newSource = WebRTCClient.SOURCE_REAR;
                 }
                 webRTCClient.changeVideoSource(newSource);
-               // webRTCClient.changeAudioSource();
             }
         });
 
         String streamId = "stream36";
         String tokenId = "tokenId";
-        String url = "wss://test.antmedia.io:5443/WebRTCAppEE/websocket";
+        String url = "ws://test.antmedia.io:5080/WebRTCAppEE/websocket";
 
         webRTCClient.init(url, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
     }
 
-
-    @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         webRTCClient.onActivityResult(requestCode, resultCode, data);
-/*
-        MediaProjectionManager mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(
-                Context.MEDIA_PROJECTION_SERVICE);
-
-/*
-
-        MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(
-                Activity.RESULT_OK, data);
-
-        //aaaaaaaaaaa
-        if(mediaProjection != null){
-            Log.e(TAG, "1111111111111111111:");
-        }
-        else{
-            Log.e(TAG, "22222222222222222222");
-        }
-        */
-
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.Q)
     public void startStreaming(View v) {
 
         if (!webRTCClient.isStreaming()) {

@@ -18,7 +18,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
-import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -26,7 +25,6 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import org.webrtc.ThreadUtils;
-import org.webrtc.voiceengine.WebRtcAudioRecord;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -43,7 +41,6 @@ public class AppRTCAudioManager {
   private static final String SPEAKERPHONE_AUTO = "auto";
   private static final String SPEAKERPHONE_TRUE = "true";
   private static final String SPEAKERPHONE_FALSE = "false";
-  public MediaProjection mediaProjection = null;
 
   /**
    * AudioDevice is the names of possible audio devices that we currently
@@ -297,10 +294,6 @@ public class AppRTCAudioManager {
     // wired headset.
     registerReceiver(wiredHeadsetReceiver, new IntentFilter(Intent.ACTION_HEADSET_PLUG));
     Log.d(TAG, "AudioManager started");
-  }
-
-  public void setMediaProjection(MediaProjection mediaProjection){
-    this.mediaProjection = mediaProjection;
   }
 
   @SuppressWarnings("deprecation") // TODO(henrika): audioManager.abandonAudioFocus() is deprecated.
