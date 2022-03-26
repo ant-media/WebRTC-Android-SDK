@@ -56,7 +56,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.4:5080";
+    public static final String SERVER_ADDRESS = "test.antmedia.io:5443";
 
     /**
      * Mode can Publish, Play or P2P
@@ -66,8 +66,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
+    public static final String SERVER_URL = "wss://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
+    public static final String REST_URL = "https://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
 

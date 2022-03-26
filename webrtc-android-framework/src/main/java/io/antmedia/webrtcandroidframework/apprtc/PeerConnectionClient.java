@@ -11,6 +11,7 @@
 package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.content.Context;
+import android.media.projection.MediaProjection;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
@@ -129,7 +130,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   @Nullable
   private PeerConnectionFactory factory;
   @Nullable
-  private PeerConnection peerConnection;
+  public PeerConnection peerConnection;
   @Nullable
   private AudioSource audioSource;
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
@@ -178,6 +179,8 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   // recorded audio samples to an output file.
   @Nullable private RecordedAudioToFileController saveRecordedAudioToFile;
 
+  @Nullable public MediaProjection mediaProjection;
+
   @Nullable
   IDataChannelObserver dataChannelObserver;
 
@@ -203,6 +206,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       dataChannelObserver.onMessage(buffer,dataChannel.label());
     }
   };
+  public AudioDeviceModule adm;
 
   @Nullable
   public DataChannel getDataChannel() {
@@ -270,7 +274,10 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
   }
 
-
+public void setMediaProjection(MediaProjection mediaProjection){
+    this.mediaProjection = mediaProjection;
+   adm.setMediaProjection(mediaProjection);
+}
     /**
    * Peer connection parameters.
    */
@@ -525,7 +532,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       }
     }
 
-    final AudioDeviceModule adm = createJavaAudioDevice();
+    adm = createJavaAudioDevice();
 
     // Create peer connection factory.
     if (options != null) {

@@ -45,19 +45,19 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.31:5080";
+    public static final String SERVER_ADDRESS = "test.antmedia.io:5443";
 
     private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
+    public static final String SERVER_URL = "wss://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
+    public static final String REST_URL = "https://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
 
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId = "stream1";
+    private String streamId = "stream12";
     String tokenId = "tokenId";
 
     private SurfaceViewRenderer cameraViewRenderer;
@@ -126,6 +126,7 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
         final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
         DataChannel.Buffer buf= new DataChannel.Buffer(buffer,false);
         webRTCClient.sendMessageViaDataChannel(buf);
+        messageInput.setText("");
     }
 
     @Override

@@ -77,6 +77,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public static final String SOURCE_SCREEN = "SCREEN";
     public static final String SOURCE_FRONT = "FRONT";
     public static final String SOURCE_REAR = "REAR";
+    private MediaProjection mediaProjection;
+
+    public MediaProjectionManager mediaProjectionManager;
+
+    ScreenCapturerAndroid screenCapturer;
 
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
@@ -417,6 +422,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
+    public void setMediaProjection(MediaProjection mediaProjection){
+        this.mediaProjection = mediaProjection;
+        peerConnectionClient.setMediaProjection(mediaProjection);
+    };
 
     public void setBitrate(int bitrate) {
         peerConnectionClient.setVideoMaxBitrate(bitrate);
@@ -456,7 +465,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @TargetApi(21)
     public void startScreenCapture() {
-        MediaProjectionManager mediaProjectionManager =
+        mediaProjectionManager =
                 (MediaProjectionManager) this.context.getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
 
@@ -543,13 +552,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             reportError("User didn't give permission to capture the screen.");
             return null;
         }
-        return new ScreenCapturerAndroid(
+        screenCapturer = new ScreenCapturerAndroid(
                 mediaProjectionPermissionResultData, new MediaProjection.Callback() {
             @Override
             public void onStop() {
                 reportError("User revoked permission to capture the screen.");
             }
         });
+        return screenCapturer;
     }
 
     @Override
@@ -797,6 +807,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
             peerConnectionClient.changeVideoCapturer(videoCapturer, videoWidth, videoHeight);
             currentSource = newSource;
+            if(screenCapturer.getMediaProjection() != null){
+                this.setMediaProjection(screenCapturer.getMediaProjection());
+            }
         }
     }
 

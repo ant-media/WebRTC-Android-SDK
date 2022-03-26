@@ -12,6 +12,8 @@ package org.webrtc.audio;
 
 import android.media.AudioManager;
 import android.content.Context;
+import android.media.AudioRecord;
+import android.media.projection.MediaProjection;
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
 
@@ -372,4 +374,9 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
   private static native long nativeCreateAudioDeviceModule(Context context,
       AudioManager audioManager, WebRtcAudioRecord audioInput, WebRtcAudioTrack audioOutput,
       int inputSampleRate, int outputSampleRate, boolean useStereoInput, boolean useStereoOutput);
+
+  @Override
+  public void setMediaProjection(MediaProjection mediaProjection){
+    audioInput.setMediaProjection(mediaProjection);
+  }
 }
