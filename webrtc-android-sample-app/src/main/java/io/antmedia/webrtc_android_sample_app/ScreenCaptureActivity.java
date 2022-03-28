@@ -102,7 +102,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         String streamId = "stream36";
         String tokenId = "tokenId";
-        String url = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
+        String url = "ws://test.antmedia.io:5080/WebRTCAppEE/websocket";
 
         webRTCClient.init(url, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
     }

@@ -146,6 +146,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String currentSource;
     private boolean screenPersmisonNeeded = true;
 
+    public MediaProjectionManager mediaProjectionManager;
+    ScreenCapturerAndroid screenCapturer;
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
@@ -417,6 +419,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
+    public void setMediaProjection(MediaProjection mediaProjection){
+        peerConnectionClient.setMediaProjection(mediaProjection);
+    };
 
     public void setBitrate(int bitrate) {
         peerConnectionClient.setVideoMaxBitrate(bitrate);
@@ -456,7 +461,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @TargetApi(21)
     public void startScreenCapture() {
-        MediaProjectionManager mediaProjectionManager =
+        mediaProjectionManager =
                 (MediaProjectionManager) this.context.getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
 
@@ -475,6 +480,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         screenPersmisonNeeded = false;
         changeVideoSource(SOURCE_SCREEN);
+
+        if(screenCapturer.getMediaProjection() != null){
+
+            if(android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                Toast.makeText(context,"API level 29+ and media projection is not null",Toast.LENGTH_LONG).show();
+            }
+            this.setMediaProjection(screenCapturer.getMediaProjection());
+        }
     }
 
     private boolean useCamera2() {
@@ -543,13 +556,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             reportError("User didn't give permission to capture the screen.");
             return null;
         }
-        return new ScreenCapturerAndroid(
+        screenCapturer = new ScreenCapturerAndroid(
                 mediaProjectionPermissionResultData, new MediaProjection.Callback() {
             @Override
             public void onStop() {
                 reportError("User revoked permission to capture the screen.");
             }
         });
+
+        return screenCapturer;
     }
 
     @Override
