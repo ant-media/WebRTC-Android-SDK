@@ -401,14 +401,13 @@ class WebRtcAudioRecord {
                     .build();
 
     return new AudioRecord.Builder()
-            .setAudioSource(audioSource)
             .setAudioFormat(new AudioFormat.Builder()
                     .setEncoding(audioFormat)
                     .setSampleRate(sampleRate)
                     .setChannelMask(channelConfig)
                     .build())
             .setBufferSizeInBytes(bufferSizeInBytes)
-            .setAudioPlaybackCaptureConfig(audioConfig) // aaa
+            .setAudioPlaybackCaptureConfig(audioConfig)
             .build();
   }
 
