@@ -6,7 +6,7 @@ on:
     branches: [ master , sdk-tests ]
 jobs:
   build-with-upload-artifact:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
