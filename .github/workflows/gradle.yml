@@ -5,46 +5,19 @@ on:
   pull_request:
     branches: [ master , sdk-tests ]
 jobs:
-  build:
+  build-with-upload-artifact:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
           java-version: 11
           distribution: 'adopt'
-  test:
-    runs-on: macos-latest
-    needs: build
-    strategy:
-      matrix:
-        api-level: [ 21, 23, 29 ]
-        target: [ default ]
-
-      steps:
-        - name: Checkout the code
-          uses: actions/checkout@v2
-
-        - name: Set up JDK 11
-          uses: actions/setup-java@v1
-          with:
-            java-version: 11
-
-        - name: Run unit tests
-          run: ./gradlew test --stacktrace
-
-        - name: Instrumentation Tests
-          uses: reactivecircus/android-emulator-runner@v2
-          with:
-            api-level: ${{ matrix.api-level }}
-            target: ${{ matrix.target }}
-            arch: x86
-            profile: Nexus 6
-            script: ./gradlew connectedCheck --stacktrace
-
-        - name: Upload Reports
-          uses: actions/upload-artifact@v2
-          with:
-            name: Test-Reports
-            path: app/build/reports
-          if: always()
+      - name: Build and Test with Gradle
+        run: ./gradlew testReleaseUnitTest --tests ExampleUnitTest
+      - name: Archive test report
+        uses: actions/upload-artifact@v2
+        with:
+          name: Test report
+          path: build/reports/tests/test
