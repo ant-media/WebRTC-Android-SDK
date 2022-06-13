@@ -15,7 +15,7 @@ jobs:
           java-version: 11
           distribution: 'adopt'
   test:
-    runs-on: macous-latest
+    runs-on: macos-latest
     needs: build
     strategy:
       matrix:
