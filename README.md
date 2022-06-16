@@ -4,18 +4,14 @@
 
 Ant Media Server is a streaming engine software that provides adaptive, ultra low latency streaming by using WebRTC technology with ~0.5 seconds latency or low latency by using HLS or CMAF. Ant Media Server is highly scalable, running on-premises or on any cloud provider of your choice.
 
-## About iOS SDK
+## About Android SDK
 
-This repository includes Ant Media iOS Android for WebRTC. 
+This repository includes Ant Media Android SDK for WebRTC. 
 
 ## Integration 
 
 In order to integrate Android SDK to your project, please follow [this link](https://resources.antmedia.io/docs/android-sdk).
 
-## Security 
-
-If you discover any issues regarding security, please disclose the information responsibly by sending an email to security@antmedia.io.
-
 ## Support
 
-Have any questions about the iOS SDK? Visit our [community platform](http://community.antmedia.io/).
+Have any questions about the Android SDK? Visit our [community platform](http://community.antmedia.io/).
