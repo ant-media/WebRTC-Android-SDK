@@ -146,6 +146,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String currentSource;
     private boolean screenPersmisonNeeded = true;
 
+    public MediaProjection mediaProjection;
+    public MediaProjectionManager mediaProjectionManager;
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
@@ -417,6 +419,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
+    public void setMediaProjection(MediaProjection mediaProjection){
+        this.mediaProjection = mediaProjection;
+        peerConnectionClient.setMediaProjection(mediaProjection);
+    };
 
     public void setBitrate(int bitrate) {
         peerConnectionClient.setVideoMaxBitrate(bitrate);
@@ -456,7 +462,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @TargetApi(21)
     public void startScreenCapture() {
-        MediaProjectionManager mediaProjectionManager =
+        mediaProjectionManager =
                 (MediaProjectionManager) this.context.getSystemService(
                         Context.MEDIA_PROJECTION_SERVICE);
 
@@ -543,7 +549,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             reportError("User didn't give permission to capture the screen.");
             return null;
         }
-        return new ScreenCapturerAndroid(
+        return new ScreenCapturerAndroid(mediaProjection,
                 mediaProjectionPermissionResultData, new MediaProjection.Callback() {
             @Override
             public void onStop() {

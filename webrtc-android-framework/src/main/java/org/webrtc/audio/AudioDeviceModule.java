@@ -10,6 +10,8 @@
 
 package org.webrtc.audio;
 
+import android.media.projection.MediaProjection;
+
 /**
  * This interface is a thin wrapper on top of a native C++ webrtc::AudioDeviceModule (ADM). The
  * reason for basing it on a native ADM instead of a pure Java interface is that we have two native
@@ -35,4 +37,8 @@ public interface AudioDeviceModule {
 
   /** Control muting/unmuting the microphone. */
   void setMicrophoneMute(boolean mute);
+
+  /** Set media projection for the audio record. */
+  void setMediaProjection(MediaProjection mediaProjection);
+
 }

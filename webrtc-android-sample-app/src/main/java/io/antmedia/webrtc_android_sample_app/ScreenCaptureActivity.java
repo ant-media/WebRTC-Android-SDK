@@ -25,19 +25,12 @@ import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
-
-
-    private CallFragment callFragment;
-
-    public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,7 +103,21 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-        webRTCClient.onActivityResult(requestCode, resultCode, data);
+        // If the device version is v29 or higher, screen sharing will work service due to media projection policy.
+        // Otherwise media projection will work without service
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            MediaProjectionService service = new MediaProjectionService();
+
+            service.setListener(mediaProjection -> {
+                webRTCClient.setMediaProjection(mediaProjection);
+                webRTCClient.onActivityResult(requestCode, resultCode, data);
+            });
+
+            service.start(getApplicationContext(), data);
+        }
+        else{
+            webRTCClient.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     public void startStreaming(View v) {
