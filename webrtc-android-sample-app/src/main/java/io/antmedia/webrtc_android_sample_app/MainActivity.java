@@ -56,7 +56,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "172.16.110.178:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.34:5080";
+
 
     /**
      * Mode can Publish, Play or P2P
@@ -81,15 +82,20 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
 
     // variables for handling reconnection attempts after disconnected
-    final int RECONNECTION_PERIOD_MLS = 100;
+    final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
     Handler reconnectionHandler = new Handler();
     Runnable reconnectionRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!webRTCClient.isStreaming()) {
-                attempt2Reconnect();
-                // call the handler again in case startStreaming is not successful
+            if (!stoppedStream && !webRTCClient.isStreaming()) {
+                webRTCClient.startStream();
+                if (webRTCMode == IWebRTCClient.MODE_JOIN)
+                {
+                    pipViewRenderer.setZOrderOnTop(true);
+                }
+            }
+            if (!stoppedStream) {
                 reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
             }
         }
@@ -175,7 +181,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        streamId = "stream1";
+        streamId = "myStream";
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
@@ -194,24 +200,16 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
                 pipViewRenderer.setZOrderOnTop(true);
             }
+            stoppedStream = false;
         }
         else {
             ((Button)v).setText("Start " + operationName);
+            reconnectionHandler.removeCallbacks(reconnectionRunnable);
             webRTCClient.stopStream();
-            webRTCClient.startStream();
             stoppedStream = true;
+
         }
 
-    }
-
-    private void attempt2Reconnect() {
-        Log.w(getClass().getSimpleName(), "Attempt2Reconnect called");
-        if (!webRTCClient.isStreaming()) {
-            webRTCClient.startStream();
-            if (webRTCMode == IWebRTCClient.MODE_JOIN) {
-                pipViewRenderer.setZOrderOnTop(true);
-            }
-        }
     }
 
     @Override
@@ -262,6 +260,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
+        stoppedStream = true;
     }
 
     @Override
@@ -272,7 +271,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     @Override
     public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
 
         startStreamingButton.setText("Start " + operationName);
         // handle reconnection attempt
@@ -287,7 +286,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             }
         } else {
             Toast.makeText(this, "Stopped the stream", Toast.LENGTH_LONG).show();
-            stoppedStream = false;
         }
     }
 
@@ -295,14 +293,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void onIceConnected(String streamId) {
         //it is called when connected to ice
         startStreamingButton.setText("Stop " + operationName);
-        // remove scheduled reconnection attempts
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
-                reconnectionHandler.removeCallbacks(reconnectionRunnable, null);
-            }
-        } else {
-            reconnectionHandler.removeCallbacks(reconnectionRunnable, null);
-        }
     }
 
     @Override

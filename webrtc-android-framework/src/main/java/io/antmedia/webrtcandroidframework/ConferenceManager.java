@@ -80,6 +80,10 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         this.playOnlyMode = playOnlyMode;
     }
 
+    public boolean isPlayOnlyMode() {
+        return playOnlyMode;
+    }
+
     public boolean isJoined() {
         return joined;
     }
@@ -290,6 +294,14 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         }
     }
 
+    public void switchCamera()
+    {
+        WebRTCClient publisherClient = peers.get(streamId);
+        if (publisherClient != null) {
+            publisherClient.switchCamera();
+        }
+    }
+
 
     private void streamJoined(String streamId) {
         WebRTCClient player = createPeer(streamId, IWebRTCClient.MODE_PLAY);
@@ -327,6 +339,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+
+    }
+
+    @Override
+    public void onError(String streamId, String definition) {
 
     }
 

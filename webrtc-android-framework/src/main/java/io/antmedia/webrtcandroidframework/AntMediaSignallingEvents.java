@@ -75,6 +75,9 @@ public interface AntMediaSignallingEvents {
      */
     void onRoomInformation(String[] streams);
 
+    /**
+     * It's called when websocket connection is disconnected
+     */
     void onDisconnected();
 
     /**
@@ -98,4 +101,11 @@ public interface AntMediaSignallingEvents {
      * @param streamInfoList
      */
     void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList);
+
+    /**
+     * It's called when error message is received
+     * @param streamId
+     * @param definition
+     */
+    void onError(String streamId, String definition);
 }

@@ -16,8 +16,6 @@ import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
@@ -77,6 +75,7 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import androidx.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient.SignalingParameters;
 
@@ -256,8 +255,26 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     this.localVideoTrack = localVideoTrack;
   }
 
+  public void changeVideoCapturer(VideoCapturer videoCapturer, int width, int height) {
+    this.videoWidth = width;
+    this.videoHeight = height;
+    try {
+      this.videoCapturer.stopCapture();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    videoCapturerStopped = true;
+    this.videoCapturer = videoCapturer;
+    this.localVideoTrack = null;
 
-  /**
+    MediaStreamTrack newTrack = (MediaStreamTrack) createVideoTrack(this.videoCapturer);
+    if(this.localVideoSender != null) {
+      this.localVideoSender.setTrack(newTrack, true);
+    }
+  }
+
+
+    /**
    * Peer connection parameters.
    */
   public static class DataChannelParameters {
