@@ -15,50 +15,54 @@ package org.webrtc;
  * a single decoding thread.
  */
 public interface VideoDecoder {
-  /** Settings passed to the decoder by WebRTC. */
-  public class Settings {
-    public final int numberOfCores;
-    public final int width;
-    public final int height;
-
-    @CalledByNative("Settings")
-    public Settings(int numberOfCores, int width, int height) {
-      this.numberOfCores = numberOfCores;
-      this.width = width;
-      this.height = height;
-    }
-  }
-
-  /** Additional info for decoding. */
-  public class DecodeInfo {
-    public final boolean isMissingFrames;
-    public final long renderTimeMs;
-
-    public DecodeInfo(boolean isMissingFrames, long renderTimeMs) {
-      this.isMissingFrames = isMissingFrames;
-      this.renderTimeMs = renderTimeMs;
-    }
-  }
-
-  public interface Callback {
     /**
-     * Call to return a decoded frame. Can be called on any thread.
-     *
-     * @param frame Decoded frame
-     * @param decodeTimeMs Time it took to decode the frame in milliseconds or null if not available
-     * @param qp QP value of the decoded frame or null if not available
+     * Settings passed to the decoder by WebRTC.
      */
-    void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp);
-  }
+    class Settings {
+        public final int numberOfCores;
+        public final int width;
+        public final int height;
 
-  /**
-   * The decoder implementation backing this interface is either 1) a Java
-   * decoder (e.g., an Android platform decoder), or alternatively 2) a native
-   * decoder (e.g., a software decoder or a C++ decoder adapter).
-   *
-   * For case 1), createNativeVideoDecoder() should return zero.
-   * In this case, we expect the native library to call the decoder through
-   * JNI using the Java interface declared below.
+        @CalledByNative("Settings")
+        public Settings(int numberOfCores, int width, int height) {
+            this.numberOfCores = numberOfCores;
+            this.width = width;
+            this.height = height;
+        }
+    }
+
+    /**
+     * Additional info for decoding.
+     */
+    class DecodeInfo {
+        public final boolean isMissingFrames;
+        public final long renderTimeMs;
+
+        public DecodeInfo(boolean isMissingFrames, long renderTimeMs) {
+            this.isMissingFrames = isMissingFrames;
+            this.renderTimeMs = renderTimeMs;
+        }
+    }
+
+    interface Callback {
+        /**
+         * Call to return a decoded frame. Can be called on any thread.
+         *
+         * @param frame        Decoded frame
+         * @param decodeTimeMs Time it took to decode the frame in milliseconds or null if not available
+         * @param qp           QP value of the decoded frame or null if not available
+         */
+        void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp);
+    }
+
+    /**
+     * The decoder implementation backing this interface is either 1) a Java
+     * decoder (e.g., an Android platform decoder), or alternatively 2) a native
+     * decoder (e.g., a software decoder or a C++ decoder adapter).
+     *
+     * For case 1), createNativeVideoDecoder() should return zero.
+     * In this case, we expect the native library to call the decoder through
+     * JNI using the Java interface declared below.
    *
    * For case 2), createNativeVideoDecoder() should return a non-zero value.
    * In this case, we expect the native library to treat the returned value as

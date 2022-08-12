@@ -18,12 +18,14 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Process;
+
 import androidx.annotation.Nullable;
-import java.lang.Thread;
-import java.nio.ByteBuffer;
+
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
+
+import java.nio.ByteBuffer;
 
 public class WebRtcAudioTrack {
   private static final boolean DEBUG = false;
@@ -90,21 +92,27 @@ public class WebRtcAudioTrack {
   }
 
   @Deprecated
-  public static interface WebRtcAudioTrackErrorCallback {
+  public interface WebRtcAudioTrackErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
+
     void onWebRtcAudioTrackStartError(String errorMessage);
+
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
   // TODO(henrika): upgrade all clients to use this new interface instead.
-  public static interface ErrorCallback {
+  public interface ErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
+
     void onWebRtcAudioTrackStartError(AudioTrackStartErrorCode errorCode, String errorMessage);
+
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
-  private static @Nullable WebRtcAudioTrackErrorCallback errorCallbackOld;
-  private static @Nullable ErrorCallback errorCallback;
+  private static @Nullable
+  WebRtcAudioTrackErrorCallback errorCallbackOld;
+  private static @Nullable
+  ErrorCallback errorCallback;
 
   @Deprecated
   public static void setErrorCallback(WebRtcAudioTrackErrorCallback errorCallback) {
@@ -209,17 +217,17 @@ public class WebRtcAudioTrack {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioTrack = nativeAudioTrack;
     audioManager =
-        (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+            (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }
   }
 
-  private boolean initPlayout(int sampleRate, int channels, double bufferSizeFactor) {
+  private int initPlayout(int sampleRate, int channels, double bufferSizeFactor) {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG,
-        "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels
-            + ", bufferSizeFactor=" + bufferSizeFactor + ")");
+            "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels
+                    + ", bufferSizeFactor=" + bufferSizeFactor + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
     Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
@@ -234,8 +242,8 @@ public class WebRtcAudioTrack {
     // Note that this size doesn't guarantee a smooth playback under load.
     final int channelConfig = channelCountToConfiguration(channels);
     final int minBufferSizeInBytes = (int) (AudioTrack.getMinBufferSize(sampleRate, channelConfig,
-                                                AudioFormat.ENCODING_PCM_16BIT)
-        * bufferSizeFactor);
+            AudioFormat.ENCODING_PCM_16BIT)
+            * bufferSizeFactor);
     Logging.d(TAG, "minBufferSizeInBytes: " + minBufferSizeInBytes);
     // For the streaming mode, data must be written to the audio sink in
     // chunks of size (given by byteBuffer.capacity()) less than or equal
@@ -244,14 +252,14 @@ public class WebRtcAudioTrack {
     // can happen that |minBufferSizeInBytes| contains an invalid value.
     if (minBufferSizeInBytes < byteBuffer.capacity()) {
       reportWebRtcAudioTrackInitError("AudioTrack.getMinBufferSize returns an invalid value.");
-      return false;
+      return -1;
     }
 
     // Ensure that prevision audio session was stopped correctly before trying
     // to create a new AudioTrack.
     if (audioTrack != null) {
       reportWebRtcAudioTrackInitError("Conflict with existing AudioTrack.");
-      return false;
+      return -1;
     }
     try {
       // Create an AudioTrack object and initialize its associated audio buffer.
@@ -273,7 +281,7 @@ public class WebRtcAudioTrack {
     } catch (IllegalArgumentException e) {
       reportWebRtcAudioTrackInitError(e.getMessage());
       releaseAudioResources();
-      return false;
+      return -1;
     }
 
     // It can happen that an AudioTrack is created but it was not successfully
@@ -282,11 +290,11 @@ public class WebRtcAudioTrack {
     if (audioTrack == null || audioTrack.getState() != AudioTrack.STATE_INITIALIZED) {
       reportWebRtcAudioTrackInitError("Initialization of audio track failed.");
       releaseAudioResources();
-      return false;
+      return -1;
     }
     logMainParameters();
     logMainParametersExtended();
-    return true;
+    return minBufferSizeInBytes;
   }
 
   private boolean startPlayout() {
@@ -415,14 +423,14 @@ public class WebRtcAudioTrack {
           .build(),
         bufferSizeInBytes,
         AudioTrack.MODE_STREAM,
-        AudioManager.AUDIO_SESSION_ID_GENERATE);
+            AudioManager.AUDIO_SESSION_ID_GENERATE);
   }
 
   @SuppressWarnings("deprecation") // Deprecated in API level 25.
   private static AudioTrack createAudioTrackOnLowerThanLollipop(
-      int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
+          int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
     return new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRateInHz, channelConfig,
-        AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+            AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
   }
 
   private void logBufferSizeInFrames() {
@@ -433,12 +441,19 @@ public class WebRtcAudioTrack {
     }
   }
 
+  private int getBufferSizeInFrames() {
+    if (Build.VERSION.SDK_INT >= 23) {
+      return audioTrack.getBufferSizeInFrames();
+    }
+    return -1;
+  }
+
   private void logBufferCapacityInFrames() {
     if (Build.VERSION.SDK_INT >= 24) {
       Logging.d(TAG,
-          "AudioTrack: "
-              // Maximum size of the AudioTrack buffer in frames.
-              + "buffer capacity in frames: " + audioTrack.getBufferCapacityInFrames());
+              "AudioTrack: "
+                      // Maximum size of the AudioTrack buffer in frames.
+                      + "buffer capacity in frames: " + audioTrack.getBufferCapacityInFrames());
     }
   }
 

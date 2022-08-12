@@ -62,7 +62,7 @@ public class GlTextureFrameBuffer {
       textureId = GlUtil.generateTexture(GLES20.GL_TEXTURE_2D);
     }
     if (frameBufferId == 0) {
-      final int frameBuffers[] = new int[1];
+      final int[] frameBuffers = new int[1];
       GLES20.glGenFramebuffers(1, frameBuffers, 0);
       frameBufferId = frameBuffers[0];
     }

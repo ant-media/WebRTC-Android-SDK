@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.content.Context;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
@@ -32,8 +33,6 @@ import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.PeerConnectionState;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.RTCStatsCollectorCallback;
-import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
@@ -42,6 +41,8 @@ import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SoftwareVideoDecoderFactory;
 import org.webrtc.SoftwareVideoEncoderFactory;
+import org.webrtc.StatsObserver;
+import org.webrtc.StatsReport;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoDecoderFactory;
@@ -76,6 +77,7 @@ import java.util.regex.Pattern;
 
 import androidx.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
+import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient.SignalingParameters;
 
 /**
  * Peer connection client implementation.
@@ -139,8 +141,9 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   private boolean isError;
   @Nullable
   private VideoSink localRender;
-  @Nullable private List<VideoSink> remoteSinks;
-  private AppRTCClient.SignalingParameters signalingParameters;
+  @Nullable
+  private List<VideoSink> remoteSinks;
+  private SignalingParameters signalingParameters;
   private int videoWidth;
   private int videoHeight;
   private int videoFps;
@@ -211,31 +214,31 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
   @Override
   public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
-      if (dataChannel != null && dataChannel.state() == DataChannel.State.OPEN) {
-          executor.execute(() -> {
-              try {
+    if (dataChannel != null && dataChannel.state() == DataChannel.State.OPEN) {
+      executor.execute(() -> {
+        try {
 
-                  boolean success = dataChannel.send(buffer);
-                  buffer.data.rewind();
-                if (dataChannelObserver != null) {
-                  if (success) {
-                    dataChannelObserver.onMessageSent(buffer, true);
-                  } else {
-                    dataChannelObserver.onMessageSent(buffer, false);
-                    reportError("Failed to send the message via Data Channel ");
-                  }
-                  }
-              } catch (Exception e) {
-                reportError("An error occurred when sending the message via Data Channel " + e.getMessage());
-                if (dataChannelObserver != null) {
-                  buffer.data.rewind();
-                  dataChannelObserver.onMessageSent(buffer, false);
-                }
-              }
-          });
-      } else {
-          reportError("Data Channel is not ready for usage.");
-      }
+          boolean success = dataChannel.send(buffer);
+          buffer.data.rewind();
+          if (dataChannelObserver != null) {
+            if (success) {
+              dataChannelObserver.onMessageSent(buffer, true);
+            } else {
+              dataChannelObserver.onMessageSent(buffer, false);
+              reportError("Failed to send the message via Data Channel ");
+            }
+          }
+        } catch (Exception e) {
+          reportError("An error occurred when sending the message via Data Channel " + e.getMessage());
+          if (dataChannelObserver != null) {
+            buffer.data.rewind();
+            dataChannelObserver.onMessageSent(buffer, false);
+          }
+        }
+      });
+    } else {
+      reportError("Data Channel is not ready for usage.");
+    }
   }
 
   public void init(VideoCapturer videoCapturer, VideoSink localRender) {
@@ -282,14 +285,14 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     public final boolean negotiated;
     public final int id;
     public final String label;
-      public final boolean isDataChannelCreator;
+    public final boolean isDataChannelCreator;
 
     public DataChannelParameters(boolean ordered, int maxRetransmitTimeMs, int maxRetransmits,
                                  String protocol, boolean negotiated, int id, String label, boolean isDataChannelCreator) {
       this.ordered = ordered;
       this.maxRetransmitTimeMs = maxRetransmitTimeMs;
       this.maxRetransmits = maxRetransmits;
-      this.protocol = protocol == null ? "": protocol;
+      this.protocol = protocol == null ? "" : protocol;
       this.negotiated = negotiated;
       this.id = id;
       this.label = label;
@@ -409,7 +412,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     /**
      * Callback fired once peer connection statistics is ready.
      */
-    void onPeerConnectionStatsReady(RTCStatsReport reports);
+    void onPeerConnectionStatsReady(final StatsReport[] reports);
 
     /**
      * Callback fired once peer connection error happened.
@@ -454,16 +457,16 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   }
 
   public void createPeerConnection(final VideoSink localRender, final VideoSink remoteSink,
-      final VideoCapturer videoCapturer, final AppRTCClient.SignalingParameters signalingParameters) {
+                                   final VideoCapturer videoCapturer, final SignalingParameters signalingParameters) {
     if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
       Log.w(TAG, "Video call enabled but no video capturer provided.");
     }
     createPeerConnection(
-        localRender, Collections.singletonList(remoteSink), videoCapturer, signalingParameters);
+            localRender, Collections.singletonList(remoteSink), videoCapturer, signalingParameters);
   }
 
   public void createPeerConnection(final VideoSink localRender, final List<VideoSink> remoteSinks,
-      final VideoCapturer videoCapturer, final AppRTCClient.SignalingParameters signalingParameters) {
+                                   final VideoCapturer videoCapturer, final SignalingParameters signalingParameters) {
     if (peerConnectionParameters == null) {
       Log.e(TAG, "Creating peer connection without initializing factory.");
       return;
@@ -729,6 +732,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     if (isAudioEnabled()) {
       peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
     }
+
     if (isVideoCallEnabled()) {
       findVideoSender();
     }
@@ -767,7 +771,6 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       dataChannel.registerObserver(dataChannelInternalObserver);
     }
   }
-
 
   private File createRtcEventLogOutputFile() {
     DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_hhmm_ss", Locale.getDefault());
@@ -863,24 +866,15 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     if (peerConnection == null || isError) {
       return;
     }
-
-    peerConnection.getStats(new RTCStatsCollectorCallback() {
-      @Override
-      public void onStatsDelivered(RTCStatsReport report) {
-          events.onPeerConnectionStatsReady(report);
-      }
-    });
-    /*boolean success = peerConnection.getStats(new StatsObserver() {
+    boolean success = peerConnection.getStats(new StatsObserver() {
       @Override
       public void onComplete(final StatsReport[] reports) {
         events.onPeerConnectionStatsReady(reports);
       }
     }, null);
     if (!success) {
-      Log.e(TAG, "getStats() returns false!");
+      //Log.e(TAG, "getStats() returns false!");
     }
-    */
-
   }
 
   public void enableStatsEvents(boolean enable, int periodMs) {
@@ -913,13 +907,12 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     executor.execute(() -> {
       renderVideo = enable;
       if (localVideoTrack != null) {
-          if (enable) {
-              startVideoSourceInternal();
-              localVideoTrack.setEnabled(renderVideo);
-          } else {
-              stopVideoSourceInternal();
-              localVideoTrack.setEnabled(renderVideo);
-          }
+        if (enable) {
+          startVideoSourceInternal();
+        } else {
+          stopVideoSourceInternal();
+        }
+        localVideoTrack.setEnabled(renderVideo);
       }
       if (remoteVideoTrack != null) {
         remoteVideoTrack.setEnabled(renderVideo);
@@ -997,35 +990,36 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
   public void stopVideoSource() {
     executor.execute(() -> {
-        stopVideoSourceInternal();
+      stopVideoSourceInternal();
     });
   }
 
-    private void stopVideoSourceInternal() {
-        if (videoCapturer != null && !videoCapturerStopped) {
-            Log.d(TAG, "Stop video source.");
-            try {
-                videoCapturer.stopCapture();
-            } catch (InterruptedException e) {
-            }
-            videoCapturerStopped = true;
-        }
+  private void stopVideoSourceInternal() {
+    if (videoCapturer != null && !videoCapturerStopped) {
+      Log.d(TAG, "Stop video source.");
+      try {
+        videoCapturer.stopCapture();
+      } catch (InterruptedException e) {
+        Log.d(TAG, e.getMessage());
+      }
+      videoCapturerStopped = true;
     }
+  }
+
 
   public void startVideoSource() {
     executor.execute(() -> {
-        startVideoSourceInternal();
+      startVideoSourceInternal();
     });
   }
 
-    private void startVideoSourceInternal() {
-        if (videoCapturer != null && videoCapturerStopped) {
-            Log.d(TAG, "Restart video source.");
-            videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
-            videoCapturerStopped = false;
-        }
+  private void startVideoSourceInternal() {
+    if (videoCapturer != null && videoCapturerStopped) {
+      Log.d(TAG, "Restart video source.");
+      videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
+      videoCapturerStopped = false;
     }
-
+  }
 
   public void setVideoMaxBitrate(@Nullable final Integer maxBitrateKbps) {
     executor.execute(() -> {
@@ -1360,7 +1354,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
 
     @Override
-    public void onIceConnectionChange(final IceConnectionState newState) {
+    public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
       executor.execute(() -> {
         Log.d(TAG, "IceConnectionState: " + newState);
         if (newState == IceConnectionState.CONNECTED) {
@@ -1374,7 +1368,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
 
     @Override
-    public void onConnectionChange(final PeerConnectionState newState) {
+    public void onConnectionChange(final PeerConnection.PeerConnectionState newState) {
       executor.execute(() -> {
         Log.d(TAG, "PeerConnectionState: " + newState);
         if (newState == PeerConnectionState.CONNECTED) {
@@ -1420,8 +1414,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
         {
           if (i < remoteSinks.size()) {
             remoteVideoTrackList.get(i).addSink(remoteSinks.get(i));
-          }
-          else {
+          } else {
             Log.e(TAG, "There is no enough remote sinks to show video tracks");
           }
         }
@@ -1429,11 +1422,12 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
 
     @Override
-    public void onRemoveStream(final MediaStream stream) {}
+    public void onRemoveStream(final MediaStream stream) {
+    }
 
-  /*
-  * Not called for publisher mode
-  **/
+    /*
+     * Not called for publisher mode
+     **/
     @Override
     public void onDataChannel(final DataChannel dc) {
 //      if(PeerConnectionClient.this.dataChannel.state() == DataChannel.State.OPEN) {

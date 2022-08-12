@@ -18,5 +18,5 @@ import org.webrtc.Logging.Severity;
  * When injected, the Loggable will receive logging from both Java and native.
  */
 public interface Loggable {
-  public void onLogMessage(String message, Severity severity, String tag);
+  void onLogMessage(String message, Severity severity, String tag);
 }

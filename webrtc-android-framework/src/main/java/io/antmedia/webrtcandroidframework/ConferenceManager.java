@@ -80,6 +80,10 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         this.playOnlyMode = playOnlyMode;
     }
 
+    public boolean isPlayOnlyMode() {
+        return playOnlyMode;
+    }
+
     public boolean isJoined() {
         return joined;
     }
@@ -287,6 +291,14 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         WebRTCClient publisherClient = peers.get(streamId);
         if (publisherClient != null && !publisherClient.isStreaming()) {
             publishStream(streamId);
+        }
+    }
+
+    public void switchCamera()
+    {
+        WebRTCClient publisherClient = peers.get(streamId);
+        if (publisherClient != null) {
+            publisherClient.switchCamera();
         }
     }
 

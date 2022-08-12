@@ -12,14 +12,12 @@ package org.webrtc;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.concurrent.BlockingQueue;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Can be used to save the video frames to file.
@@ -56,8 +54,8 @@ public class VideoFileRenderer implements VideoSink {
 
     videoOutFile = new FileOutputStream(outputFile);
     videoOutFile.write(
-        ("YUV4MPEG2 C420 W" + outputFileWidth + " H" + outputFileHeight + " Ip F30:1 A1:1\n")
-            .getBytes(Charset.forName("US-ASCII")));
+            ("YUV4MPEG2 C420 W" + outputFileWidth + " H" + outputFileHeight + " Ip F30:1 A1:1\n")
+                    .getBytes(StandardCharsets.US_ASCII));
 
     renderThread = new HandlerThread(TAG + "RenderThread");
     renderThread.start();
@@ -121,9 +119,9 @@ public class VideoFileRenderer implements VideoSink {
       i420.release();
 
       try {
-        videoOutFile.write("FRAME\n".getBytes(Charset.forName("US-ASCII")));
+        videoOutFile.write("FRAME\n".getBytes(StandardCharsets.US_ASCII));
         videoOutFile.write(
-            outputFrameBuffer.array(), outputFrameBuffer.arrayOffset(), outputFrameSize);
+                outputFrameBuffer.array(), outputFrameBuffer.arrayOffset(), outputFrameSize);
       } catch (IOException e) {
         throw new RuntimeException("Error writing video to disk", e);
       }

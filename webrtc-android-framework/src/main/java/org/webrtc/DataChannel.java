@@ -75,18 +75,29 @@ public class DataChannel {
     }
   }
 
-  /** Java version of C++ DataChannelObserver. */
+  /**
+   * Java version of C++ DataChannelObserver.
+   */
   public interface Observer {
-    /** The data channel's bufferedAmount has changed. */
-    @CalledByNative("Observer") public void onBufferedAmountChange(long previousAmount);
-    /** The data channel state has changed. */
-    @CalledByNative("Observer") public void onStateChange();
+    /**
+     * The data channel's bufferedAmount has changed.
+     */
+    @CalledByNative("Observer")
+    void onBufferedAmountChange(long previousAmount);
+
+    /**
+     * The data channel state has changed.
+     */
+    @CalledByNative("Observer")
+    void onStateChange();
+
     /**
      * A data buffer was successfully received.  NOTE: |buffer.data| will be
      * freed once this function returns so callers who want to use the data
      * asynchronously must make sure to copy it first.
      */
-    @CalledByNative("Observer") public void onMessage(Buffer buffer);
+    @CalledByNative("Observer")
+    void onMessage(Buffer buffer);
   }
 
   /** Keep in sync with DataChannelInterface::DataState. */
@@ -192,4 +203,4 @@ public class DataChannel {
   private native long nativeBufferedAmount();
   private native void nativeClose();
   private native boolean nativeSend(byte[] data, boolean binary);
-};
+}

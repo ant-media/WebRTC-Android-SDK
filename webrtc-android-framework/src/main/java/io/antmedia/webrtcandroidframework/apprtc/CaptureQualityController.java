@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -73,7 +74,7 @@ public class CaptureQualityController implements SeekBar.OnSeekBarChangeListener
     }
 
     // Extract max bandwidth (in millipixels / second).
-    long maxCaptureBandwidth = Long.MIN_VALUE;
+    long maxCaptureBandwidth = java.lang.Long.MIN_VALUE;
     for (CaptureFormat format : formats) {
       maxCaptureBandwidth =
           Math.max(maxCaptureBandwidth, (long) format.width * format.height * format.framerate.max);

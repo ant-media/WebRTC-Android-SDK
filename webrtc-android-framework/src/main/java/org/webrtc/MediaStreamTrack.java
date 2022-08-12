@@ -35,7 +35,7 @@ public class MediaStreamTrack {
 
     private final int nativeIndex;
 
-    private MediaType(int nativeIndex) {
+    MediaType(int nativeIndex) {
       this.nativeIndex = nativeIndex;
     }
 

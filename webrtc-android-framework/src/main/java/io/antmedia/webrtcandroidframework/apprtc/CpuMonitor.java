@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
@@ -26,7 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.Executors;
@@ -250,20 +251,20 @@ class CpuMonitor {
   }
 
   private void init() {
-    try (FileInputStream fin = new FileInputStream("/sys/devices/system/cpu/present");
-         InputStreamReader streamReader = new InputStreamReader(fin, Charset.forName("UTF-8"));
-         BufferedReader reader = new BufferedReader(streamReader);
-         Scanner scanner = new Scanner(reader).useDelimiter("[-\n]");) {
-      scanner.nextInt(); // Skip leading number 0.
-      cpusPresent = 1 + scanner.nextInt();
-      scanner.close();
-    } catch (FileNotFoundException e) {
-      Log.e(TAG, "Cannot do CPU stats since /sys/devices/system/cpu/present is missing");
-    } catch (IOException e) {
-      Log.e(TAG, "Error closing file");
-    } catch (Exception e) {
-      Log.e(TAG, "Cannot do CPU stats due to /sys/devices/system/cpu/present parsing problem");
-    }
+      try (FileInputStream fin = new FileInputStream("/sys/devices/system/cpu/present");
+           InputStreamReader streamReader = new InputStreamReader(fin, StandardCharsets.UTF_8);
+           BufferedReader reader = new BufferedReader(streamReader);
+           Scanner scanner = new Scanner(reader).useDelimiter("[-\n]")) {
+          scanner.nextInt(); // Skip leading number 0.
+          cpusPresent = 1 + scanner.nextInt();
+          scanner.close();
+      } catch (FileNotFoundException e) {
+          Log.e(TAG, "Cannot do CPU stats since /sys/devices/system/cpu/present is missing");
+      } catch (IOException e) {
+          Log.e(TAG, "Error closing file");
+      } catch (Exception e) {
+          Log.e(TAG, "Cannot do CPU stats due to /sys/devices/system/cpu/present parsing problem");
+      }
 
     cpuFreqMax = new long[cpusPresent];
     maxPath = new String[cpusPresent];
@@ -460,7 +461,7 @@ class CpuMonitor {
   private long readFreqFromFile(String fileName) {
     long number = 0;
     try (FileInputStream stream = new FileInputStream(fileName);
-         InputStreamReader streamReader = new InputStreamReader(stream, Charset.forName("UTF-8"));
+         InputStreamReader streamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
          BufferedReader reader = new BufferedReader(streamReader)) {
       String line = reader.readLine();
       number = parseLong(line);
@@ -494,7 +495,7 @@ class CpuMonitor {
     long systemTime = 0;
     long idleTime = 0;
     try (FileInputStream stream = new FileInputStream("/proc/stat");
-         InputStreamReader streamReader = new InputStreamReader(stream, Charset.forName("UTF-8"));
+         InputStreamReader streamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
          BufferedReader reader = new BufferedReader(streamReader)) {
       // line should contain something like this:
       // cpu  5093818 271838 3512830 165934119 101374 447076 272086 0 0 0
