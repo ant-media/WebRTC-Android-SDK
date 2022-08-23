@@ -31,7 +31,7 @@ public enum VideoCodecStatus {
 
   private final int number;
 
-  private VideoCodecStatus(int number) {
+  VideoCodecStatus(int number) {
     this.number = number;
   }
 

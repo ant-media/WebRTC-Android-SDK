@@ -16,5 +16,5 @@ public interface NetworkStatePredictorFactoryFactory {
    * Dynamically allocates a webrtc::NetworkStatePredictorFactory instance and returns a pointer to
    * it. The caller takes ownership of the object.
    */
-  public long createNativeNetworkStatePredictorFactory();
+  long createNativeNetworkStatePredictorFactory();
 }

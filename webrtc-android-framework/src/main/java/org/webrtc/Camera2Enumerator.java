@@ -20,14 +20,17 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.os.SystemClock;
-import androidx.annotation.Nullable;
 import android.util.AndroidException;
 import android.util.Range;
+
+import androidx.annotation.Nullable;
+
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @TargetApi(21)
 public class Camera2Enumerator implements CameraEnumerator {
@@ -78,6 +81,7 @@ public class Camera2Enumerator implements CameraEnumerator {
         == CameraMetadata.LENS_FACING_BACK;
   }
 
+  @Nullable
   @Override
   public List<CaptureFormat> getSupportedFormats(String deviceName) {
     return getSupportedFormats(context, deviceName);
@@ -165,11 +169,13 @@ public class Camera2Enumerator implements CameraEnumerator {
     }
   }
 
+  @Nullable
   static List<CaptureFormat> getSupportedFormats(Context context, String cameraId) {
     return getSupportedFormats(
-        (CameraManager) context.getSystemService(Context.CAMERA_SERVICE), cameraId);
+            (CameraManager) context.getSystemService(Context.CAMERA_SERVICE), cameraId);
   }
 
+  @Nullable
   static List<CaptureFormat> getSupportedFormats(CameraManager cameraManager, String cameraId) {
     synchronized (cachedSupportedFormats) {
       if (cachedSupportedFormats.containsKey(cameraId)) {
@@ -188,12 +194,12 @@ public class Camera2Enumerator implements CameraEnumerator {
       }
 
       final StreamConfigurationMap streamMap =
-          cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+              cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
       Range<Integer>[] fpsRanges =
-          cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+              cameraCharacteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
       List<CaptureFormat.FramerateRange> framerateRanges =
-          convertFramerates(fpsRanges, getFpsUnitFactor(fpsRanges));
+              convertFramerates(fpsRanges, getFpsUnitFactor(fpsRanges));
       List<Size> sizes = getSupportedSizes(cameraCharacteristics);
 
       int defaultMaxFps = 0;
@@ -206,13 +212,13 @@ public class Camera2Enumerator implements CameraEnumerator {
         long minFrameDurationNs = 0;
         try {
           minFrameDurationNs = streamMap.getOutputMinFrameDuration(
-              SurfaceTexture.class, new android.util.Size(size.width, size.height));
+                  SurfaceTexture.class, new android.util.Size(size.width, size.height));
         } catch (Exception e) {
           // getOutputMinFrameDuration() is not supported on all devices. Ignore silently.
         }
         final int maxFps = (minFrameDurationNs == 0)
-            ? defaultMaxFps
-            : (int) Math.round(NANO_SECONDS_PER_SECOND / minFrameDurationNs) * 1000;
+                ? defaultMaxFps
+                : (int) Math.round(NANO_SECONDS_PER_SECOND / minFrameDurationNs) * 1000;
         formatList.add(new CaptureFormat(size.width, size.height, 0, maxFps));
         Logging.d(TAG, "Format: " + size.width + "x" + size.height + "@" + maxFps);
       }

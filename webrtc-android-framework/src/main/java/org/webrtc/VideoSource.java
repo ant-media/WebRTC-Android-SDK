@@ -99,19 +99,25 @@ public class VideoSource extends MediaSource {
    * video to be cropped to portrait video.
    */
   public void adaptOutputFormat(
-      int landscapeWidth, int landscapeHeight, int portraitWidth, int portraitHeight, int fps) {
+          int landscapeWidth, int landscapeHeight, int portraitWidth, int portraitHeight, int fps) {
     adaptOutputFormat(new AspectRatio(landscapeWidth, landscapeHeight),
-        /* maxLandscapePixelCount= */ landscapeWidth * landscapeHeight,
-        new AspectRatio(portraitWidth, portraitHeight),
-        /* maxPortraitPixelCount= */ portraitWidth * portraitHeight, fps);
+            /* maxLandscapePixelCount= */ landscapeWidth * landscapeHeight,
+            new AspectRatio(portraitWidth, portraitHeight),
+            /* maxPortraitPixelCount= */ portraitWidth * portraitHeight, fps);
   }
 
-  /** Same as above, with even more control as each constraint is optional. */
+  /**
+   * Same as above, with even more control as each constraint is optional.
+   */
   public void adaptOutputFormat(AspectRatio targetLandscapeAspectRatio,
-      @Nullable Integer maxLandscapePixelCount, AspectRatio targetPortraitAspectRatio,
-      @Nullable Integer maxPortraitPixelCount, @Nullable Integer maxFps) {
+                                @Nullable Integer maxLandscapePixelCount, AspectRatio targetPortraitAspectRatio,
+                                @Nullable Integer maxPortraitPixelCount, @Nullable Integer maxFps) {
     nativeAndroidVideoTrackSource.adaptOutputFormat(targetLandscapeAspectRatio,
-        maxLandscapePixelCount, targetPortraitAspectRatio, maxPortraitPixelCount, maxFps);
+            maxLandscapePixelCount, targetPortraitAspectRatio, maxPortraitPixelCount, maxFps);
+  }
+
+  public void setIsScreencast(boolean isScreencast) {
+    nativeAndroidVideoTrackSource.setIsScreencast(isScreencast);
   }
 
   /**
@@ -131,7 +137,9 @@ public class VideoSource extends MediaSource {
       }
       videoProcessor = newVideoProcessor;
       if (newVideoProcessor != null) {
-        newVideoProcessor.setSink(nativeAndroidVideoTrackSource::onFrameCaptured);
+        newVideoProcessor.setSink(
+                (frame)
+                        -> runWithReference(() -> nativeAndroidVideoTrackSource.onFrameCaptured(frame)));
         if (isCapturerRunning) {
           newVideoProcessor.onCapturerStarted(/* success= */ true);
         }

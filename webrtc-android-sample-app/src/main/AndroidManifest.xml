@@ -29,7 +29,7 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".ConferenceActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -46,9 +46,7 @@
             />
 
         <!--
-        <activity android:name=".ConferenceActivity"
-                  android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-        />
+        <activity android:name=".ConferenceActivity"/>
         <activity android:name=".ScreenCaptureActivity"/>
 
         <activity android:name=".MultiTrackPlayActivity"/>

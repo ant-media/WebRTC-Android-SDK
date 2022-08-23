@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -21,7 +22,6 @@ import org.webrtc.Camera2Enumerator;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import io.antmedia.webrtcandroidframework.R;
-
 /**
  * Settings activity for AppRTC.
  */

@@ -13,37 +13,40 @@ package org.webrtc;
 /**
  * Wraps a native webrtc::VideoEncoder.
  */
-abstract class WrappedNativeVideoEncoder implements VideoEncoder {
-  @Override public abstract long createNativeVideoEncoder();
-  @Override public abstract boolean isHardwareEncoder();
+public abstract class WrappedNativeVideoEncoder implements VideoEncoder {
+    @Override
+    public abstract long createNativeVideoEncoder();
 
-  @Override
-  public VideoCodecStatus initEncode(Settings settings, Callback encodeCallback) {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
+    @Override
+    public abstract boolean isHardwareEncoder();
 
-  @Override
-  public VideoCodecStatus release() {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
+    @Override
+    public final VideoCodecStatus initEncode(Settings settings, Callback encodeCallback) {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
 
-  @Override
-  public VideoCodecStatus encode(VideoFrame frame, EncodeInfo info) {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
+    @Override
+    public final VideoCodecStatus release() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
 
-  @Override
-  public VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate) {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
+    @Override
+    public final VideoCodecStatus encode(VideoFrame frame, EncodeInfo info) {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
 
-  @Override
-  public ScalingSettings getScalingSettings() {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
+    @Override
+    public final VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate) {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
 
-  @Override
-  public String getImplementationName() {
-    throw new UnsupportedOperationException("Not implemented.");
-  }
+    @Override
+    public final ScalingSettings getScalingSettings() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
+
+    @Override
+    public final String getImplementationName() {
+        throw new UnsupportedOperationException("Not implemented.");
+    }
 }

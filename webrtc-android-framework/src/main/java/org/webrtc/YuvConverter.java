@@ -12,9 +12,11 @@ package org.webrtc;
 
 import android.graphics.Matrix;
 import android.opengl.GLES20;
-import java.nio.ByteBuffer;
+
 import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer;
+
+import java.nio.ByteBuffer;
 
 /**
  * Class for converting OES textures to a YUV ByteBuffer. It can be constructed on any thread, but
@@ -22,19 +24,19 @@ import org.webrtc.VideoFrame.TextureBuffer;
  */
 public class YuvConverter {
   private static final String FRAGMENT_SHADER =
-      // Difference in texture coordinate corresponding to one
-      // sub-pixel in the x direction.
-      "uniform vec2 xUnit;\n"
-      // Color conversion coefficients, including constant term
-      + "uniform vec4 coeffs;\n"
-      + "\n"
-      + "void main() {\n"
-      // Since the alpha read from the texture is always 1, this could
-      // be written as a mat4 x vec4 multiply. However, that seems to
-      // give a worse framerate, possibly because the additional
-      // multiplies by 1.0 consume resources. TODO(nisse): Could also
-      // try to do it as a vec3 x mat3x4, followed by an add in of a
-      // constant vector.
+          // Difference in texture coordinate corresponding to one
+          // sub-pixel in the x direction.
+          "uniform vec2 xUnit;\n"
+                  // Color conversion coefficients, including constant term
+                  + "uniform vec4 coeffs;\n"
+                  + "\n"
+                  + "void main() {\n"
+                  // Since the alpha read from the texture is always 1, this could
+                  // be written as a mat4 x vec4 multiply. However, that seems to
+                  // give a worse framerate, possibly because the additional
+                  // multiplies by 1.0 consume resources. TODO(nisse): Could also
+                  // try to do it as a vec3 x mat3x4, followed by an add in of a
+                  // constant vector.
       + "  gl_FragColor.r = coeffs.a + dot(coeffs.rgb,\n"
       + "      sample(tc - 1.5 * xUnit).rgb);\n"
       + "  gl_FragColor.g = coeffs.a + dot(coeffs.rgb,\n"

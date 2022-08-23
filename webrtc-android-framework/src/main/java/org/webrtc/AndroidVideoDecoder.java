@@ -10,26 +10,21 @@
 
 package org.webrtc;
 
-import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.SystemClock;
-
-import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.Nullable;
+
+import org.webrtc.ThreadUtils.ThreadChecker;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
-import org.webrtc.ThreadUtils.ThreadChecker;
-
-import io.antmedia.webrtcandroidframework.WebRTCClient;
 
 /**
  * Android hardware video decoder.
@@ -64,7 +59,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
 
   private final MediaCodecWrapperFactory mediaCodecWrapperFactory;
   private final String codecName;
-  private final VideoCodecType codecType;
+  private final VideoCodecMimeType codecType;
 
   private static class FrameInfo {
     final long decodeStartTimeMs;
@@ -138,13 +133,13 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   @Nullable private MediaCodecWrapper codec;
 
   AndroidVideoDecoder(MediaCodecWrapperFactory mediaCodecWrapperFactory, String codecName,
-      VideoCodecType codecType, int colorFormat, @Nullable EglBase.Context sharedContext) {
+                      VideoCodecMimeType codecType, int colorFormat, @Nullable EglBase.Context sharedContext) {
     if (!isSupportedColorFormat(colorFormat)) {
       throw new IllegalArgumentException("Unsupported color format: " + colorFormat);
     }
     Logging.d(TAG,
-        "ctor name: " + codecName + " type: " + codecType + " color format: " + colorFormat
-            + " context: " + sharedContext);
+            "ctor name: " + codecName + " type: " + codecType + " color format: " + colorFormat
+                    + " context: " + sharedContext);
     this.mediaCodecWrapperFactory = mediaCodecWrapperFactory;
     this.codecName = codecName;
     this.codecType = codecType;
@@ -220,9 +215,6 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
       Logging.d(TAG, "decode uninitalized, codec: " + (codec != null) + ", callback: " + callback);
       return VideoCodecStatus.UNINITIALIZED;
     }
-    Log.i(TAG, "Capture time Ms: " + frame.captureTimeMs + " system time: " + System.currentTimeMillis());
-
-    WebRTCClient.insertFrameId(frame.captureTimeMs);
 
     if (frame.buffer == null) {
       Logging.e(TAG, "decode() - no input data");
@@ -475,7 +467,10 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   private void deliverByteFrame(
       int result, MediaCodec.BufferInfo info, int rotation, Integer decodeTimeMs) {
     // Load dimensions from shared memory under the dimension lock.
-    int width, height, stride, sliceHeight;
+    int width;
+    int height;
+    int stride;
+    int sliceHeight;
     synchronized (dimensionLock) {
       width = this.width;
       height = this.height;

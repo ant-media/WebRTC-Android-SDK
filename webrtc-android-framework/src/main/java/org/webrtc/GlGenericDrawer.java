@@ -12,11 +12,10 @@ package org.webrtc;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+
 import androidx.annotation.Nullable;
+
 import java.nio.FloatBuffer;
-import org.webrtc.GlShader;
-import org.webrtc.GlUtil;
-import org.webrtc.RendererCommon;
 
 /**
  * Helper class to implement an instance of RendererCommon.GlDrawer that can accept multiple input
@@ -36,13 +35,13 @@ class GlGenericDrawer implements RendererCommon.GlDrawer {
    * The different shader types representing different input sources. YUV here represents three
    * separate Y, U, V textures.
    */
-  public static enum ShaderType { OES, RGB, YUV }
+  public enum ShaderType {OES, RGB, YUV}
 
   /**
    * The shader callbacks is used to customize behavior for a GlDrawer. It provides a hook to set
    * uniform variables in the shader before a frame is drawn.
    */
-  public static interface ShaderCallbacks {
+  public interface ShaderCallbacks {
     /**
      * This callback is called when a new shader has been compiled and created. It will be called
      * for the first frame as well as when the shader type is changed. This callback can be used to

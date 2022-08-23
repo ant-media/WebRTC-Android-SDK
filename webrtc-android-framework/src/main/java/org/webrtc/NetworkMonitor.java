@@ -10,14 +10,15 @@
 
 package org.webrtc;
 
-import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
-
 import android.content.Context;
 import android.os.Build;
+
 import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.webrtc.NetworkMonitorAutoDetect;
+
+import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
 
 /**
  * Borrowed from Chromium's
@@ -32,7 +33,7 @@ public class NetworkMonitor {
    * Alerted when the connection type of the network changes. The alert is fired on the UI thread.
    */
   public interface NetworkObserver {
-    public void onConnectionTypeChanged(NetworkMonitorAutoDetect.ConnectionType connectionType);
+    void onConnectionTypeChanged(NetworkMonitorAutoDetect.ConnectionType connectionType);
   }
 
   private static final String TAG = "NetworkMonitor";

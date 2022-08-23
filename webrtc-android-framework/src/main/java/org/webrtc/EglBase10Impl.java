@@ -13,9 +13,11 @@ package org.webrtc;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import androidx.annotation.Nullable;
 import android.view.Surface;
 import android.view.SurfaceHolder;
+
+import androidx.annotation.Nullable;
+
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.egl.EGLContext;
@@ -196,14 +198,14 @@ class EglBase10Impl implements EglBase10 {
 
   @Override
   public int surfaceWidth() {
-    final int widthArray[] = new int[1];
+    final int[] widthArray = new int[1];
     egl.eglQuerySurface(eglDisplay, eglSurface, EGL10.EGL_WIDTH, widthArray);
     return widthArray[0];
   }
 
   @Override
   public int surfaceHeight() {
-    final int heightArray[] = new int[1];
+    final int[] heightArray = new int[1];
     egl.eglQuerySurface(eglDisplay, eglSurface, EGL10.EGL_HEIGHT, heightArray);
     return heightArray[0];
   }

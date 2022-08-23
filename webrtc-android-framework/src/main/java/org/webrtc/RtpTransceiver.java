@@ -13,8 +13,6 @@ package org.webrtc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.webrtc.MediaStreamTrack;
-import org.webrtc.RtpParameters;
 
 /**
  * Java wrapper for a C++ RtpTransceiverInterface.
@@ -33,7 +31,9 @@ import org.webrtc.RtpParameters;
  * https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver
  */
 public class RtpTransceiver {
-  /** Java version of webrtc::RtpTransceiverDirection - the ordering must be kept in sync. */
+  /**
+   * Java version of webrtc::RtpTransceiverDirection - the ordering must be kept in sync.
+   */
   public enum RtpTransceiverDirection {
     SEND_RECV(0),
     SEND_ONLY(1),
@@ -42,7 +42,7 @@ public class RtpTransceiver {
 
     private final int nativeIndex;
 
-    private RtpTransceiverDirection(int nativeIndex) {
+    RtpTransceiverDirection(int nativeIndex) {
       this.nativeIndex = nativeIndex;
     }
 

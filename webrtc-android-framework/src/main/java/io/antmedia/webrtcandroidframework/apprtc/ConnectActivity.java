@@ -10,6 +10,7 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -37,6 +38,8 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -303,6 +306,7 @@ public class ConnectActivity extends Activity {
    * Get a value from the shared preference or from the intent, if it does not
    * exist the default is used.
    */
+  @Nullable
   private String sharedPrefGetString(
       int attributeId, String intentName, int defaultId, boolean useFromIntent) {
     String defaultValue = getString(defaultId);

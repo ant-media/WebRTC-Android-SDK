@@ -22,7 +22,6 @@ rtc_use_h264=true
 rtc_include_tests=false
 is_debug=false
 
-
 # Java source files that needs to be copied from branch:
 
 src/sdk/android/api

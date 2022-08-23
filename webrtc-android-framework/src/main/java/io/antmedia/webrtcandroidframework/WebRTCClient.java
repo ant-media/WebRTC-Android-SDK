@@ -36,11 +36,11 @@ import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
+import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
@@ -127,7 +127,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private Intent intent = new Intent();
     private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
-    private String stunServerUri = "stun:stun.l.google.com:19302";
+    private String stunServerUri = "stun:stun1.l.google.com:19302";
     List<PeerConnection.IceServer> iceServers = new ArrayList();
     private boolean videoOn = true;
     private boolean audioOn = true;
@@ -136,9 +136,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private IDataChannelObserver dataChannelObserver;
 
     private String streamId;
-	private String url;
-	private String token;
-	private boolean dataChannelOnly = false;
+	  private String url;
+	  private String token;
+	  private boolean dataChannelOnly = false;
     private String subscriberId = "";
     private String subscriberCode = "";
     private String streamName = "";
@@ -582,7 +582,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void stopStream() {
-
         disconnect();
         if (logToast != null) {
             logToast.cancel();
@@ -702,6 +701,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);
+
+        //signalling listener is not ConferenceManager in Conference mode so that
+        // below method does not disconnect websocket connection in ConferenceManager
         if (wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
             wsHandler.disconnect(true);
             wsHandler = null;
@@ -989,7 +991,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPeerConnectionClosed() {}
 
     @Override
-    public void onPeerConnectionStatsReady(RTCStatsReport reports) {
+    public void onPeerConnectionStatsReady(StatsReport[] reports) {
         this.handler.post(() -> {
             if (!isError && iceConnected) {
                 //hudFragment.updateEncoderStatistics(reports);
@@ -1155,6 +1157,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 webRTCListener.onDisconnected(streamId);
             }
         });
+
     }
 
     @Override
