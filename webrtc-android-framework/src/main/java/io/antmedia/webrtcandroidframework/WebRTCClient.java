@@ -373,7 +373,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         //options.disableEncryption = true;
         peerConnectionClient.createPeerConnectionFactory(options);
 
-        if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
+        // if video capture is null or disposed, we should recreate it.
+        // we should also check if video capturer is an instance of ScreenCapturerAndroid
+        // because other implementations of VideoCapturer doesn't have a dispose() method.
+        if (peerConnectionParameters.videoCallEnabled
+                && (videoCapturer == null
+                || (videoCapturer instanceof ScreenCapturerAndroid && ((ScreenCapturerAndroid) videoCapturer).isDisposed()))
+            ) {
 
             String source = SOURCE_REAR;
             String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
