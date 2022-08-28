@@ -803,7 +803,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 videoHeight = displayMetrics.heightPixels;
             }
 
-            peerConnectionClient.changeVideoCapturer(videoCapturer, videoWidth, videoHeight);
+            /* When user try to change video source after stopped the publishing
+            * peerConnectionClient will null, until start another broadcast
+            */
+            if (peerConnectionClient != null) {
+                peerConnectionClient.changeVideoCapturer(videoCapturer, videoWidth, videoHeight);
+            }
             currentSource = newSource;
         }
     }
