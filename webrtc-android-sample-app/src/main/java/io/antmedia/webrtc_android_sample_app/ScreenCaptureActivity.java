@@ -82,12 +82,15 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 String newSource = "";
                 if(checkedId == R.id.rbScreen) {
                     newSource = WebRTCClient.SOURCE_SCREEN;
+                    getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
                 }
                 else if(checkedId == R.id.rbFront) {
                     newSource = WebRTCClient.SOURCE_FRONT;
+                    getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
                 }
                 else if(checkedId == R.id.rbRear) {
                     newSource = WebRTCClient.SOURCE_REAR;
+                    getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
                 }
                 webRTCClient.changeVideoSource(newSource);
             }
