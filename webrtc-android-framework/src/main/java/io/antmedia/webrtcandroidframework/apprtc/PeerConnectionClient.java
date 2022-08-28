@@ -16,6 +16,7 @@ import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import android.media.projection.MediaProjection;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
@@ -131,7 +132,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   @Nullable
   private PeerConnectionFactory factory;
   @Nullable
-  private PeerConnection peerConnection;
+  public PeerConnection peerConnection;
   @Nullable
   private AudioSource audioSource;
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
@@ -183,6 +184,9 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
   @Nullable
   IDataChannelObserver dataChannelObserver;
+
+  @Nullable
+  public AudioDeviceModule adm;
 
   final DataChannel.Observer dataChannelInternalObserver= new DataChannel.Observer() {
     @Override
@@ -273,6 +277,9 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
   }
 
+  public void setMediaProjection(MediaProjection mediaProjection){
+    adm.setMediaProjection(mediaProjection);
+  }
 
     /**
    * Peer connection parameters.
@@ -528,7 +535,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       }
     }
 
-    final AudioDeviceModule adm = createJavaAudioDevice();
+    adm = createJavaAudioDevice();
 
     // Create peer connection factory.
     if (options != null) {

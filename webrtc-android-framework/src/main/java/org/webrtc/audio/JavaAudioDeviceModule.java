@@ -19,6 +19,8 @@ import androidx.annotation.RequiresApi;
 
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
+import android.media.AudioRecord;
+import android.media.projection.MediaProjection;
 
 /**
  * AudioDeviceModule implemented using android.media.AudioRecord as input and
@@ -399,6 +401,12 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
   }
 
   private static native long nativeCreateAudioDeviceModule(Context context,
-                                                           AudioManager audioManager, WebRtcAudioRecord audioInput, WebRtcAudioTrack audioOutput,
-                                                           int inputSampleRate, int outputSampleRate, boolean useStereoInput, boolean useStereoOutput);
+      AudioManager audioManager, WebRtcAudioRecord audioInput, WebRtcAudioTrack audioOutput,
+      int inputSampleRate, int outputSampleRate, boolean useStereoInput, boolean useStereoOutput);
+
+  @Override
+  public void setMediaProjection(MediaProjection mediaProjection){
+    audioInput.setMediaProjection(mediaProjection);
+  }
+
 }

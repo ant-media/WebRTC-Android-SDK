@@ -10,6 +10,8 @@
 
 package org.webrtc.audio;
 
+import android.media.projection.MediaProjection;
+
 import org.webrtc.voiceengine.WebRtcAudioRecord;
 import org.webrtc.voiceengine.WebRtcAudioTrack;
 
@@ -43,4 +45,9 @@ public class LegacyAudioDeviceModule implements AudioDeviceModule {
   public void setMicrophoneMute(boolean mute) {
     WebRtcAudioRecord.setMicrophoneMute(mute);
   }
+
+  @Override
+  public void setMediaProjection(MediaProjection mediaProjection) {
+  }
+
 }
