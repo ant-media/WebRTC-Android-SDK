@@ -66,8 +66,13 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     private boolean enableDataChannel = true;
 
-
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
+    /*
+    * It's not mandatory if you don't use the new Load Balancer mechanism
+    * It uses one of the nodes on Cluster mode
+    * Example parameters: "origin" or "edge"
+    * Default value is origin
+    */
+    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket?target=origin";
     public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
