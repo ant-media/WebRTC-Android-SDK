@@ -210,6 +210,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       dataChannelObserver.onMessage(buffer,dataChannel.label());
     }
   };
+  private CustomCapturerObserver customCapturerObserver;
 
   @Nullable
   public DataChannel getDataChannel() {
@@ -279,6 +280,10 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
 
   public void setMediaProjection(MediaProjection mediaProjection){
     adm.setMediaProjection(mediaProjection);
+  }
+
+  public void setFrameListener(IFrameListener frameListener) {
+    customCapturerObserver.setFrameListener(frameListener);
   }
 
     /**
@@ -1082,7 +1087,8 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       surfaceTextureHelper =
               SurfaceTextureHelper.create("CaptureThread", rootEglBase.getEglBaseContext());
       videoSource = factory.createVideoSource(capturer.isScreencast());
-      capturer.initialize(surfaceTextureHelper, appContext, videoSource.getCapturerObserver());
+      customCapturerObserver = new CustomCapturerObserver(videoSource.getCapturerObserver());
+      capturer.initialize(surfaceTextureHelper, appContext, customCapturerObserver);
       capturer.startCapture(videoWidth, videoHeight, videoFps);
 
       localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);

@@ -6,6 +6,7 @@ import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
 import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
+import io.antmedia.webrtcandroidframework.apprtc.IFrameListener;
 
 /**
  * Created by karinca on 20.10.2017.
@@ -154,6 +155,12 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * @param streamName: any name
      */
     void setStreamName(String streamName);
+
+    /**
+     * This is used to setframe listener for the captured video frames
+     * @param frameListener
+     */
+    public void setFrameListener(IFrameListener frameListener);
 
 
 }

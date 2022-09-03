@@ -30,8 +30,10 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
+import org.webrtc.JavaI420Buffer;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoFrame;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -56,7 +58,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     /**
      * Change this address with your Ant Media Server address
      */
-    public static final String SERVER_ADDRESS = "192.168.1.34:5080";
+    public static final String SERVER_ADDRESS = "192.168.1.4:5080";
 
 
     /**
@@ -179,6 +181,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         webRTCClient = new WebRTCClient( this,this);
 
+        //applyFiltering();
+
         //webRTCClient.setOpenFrontCamera(false);
 
         streamId = "myStream";
@@ -189,6 +193,48 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
 
+    }
+
+    private void applyFiltering() {
+        webRTCClient.setFrameListener(frame -> {
+
+            VideoFrame.Buffer buffer = frame.getBuffer();
+
+            VideoFrame.I420Buffer yuvBuffer = buffer.toI420();
+
+
+            int length = yuvBuffer.getDataU().capacity();
+            ByteBuffer arrayU = ByteBuffer.allocateDirect(length);
+
+            for (int i = 0; i < length; i++) {
+                arrayU.put((byte) 0x55);
+            }
+
+            arrayU.rewind();
+
+            ByteBuffer dataY = yuvBuffer.getDataY();
+            ByteBuffer dataU = arrayU; //yuvBuffer.getDataU();
+            ByteBuffer dataV = yuvBuffer.getDataV();
+            int strideY = yuvBuffer.getStrideY();
+            int strideU = yuvBuffer.getStrideU();
+            int strideV = yuvBuffer.getStrideV();
+
+
+            JavaI420Buffer newBuffer = JavaI420Buffer.wrap(yuvBuffer.getWidth(), yuvBuffer.getHeight(),
+                    dataY, strideY,
+                    dataU, strideU,
+                    dataV, strideV,
+                    null
+                    );
+
+
+            int rotation = frame.getRotation();
+            long timestampNs = frame.getTimestampNs();
+
+            VideoFrame newFrame = new VideoFrame(newBuffer, rotation, timestampNs);
+
+            return newFrame;
+        });
     }
 
 

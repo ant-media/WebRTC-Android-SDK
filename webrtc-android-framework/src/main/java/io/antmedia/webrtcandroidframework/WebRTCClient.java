@@ -61,6 +61,7 @@ import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
+import io.antmedia.webrtcandroidframework.apprtc.IFrameListener;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
@@ -148,6 +149,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public MediaProjection mediaProjection;
     public MediaProjectionManager mediaProjectionManager;
+    private IFrameListener frameListener;
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
@@ -399,7 +401,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         peerConnectionClient.init(videoCapturer, localProxyVideoSink);
 
-
         if (peerConnectionParameters.audioCallEnabled) {
             // Create and audio manager that will take care of audio routing,
             // audio modes, audio device enumeration etc.
@@ -430,6 +431,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void startStream() {
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
+        if(frameListener != null) {
+            peerConnectionClient.setFrameListener(frameListener);
+        }
+
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
@@ -1240,6 +1245,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     @Override
     public void setStreamName(String streamName) {
         this.streamName = streamName;
+    }
+
+    @Override
+    public void setFrameListener(IFrameListener frameListener) {
+        this.frameListener = frameListener;
     }
 
     @Override
