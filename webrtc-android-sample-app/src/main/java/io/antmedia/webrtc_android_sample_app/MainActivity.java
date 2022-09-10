@@ -66,13 +66,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     private boolean enableDataChannel = true;
 
-    /*
-    * It's not mandatory if you don't use the new Load Balancer mechanism
-    * It uses one of the nodes on Cluster mode
-    * Example parameters: "origin" or "edge"
-    * Default value is origin
-    */
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket?target=origin";
+    public static String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
     public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
@@ -166,10 +160,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
             operationName = "Publishing";
+            SERVER_URL+="?target=origin";
         }
         else  if (webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             startStreamingButton.setText("Start Playing");
             operationName = "Playing";
+            SERVER_URL+="?target=edge";
         }
         else if (webRTCMode.equals(IWebRTCClient.MODE_JOIN)) {
             startStreamingButton.setText("Start P2P");
