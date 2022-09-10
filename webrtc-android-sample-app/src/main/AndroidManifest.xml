@@ -29,7 +29,7 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".ConferenceActivity">
+        <activity android:name=".HomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -45,19 +45,16 @@
             android:exported="true"
             />
 
-        <!--
         <activity android:name=".ConferenceActivity"/>
         <activity android:name=".ScreenCaptureActivity"/>
-
         <activity android:name=".MultiTrackPlayActivity"/>
-
         <activity android:name=".MainActivity"/>
-
+        <activity android:name=".SettingsActivity"/>
         <activity android:name=".DataChannelActivity"/>
         <activity android:name=".chat.SettingsActivity"
             android:parentActivityName=".DataChannelActivity">
         </activity>
-        -->
+
     </application>
 
 </manifest>

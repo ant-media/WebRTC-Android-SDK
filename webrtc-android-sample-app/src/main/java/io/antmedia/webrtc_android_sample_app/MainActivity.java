@@ -2,10 +2,12 @@ package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -53,10 +55,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 
 public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
-    /**
-     * Change this address with your Ant Media Server address
-     */
-    public static final String SERVER_ADDRESS = "192.168.1.34:5080";
+    public static final String DEFAULT_SERVER_ADDRESS = "192.168.1.34:5080";
 
 
     /**
@@ -67,14 +66,13 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private boolean enableDataChannel = true;
 
 
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
-
     private WebRTCClient webRTCClient;
 
     private Button startStreamingButton;
     private String operationName = "";
     private String streamId;
+    private String serverUrl;
+    private String restUrl;
 
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
@@ -122,6 +120,15 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
+
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+
+        streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
+        serverUrl = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+        restUrl = "http://" + serverAddress + "/WebRTCAppEE/rest/v2";
 
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
@@ -185,12 +192,12 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
+
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamId, webRTCMode, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
 
     }
-
 
     public void startStreaming(View v) {
 
@@ -347,7 +354,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
      * @param streamId
      */
     public void calculateAbsoluteLatency(String streamId) {
-        String url = REST_URL + "/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
+        String url = restUrl + "/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
 
         RequestQueue queue = Volley.newRequestQueue(this);
 

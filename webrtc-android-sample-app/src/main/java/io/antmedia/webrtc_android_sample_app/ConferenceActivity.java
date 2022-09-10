@@ -1,9 +1,11 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -32,10 +34,12 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 
 public class ConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
+    SharedPreferences sharedPref;
 
     private ConferenceManager conferenceManager;
     private Button audioButton;
     private Button videoButton;
+    private String serverUrl;
 
     final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
@@ -53,7 +57,6 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
         }
     };
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,13 +94,20 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+
+        serverUrl = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+
         String streamId = null; //"stream1";
         String roomId = "room1";
         conferenceManager = new ConferenceManager(
                 this,
                 this,
                 getIntent(),
-                MainActivity.SERVER_URL,
+                serverUrl,
                 roomId,
                 publishViewRenderer,
                 playViewRenderers,

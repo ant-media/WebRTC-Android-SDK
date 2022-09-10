@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">webrtc-android-sample-app</string>
+    <string name="app_name">And Media WebRTC Sample App</string>
     <string name="start">Start</string>
     <string name="write_something">Write a Message!</string>
     <string name="title_activity_settings">Settings</string>

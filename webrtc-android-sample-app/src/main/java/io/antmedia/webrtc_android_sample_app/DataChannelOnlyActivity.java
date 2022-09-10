@@ -1,10 +1,12 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -42,23 +44,15 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
  */
 public class DataChannelOnlyActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
-    /**
-     * Change this address with your Ant Media Server address
-     */
-    public static final String SERVER_ADDRESS = "192.168.1.31:5080";
-
     private boolean enableDataChannel = true;
-
-
-    public static final String SERVER_URL = "ws://" + SERVER_ADDRESS + "/WebRTCAppEE/websocket";
-    public static final String REST_URL = "http://" + SERVER_ADDRESS + "/WebRTCAppEE/rest/v2";
 
     private WebRTCClient webRTCClient;
 
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId = "stream1";
+    private String streamId;
     String tokenId = "tokenId";
+    String serverUrl;
 
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
@@ -96,6 +90,14 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
             }
         }
 
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+
+        streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
+        serverUrl = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+
         startStreamingButton.setText("Connect Data Channel");
         operationName = "DataChannel";
 
@@ -105,7 +107,7 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
         webRTCClient.setDataChannelOnly(true);
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
     }
 
     public void startStreaming(View v) {
@@ -163,7 +165,7 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
         webRTCClient.setDataChannelOnly(true);
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
-        webRTCClient.init(SERVER_URL, streamId, IWebRTCClient.MODE_PUBLISH, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PUBLISH, tokenId, this.getIntent());
 
         startStreaming(startStreamingButton);
     }
