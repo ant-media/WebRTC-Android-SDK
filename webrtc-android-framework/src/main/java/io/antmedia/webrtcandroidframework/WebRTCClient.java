@@ -605,6 +605,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void switchCamera() {
+        openFrontCamera = !openFrontCamera;
         if (peerConnectionClient != null) {
             peerConnectionClient.switchCamera();
         }
@@ -796,6 +797,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             if(newSource.equals(SOURCE_SCREEN) && screenPersmisonNeeded) {
                 startScreenCapture();
                 return;
+            } else if(newSource.equals(SOURCE_REAR)) {
+                openFrontCamera = false;
+            } else if(newSource.equals(SOURCE_FRONT)) {
+                openFrontCamera = true;
             }
             videoCapturer = createVideoCapturer(newSource);
 
@@ -821,6 +826,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     private @Nullable VideoCapturer createVideoCapturer(String source) {
         final VideoCapturer videoCapturer;
+
+        if (SOURCE_FRONT.equals(source)) {
+            openFrontCamera = true;
+        } else if (SOURCE_REAR.equals(source)) {
+            openFrontCamera = false;
+        }
+
+
         if (source.equals(SOURCE_FILE)) {
             String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
             try {
@@ -829,21 +842,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 reportError("Failed to open video file for emulated camera");
                 return null;
             }
-        } else if (source.equals(SOURCE_SCREEN)) {
+        } else if (SOURCE_SCREEN.equals(source)) {
             return createScreenCapturer();
-        } else if (source.equals(SOURCE_FRONT)) {
+        } else {
             if (!captureToTexture()) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
                 return null;
             }
 
             Logging.d(TAG, "Creating capturer using camera2 API.");
-            openFrontCamera = true;
             videoCapturer = createCameraCapturer(new Camera2Enumerator(this.context));
-        } else {
-            Logging.d(TAG, "Creating capturer using camera1 API.");
-            openFrontCamera = false;
-            videoCapturer = createCameraCapturer(new Camera1Enumerator(captureToTexture()));
         }
         if (videoCapturer == null) {
             reportError("Failed to open camera");
