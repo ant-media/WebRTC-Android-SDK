@@ -19,6 +19,7 @@ import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.view.Surface;
+import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 
@@ -61,6 +62,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable public MediaProjectionManager mediaProjectionManager;
 
   private boolean isDisposed;
+
+  private WindowManager windowManager;
+  private boolean isOrientationPortrait;
+  private Context applicationContext;
 
   /**
    * Constructs a new Screen Capturer.
@@ -105,6 +110,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     }
     this.surfaceTextureHelper = surfaceTextureHelper;
 
+    if (applicationContext == null) {
+      throw new RuntimeException("Application Context not set.");
+    }
+    this.applicationContext = applicationContext;
+
     mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
               Context.MEDIA_PROJECTION_SERVICE);
   }
@@ -122,6 +132,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
     this.width = width;
     this.height = height;
+
+    this.windowManager = (WindowManager) applicationContext.getSystemService(
+            Context.WINDOW_SERVICE);
+    this.isOrientationPortrait = isDeviceOrientationPortrait();
 
     // It means that it will use old method(without running in MediaProjectionService)
     if(mediaProjection == null){
@@ -217,6 +231,16 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
+    final boolean isOrientationPortrait = isDeviceOrientationPortrait();
+    // if the device orientation has changed, we need to change the output video's aspect ratio
+    if (isOrientationPortrait != this.isOrientationPortrait) {
+      this.isOrientationPortrait = isOrientationPortrait;
+
+      final int rotatedWidth = isOrientationPortrait ? width : height;
+      final int rotatedHeight = isOrientationPortrait ? height : width;
+
+      this.changeCaptureFormat(rotatedWidth, rotatedHeight, 15);
+    }
     capturerObserver.onFrameCaptured(frame);
   }
 
@@ -227,5 +251,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   public long getNumCapturedFrames() {
     return numCapturedFrames;
+  }
+
+  private boolean isDeviceOrientationPortrait() {
+    final int surfaceRotation = windowManager.getDefaultDisplay().getRotation();
+
+    return surfaceRotation != Surface.ROTATION_90 && surfaceRotation != Surface.ROTATION_270;
   }
 }
