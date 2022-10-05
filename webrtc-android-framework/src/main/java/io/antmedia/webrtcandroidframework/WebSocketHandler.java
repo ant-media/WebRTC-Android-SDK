@@ -43,10 +43,35 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         this.signallingListener = signallingListener;
     }
 
-    public void connect(final String wsUrl) {
+    public void connect(final String wsUrl, String streamMode) {
         checkIfCalledOnValidThread();
         wsServerUrl = wsUrl;
-        Log.d(TAG, "Connecting WebSocket to: " + wsUrl);
+
+        /*
+         * It's not mandatory if you don't use the new Load Balancer mechanism
+         * It uses one of the nodes on Cluster mode
+         * Example parameters: "origin" or "edge"
+         */
+        if (wsServerUrl.indexOf("?") == -1) {
+            //if there is no question mark just add it to give extra parameter
+            wsServerUrl+="?";
+        }
+        else {
+            //if there is a question mark, just append extra parameter
+            wsServerUrl+="&";
+        }
+        //add the target field
+        wsServerUrl+="target=";
+
+        //add the target value
+        if(streamMode.equals(IWebRTCClient.MODE_PLAY)){
+        wsServerUrl+="edge";
+        }
+        else{
+         wsServerUrl+="origin";
+        }
+
+        Log.d(TAG, "Connecting WebSocket to: " + wsServerUrl);
         ws = new WebSocketConnection();
         try {
             ws.connect(new URI(wsServerUrl), this);

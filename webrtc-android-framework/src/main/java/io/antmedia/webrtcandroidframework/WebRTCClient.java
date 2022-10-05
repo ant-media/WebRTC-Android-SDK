@@ -432,11 +432,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
-            wsHandler.connect(roomConnectionParameters.roomUrl);
+            wsHandler.connect(roomConnectionParameters.roomUrl, streamMode);
         } else if (!wsHandler.isConnected()) {
             wsHandler.disconnect(true);
             wsHandler = new WebSocketHandler(this, handler);
-            wsHandler.connect(roomConnectionParameters.roomUrl);
+            wsHandler.connect(roomConnectionParameters.roomUrl, streamMode);
         }
         startCall();
     }

@@ -96,7 +96,14 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     private void initWebSocketHandler() {
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
-            wsHandler.connect(serverUrl);
+            String streamMode;
+            if(isPlayOnlyMode()){
+                streamMode = IWebRTCClient.MODE_PLAY;
+            }
+            else{
+                streamMode = IWebRTCClient.MODE_PUBLISH;
+            }
+            wsHandler.connect(serverUrl, streamMode);
         }
     }
 
