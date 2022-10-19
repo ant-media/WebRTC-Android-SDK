@@ -6,7 +6,7 @@ Ant Media Server is a streaming engine software that provides adaptive, ultra lo
 
 ## About Android SDK
 
-This repository includes Ant Media Android SDK for WebRTC. 
+This repository includes Ant Media Android SDK for WebRTC. This repository is not compatible with the community edition.
 
 ## Integration 
 
