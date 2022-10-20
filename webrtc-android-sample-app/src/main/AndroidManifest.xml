@@ -29,7 +29,9 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".ConferenceActivity">
+        <activity android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|keyboard"> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
