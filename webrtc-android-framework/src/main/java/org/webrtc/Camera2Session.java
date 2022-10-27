@@ -309,9 +309,12 @@ class Camera2Session implements CameraSession {
       reportError("getCameraCharacteristics(): " + e.getMessage());
       return;
     }
-    cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+
     isCameraFrontFacing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING)
         == CameraMetadata.LENS_FACING_FRONT;
+
+    int sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+    calculateCameraOrientation(sensorOrientation);
 
     findCaptureFormat();
     openCamera();
@@ -404,6 +407,28 @@ class Camera2Session implements CameraSession {
       callback.onFailure(FailureType.ERROR, error);
     } else {
       events.onCameraError(this, error);
+    }
+  }
+
+  private void calculateCameraOrientation(int sensorOrientation) {
+    cameraOrientation = 0;
+    switch (sensorOrientation) {
+      case 90:
+        cameraOrientation = 270;
+        break;
+      case 180:
+        cameraOrientation = 0;
+        break;
+      case 270:
+        cameraOrientation = 90;
+        break;
+      case 0:
+        cameraOrientation = 180;
+        break;
+    }
+
+    if (isCameraFrontFacing) {
+      cameraOrientation = 360 - cameraOrientation;
     }
   }
 
