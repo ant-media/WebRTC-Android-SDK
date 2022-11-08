@@ -173,7 +173,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       if (info == null || !info.isEncoder()) {
         continue;
       }
-
       if (isSupportedCodec(info, type)) {
         return info;
       }
@@ -227,17 +226,21 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
   }
 
-  private boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
+  public boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
     // First, H264 hardware might perform poorly on this model.
     if (H264_HW_EXCEPTION_MODELS.contains(Build.MODEL)) {
       return false;
     }
     String name = info.getName();
     // QCOM H264 encoder is supported in KITKAT or later.
+
+    return true;
+    /*
     return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)
         // Exynos H264 encoder is supported in LOLLIPOP or later.
         || (name.startsWith(EXYNOS_PREFIX)
                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
+    */
   }
 
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {
