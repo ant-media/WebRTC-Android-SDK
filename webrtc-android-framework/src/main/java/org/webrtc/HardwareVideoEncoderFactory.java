@@ -234,6 +234,7 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
     String name = info.getName();
     // QCOM H264 encoder is supported in KITKAT or later.
 
+    // disable model check and always return true to enable H264 HW encoder on all devices
     return true;
     /*
     return (name.startsWith(QCOM_PREFIX) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT)

@@ -1,6 +1,7 @@
 package org.webrtc;
 
 import android.media.MediaCodecInfo;
+import android.os.Build;
 
 import junit.framework.TestCase;
 
@@ -8,14 +9,14 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class HardwareVideoEncoderFactoryTest extends TestCase {
+
     private static final String GOOGLE_H264_HW_ENCODER = "OMX.google.h264.encoder";
 
+    //Test that the HW encoder is working on google's hw encoder.
     @Test
     public void testIsHardwareSupportedInCurrentSdkH264() {
-        HardwareVideoEncoderFactory encoderFactory = Mockito.mock(HardwareVideoEncoderFactory.class);
+        HardwareVideoEncoderFactory encoderFactory = new HardwareVideoEncoderFactory(null, true, true);
         MediaCodecInfo info = Mockito.mock(MediaCodecInfo.class);
-        Mockito.when(encoderFactory.findCodecForType(VideoCodecMimeType.H264))
-                .thenReturn(info);
 
         Mockito.when(info.getName()).thenReturn(GOOGLE_H264_HW_ENCODER);
 
