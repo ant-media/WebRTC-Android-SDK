@@ -55,7 +55,10 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 
 public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
-    public static final String DEFAULT_SERVER_ADDRESS = "192.168.1.34:5080";
+    /**
+     * Change this address with your Ant Media Server address
+     */
+    public static final String DEFAULT_SERVER_ADDRESS = "ovh36.antmedia.io:5080";
 
 
     /**
