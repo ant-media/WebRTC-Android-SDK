@@ -41,9 +41,9 @@ public class SettingsActivity extends Activity {
                 android.preference.PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverAddressEditText.setText(sharedPreferences.getString(getString(R.string.serverAddress), DEFAULT_SERVER_ADDRESS));
         serverPortEditText.setText(sharedPreferences.getString(getString(R.string.serverPort), DEFAULT_SERVER_PORT));
-        applicationNameEditText.setText(sharedPreferences.getString(getString(R.string.serverPort), DEFAULT_APP_NAME));
-        streamIdEditText.setText(sharedPreferences.getString(getString(R.string.serverPort), DEFAULT_STREAM_ID));
-        roomNameEditText.setText(sharedPreferences.getString(getString(R.string.serverPort), DEFAULT_ROOM_NAME));
+        applicationNameEditText.setText(sharedPreferences.getString(getString(R.string.app_name), DEFAULT_APP_NAME));
+        streamIdEditText.setText(sharedPreferences.getString(getString(R.string.streamId), DEFAULT_STREAM_ID));
+        roomNameEditText.setText(sharedPreferences.getString(getString(R.string.roomId), DEFAULT_ROOM_NAME));
 
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
