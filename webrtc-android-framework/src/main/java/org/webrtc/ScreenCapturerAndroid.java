@@ -93,6 +93,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     }
   }
 
+  public void setWindowManager(WindowManager windowManager) {
+    this.windowManager = windowManager;
+  }
+
   @Override
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
@@ -251,7 +255,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     return numCapturedFrames;
   }
 
-  private boolean isDeviceOrientationPortrait() {
+  public boolean isDeviceOrientationPortrait() {
     final int surfaceRotation = windowManager.getDefaultDisplay().getRotation();
 
     return surfaceRotation != Surface.ROTATION_90 && surfaceRotation != Surface.ROTATION_270;
