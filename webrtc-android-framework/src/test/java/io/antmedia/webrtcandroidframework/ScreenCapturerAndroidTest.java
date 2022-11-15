@@ -14,7 +14,7 @@ public class ScreenCapturerAndroidTest extends TestCase {
 
     @Test
     public void testIsDeviceOrientationPortrait() {
-        ScreenCapturerAndroid screenCapturerAndroid = new ScreenCapturerAndroid(null,null,null);//Mockito.mock(ScreenCapturerAndroid.class);
+        ScreenCapturerAndroid screenCapturerAndroid = new ScreenCapturerAndroid(null,null,null);
         WindowManager windowManager = Mockito.mock(WindowManager.class);
         Display display = Mockito.mock(Display.class);
 
