@@ -56,12 +56,6 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     /**
-     * Change this address with your Ant Media Server address
-     */
-    public static final String DEFAULT_SERVER_ADDRESS = "ovh36.antmedia.io:5080";
-
-
-    /**
      * Mode can Publish, Play or P2P
      */
     private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
@@ -126,12 +120,14 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
 
-        streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
-        serverUrl = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
-        restUrl = "http://" + serverAddress + "/WebRTCAppEE/rest/v2";
+        String restUrlScheme = serverPort.equals("5443") ? "https://" : "http://";
+        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
+        restUrl = restUrlScheme + serverAddress + "/" + SettingsActivity.DEFAULT_APP_NAME + "/rest/v2";
 
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             streamInfoListSpinner.setVisibility(View.INVISIBLE);

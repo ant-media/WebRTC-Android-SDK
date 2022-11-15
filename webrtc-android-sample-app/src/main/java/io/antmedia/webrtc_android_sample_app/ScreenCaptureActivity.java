@@ -103,11 +103,12 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
 
-        streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
-        serverUrl = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
+        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
 
         webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
     }

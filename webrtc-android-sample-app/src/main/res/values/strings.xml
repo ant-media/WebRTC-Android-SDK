@@ -6,6 +6,7 @@
     <string name="serverAddress">server_address</string>
     <string name="serverPort">server_port</string>
     <string name="streamId">stream_id</string>
+    <string name="roomId">room_id</string>
     <string name="settings_button_name">Settings</string>
     <string name="stream_mode">streaming_mode</string>
     <string name="send_image_button_name">Send Image</string>

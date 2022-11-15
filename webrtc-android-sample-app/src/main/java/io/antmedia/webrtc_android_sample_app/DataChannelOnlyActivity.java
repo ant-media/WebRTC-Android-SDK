@@ -92,11 +92,12 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), "192.168.1.23");
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), "5080");
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_PORT);
+        streamId = sharedPreferences.getString(getString(R.string.streamId), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_STREAM_ID);
 
-        streamId = sharedPreferences.getString(getString(R.string.streamId), "stream1");
-        serverUrl = "ws://" + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
+        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
 
         startStreamingButton.setText("Connect Data Channel");
         operationName = "DataChannel";
