@@ -13,6 +13,7 @@ package org.webrtc;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -35,6 +36,37 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   private final CameraEnumerator cameraEnumerator;
   private final CameraEventsHandler eventsHandler;
   private final Handler uiThreadHandler;
+  private long nextZoomTime = 0;
+
+  @Override
+  public void setZoom(int zoom) {
+    if (currentSession instanceof Camera1Session) {
+      cameraThreadHandler.post(new Runnable() {
+        @Override
+        public void run() {
+          if (currentSession != null) {
+            currentSession.setZoom(zoom);
+          }
+        }
+      });
+    } else {
+      long currentTime = System.currentTimeMillis();
+      if (currentTime - nextZoomTime > 200) {
+        nextZoomTime = currentTime;
+        cameraThreadHandler.post(new Runnable() {
+          @Override
+          public void run() {
+            if (currentSession != null) {
+              currentSession.setZoom(zoom);
+            }
+          }
+        });
+      } else {
+        Log.e(TAG, "ignore zoom");
+      }
+    }
+
+  }
 
   @Nullable
   private final CameraSession.CreateSessionCallback createSessionCallback =
@@ -185,9 +217,9 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   private org.webrtc.CapturerObserver capturerObserver;
   private SurfaceTextureHelper surfaceHelper;
 
-  private final Object stateLock = new Object();
+  protected final Object stateLock = new Object();
   private boolean sessionOpening; /* guarded by stateLock */
-  @Nullable private CameraSession currentSession; /* guarded by stateLock */
+  @Nullable protected CameraSession currentSession; /* guarded by stateLock */
   private String cameraName; /* guarded by stateLock */
   private String pendingCameraName; /* guarded by stateLock */
   private int width; /* guarded by stateLock */

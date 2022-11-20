@@ -45,6 +45,31 @@
         android:onClick="showSendDataChannelMessageDialog"
         android:layout_centerVertical="true"/>
 
+    <ImageButton
+        android:id="@+id/button1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true"
+        android:layout_toLeftOf="@+id/button2"
+        android:src="@drawable/zoom_in"
+        android:gravity="center"
+        android:onClick="setZoomIn"
+        android:scaleType="centerInside" />
+
+    <ImageButton
+        android:id="@+id/button2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:src="@drawable/zoom_out"
+         android:onClick="setZoomOut"
+        android:scaleType="centerInside"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        />
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

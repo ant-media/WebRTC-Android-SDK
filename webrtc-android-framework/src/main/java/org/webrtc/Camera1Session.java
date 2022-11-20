@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import android.hardware.Camera;
+import android.util.Log;
 
 @SuppressWarnings("deprecation")
 class Camera1Session implements CameraSession {
@@ -49,6 +51,28 @@ class Camera1Session implements CameraSession {
 
   private SessionState state;
   private boolean firstFrameReported;
+
+
+  @Override
+  public void setZoom(int zoom) {
+    Log.d(TAG, "setZoom() zoom=" + zoom);
+    if (zoom < 1) {
+      zoom = 1;
+    } else if (zoom > 100) {
+      zoom = 100;
+    }
+    if (camera != null) {
+      Camera.Parameters parameters = camera.getParameters();
+      if (parameters.isZoomSupported()) {
+        List<Integer> ratios = parameters.getZoomRatios();
+        int index = (int) (zoom * 1.0f / 100 * ratios.size());
+        index = Math.min(index, ratios.size() - 1);
+//                parameters.setZoom(ratios.get(index));
+        parameters.setZoom(index);
+        camera.setParameters(parameters);
+      }
+    }
+  }
 
   // TODO(titovartem) make correct fix during webrtc:9175
   @SuppressWarnings("ByteBufferBackingArray")

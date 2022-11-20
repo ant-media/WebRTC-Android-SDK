@@ -42,6 +42,7 @@ public interface CameraVideoCapturer extends VideoCapturer {
       // Callback invoked when camera is closed.
       void onCameraClosed();
   }
+    void setZoom(int zoom);
 
     /**
      * Camera switch handler - one of these functions are invoked with the result of switchCamera().

@@ -12,6 +12,7 @@ package org.webrtc;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.Rect;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -21,6 +22,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Handler;
+import android.util.Log;
 import android.util.Range;
 import android.view.Surface;
 
@@ -35,6 +37,8 @@ import java.util.concurrent.TimeUnit;
 @TargetApi(21)
 class Camera2Session implements CameraSession {
   private static final String TAG = "Camera2Session";
+
+  private CaptureRequest.Builder captureRequestBuilder;
 
   private static final Histogram camera2StartTimeMsHistogram =
       Histogram.createCounts("WebRTC.Android.Camera2.StartTimeMs", 1, 10000, 50);
@@ -76,6 +80,31 @@ class Camera2Session implements CameraSession {
 
   // Used only for stats. Only used on the camera thread.
   private final long constructionTimeNs; // Construction time of this class.
+
+  @Override
+  public void setZoom(int zoom) {
+    if (cameraDevice != null && cameraCharacteristics != null && captureRequestBuilder != null && captureSession != null) {
+      int maxZoom = cameraCharacteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM).intValue() * 10;
+      Rect rect = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+      int minW = rect.width() / maxZoom;
+      int minH = rect.height() / maxZoom;
+      int difW = rect.width() - minW;
+      int difH = rect.height() - minH;
+      int cropW = difW * zoom / 150;
+      int cropH = difH * zoom / 150;
+      cropW -= cropW & 3;
+      cropH -= cropH & 3;
+      Rect zoomRect = new Rect(cropW, cropH, rect.width() - cropW, rect.height() - cropH);
+      Log.d(TAG, "handleZoom() zoom=" + zoom + "maxZoom=" + maxZoom + "zoomRect=" + zoomRect);
+      captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, zoomRect);
+      try {
+        captureSession.setRepeatingRequest(
+                captureRequestBuilder.build(), new CameraCaptureCallback(), cameraThreadHandler);
+      } catch (CameraAccessException e) {
+        e.printStackTrace();
+      }
+    }
+  }
 
   private class CameraStateCallback extends CameraDevice.StateCallback {
     private String getErrorDescription(int errorCode) {

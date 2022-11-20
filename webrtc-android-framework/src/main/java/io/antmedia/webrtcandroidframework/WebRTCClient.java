@@ -165,6 +165,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         return pipRenderer;
     }
 
+    public VideoCapturer getVideoCapturer() {
+        return videoCapturer;
+    }
+
     @Nullable
     public SurfaceViewRenderer getFullscreenRenderer() {
         return fullscreenRenderer;
@@ -390,7 +394,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             else if(screencaptureEnabled) {
                 source = SOURCE_SCREEN;
             }
-            else if(useCamera2()) {
+            else if(openFrontCamera) {
                 source = SOURCE_FRONT;
             }
 
@@ -844,7 +848,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             }
         } else if (SOURCE_SCREEN.equals(source)) {
             return createScreenCapturer();
-        } else {
+        }  else if (useCamera2()) {
             if (!captureToTexture()) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
                 return null;
@@ -852,6 +856,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
             Logging.d(TAG, "Creating capturer using camera2 API.");
             videoCapturer = createCameraCapturer(new Camera2Enumerator(this.context));
+        } else {
+            Logging.d(TAG, "Creating capturer using camera1 API.");
+            videoCapturer = createCameraCapturer(new Camera1Enumerator(captureToTexture()));
         }
         if (videoCapturer == null) {
             reportError("Failed to open camera");
