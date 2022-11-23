@@ -241,7 +241,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
       this.isOrientationPortrait = isOrientationPortrait;
 
       // Reverse width and height.
-      this.changeCaptureFormat(height, width, 15);
+      this.changeCaptureFormat(height, width, 0);
     }
     capturerObserver.onFrameCaptured(frame);
   }
