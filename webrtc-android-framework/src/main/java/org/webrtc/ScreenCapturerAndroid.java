@@ -235,13 +235,15 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
-    final boolean isOrientationPortrait = isDeviceOrientationPortrait();
-    // if the device orientation has changed, we need to change the output video's aspect ratio
-    if (isOrientationPortrait != this.isOrientationPortrait) {
-      this.isOrientationPortrait = isOrientationPortrait;
+    if ((numCapturedFrames % 20) == 0) {
+      final boolean isOrientationPortrait = isDeviceOrientationPortrait();
+      // if the device orientation has changed, we need to change the output video's aspect ratio
+      if (isOrientationPortrait != this.isOrientationPortrait) {
+        this.isOrientationPortrait = isOrientationPortrait;
 
-      // Reverse width and height.
-      this.changeCaptureFormat(height, width, 0);
+        // Reverse width and height.
+        this.changeCaptureFormat(height, width, 0);
+      }
     }
     capturerObserver.onFrameCaptured(frame);
   }
