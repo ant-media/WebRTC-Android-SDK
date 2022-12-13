@@ -11,13 +11,16 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.webrtc.CandidatePairChangeEvent;
+import org.webrtc.DataChannel;
+import org.webrtc.MediaStreamTrack;
+import org.webrtc.RtpTransceiver;
 
 /**
  * Java-land version of the PeerConnection APIs; wraps the C++ API
@@ -90,38 +93,33 @@ public class PeerConnection {
     }
   }
 
-  /**
-   * Java version of PeerConnectionObserver.
-   */
-  public interface Observer {
+  /** Java version of PeerConnectionObserver. */
+  public static interface Observer {
     /** Triggered when the SignalingState changes. */
-    @CalledByNative("Observer")
-    void onSignalingChange(SignalingState newState);
+    @CalledByNative("Observer") void onSignalingChange(SignalingState newState);
 
     /** Triggered when the IceConnectionState changes. */
-    @CalledByNative("Observer")
-    void onIceConnectionChange(IceConnectionState newState);
+    @CalledByNative("Observer") void onIceConnectionChange(IceConnectionState newState);
 
     /* Triggered when the standard-compliant state transition of IceConnectionState happens. */
     @CalledByNative("Observer")
-    default void onStandardizedIceConnectionChange(IceConnectionState newState) {
-    }
+    default void onStandardizedIceConnectionChange(IceConnectionState newState) {}
 
     /** Triggered when the PeerConnectionState changes. */
     @CalledByNative("Observer")
-    default void onConnectionChange(PeerConnectionState newState) {
-    }
+    default void onConnectionChange(PeerConnectionState newState) {}
 
     /** Triggered when the ICE connection receiving status changes. */
-    @CalledByNative("Observer")
-    void onIceConnectionReceivingChange(boolean receiving);
+    @CalledByNative("Observer") void onIceConnectionReceivingChange(boolean receiving);
 
     /** Triggered when the IceGatheringState changes. */
-    @CalledByNative("Observer")
-    void onIceGatheringChange(IceGatheringState newState);
+    @CalledByNative("Observer") void onIceGatheringChange(IceGatheringState newState);
 
     /** Triggered when a new ICE candidate has been found. */
     @CalledByNative("Observer") void onIceCandidate(IceCandidate candidate);
+
+    /** Triggered when gathering of an ICE candidate failed. */
+    default @CalledByNative("Observer") void onIceCandidateError(IceCandidateErrorEvent event) {}
 
     /** Triggered when some ICE candidates have been removed. */
     @CalledByNative("Observer") void onIceCandidatesRemoved(IceCandidate[] candidates);
@@ -139,27 +137,28 @@ public class PeerConnection {
     /** Triggered when a remote peer opens a DataChannel. */
     @CalledByNative("Observer") void onDataChannel(DataChannel dataChannel);
 
-    /**
-     * Triggered when renegotiation is necessary.
-     */
-    @CalledByNative("Observer")
-    void onRenegotiationNeeded();
+    /** Triggered when renegotiation is necessary. */
+    @CalledByNative("Observer") void onRenegotiationNeeded();
 
     /**
      * Triggered when a new track is signaled by the remote peer, as a result of
      * setRemoteDescription.
      */
     @CalledByNative("Observer")
-    void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
+    default void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams){};
+
+    /**
+     * Triggered when a previously added remote track is removed by the remote
+     * peer, as a result of setRemoteDescription.
+     */
+    @CalledByNative("Observer") default void onRemoveTrack(RtpReceiver receiver){};
 
     /**
      * Triggered when the signaling from SetRemoteDescription indicates that a transceiver
      * will be receiving media from a remote endpoint. This is only called if UNIFIED_PLAN
      * semantics are specified. The transceiver will be disposed automatically.
      */
-    @CalledByNative("Observer")
-    default void onTrack(RtpTransceiver transceiver) {
-    }
+    @CalledByNative("Observer") default void onTrack(RtpTransceiver transceiver){};
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */
@@ -173,9 +172,9 @@ public class PeerConnection {
     public final String password;
     public final TlsCertPolicy tlsCertPolicy;
 
-    // If the URIs in |urls| only contain IP addresses, this field can be used
+    // If the URIs in `urls` only contain IP addresses, this field can be used
     // to indicate the hostname, which may be necessary for TLS (using the SNI
-    // extension). If |urls| itself contains the hostname, this isn't
+    // extension). If `urls` itself contains the hostname, this isn't
     // necessary.
     public final String hostname;
 
@@ -374,22 +373,16 @@ public class PeerConnection {
   public enum IceTransportsType { NONE, RELAY, NOHOST, ALL }
 
   /** Java version of PeerConnectionInterface.BundlePolicy */
-  public enum BundlePolicy {BALANCED, MAXBUNDLE, MAXCOMPAT}
+  public enum BundlePolicy { BALANCED, MAXBUNDLE, MAXCOMPAT }
 
-  /**
-   * Java version of PeerConnectionInterface.RtcpMuxPolicy
-   */
-  public enum RtcpMuxPolicy {NEGOTIATE, REQUIRE}
+  /** Java version of PeerConnectionInterface.RtcpMuxPolicy */
+  public enum RtcpMuxPolicy { NEGOTIATE, REQUIRE }
 
-  /**
-   * Java version of PeerConnectionInterface.TcpCandidatePolicy
-   */
-  public enum TcpCandidatePolicy {ENABLED, DISABLED}
+  /** Java version of PeerConnectionInterface.TcpCandidatePolicy */
+  public enum TcpCandidatePolicy { ENABLED, DISABLED }
 
-  /**
-   * Java version of PeerConnectionInterface.CandidateNetworkPolicy
-   */
-  public enum CandidateNetworkPolicy {ALL, LOW_COST}
+  /** Java version of PeerConnectionInterface.CandidateNetworkPolicy */
+  public enum CandidateNetworkPolicy { ALL, LOW_COST }
 
   // Keep in sync with webrtc/rtc_base/network_constants.h.
   public enum AdapterType {
@@ -406,13 +399,10 @@ public class PeerConnection {
     CELLULAR_5G(1 << 9);
 
     public final Integer bitMask;
-
-    AdapterType(Integer bitMask) {
+    private AdapterType(Integer bitMask) {
       this.bitMask = bitMask;
     }
-
     private static final Map<Integer, AdapterType> BY_BITMASK = new HashMap<>();
-
     static {
       for (AdapterType t : values()) {
         BY_BITMASK.put(t.bitMask, t);
@@ -423,7 +413,7 @@ public class PeerConnection {
     @CalledByNative("AdapterType")
     static AdapterType fromNativeIndex(int nativeIndex) {
       return BY_BITMASK.get(nativeIndex);
-        }
+    }
   }
 
   /** Java version of rtc::KeyType */
@@ -442,29 +432,29 @@ public class PeerConnection {
   /**
    * Java version of webrtc::SdpSemantics.
    *
-   * Configure the SDP semantics used by this PeerConnection. Note that the
-   * WebRTC 1.0 specification requires UNIFIED_PLAN semantics. The
-   * RtpTransceiver API is only available with UNIFIED_PLAN semantics.
+   * Configure the SDP semantics used by this PeerConnection. By default, this
+   * is UNIFIED_PLAN which is compliant to the WebRTC 1.0 specification. It is
+   * possible to overrwite this to the deprecated PLAN_B SDP format, but note
+   * that PLAN_B will be deleted at some future date, see
+   * https://crbug.com/webrtc/13528.
    *
-   * <p>PLAN_B will cause PeerConnection to create offers and answers with at
-   * most one audio and one video m= section with multiple RtpSenders and
-   * RtpReceivers specified as multiple a=ssrc lines within the section. This
-   * will also cause PeerConnection to ignore all but the first m= section of
-   * the same media type.
-   *
-   * <p>UNIFIED_PLAN will cause PeerConnection to create offers and answers with
+   * UNIFIED_PLAN will cause PeerConnection to create offers and answers with
    * multiple m= sections where each m= section maps to one RtpSender and one
    * RtpReceiver (an RtpTransceiver), either both audio or both video. This
    * will also cause PeerConnection to ignore all but the first a=ssrc lines
    * that form a Plan B stream.
    *
-   * <p>For users who wish to send multiple audio/video streams and need to stay
-   * interoperable with legacy WebRTC implementations, specify PLAN_B.
-   *
-   * <p>For users who wish to send multiple audio/video streams and/or wish to
-   * use the new RtpTransceiver API, specify UNIFIED_PLAN.
+   * PLAN_B will cause PeerConnection to create offers and answers with at most
+   * one audio and one video m= section with multiple RtpSenders and
+   * RtpReceivers specified as multiple a=ssrc lines within the section. This
+   * will also cause PeerConnection to ignore all but the first m= section of
+   * the same media type.
    */
-  public enum SdpSemantics { PLAN_B, UNIFIED_PLAN }
+  public enum SdpSemantics {
+    // TODO(https://crbug.com/webrtc/13528): Remove support for PLAN_B.
+    @Deprecated PLAN_B,
+    UNIFIED_PLAN
+  }
 
   /** Java version of PeerConnectionInterface.RTCConfiguration */
   // TODO(qingsi): Resolve the naming inconsistency of fields with/without units.
@@ -521,6 +511,9 @@ public class PeerConnection {
     // to keep NAT bindings open.
     // The default value in the implementation is used if this field is null.
     @Nullable public Integer stunCandidateKeepaliveIntervalMs;
+    // The interval in milliseconds of pings sent when the connection is stable and writable.
+    // The default value in the implementation is used if this field is null.
+    @Nullable public Integer stableWritableConnectionPingIntervalMs;
     public boolean disableIPv6OnWifi;
     // By default, PeerConnection will use a limited number of IPv6 network
     // interfaces, in order to avoid too many ICE candidate pairs being created
@@ -534,22 +527,16 @@ public class PeerConnection {
     public boolean disableIpv6;
     public boolean enableDscp;
     public boolean enableCpuOveruseDetection;
-    public boolean enableRtpDataChannel;
     public boolean suspendBelowMinBitrate;
-    @Nullable
-    public Integer screencastMinBitrate;
-    @Nullable
-    public Boolean combinedAudioVideoBwe;
-    @Nullable
-    public Boolean enableDtlsSrtp;
+    @Nullable public Integer screencastMinBitrate;
+    @Nullable public Boolean combinedAudioVideoBwe;
     // Use "Unknown" to represent no preference of adapter types, not the
     // preference of adapters of unknown types.
     public AdapterType networkPreference;
     public SdpSemantics sdpSemantics;
 
     // This is an optional wrapper for the C++ webrtc::TurnCustomizer.
-    @Nullable
-    public TurnCustomizer turnCustomizer;
+    @Nullable public TurnCustomizer turnCustomizer;
 
     // Actively reset the SRTP parameters whenever the DTLS transports underneath are reset for
     // every offer/answer negotiation.This is only intended to be a workaround for crbug.com/835958
@@ -558,24 +545,34 @@ public class PeerConnection {
     // Whether this client is allowed to switch encoding codec mid-stream. This is a workaround for
     // a WebRTC bug where the receiver could get confussed if a codec switch happened mid-call.
     // Null indicates no change to currently configured value.
-    @Nullable
-    public Boolean allowCodecSwitching;
+    @Nullable public Boolean allowCodecSwitching;
 
     /**
      * Defines advanced optional cryptographic settings related to SRTP and
      * frame encryption for native WebRTC. Setting this will overwrite any
      * options set through the PeerConnectionFactory (which is deprecated).
      */
-    @Nullable
-    public CryptoOptions cryptoOptions;
+    @Nullable public CryptoOptions cryptoOptions;
 
     /**
      * An optional string that if set will be attached to the
      * TURN_ALLOCATE_REQUEST which can be used to correlate client
      * logs with backend logs
      */
-    @Nullable
-    public String turnLoggingId;
+    @Nullable public String turnLoggingId;
+
+    /**
+     * Allow implicit rollback of local description when remote description
+     * conflicts with local description.
+     * See: https://w3c.github.io/webrtc-pc/#dom-peerconnection-setremotedescription
+     */
+    public boolean enableImplicitRollback;
+
+    /**
+     * Control if "a=extmap-allow-mixed" is included in the offer.
+     * See: https://www.chromestatus.com/feature/6269234631933952
+     */
+    public boolean offerExtmapAllowMixed;
 
     // TODO(deadbeef): Instead of duplicating the defaults here, we should do
     // something to pick up the defaults from C++. The Objective-C equivalent
@@ -604,22 +601,23 @@ public class PeerConnection {
       iceUnwritableTimeMs = null;
       iceUnwritableMinChecks = null;
       stunCandidateKeepaliveIntervalMs = null;
+      stableWritableConnectionPingIntervalMs = null;
       disableIPv6OnWifi = false;
       maxIPv6Networks = 5;
       disableIpv6 = false;
       enableDscp = false;
       enableCpuOveruseDetection = true;
-      enableRtpDataChannel = false;
       suspendBelowMinBitrate = false;
       screencastMinBitrate = null;
       combinedAudioVideoBwe = null;
-      enableDtlsSrtp = null;
       networkPreference = AdapterType.UNKNOWN;
-      sdpSemantics = SdpSemantics.PLAN_B;
+      sdpSemantics = SdpSemantics.UNIFIED_PLAN;
       activeResetSrtpParams = false;
-        cryptoOptions = null;
-        turnLoggingId = null;
+      cryptoOptions = null;
+      turnLoggingId = null;
       allowCodecSwitching = null;
+      enableImplicitRollback = false;
+      offerExtmapAllowMixed = true;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -749,6 +747,12 @@ public class PeerConnection {
       return stunCandidateKeepaliveIntervalMs;
     }
 
+    @Nullable
+    @CalledByNative("RTCConfiguration")
+    Integer getStableWritableConnectionPingIntervalMs() {
+      return stableWritableConnectionPingIntervalMs;
+    }
+
     @CalledByNative("RTCConfiguration")
     boolean getDisableIPv6OnWifi() {
       return disableIPv6OnWifi;
@@ -781,11 +785,6 @@ public class PeerConnection {
     }
 
     @CalledByNative("RTCConfiguration")
-    boolean getEnableRtpDataChannel() {
-      return enableRtpDataChannel;
-    }
-
-    @CalledByNative("RTCConfiguration")
     boolean getSuspendBelowMinBitrate() {
       return suspendBelowMinBitrate;
     }
@@ -800,12 +799,6 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     Boolean getCombinedAudioVideoBwe() {
       return combinedAudioVideoBwe;
-    }
-
-    @Nullable
-    @CalledByNative("RTCConfiguration")
-    Boolean getEnableDtlsSrtp() {
-      return enableDtlsSrtp;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -840,7 +833,17 @@ public class PeerConnection {
     String getTurnLoggingId() {
       return turnLoggingId;
     }
-  }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getEnableImplicitRollback() {
+      return enableImplicitRollback;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getOfferExtmapAllowMixed() {
+      return offerExtmapAllowMixed;
+    }
+  };
 
   private final List<MediaStream> localStreams = new ArrayList<>();
   private final long nativePeerConnection;
@@ -885,12 +888,23 @@ public class PeerConnection {
     nativeCreateAnswer(observer, constraints);
   }
 
+  public void setLocalDescription(SdpObserver observer) {
+    nativeSetLocalDescriptionAutomatically(observer);
+  }
+
   public void setLocalDescription(SdpObserver observer, SessionDescription sdp) {
     nativeSetLocalDescription(observer, sdp);
   }
 
   public void setRemoteDescription(SdpObserver observer, SessionDescription sdp) {
     nativeSetRemoteDescription(observer, sdp);
+  }
+
+  /**
+   * Tells the PeerConnection that ICE should be restarted.
+   */
+  public void restartIce() {
+    nativeRestartIce();
   }
 
   /**
@@ -921,6 +935,11 @@ public class PeerConnection {
 
   public boolean addIceCandidate(IceCandidate candidate) {
     return nativeAddIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
+  }
+
+  public void addIceCandidate(IceCandidate candidate, AddIceObserver observer) {
+    nativeAddIceCandidateWithObserver(
+        candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp, observer);
   }
 
   public boolean removeIceCandidates(final IceCandidate[] candidates) {
@@ -1082,7 +1101,7 @@ public class PeerConnection {
    * transceiver will cause future calls to CreateOffer to add a media description
    * for the corresponding transceiver.
    *
-   * <p>The initial value of |mid| in the returned transceiver is null. Setting a
+   * <p>The initial value of `mid` in the returned transceiver is null. Setting a
    * new session description may change it to a non-null value.
    *
    * <p>https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-addtransceiver
@@ -1267,8 +1286,10 @@ public class PeerConnection {
   private native DataChannel nativeCreateDataChannel(String label, DataChannel.Init init);
   private native void nativeCreateOffer(SdpObserver observer, MediaConstraints constraints);
   private native void nativeCreateAnswer(SdpObserver observer, MediaConstraints constraints);
+  private native void nativeSetLocalDescriptionAutomatically(SdpObserver observer);
   private native void nativeSetLocalDescription(SdpObserver observer, SessionDescription sdp);
   private native void nativeSetRemoteDescription(SdpObserver observer, SessionDescription sdp);
+  private native void nativeRestartIce();
   private native void nativeSetAudioPlayout(boolean playout);
   private native void nativeSetAudioRecording(boolean recording);
   private native boolean nativeSetBitrate(Integer min, Integer current, Integer max);
@@ -1282,6 +1303,8 @@ public class PeerConnection {
   private native boolean nativeSetConfiguration(RTCConfiguration config);
   private native boolean nativeAddIceCandidate(
       String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
+  private native void nativeAddIceCandidateWithObserver(
+      String sdpMid, int sdpMLineIndex, String iceCandidateSdp, AddIceObserver observer);
   private native boolean nativeRemoveIceCandidates(final IceCandidate[] candidates);
   private native boolean nativeAddLocalStream(long stream);
   private native void nativeRemoveLocalStream(long stream);

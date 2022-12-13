@@ -15,54 +15,50 @@ package org.webrtc;
  * a single decoding thread.
  */
 public interface VideoDecoder {
-    /**
-     * Settings passed to the decoder by WebRTC.
-     */
-    class Settings {
-        public final int numberOfCores;
-        public final int width;
-        public final int height;
+  /** Settings passed to the decoder by WebRTC. */
+  public class Settings {
+    public final int numberOfCores;
+    public final int width;
+    public final int height;
 
-        @CalledByNative("Settings")
-        public Settings(int numberOfCores, int width, int height) {
-            this.numberOfCores = numberOfCores;
-            this.width = width;
-            this.height = height;
-        }
+    @CalledByNative("Settings")
+    public Settings(int numberOfCores, int width, int height) {
+      this.numberOfCores = numberOfCores;
+      this.width = width;
+      this.height = height;
     }
+  }
 
-    /**
-     * Additional info for decoding.
-     */
-    class DecodeInfo {
-        public final boolean isMissingFrames;
-        public final long renderTimeMs;
+  /** Additional info for decoding. */
+  public class DecodeInfo {
+    public final boolean isMissingFrames;
+    public final long renderTimeMs;
 
-        public DecodeInfo(boolean isMissingFrames, long renderTimeMs) {
-            this.isMissingFrames = isMissingFrames;
-            this.renderTimeMs = renderTimeMs;
-        }
+    public DecodeInfo(boolean isMissingFrames, long renderTimeMs) {
+      this.isMissingFrames = isMissingFrames;
+      this.renderTimeMs = renderTimeMs;
     }
+  }
 
-    interface Callback {
-        /**
-         * Call to return a decoded frame. Can be called on any thread.
-         *
-         * @param frame        Decoded frame
-         * @param decodeTimeMs Time it took to decode the frame in milliseconds or null if not available
-         * @param qp           QP value of the decoded frame or null if not available
-         */
-        void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp);
-    }
-
+  public interface Callback {
     /**
-     * The decoder implementation backing this interface is either 1) a Java
-     * decoder (e.g., an Android platform decoder), or alternatively 2) a native
-     * decoder (e.g., a software decoder or a C++ decoder adapter).
+     * Call to return a decoded frame. Can be called on any thread.
      *
-     * For case 1), createNativeVideoDecoder() should return zero.
-     * In this case, we expect the native library to call the decoder through
-     * JNI using the Java interface declared below.
+     * @param frame Decoded frame
+     * @param decodeTimeMs Time it took to decode the frame in milliseconds or null if not available
+     * @param qp QP value of the decoded frame or null if not available
+     */
+    void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp);
+  }
+
+  /**
+   * The decoder implementation backing this interface is either 1) a Java
+   * decoder (e.g., an Android platform decoder), or alternatively 2) a native
+   * decoder (e.g., a software decoder or a C++ decoder adapter).
+   *
+   * For case 1), createNativeVideoDecoder() should return zero.
+   * In this case, we expect the native library to call the decoder through
+   * JNI using the Java interface declared below.
    *
    * For case 2), createNativeVideoDecoder() should return a non-zero value.
    * In this case, we expect the native library to treat the returned value as
@@ -90,11 +86,6 @@ public interface VideoDecoder {
    * Request the decoder to decode a frame.
    */
   @CalledByNative VideoCodecStatus decode(EncodedImage frame, DecodeInfo info);
-  /**
-   * The decoder should return true if it prefers late decoding. That is, it can not decode
-   * infinite number of frames before the decoded frame is consumed.
-   */
-  @CalledByNative boolean getPrefersLateDecoding();
   /**
    * Should return a descriptive name for the implementation. Gets called once and cached. May be
    * called from arbitrary thread.

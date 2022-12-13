@@ -8,8 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package io.antmedia.webrtcandroidframework.apprtc;
-
+package org.appspot.apprtc;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -38,16 +37,11 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import androidx.annotation.Nullable;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.Random;
-
-import io.antmedia.webrtcandroidframework.R;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 /**
  * Handles the initial setup where the user selects which room to join.

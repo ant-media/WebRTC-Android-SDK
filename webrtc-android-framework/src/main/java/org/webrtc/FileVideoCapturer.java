@@ -12,12 +12,11 @@ package org.webrtc;
 
 import android.content.Context;
 import android.os.SystemClock;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -114,7 +113,7 @@ public class FileVideoCapturer implements VideoCapturer {
             throw new RuntimeException("Error looping video");
           }
         }
-        String frameDelimStr = new String(frameDelim.array(), StandardCharsets.US_ASCII);
+        String frameDelimStr = new String(frameDelim.array(), Charset.forName("US-ASCII"));
         if (!frameDelimStr.equals(Y4M_FRAME_DELIMETER + "\n")) {
           throw new RuntimeException(
               "Frames should be delimited by FRAME plus newline, found delimter was: '"

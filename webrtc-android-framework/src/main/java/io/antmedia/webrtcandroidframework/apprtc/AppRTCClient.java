@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package io.antmedia.webrtcandroidframework.apprtc;
+package org.appspot.apprtc;
 
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
@@ -28,20 +28,16 @@ public interface AppRTCClient {
     public final String roomId;
     public final boolean loopback;
     public final String urlParameters;
-    public final String mode;
-    public final String token;
     public RoomConnectionParameters(
-        String roomUrl, String roomId, boolean loopback, String urlParameters, String mode, String token) {
+        String roomUrl, String roomId, boolean loopback, String urlParameters) {
       this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.loopback = loopback;
       this.urlParameters = urlParameters;
-      this.mode = mode;
-      this.token = token;
     }
-    //public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
-    //  this(roomUrl, roomId, loopback, null /* urlParameters */);
-    //}
+    public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
+      this(roomUrl, roomId, loopback, null /* urlParameters */);
+    }
   }
 
   /**
@@ -104,7 +100,7 @@ public interface AppRTCClient {
   /**
    * Callback interface for messages delivered on signaling channel.
    *
-   * <p>Methods are guaranteed to be invoked on the UI thread of |activity|.
+   * <p>Methods are guaranteed to be invoked on the UI thread of `activity`.
    */
   interface SignalingEvents {
     /**
@@ -137,17 +133,5 @@ public interface AppRTCClient {
      * Callback fired once channel error happened.
      */
     void onChannelError(final String description);
-
-    void onPublishFinished();
-
-    void onPlayFinished();
-
-    void onPublishStarted();
-
-    void onPlayStarted();
-
-    void noStreamExistsToPlay();
-
-    void onDisconnected();
   }
 }

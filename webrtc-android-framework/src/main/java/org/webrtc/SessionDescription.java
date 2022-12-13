@@ -18,23 +18,22 @@ import java.util.Locale;
  * to SessionDescriptionInterface as appropriate in the JNI layer.
  */
 public class SessionDescription {
-    /**
-     * Java-land enum version of SessionDescriptionInterface's type() string.
-     */
-    public enum Type {
-        OFFER,
-        PRANSWER,
-        ANSWER;
+  /** Java-land enum version of SessionDescriptionInterface's type() string. */
+  public static enum Type {
+    OFFER,
+    PRANSWER,
+    ANSWER,
+    ROLLBACK;
 
-        public String canonicalForm() {
-            return name().toLowerCase(Locale.US);
-        }
-
-        @CalledByNative("Type")
-        public static Type fromCanonicalForm(String canonical) {
-            return Type.valueOf(Type.class, canonical.toUpperCase(Locale.US));
-        }
+    public String canonicalForm() {
+      return name().toLowerCase(Locale.US);
     }
+
+    @CalledByNative("Type")
+    public static Type fromCanonicalForm(String canonical) {
+      return Type.valueOf(Type.class, canonical.toUpperCase(Locale.US));
+    }
+  }
 
   public final Type type;
   public final String description;

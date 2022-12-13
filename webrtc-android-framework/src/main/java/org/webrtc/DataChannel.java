@@ -63,7 +63,7 @@ public class DataChannel {
     public final ByteBuffer data;
 
     /**
-     * Indicates whether |data| contains UTF-8 text or "binary data"
+     * Indicates whether `data` contains UTF-8 text or "binary data"
      * (i.e. anything else).
      */
     public final boolean binary;
@@ -75,29 +75,18 @@ public class DataChannel {
     }
   }
 
-  /**
-   * Java version of C++ DataChannelObserver.
-   */
+  /** Java version of C++ DataChannelObserver. */
   public interface Observer {
+    /** The data channel's bufferedAmount has changed. */
+    @CalledByNative("Observer") public void onBufferedAmountChange(long previousAmount);
+    /** The data channel state has changed. */
+    @CalledByNative("Observer") public void onStateChange();
     /**
-     * The data channel's bufferedAmount has changed.
-     */
-    @CalledByNative("Observer")
-    void onBufferedAmountChange(long previousAmount);
-
-    /**
-     * The data channel state has changed.
-     */
-    @CalledByNative("Observer")
-    void onStateChange();
-
-    /**
-     * A data buffer was successfully received.  NOTE: |buffer.data| will be
+     * A data buffer was successfully received.  NOTE: `buffer.data` will be
      * freed once this function returns so callers who want to use the data
      * asynchronously must make sure to copy it first.
      */
-    @CalledByNative("Observer")
-    void onMessage(Buffer buffer);
+    @CalledByNative("Observer") public void onMessage(Buffer buffer);
   }
 
   /** Keep in sync with DataChannelInterface::DataState. */
@@ -121,7 +110,7 @@ public class DataChannel {
     this.nativeDataChannel = nativeDataChannel;
   }
 
-  /** Register |observer|, replacing any previously-registered observer. */
+  /** Register `observer`, replacing any previously-registered observer. */
   public void registerObserver(Observer observer) {
     checkDataChannelExists();
     if (nativeObserver != 0) {
@@ -134,6 +123,7 @@ public class DataChannel {
   public void unregisterObserver() {
     checkDataChannelExists();
     nativeUnregisterObserver(nativeObserver);
+    nativeObserver = 0;
   }
 
   public String label() {
@@ -167,7 +157,7 @@ public class DataChannel {
     nativeClose();
   }
 
-  /** Send |data| to the remote peer; return success. */
+  /** Send `data` to the remote peer; return success. */
   public boolean send(Buffer buffer) {
     checkDataChannelExists();
     // TODO(fischman): this could be cleverer about avoiding copies if the
@@ -203,4 +193,4 @@ public class DataChannel {
   private native long nativeBufferedAmount();
   private native void nativeClose();
   private native boolean nativeSend(byte[] data, boolean binary);
-}
+};

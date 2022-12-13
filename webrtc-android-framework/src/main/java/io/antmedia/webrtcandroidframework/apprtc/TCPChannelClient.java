@@ -8,15 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package io.antmedia.webrtcandroidframework.apprtc;
-
+package org.appspot.apprtc;
 
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
-import org.webrtc.ThreadUtils;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,8 +21,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
+import org.webrtc.ThreadUtils;
 
 /**
  * Replacement for WebSocketChannelClient for direct communication between two IP addresses. Handles
@@ -175,9 +171,9 @@ public class TCPChannelClient {
 
         try {
           out = new PrintWriter(
-                  new OutputStreamWriter(rawSocket.getOutputStream(), StandardCharsets.UTF_8), true);
+              new OutputStreamWriter(rawSocket.getOutputStream(), Charset.forName("UTF-8")), true);
           in = new BufferedReader(
-                  new InputStreamReader(rawSocket.getInputStream(), StandardCharsets.UTF_8));
+              new InputStreamReader(rawSocket.getInputStream(), Charset.forName("UTF-8")));
         } catch (IOException e) {
           reportError("Failed to open IO on rawSocket: " + e.getMessage());
           return;
@@ -286,7 +282,7 @@ public class TCPChannelClient {
     @Nullable
     @Override
     public Socket connect() {
-      Log.d(TAG, "Listening on [" + address.getHostAddress() + "]:" + port);
+      Log.d(TAG, "Listening on [" + address.getHostAddress() + "]:" + Integer.toString(port));
 
       final ServerSocket tempSocket;
       try {
@@ -348,7 +344,7 @@ public class TCPChannelClient {
     @Nullable
     @Override
     public Socket connect() {
-      Log.d(TAG, "Connecting to [" + address.getHostAddress() + "]:" + port);
+      Log.d(TAG, "Connecting to [" + address.getHostAddress() + "]:" + Integer.toString(port));
 
       try {
         return new Socket(address, port);

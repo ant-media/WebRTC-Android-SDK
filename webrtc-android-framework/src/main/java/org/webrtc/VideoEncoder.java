@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
+import org.webrtc.EncodedImage;
 
 /**
  * Interface for a video encoder that can be used with WebRTC. All calls will be made on the
@@ -18,141 +19,126 @@ import androidx.annotation.Nullable;
  * calling release is allowed.
  */
 public interface VideoEncoder {
-    /**
-     * Settings passed to the encoder by WebRTC.
-     */
-    class Settings {
-        public final int numberOfCores;
-        public final int width;
-        public final int height;
-        public final int startBitrate; // Kilobits per second.
-        public final int maxFramerate;
-        public final int numberOfSimulcastStreams;
-        public final boolean automaticResizeOn;
-        public final Capabilities capabilities;
+  /** Settings passed to the encoder by WebRTC. */
+  public class Settings {
+    public final int numberOfCores;
+    public final int width;
+    public final int height;
+    public final int startBitrate; // Kilobits per second.
+    public final int maxFramerate;
+    public final int numberOfSimulcastStreams;
+    public final boolean automaticResizeOn;
+    public final Capabilities capabilities;
 
-        // TODO(bugs.webrtc.org/10720): Remove.
-        @Deprecated
-        public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
-                        int numberOfSimulcastStreams, boolean automaticResizeOn) {
-            this(numberOfCores, width, height, startBitrate, maxFramerate, numberOfSimulcastStreams,
-                    automaticResizeOn, new VideoEncoder.Capabilities(false /* lossNotification */));
-        }
+    // TODO(bugs.webrtc.org/10720): Remove.
+    @Deprecated
+    public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
+        int numberOfSimulcastStreams, boolean automaticResizeOn) {
+      this(numberOfCores, width, height, startBitrate, maxFramerate, numberOfSimulcastStreams,
+          automaticResizeOn, new VideoEncoder.Capabilities(false /* lossNotification */));
+    }
 
-        @CalledByNative("Settings")
+    @CalledByNative("Settings")
     public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
         int numberOfSimulcastStreams, boolean automaticResizeOn, Capabilities capabilities) {
       this.numberOfCores = numberOfCores;
-            this.width = width;
-            this.height = height;
-            this.startBitrate = startBitrate;
-            this.maxFramerate = maxFramerate;
-            this.numberOfSimulcastStreams = numberOfSimulcastStreams;
-            this.automaticResizeOn = automaticResizeOn;
-            this.capabilities = capabilities;
-        }
+      this.width = width;
+      this.height = height;
+      this.startBitrate = startBitrate;
+      this.maxFramerate = maxFramerate;
+      this.numberOfSimulcastStreams = numberOfSimulcastStreams;
+      this.automaticResizeOn = automaticResizeOn;
+      this.capabilities = capabilities;
+    }
+  }
+
+  /** Capabilities (loss notification, etc.) passed to the encoder by WebRTC. */
+  public class Capabilities {
+    /**
+     * The remote side has support for the loss notification RTCP feedback message format, and will
+     * be sending these feedback messages if necessary.
+     */
+    public final boolean lossNotification;
+
+    @CalledByNative("Capabilities")
+    public Capabilities(boolean lossNotification) {
+      this.lossNotification = lossNotification;
+    }
+  }
+
+  /** Additional info for encoding. */
+  public class EncodeInfo {
+    public final EncodedImage.FrameType[] frameTypes;
+
+    @CalledByNative("EncodeInfo")
+    public EncodeInfo(EncodedImage.FrameType[] frameTypes) {
+      this.frameTypes = frameTypes;
+    }
+  }
+
+  // TODO(sakal): Add values to these classes as necessary.
+  /** Codec specific information about the encoded frame. */
+  public class CodecSpecificInfo {}
+
+  public class CodecSpecificInfoVP8 extends CodecSpecificInfo {}
+
+  public class CodecSpecificInfoVP9 extends CodecSpecificInfo {}
+
+  public class CodecSpecificInfoH264 extends CodecSpecificInfo {}
+
+  public class CodecSpecificInfoAV1 extends CodecSpecificInfo {}
+
+  /**
+   * Represents bitrate allocated for an encoder to produce frames. Bitrate can be divided between
+   * spatial and temporal layers.
+   */
+  public class BitrateAllocation {
+    // First index is the spatial layer and second the temporal layer.
+    public final int[][] bitratesBbs;
+
+    /**
+     * Initializes the allocation with a two dimensional array of bitrates. The first index of the
+     * array is the spatial layer and the second index in the temporal layer.
+     */
+    @CalledByNative("BitrateAllocation")
+    public BitrateAllocation(int[][] bitratesBbs) {
+      this.bitratesBbs = bitratesBbs;
     }
 
     /**
-     * Capabilities (loss notification, etc.) passed to the encoder by WebRTC.
+     * Gets the total bitrate allocated for all layers.
      */
-    class Capabilities {
-        /**
-         * The remote side has support for the loss notification RTCP feedback message format, and will
-         * be sending these feedback messages if necessary.
-         */
-        public final boolean lossNotification;
-
-        @CalledByNative("Capabilities")
-        public Capabilities(boolean lossNotification) {
-            this.lossNotification = lossNotification;
+    public int getSum() {
+      int sum = 0;
+      for (int[] spatialLayer : bitratesBbs) {
+        for (int bitrate : spatialLayer) {
+          sum += bitrate;
         }
+      }
+      return sum;
     }
+  }
+
+  /** Settings for WebRTC quality based scaling. */
+  public class ScalingSettings {
+    public final boolean on;
+    @Nullable public final Integer low;
+    @Nullable public final Integer high;
 
     /**
-     * Additional info for encoding.
+     * Settings to disable quality based scaling.
      */
-    class EncodeInfo {
-        public final EncodedImage.FrameType[] frameTypes;
-
-        @CalledByNative("EncodeInfo")
-        public EncodeInfo(EncodedImage.FrameType[] frameTypes) {
-            this.frameTypes = frameTypes;
-        }
-    }
-
-    // TODO(sakal): Add values to these classes as necessary.
+    public static final ScalingSettings OFF = new ScalingSettings();
 
     /**
-     * Codec specific information about the encoded frame.
+     * Creates settings to enable quality based scaling.
+     *
+     * @param low Average QP at which to scale up the resolution.
+     * @param high Average QP at which to scale down the resolution.
      */
-    class CodecSpecificInfo {
-    }
-
-    class CodecSpecificInfoVP8 extends CodecSpecificInfo {
-    }
-
-    class CodecSpecificInfoVP9 extends CodecSpecificInfo {
-    }
-
-    class CodecSpecificInfoH264 extends CodecSpecificInfo {
-    }
-
-    /**
-     * Represents bitrate allocated for an encoder to produce frames. Bitrate can be divided between
-     * spatial and temporal layers.
-     */
-    class BitrateAllocation {
-        // First index is the spatial layer and second the temporal layer.
-        public final int[][] bitratesBbs;
-
-        /**
-         * Initializes the allocation with a two dimensional array of bitrates. The first index of the
-         * array is the spatial layer and the second index in the temporal layer.
-         */
-        @CalledByNative("BitrateAllocation")
-        public BitrateAllocation(int[][] bitratesBbs) {
-            this.bitratesBbs = bitratesBbs;
-        }
-
-        /**
-         * Gets the total bitrate allocated for all layers.
-         */
-        public int getSum() {
-            int sum = 0;
-            for (int[] spatialLayer : bitratesBbs) {
-                for (int bitrate : spatialLayer) {
-                    sum += bitrate;
-                }
-            }
-            return sum;
-        }
-    }
-
-    /**
-     * Settings for WebRTC quality based scaling.
-     */
-    class ScalingSettings {
-        public final boolean on;
-        @Nullable
-        public final Integer low;
-        @Nullable
-        public final Integer high;
-
-        /**
-         * Settings to disable quality based scaling.
-         */
-        public static final ScalingSettings OFF = new ScalingSettings();
-
-        /**
-         * Creates settings to enable quality based scaling.
-         *
-         * @param low  Average QP at which to scale up the resolution.
-         * @param high Average QP at which to scale down the resolution.
-         */
-        public ScalingSettings(int low, int high) {
-            this.on = true;
-            this.low = low;
+    public ScalingSettings(int low, int high) {
+      this.on = true;
+      this.low = low;
       this.high = high;
     }
 
@@ -186,35 +172,35 @@ public interface VideoEncoder {
      */
     @Deprecated
     public ScalingSettings(boolean on, int low, int high) {
-        this.on = on;
-        this.low = low;
-        this.high = high;
+      this.on = on;
+      this.low = low;
+      this.high = high;
     }
 
-        @Override
-        public String toString() {
-            return on ? "[ " + low + ", " + high + " ]" : "OFF";
-        }
+    @Override
+    public String toString() {
+      return on ? "[ " + low + ", " + high + " ]" : "OFF";
     }
+  }
+
+  /**
+   * Bitrate limits for resolution.
+   */
+  public class ResolutionBitrateLimits {
+    /**
+     * Maximum size of video frame, in pixels, the bitrate limits are intended for.
+     */
+    public final int frameSizePixels;
 
     /**
-     * Bitrate limits for resolution.
+     * Recommended minimum bitrate to start encoding.
      */
-    class ResolutionBitrateLimits {
-        /**
-         * Maximum size of video frame, in pixels, the bitrate limits are intended for.
-         */
-        public final int frameSizePixels;
+    public final int minStartBitrateBps;
 
-        /**
-         * Recommended minimum bitrate to start encoding.
-         */
-        public final int minStartBitrateBps;
-
-        /**
-         * Recommended minimum bitrate.
-         */
-        public final int minBitrateBps;
+    /**
+     * Recommended minimum bitrate.
+     */
+    public final int minBitrateBps;
 
     /**
      * Recommended maximum bitrate.
@@ -239,35 +225,90 @@ public interface VideoEncoder {
       return minStartBitrateBps;
     }
 
-        @CalledByNative("ResolutionBitrateLimits")
-        public int getMinBitrateBps() {
-            return minBitrateBps;
-        }
-
-        @CalledByNative("ResolutionBitrateLimits")
-        public int getMaxBitrateBps() {
-            return maxBitrateBps;
-        }
+    @CalledByNative("ResolutionBitrateLimits")
+    public int getMinBitrateBps() {
+      return minBitrateBps;
     }
 
-    interface Callback {
-        /**
-         * Old encoders assume that the byte buffer held by |frame| is not accessed after the call to
-         * this method returns. If the pipeline downstream needs to hold on to the buffer, it then has
-         * to make its own copy. We want to move to a model where no copying is needed, and instead use
-         * retain()/release() to signal to the encoder when it is safe to reuse the buffer.
-         * <p>
-         * Over the transition, implementations of this class should use the maybeRetain() method if
-         * they want to keep a reference to the buffer, and fall back to copying if that method returns
-         * false.
-         */
-        void onEncodedFrame(EncodedImage frame, CodecSpecificInfo info);
+    @CalledByNative("ResolutionBitrateLimits")
+    public int getMaxBitrateBps() {
+      return maxBitrateBps;
     }
+  }
+
+  /** Rate control parameters. */
+  public class RateControlParameters {
+    /**
+     * Adjusted target bitrate, per spatial/temporal layer. May be lower or higher than the target
+     * depending on encoder behaviour.
+     */
+    public final BitrateAllocation bitrate;
 
     /**
-     * The encoder implementation backing this interface is either 1) a Java
-     * encoder (e.g., an Android platform encoder), or alternatively 2) a native
-     * encoder (e.g., a software encoder or a C++ encoder adapter).
+     * Target framerate, in fps. A value <= 0.0 is invalid and should be interpreted as framerate
+     * target not available. In this case the encoder should fall back to the max framerate
+     * specified in `codec_settings` of the last InitEncode() call.
+     */
+    public final double framerateFps;
+
+    @CalledByNative("RateControlParameters")
+    public RateControlParameters(BitrateAllocation bitrate, double framerateFps) {
+      this.bitrate = bitrate;
+      this.framerateFps = framerateFps;
+    }
+  }
+
+  /**
+   * Metadata about the Encoder.
+   */
+  public class EncoderInfo {
+    /**
+     * The width and height of the incoming video frames should be divisible by
+     * |requested_resolution_alignment|
+     */
+    public final int requestedResolutionAlignment;
+
+    /**
+     * Same as above but if true, each simulcast layer should also be divisible by
+     * |requested_resolution_alignment|.
+     */
+    public final boolean applyAlignmentToAllSimulcastLayers;
+
+    public EncoderInfo(
+        int requestedResolutionAlignment, boolean applyAlignmentToAllSimulcastLayers) {
+      this.requestedResolutionAlignment = requestedResolutionAlignment;
+      this.applyAlignmentToAllSimulcastLayers = applyAlignmentToAllSimulcastLayers;
+    }
+
+    @CalledByNative("EncoderInfo")
+    public int getRequestedResolutionAlignment() {
+      return requestedResolutionAlignment;
+    }
+
+    @CalledByNative("EncoderInfo")
+    public boolean getApplyAlignmentToAllSimulcastLayers() {
+      return applyAlignmentToAllSimulcastLayers;
+    }
+  }
+
+  public interface Callback {
+    /**
+     * Old encoders assume that the byte buffer held by `frame` is not accessed after the call to
+     * this method returns. If the pipeline downstream needs to hold on to the buffer, it then has
+     * to make its own copy. We want to move to a model where no copying is needed, and instead use
+     * retain()/release() to signal to the encoder when it is safe to reuse the buffer.
+     *
+     * Over the transition, implementations of this class should use the maybeRetain() method if
+     * they want to keep a reference to the buffer, and fall back to copying if that method returns
+     * false.
+     */
+    void onEncodedFrame(EncodedImage frame, CodecSpecificInfo info);
+  }
+
+  /**
+   * The encoder implementation backing this interface is either 1) a Java
+   * encoder (e.g., an Android platform encoder), or alternatively 2) a native
+   * encoder (e.g., a software encoder or a C++ encoder adapter).
    *
    * For case 1), createNativeVideoEncoder() should return zero.
    * In this case, we expect the native library to call the encoder through
@@ -310,7 +351,14 @@ public interface VideoEncoder {
   @CalledByNative VideoCodecStatus encode(VideoFrame frame, EncodeInfo info);
 
   /** Sets the bitrate allocation and the target framerate for the encoder. */
-  @CalledByNative VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
+  VideoCodecStatus setRateAllocation(BitrateAllocation allocation, int framerate);
+
+  /** Sets the bitrate allocation and the target framerate for the encoder. */
+  default @CalledByNative VideoCodecStatus setRates(RateControlParameters rcParameters) {
+    // Round frame rate up to avoid overshoots.
+    int framerateFps = (int) Math.ceil(rcParameters.framerateFps);
+    return setRateAllocation(rcParameters.bitrate, framerateFps);
+  }
 
   /** Any encoder that wants to use WebRTC provided quality scaler must implement this method. */
   @CalledByNative ScalingSettings getScalingSettings();
@@ -319,7 +367,7 @@ public interface VideoEncoder {
   @CalledByNative
   default ResolutionBitrateLimits[] getResolutionBitrateLimits() {
     // TODO(ssilkin): Update downstream projects and remove default implementation.
-    ResolutionBitrateLimits[] bitrate_limits = {};
+    ResolutionBitrateLimits bitrate_limits[] = {};
     return bitrate_limits;
   }
 
@@ -328,4 +376,10 @@ public interface VideoEncoder {
    * called from arbitrary thread.
    */
   @CalledByNative String getImplementationName();
+
+  @CalledByNative
+  default EncoderInfo getEncoderInfo() {
+    return new EncoderInfo(
+        /* requestedResolutionAlignment= */ 1, /* applyAlignmentToAllSimulcastLayers= */ false);
+  }
 }

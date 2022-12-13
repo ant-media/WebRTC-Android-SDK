@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package io.antmedia.webrtcandroidframework.apprtc;
+package org.appspot.apprtc;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -21,17 +21,13 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
-import org.webrtc.ThreadUtils;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.appspot.apprtc.util.AppRTCUtils;
+import org.webrtc.ThreadUtils;
 
-import io.antmedia.webrtcandroidframework.R;
-import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
  */
@@ -58,7 +54,7 @@ public class AppRTCAudioManager {
   public interface AudioManagerEvents {
     // Callback fired once audio device is changed or list of available audio devices changed.
     void onAudioDeviceChanged(
-            AudioDevice selectedAudioDevice, Set<AudioDevice> availableAudioDevices);
+        AudioDevice selectedAudioDevice, Set<AudioDevice> availableAudioDevices);
   }
 
   private final Context apprtcContext;
@@ -81,7 +77,7 @@ public class AppRTCAudioManager {
   // This device is changed automatically using a certain scheme where e.g.
   // a wired headset "wins" over speaker phone. It is also possible for a
   // user to explicitly select a device (and overrid any predefined scheme).
-  // See |userSelectedAudioDevice| for details.
+  // See `userSelectedAudioDevice` for details.
   private AudioDevice selectedAudioDevice;
 
   // Contains the user-selected audio device which overrides the predefined
@@ -91,8 +87,7 @@ public class AppRTCAudioManager {
   private AudioDevice userSelectedAudioDevice;
 
   // Contains speakerphone setting: auto, true or false
-  @Nullable
-  private final String useSpeakerphone;
+  @Nullable private final String useSpeakerphone;
 
   // Proximity sensor object. It measures the proximity of an object in cm
   // relative to the view screen of a device and can therefore be used to
@@ -126,7 +121,7 @@ public class AppRTCAudioManager {
     // The proximity sensor should only be activated when there are exactly two
     // available audio devices.
     if (audioDevices.size() == 2 && audioDevices.contains(AppRTCAudioManager.AudioDevice.EARPIECE)
-            && audioDevices.contains(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
+        && audioDevices.contains(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
       if (proximitySensor.sensorReportsNearState()) {
         // Sensor reports that a "handset is being held up to a person's ear",
         // or "something is covering the light sensor".
@@ -162,7 +157,7 @@ public class AppRTCAudioManager {
   }
 
   /** Construction. */
-  public static AppRTCAudioManager create(Context context) {
+  static AppRTCAudioManager create(Context context) {
     return new AppRTCAudioManager(context);
   }
 
@@ -189,10 +184,10 @@ public class AppRTCAudioManager {
     // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
     // Note that, the sensor will not be active until start() has been called.
     proximitySensor = AppRTCProximitySensor.create(context,
-            // This method will be called each time a state change is detected.
-            // Example: user holds their hand over the device (closer than ~5 cm),
-            // or removes their hand from the device.
-            this::onProximitySensorChangedState);
+        // This method will be called each time a state change is detected.
+        // Example: user holds their hand over the device (closer than ~5 cm),
+        // or removes their hand from the device.
+        this ::onProximitySensorChangedState);
 
     Log.d(TAG, "defaultAudioDevice: " + defaultAudioDevice);
     AppRTCUtils.logDeviceInfo(TAG);
@@ -221,7 +216,7 @@ public class AppRTCAudioManager {
     // Create an AudioManager.OnAudioFocusChangeListener instance.
     audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
       // Called on the listener to notify if the audio focus for this listener has been changed.
-      // The |focusChange| value indicates whether the focus was gained, whether the focus was lost,
+      // The `focusChange` value indicates whether the focus was gained, whether the focus was lost,
       // and whether that loss is transient, or whether the new focus holder will hold it for an
       // unknown amount of time.
       // TODO(henrika): possibly extend support of handling audio-focus changes. Only contains
@@ -578,7 +573,7 @@ public class AppRTCAudioManager {
     } else {
       // No wired headset and no Bluetooth, hence the audio-device list can contain speaker
       // phone (on a tablet), or speaker phone and earpiece (on mobile phone).
-      // |defaultAudioDevice| contains either AudioDevice.SPEAKER_PHONE or AudioDevice.EARPIECE
+      // `defaultAudioDevice` contains either AudioDevice.SPEAKER_PHONE or AudioDevice.EARPIECE
       // depending on the user's selection.
       newAudioDevice = defaultAudioDevice;
     }

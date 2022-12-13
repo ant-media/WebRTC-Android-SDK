@@ -10,22 +10,21 @@
 
 package org.webrtc.voiceengine;
 
+import static android.media.AudioManager.MODE_IN_CALL;
+import static android.media.AudioManager.MODE_IN_COMMUNICATION;
+import static android.media.AudioManager.MODE_NORMAL;
+import static android.media.AudioManager.MODE_RINGTONE;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
-
-import org.webrtc.ContextUtils;
-import org.webrtc.Logging;
-
+import java.lang.Thread;
 import java.util.Arrays;
 import java.util.List;
-
-import static android.media.AudioManager.MODE_IN_CALL;
-import static android.media.AudioManager.MODE_IN_COMMUNICATION;
-import static android.media.AudioManager.MODE_NORMAL;
-import static android.media.AudioManager.MODE_RINGTONE;
+import org.webrtc.ContextUtils;
+import org.webrtc.Logging;
 
 public final class WebRtcAudioUtils {
   private static final String TAG = "WebRtcAudioUtils";
@@ -33,19 +32,19 @@ public final class WebRtcAudioUtils {
   // List of devices where we have seen issues (e.g. bad audio quality) using
   // the low latency output mode in combination with OpenSL ES.
   // The device name is given by Build.MODEL.
-  private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[]{
-          // It is recommended to maintain a list of blacklisted models outside
-          // this package and instead call
-          // WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true)
-          // from the client for devices where OpenSL ES shall be disabled.
+  private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[] {
+      // It is recommended to maintain a list of blacklisted models outside
+      // this package and instead call
+      // WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true)
+      // from the client for devices where OpenSL ES shall be disabled.
   };
 
   // List of devices where it has been verified that the built-in effect
   // bad and where it makes sense to avoid using it and instead rely on the
   // native WebRTC version instead. The device name is given by Build.MODEL.
-  private static final String[] BLACKLISTED_AEC_MODELS = new String[]{
-          // It is recommended to maintain a list of blacklisted models outside
-          // this package and instead call setWebRtcBasedAcousticEchoCanceler(true)
+  private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
+      // It is recommended to maintain a list of blacklisted models outside
+      // this package and instead call setWebRtcBasedAcousticEchoCanceler(true)
       // from the client for devices where the built-in AEC shall be disabled.
   };
   private static final String[] BLACKLISTED_NS_MODELS = new String[] {
@@ -215,13 +214,6 @@ public final class WebRtcAudioUtils {
             + "BT SCO: " + audioManager.isBluetoothScoOn());
   }
 
-  private static boolean isVolumeFixed(AudioManager audioManager) {
-    if (Build.VERSION.SDK_INT < 21) {
-      return false;
-    }
-    return audioManager.isVolumeFixed();
-  }
-
   // Adds volume information for all possible stream types.
   private static void logAudioStateVolume(String tag, AudioManager audioManager) {
     final int[] streams = {
@@ -234,7 +226,7 @@ public final class WebRtcAudioUtils {
     };
     Logging.d(tag, "Audio State: ");
     // Some devices may not have volume controls and might use a fixed volume.
-    boolean fixedVolume = isVolumeFixed(audioManager);
+    boolean fixedVolume = audioManager.isVolumeFixed();
     Logging.d(tag, "  fixed volume=" + fixedVolume);
     if (!fixedVolume) {
       for (int stream : streams) {

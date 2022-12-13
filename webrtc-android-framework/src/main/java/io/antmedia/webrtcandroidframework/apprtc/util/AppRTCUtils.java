@@ -8,8 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package io.antmedia.webrtcandroidframework.apprtc.util;
-
+package org.appspot.apprtc.util;
 
 import android.os.Build;
 import android.util.Log;

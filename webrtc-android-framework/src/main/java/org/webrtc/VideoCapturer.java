@@ -26,7 +26,7 @@ public interface VideoCapturer {
    * VideoCapturer once the previous VideoCapturer has been disposed.
    */
   void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
-                  CapturerObserver capturerObserver);
+      CapturerObserver capturerObserver);
 
   /**
    * Start capturing frames in a format that is as close as possible to {@code width x height} and
