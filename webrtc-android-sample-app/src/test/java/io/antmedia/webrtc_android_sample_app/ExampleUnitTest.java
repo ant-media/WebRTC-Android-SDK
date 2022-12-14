@@ -20,6 +20,7 @@ import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
@@ -181,5 +182,17 @@ public class ExampleUnitTest {
         }
 
         assertEquals(json.toString(), jsonCaptor.getValue());
+    }
+
+    //rotate camera upside down, left and right and check it is playing normally
+    @Test
+    public void testCameraOrientation(){
+        //related class is Camera2Session.java and calculateCameraOrientation method
+        fail("Implement this test");
+    }
+
+    @Test
+    public void testH264EncoderIsWorkingInHuaweiDevices() {
+        fail("Implement this test");
     }
 }

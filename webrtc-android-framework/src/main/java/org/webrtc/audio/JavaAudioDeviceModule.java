@@ -14,6 +14,7 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.media.projection.MediaProjection;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 import java.util.concurrent.ScheduledExecutorService;
@@ -433,4 +434,10 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
   private static native long nativeCreateAudioDeviceModule(Context context,
       AudioManager audioManager, WebRtcAudioRecord audioInput, WebRtcAudioTrack audioOutput,
       int inputSampleRate, int outputSampleRate, boolean useStereoInput, boolean useStereoOutput);
+
+  @Override
+  public void setMediaProjection(MediaProjection mediaProjection){
+    audioInput.setMediaProjection(mediaProjection);
+  }
+
 }

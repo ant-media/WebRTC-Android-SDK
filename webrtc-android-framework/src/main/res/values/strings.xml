@@ -15,6 +15,8 @@
     <string name="channel_error_title">Connection error</string>
     <string name="connecting_to">Connecting to: %1$s</string>
     <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
+    <string name="missing_stream_id">FATAL ERROR: Missing Stream id to connect to.</string>
+    <string name="missing_stream_mode">FATAL ERROR: Missing Stream mode. Please specify publish, play or join.</string>
     <string name="camera2_texture_only_error">Camera2 only supports capturing to texture. Either disable Camera2 or enable capturing to texture in the options.</string>
     <string name="ok">OK</string>
     <string name="switch_camera">Switch front/back camera</string>
@@ -27,7 +29,7 @@
     <string name="connect_description">Connect to the room</string>
     <string name="add_favorite_description">Add favorite</string>
     <string name="format_description">%1$dx%2$d @ %3$d fps</string>
-    <string name="missing_permissions_try_again">The application is missing permissions. It might not work correctly. Do you want to try again?</string>
+    <string name="missing_permissions_try_again">The application is missing permissions. It might not work correctly. Do you want to to try again?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
 

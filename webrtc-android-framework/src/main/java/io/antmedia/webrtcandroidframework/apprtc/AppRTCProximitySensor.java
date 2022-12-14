@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -18,8 +18,9 @@ import android.hardware.SensorManager;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.Nullable;
-import org.appspot.apprtc.util.AppRTCUtils;
 import org.webrtc.ThreadUtils;
+
+import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
 
 /**
  * AppRTCProximitySensor manages functions related to the proximity sensor in

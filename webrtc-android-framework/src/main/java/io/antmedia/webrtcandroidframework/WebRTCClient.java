@@ -26,7 +26,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.DataChannel;
@@ -36,6 +35,7 @@ import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
@@ -60,7 +60,6 @@ import javax.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
@@ -1010,12 +1009,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPeerConnectionClosed() {}
 
     @Override
-    public void onPeerConnectionStatsReady(StatsReport[] reports) {
+    public void onPeerConnectionStatsReady(RTCStatsReport report) {
         this.handler.post(() -> {
             if (!isError && iceConnected) {
                 //hudFragment.updateEncoderStatistics(reports);
                 Log.i(TAG, "onPeerConnectionStatsReady");
-                Log.i(TAG, reports.toString());
+                Log.i(TAG, report.toString());
             }
         });
     }

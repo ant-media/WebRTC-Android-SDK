@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
 
-    compileSdkVersion 29
+    compileSdkVersion 33
     buildToolsVersion "29.0.3"
 
     defaultConfig {
         applicationId "io.antmedia.webrtc_android_sample_app"
-        minSdkVersion 21
-        targetSdkVersion 29
+        minSdkVersion 22
+        targetSdkVersion 33
 
         versionCode 1
         versionName "1.0"

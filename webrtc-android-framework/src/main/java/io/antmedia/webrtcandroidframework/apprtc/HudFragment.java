@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.app.Fragment;
 import android.os.Bundle;
@@ -19,6 +19,8 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
+
+import io.antmedia.webrtcandroidframework.R;
 
 /**
  * Fragment for HUD statistics display.

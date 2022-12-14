@@ -34,3 +34,7 @@ build_directory/gen/api/priority_enums.srcjar
 
 # Modifications to the Copied source:
 - replace all import android.support.annotation.Nullable; with import androidx.annotation.Nullable;
+
+
+VideoFrameBufferType.java. It's under gen/sdk/android/video_api_java/generated_java/input_srcjars/org/webrtc
+Priority.java and NetworkPreference.java is under gen/sdk/android/peerconnection_java/generated_java/input_srcjars/org/webrtc

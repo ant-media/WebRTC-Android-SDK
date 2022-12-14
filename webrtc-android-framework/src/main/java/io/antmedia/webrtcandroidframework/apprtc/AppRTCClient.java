@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
@@ -28,16 +28,20 @@ public interface AppRTCClient {
     public final String roomId;
     public final boolean loopback;
     public final String urlParameters;
+    public final String mode;
+    public final String token;
     public RoomConnectionParameters(
-        String roomUrl, String roomId, boolean loopback, String urlParameters) {
+        String roomUrl, String roomId, boolean loopback, String urlParameters, String mode, String token) {
       this.roomUrl = roomUrl;
       this.roomId = roomId;
       this.loopback = loopback;
       this.urlParameters = urlParameters;
+      this.mode = mode;
+      this.token = token;
     }
-    public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
-      this(roomUrl, roomId, loopback, null /* urlParameters */);
-    }
+    //public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
+    //  this(roomUrl, roomId, loopback, null /* urlParameters */);
+    //}
   }
 
   /**
@@ -133,5 +137,17 @@ public interface AppRTCClient {
      * Callback fired once channel error happened.
      */
     void onChannelError(final String description);
+
+    void onPublishFinished();
+
+    void onPlayFinished();
+
+    void onPublishStarted();
+
+    void onPlayStarted();
+
+    void noStreamExistsToPlay();
+
+    void onDisconnected();
   }
 }

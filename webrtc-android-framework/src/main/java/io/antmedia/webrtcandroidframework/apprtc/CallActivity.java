@@ -8,9 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
@@ -21,7 +20,6 @@ import android.content.pm.PackageManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -31,18 +29,9 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Toast;
+
 import androidx.annotation.Nullable;
-import java.io.IOException;
-import java.lang.RuntimeException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import org.appspot.apprtc.AppRTCAudioManager.AudioDevice;
-import org.appspot.apprtc.AppRTCAudioManager.AudioManagerEvents;
-import org.appspot.apprtc.AppRTCClient.RoomConnectionParameters;
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.PeerConnectionClient.DataChannelParameters;
-import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
+
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -60,6 +49,13 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import io.antmedia.webrtcandroidframework.R;
 
 /**
  * Activity for peer connection call setup, call waiting
@@ -121,16 +117,16 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_ID = "org.appspot.apprtc.ID";
   public static final String EXTRA_ENABLE_RTCEVENTLOG = "org.appspot.apprtc.ENABLE_RTCEVENTLOG";
 
-  private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
+  public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
   // List of mandatory application permissions.
-  private static final String[] MANDATORY_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
+  public static final String[] MANDATORY_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
       "android.permission.RECORD_AUDIO", "android.permission.INTERNET"};
 
   // Peer connection statistics callback period in ms.
-  private static final int STAT_CALLBACK_PERIOD = 1000;
+  public static final int STAT_CALLBACK_PERIOD = 1000;
 
-  private static class ProxyVideoSink implements VideoSink {
+  public static class ProxyVideoSink implements VideoSink {
     private VideoSink target;
 
     @Override
@@ -154,7 +150,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   @Nullable
   private AppRTCClient appRtcClient;
   @Nullable
-  private SignalingParameters signalingParameters;
+  private AppRTCClient.SignalingParameters signalingParameters;
   @Nullable private AppRTCAudioManager audioManager;
   @Nullable
   private SurfaceViewRenderer pipRenderer;
@@ -166,9 +162,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private Toast logToast;
   private boolean commandLineRun;
   private boolean activityRunning;
-  private RoomConnectionParameters roomConnectionParameters;
+  private AppRTCClient.RoomConnectionParameters roomConnectionParameters;
   @Nullable
-  private PeerConnectionParameters peerConnectionParameters;
+  private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
   private boolean connected;
   private boolean isError;
   private boolean callControlFragmentVisible = true;
@@ -302,15 +298,15 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       videoWidth = displayMetrics.widthPixels;
       videoHeight = displayMetrics.heightPixels;
     }
-    DataChannelParameters dataChannelParameters = null;
+    PeerConnectionClient.DataChannelParameters dataChannelParameters = null;
     if (intent.getBooleanExtra(EXTRA_DATA_CHANNEL_ENABLED, false)) {
-      dataChannelParameters = new DataChannelParameters(intent.getBooleanExtra(EXTRA_ORDERED, true),
-          intent.getIntExtra(EXTRA_MAX_RETRANSMITS_MS, -1),
-          intent.getIntExtra(EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(EXTRA_PROTOCOL),
-          intent.getBooleanExtra(EXTRA_NEGOTIATED, false), intent.getIntExtra(EXTRA_ID, -1));
+      dataChannelParameters = new PeerConnectionClient.DataChannelParameters(intent.getBooleanExtra(EXTRA_ORDERED, true),
+              intent.getIntExtra(EXTRA_MAX_RETRANSMITS_MS, -1),
+              intent.getIntExtra(EXTRA_MAX_RETRANSMITS, -1), intent.getStringExtra(EXTRA_PROTOCOL),
+              intent.getBooleanExtra(EXTRA_NEGOTIATED, false), intent.getIntExtra(EXTRA_ID, -1), roomId, false);
     }
     peerConnectionParameters =
-        new PeerConnectionParameters(intent.getBooleanExtra(EXTRA_VIDEO_CALL, true), loopback,
+        new PeerConnectionClient.PeerConnectionParameters(intent.getBooleanExtra(EXTRA_VIDEO_CALL, true), loopback,
             tracing, videoWidth, videoHeight, intent.getIntExtra(EXTRA_VIDEO_FPS, 0),
             intent.getIntExtra(EXTRA_VIDEO_BITRATE, 0), intent.getStringExtra(EXTRA_VIDEOCODEC),
             intent.getBooleanExtra(EXTRA_HWCODEC_ENABLED, true),
@@ -324,7 +320,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false),
             intent.getBooleanExtra(EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false),
-            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false), dataChannelParameters);
+            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false), dataChannelParameters, false);
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     int runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 
@@ -341,7 +337,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     // Create connection parameters.
     String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
     roomConnectionParameters =
-        new RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters);
+            new AppRTCClient.RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters, null, null);
 
     // Create CPU monitor
     if (CpuMonitor.isSupported()) {
@@ -370,7 +366,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     // Create peer connection client.
     peerConnectionClient = new PeerConnectionClient(
-        getApplicationContext(), eglBase, peerConnectionParameters, CallActivity.this);
+        getApplicationContext(), eglBase, peerConnectionParameters, CallActivity.this, null);
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     if (loopback) {
       options.networkIgnoreMask = 0;
@@ -459,7 +455,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       reportError("User didn't give permission to capture the screen.");
       return null;
     }
-    return new ScreenCapturerAndroid(
+    return new ScreenCapturerAndroid(null,
         mediaProjectionPermissionResultData, new MediaProjection.Callback() {
       @Override
       public void onStop() {
@@ -577,12 +573,12 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     // Store existing audio settings and change audio mode to
     // MODE_IN_COMMUNICATION for best possible VoIP performance.
     Log.d(TAG, "Starting the audio manager...");
-    audioManager.start(new AudioManagerEvents() {
+    audioManager.start(new AppRTCAudioManager.AudioManagerEvents() {
       // This method will be called each time the number of available audio
       // devices has changed.
       @Override
       public void onAudioDeviceChanged(
-          AudioDevice audioDevice, Set<AudioDevice> availableAudioDevices) {
+              AppRTCAudioManager.AudioDevice audioDevice, Set<AppRTCAudioManager.AudioDevice> availableAudioDevices) {
         onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
       }
     });
@@ -604,7 +600,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   // This method is called when the audio manager reports audio device change,
   // e.g. from wired headset to speakerphone.
   private void onAudioManagerDevicesChanged(
-      final AudioDevice device, final Set<AudioDevice> availableDevices) {
+          final AppRTCAudioManager.AudioDevice device, final Set<AppRTCAudioManager.AudioDevice> availableDevices) {
     Log.d(TAG, "onAudioManagerDevicesChanged: " + availableDevices + ", "
             + "selected: " + device);
     // TODO(henrika): add callback handler.
@@ -734,7 +730,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
   // All callbacks are invoked from websocket signaling looper thread and
   // are routed to UI thread.
-  private void onConnectedToRoomInternal(final SignalingParameters params) {
+  private void onConnectedToRoomInternal(final AppRTCClient.SignalingParameters params) {
     final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
     signalingParameters = params;
@@ -769,7 +765,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   }
 
   @Override
-  public void onConnectedToRoom(final SignalingParameters params) {
+  public void onConnectedToRoom(final AppRTCClient.SignalingParameters params) {
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -842,6 +838,31 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   @Override
   public void onChannelError(final String description) {
     reportError(description);
+  }
+
+  @Override
+  public void onPublishFinished() {
+
+  }
+
+  @Override
+  public void onPlayFinished() {
+
+  }
+
+  @Override
+  public void onPublishStarted() {
+
+  }
+
+  @Override
+  public void onPlayStarted() {
+
+  }
+
+  @Override
+  public void noStreamExistsToPlay() {
+
   }
 
   // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------

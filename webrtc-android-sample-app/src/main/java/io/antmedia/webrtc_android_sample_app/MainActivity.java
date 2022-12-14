@@ -181,7 +181,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         //webRTCClient.setOpenFrontCamera(false);
 
-        streamId = "myStream";
+        streamId = "myStream2";
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 

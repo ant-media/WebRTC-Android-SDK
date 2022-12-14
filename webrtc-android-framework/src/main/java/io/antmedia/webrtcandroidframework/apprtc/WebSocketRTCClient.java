@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import androidx.annotation.Nullable;
-import org.appspot.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
-import org.appspot.apprtc.WebSocketChannelClient.WebSocketChannelEvents;
-import org.appspot.apprtc.WebSocketChannelClient.WebSocketConnectionState;
-import org.appspot.apprtc.util.AsyncHttpURLConnection;
-import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
+import io.antmedia.webrtcandroidframework.apprtc.RoomParametersFetcher.RoomParametersFetcherEvents;
+import io.antmedia.webrtcandroidframework.apprtc.WebSocketChannelClient.WebSocketChannelEvents;
+import io.antmedia.webrtcandroidframework.apprtc.WebSocketChannelClient.WebSocketConnectionState;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

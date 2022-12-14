@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -25,7 +25,9 @@ import androidx.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import org.appspot.apprtc.util.AppRTCUtils;
+
+import io.antmedia.webrtcandroidframework.R;
+import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
 import org.webrtc.ThreadUtils;
 
 /**
@@ -157,7 +159,7 @@ public class AppRTCAudioManager {
   }
 
   /** Construction. */
-  static AppRTCAudioManager create(Context context) {
+  public static AppRTCAudioManager create(Context context) {
     return new AppRTCAudioManager(context);
   }
 

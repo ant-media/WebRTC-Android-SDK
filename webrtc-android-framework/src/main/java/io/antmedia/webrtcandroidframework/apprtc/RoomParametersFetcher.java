@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.util.Log;
 import java.io.IOException;
@@ -18,9 +18,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.List;
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.appspot.apprtc.util.AsyncHttpURLConnection;
-import org.appspot.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
+import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient.SignalingParameters;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
+import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

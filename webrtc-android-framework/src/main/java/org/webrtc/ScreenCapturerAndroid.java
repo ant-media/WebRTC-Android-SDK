@@ -46,9 +46,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
   @Nullable private CapturerObserver capturerObserver;
   private long numCapturedFrames;
-  @Nullable private MediaProjection mediaProjection;
+
+  @Nullable public MediaProjection mediaProjection;
+  @Nullable public MediaProjectionManager mediaProjectionManager;
+
   private boolean isDisposed;
-  @Nullable private MediaProjectionManager mediaProjectionManager;
 
   /**
    * Constructs a new Screen Capturer.
@@ -59,10 +61,15 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
    * @param mediaProjectionCallback MediaProjection callback to implement application specific
    *     logic in events such as when the user revokes a previously granted capture permission.
   **/
-  public ScreenCapturerAndroid(Intent mediaProjectionPermissionResultData,
+  public ScreenCapturerAndroid(MediaProjection mediaProjection, Intent mediaProjectionPermissionResultData,
       MediaProjection.Callback mediaProjectionCallback) {
+    this.mediaProjection = mediaProjection;
     this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
     this.mediaProjectionCallback = mediaProjectionCallback;
+  }
+
+  public boolean isDisposed() {
+    return isDisposed;
   }
 
   private void checkNotDisposed() {
@@ -97,6 +104,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
         Context.MEDIA_PROJECTION_SERVICE);
   }
 
+  public void setMediaProjection(@Nullable MediaProjection mediaProjection) {
+    this.mediaProjection = mediaProjection;
+  }
+
   @Override
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
@@ -107,8 +118,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     this.width = width;
     this.height = height;
 
-    mediaProjection = mediaProjectionManager.getMediaProjection(
-        Activity.RESULT_OK, mediaProjectionPermissionResultData);
+    // It means that it will use old method(without running in MediaProjectionService)
+    if(mediaProjection == null){
+      mediaProjection = mediaProjectionManager.getMediaProjection(
+              Activity.RESULT_OK, mediaProjectionPermissionResultData);
+    }
 
     // Let MediaProjection callback use the SurfaceTextureHelper thread.
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());

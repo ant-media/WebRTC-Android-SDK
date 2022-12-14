@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -21,6 +21,8 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import org.webrtc.RendererCommon.ScalingType;
+
+import io.antmedia.webrtcandroidframework.R;
 
 /**
  * Fragment for call control.

@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
+
+import io.antmedia.webrtcandroidframework.R;
 
 /**
  * Settings fragment for AppRTC.

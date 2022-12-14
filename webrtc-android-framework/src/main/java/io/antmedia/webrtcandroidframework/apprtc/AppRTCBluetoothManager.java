@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -28,7 +28,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
-import org.appspot.apprtc.util.AppRTCUtils;
+import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
 import org.webrtc.ThreadUtils;
 
 /**

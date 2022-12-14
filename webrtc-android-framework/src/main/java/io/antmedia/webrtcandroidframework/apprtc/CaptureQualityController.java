@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.appspot.apprtc;
+package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -17,6 +17,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
+
+import io.antmedia.webrtcandroidframework.R;
 
 /**
  * Control capture format based on a seekbar listener.
