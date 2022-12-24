@@ -1,9 +1,11 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -33,8 +35,6 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 
 public class MultiTrackPlayActivity extends Activity implements IWebRTCListener {
 
-
-    public static final String SERVER_URL = "ws://172.16.110.228:5080/WebRTCAppEE/websocket";
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -46,6 +46,7 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     private ToggleButton track1Button;
     private ToggleButton track2Button;
     private String[] allTracks;
+    private String serverUrl;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -68,9 +69,18 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         //webRTCClient.setOpenFrontCamera(false);
 
 
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         //String streamId = "stream" + (int)(Math.random() * 999);
-        streamId = "stream_multi_track";
+        //streamId = "stream_multi_track";
         tokenId = "tokenId";
+
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
+
+        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.player1);
 
@@ -116,10 +126,9 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         webRTCMode = IWebRTCClient.MODE_MULTI_TRACK_PLAY;
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(SERVER_URL, streamId, webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamId, webRTCMode, tokenId, this.getIntent());
 
     }
-
 
     public void startStreaming(View v) {
 
