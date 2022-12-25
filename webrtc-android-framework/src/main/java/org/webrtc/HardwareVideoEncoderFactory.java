@@ -40,8 +40,9 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   // List of devices with poor H.264 encoder quality.
   // HW H.264 encoder on below devices has poor bitrate control - actual
   // bitrates deviates a lot from the target value.
-  private static final List<String> H264_HW_EXCEPTION_MODELS =
-      Arrays.asList("SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4");
+  public static final List<String> H264_HW_EXCEPTION_MODELS = Arrays.asList();
+  //Just support in all models
+  //    Arrays.asList("SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4");
 
   @Nullable private final EglBase14.Context sharedContext;
   private final boolean enableIntelVp8Encoder;
@@ -224,14 +225,16 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
   }
 
-  private boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
+  public boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
     // First, H264 hardware might perform poorly on this model.
     if (H264_HW_EXCEPTION_MODELS.contains(Build.MODEL)) {
       return false;
     }
     String name = info.getName();
     // QCOM and Exynos H264 encoders are always supported.
-    return name.startsWith(QCOM_PREFIX) || name.startsWith(EXYNOS_PREFIX);
+    //return name.startsWith(QCOM_PREFIX) || name.startsWith(EXYNOS_PREFIX);
+    //ignore chipsets and return true for all of them
+    return true;
   }
 
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {

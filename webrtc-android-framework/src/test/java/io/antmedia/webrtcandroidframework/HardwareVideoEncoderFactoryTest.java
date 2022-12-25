@@ -19,7 +19,10 @@ public class HardwareVideoEncoderFactoryTest extends TestCase {
         MediaCodecInfo info = Mockito.mock(MediaCodecInfo.class);
 
         Mockito.when(info.getName()).thenReturn(GOOGLE_H264_HW_ENCODER);
-
+        //Following method should return true in all chipsets so it then support huawei devices etc.
         assertTrue(encoderFactory.isHardwareSupportedInCurrentSdkH264(info));
+
+        //Make this field public and empty. Working with less control is better than not working
+        assertTrue(HardwareVideoEncoderFactory.H264_HW_EXCEPTION_MODELS.isEmpty());
     }
 }
