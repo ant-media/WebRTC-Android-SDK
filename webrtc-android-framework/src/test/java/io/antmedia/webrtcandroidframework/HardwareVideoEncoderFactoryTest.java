@@ -24,5 +24,7 @@ public class HardwareVideoEncoderFactoryTest extends TestCase {
 
         //Make this field public and empty. Working with less control is better than not working
         assertTrue(HardwareVideoEncoderFactory.H264_HW_EXCEPTION_MODELS.isEmpty());
+
+        fail("Check if it's failing");
     }
 }

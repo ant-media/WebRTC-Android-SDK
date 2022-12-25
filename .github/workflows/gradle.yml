@@ -2,7 +2,7 @@ name: Android SDK CI
 on: [push]
 
 jobs:
-  build-with-upload-artifact:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
