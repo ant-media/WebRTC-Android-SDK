@@ -22,7 +22,11 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
     private List<ActivityLink> activities;
     private GridView list;
 
-    private final String[] PERMISSIONS = {
+    private final String[] PERMISSIONS_UNDER_ANDROID_S = {
+            Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT
+    };
+
+    private final String[] PERMISSIONS_BELOW_ANDROID_S = {
             Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA
     };
 
@@ -35,9 +39,16 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         createList();
         setListAdapter(activities);
 
-        if (!hasPermissions(this, PERMISSIONS)) {
-            ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!hasPermissions(this, PERMISSIONS_UNDER_ANDROID_S)) {
+                requestPermissions(PERMISSIONS_UNDER_ANDROID_S, 1);
+            }
+        } else {
+            if (!hasPermissions(this, PERMISSIONS_BELOW_ANDROID_S)) {
+                ActivityCompat.requestPermissions(this, PERMISSIONS_BELOW_ANDROID_S, 1);
+            }
         }
+
     }
 
     private void createList() {
@@ -75,17 +86,30 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        if (hasPermissions(this, PERMISSIONS)) {
-            ActivityLink link = activities.get(i);
-            startActivity(link.getIntent());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (hasPermissions(this, PERMISSIONS_UNDER_ANDROID_S)) {
+                ActivityLink link = activities.get(i);
+                startActivity(link.getIntent());
+            } else {
+                showPermissionsErrorAndRequest();
+            }
         } else {
-            showPermissionsErrorAndRequest();
+            if (hasPermissions(this, PERMISSIONS_BELOW_ANDROID_S)) {
+                ActivityLink link = activities.get(i);
+                startActivity(link.getIntent());
+            } else {
+                showPermissionsErrorAndRequest();
+            }
         }
     }
 
     private void showPermissionsErrorAndRequest() {
         Toast.makeText(this, "You need permissions before", Toast.LENGTH_SHORT).show();
-        ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.requestPermissions(this, PERMISSIONS_UNDER_ANDROID_S, 1);
+        } else {
+            ActivityCompat.requestPermissions(this, PERMISSIONS_BELOW_ANDROID_S, 1);
+        }
     }
 
 }
