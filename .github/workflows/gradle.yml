@@ -26,7 +26,6 @@ jobs:
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
         with:
-          files: |
-            webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-            webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+          files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+          fail_ci_if_error: true
 
