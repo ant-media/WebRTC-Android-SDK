@@ -28,7 +28,14 @@ android {
     }
 
     testOptions {
+        animationsDisabled true
+        unitTests.all {
+            jacoco {
+                includeNoLocationClasses = true
+            }
+        }
         unitTests.returnDefaultValues = true
+        unitTests.includeAndroidResources = true
     }
     namespace 'io.antmedia.webrtcandroidframework'
 }
@@ -41,7 +48,7 @@ tasks.withType(Test) {
     }
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','createDebugCoverageReport']) {
     reports {
         xml.enabled = true
         html.enabled = true
@@ -54,7 +61,9 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
     sourceDirectories.setFrom(files([mainSrc]))
     classDirectories.setFrom(files([debugTree]))
     executionData.setFrom(fileTree(dir: project.buildDir, includes: [
-            'outputs/unit_test_code_coverage/unit_test_code_coverage/testDebugUnitTest.exec'
+            'outputs/unit_test_code_coverage/unit_test_code_coverage/testDebugUnitTest.exec',
+            'outputs/code_coverage/debugAndroidTest/connected/**/*.ec'
+
     ]))
 }
 
