@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'jacoco'
 
 android {
     compileSdkVersion 33
@@ -12,6 +13,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -28,12 +32,38 @@ android {
     }
     namespace 'io.antmedia.webrtcandroidframework'
 }
+
+
+tasks.withType(Test) {
+    jacoco {
+        includeNoLocationClasses = true
+        excludes = ['jdk.internal.*'] // Allows it to run on Java 11
+    }
+}
+
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest']) {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+
+    def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
+    def debugTree = fileTree(dir: "$project.buildDir/intermediates/javac/debug", excludes: fileFilter)
+    def mainSrc = "$project.projectDir/src/main/java"
+
+    sourceDirectories.setFrom(files([mainSrc]))
+    classDirectories.setFrom(files([debugTree]))
+    executionData.setFrom(fileTree(dir: project.buildDir, includes: [
+            'outputs/unit_test_code_coverage/unit_test_code_coverage/testDebugUnitTest.exec'
+    ]))
+}
+
 dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'androidx.annotation:annotation:1.5.0'
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:1.10.19'
     testImplementation project(path: ':webrtc-android-framework')
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
