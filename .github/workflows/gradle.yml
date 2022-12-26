@@ -12,7 +12,7 @@ jobs:
           java-version: 11
           distribution: 'adopt'
       - name: Run tests and Generate Report
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@v2.27.0
         with:
           api-level: 29
           script: ./gradlew jacocoTestReport
@@ -26,5 +26,5 @@ jobs:
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
         with:
-          files: '**/jacocoTestReport.xml'
+          files: 'webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport.xml','webrtc-android-framework/build/reports/jacoco/jacocoTestReport.xml'
 
