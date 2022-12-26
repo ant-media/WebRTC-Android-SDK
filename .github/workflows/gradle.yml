@@ -26,5 +26,5 @@ jobs:
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
         with:
-          files: webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport.xml,webrtc-android-framework/build/reports/jacoco/jacocoTestReport.xml
+          files: webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
 
