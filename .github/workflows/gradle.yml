@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -11,10 +11,11 @@ jobs:
         with:
           java-version: 11
           distribution: 'adopt'
-      - name: Build and Test with Gradle
-        run: ./gradlew jacocoTestReport
-      - name: Assemble
-        run: ./gradlew assemble
+      - name: Run tests and Generate Report
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          script: ./gradlew jacocoTestReport
       - name: Archive test report
         uses: actions/upload-artifact@v3
         with:
