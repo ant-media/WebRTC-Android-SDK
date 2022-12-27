@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
+import androidx.test.espresso.idling.net.UriIdlingResource;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -76,6 +77,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private Spinner streamInfoListSpinner;
 
 
+    public UriIdlingResource urlIdlingResource = new UriIdlingResource("Load", 6000);
+
     // variables for handling reconnection attempts after disconnected
     final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
@@ -95,6 +98,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             }
         }
     };
+    private View broadcastingView;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -113,6 +117,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         cameraViewRenderer = findViewById(R.id.camera_view_renderer);
         pipViewRenderer = findViewById(R.id.pip_view_renderer);
+
+        broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
@@ -199,7 +205,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     }
 
     public void startStreaming(View v) {
-
+        urlIdlingResource.beginLoad(serverUrl);
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             webRTCClient.startStream();
@@ -221,33 +227,40 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     @Override
     public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
-        Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Play started", Toast.LENGTH_SHORT).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
         webRTCClient.getStreamInfoList();
+        urlIdlingResource.endLoad(serverUrl);
     }
 
     @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
-        Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.VISIBLE);
+        urlIdlingResource.endLoad(serverUrl);
     }
 
     @Override
     public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
-        Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.GONE);
+        urlIdlingResource.endLoad(serverUrl);
     }
 
     @Override
     public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
+        urlIdlingResource.endLoad(serverUrl);
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
+        urlIdlingResource.endLoad(serverUrl);
         finish();
     }
 
@@ -255,6 +268,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
         Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+        urlIdlingResource.endLoad(serverUrl);
     }
 
     @Override
@@ -276,8 +290,11 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     @Override
     public void onDisconnected(String streamId) {
+
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.GONE);
+        urlIdlingResource.endLoad(serverUrl);
 
         startStreamingButton.setText("Start " + operationName);
         // handle reconnection attempt
@@ -469,5 +486,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         else {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
+    }
+
+    public UriIdlingResource getUrlIdlingResource() {
+        return urlIdlingResource;
     }
 }
