@@ -14,7 +14,7 @@ jobs:
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
         with:
-          api-level: 33
+          api-level: 32
           script: ./gradlew jacocoTestReport
       - name: Archive test report
         uses: actions/upload-artifact@v3
