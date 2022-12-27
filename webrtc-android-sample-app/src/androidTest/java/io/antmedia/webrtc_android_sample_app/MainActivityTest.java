@@ -58,7 +58,7 @@ public class MainActivityTest {
      * Until that time, manuel test may be used
      */
     @Test
-    public void testStopStartStream() {
+    public void testStartStopStream() {
         ActivityScenario<MainActivity> scenario = activityScenarioRule.getScenario();
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MainActivity>() {
