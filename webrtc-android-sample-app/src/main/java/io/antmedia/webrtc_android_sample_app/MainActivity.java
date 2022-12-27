@@ -279,7 +279,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     @Override
     protected void onStop() {
         super.onStop();
-        webRTCClient.stopStream();
+        if (webRTCClient != null) {
+            webRTCClient.stopStream();
+        }
         stoppedStream = true;
     }
 
