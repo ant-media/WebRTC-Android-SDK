@@ -25,11 +25,11 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
-
 tasks.withType(Test) {
     testLogging {
-        exceptionFormat "full"
+        exceptionFormat = TestExceptionFormat.FULL
         events "started", "skipped", "passed", "failed"
         showStandardStreams true
+        showStackTraces = true
     }
 }

@@ -1,6 +1,5 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
@@ -12,7 +11,6 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import android.content.Context;
 
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
@@ -28,7 +26,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
@@ -44,7 +41,7 @@ public class MainActivityTest {
     @Rule
     public ActivityScenarioRule<MainActivity> activityScenarioRule
             = new ActivityScenarioRule<>(MainActivity.class);
-    private UriIdlingResource mIdlingResource;
+    private IdlingResource mIdlingResource;
 
     @Rule public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
@@ -69,7 +66,7 @@ public class MainActivityTest {
         scenario.onActivity(new ActivityScenario.ActivityAction<MainActivity>() {
             @Override
             public void perform(MainActivity activity) {
-                mIdlingResource = activity.getUrlIdlingResource();
+                mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
             }
         });

@@ -21,6 +21,8 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
 import androidx.test.espresso.idling.net.UriIdlingResource;
 
 import com.android.volley.Request;
@@ -77,7 +79,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private Spinner streamInfoListSpinner;
 
 
-    public UriIdlingResource urlIdlingResource = new UriIdlingResource("Load", 6000);
+    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
 
     // variables for handling reconnection attempts after disconnected
     final int RECONNECTION_PERIOD_MLS = 1000;
@@ -205,9 +207,10 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     }
 
     public void startStreaming(View v) {
-        urlIdlingResource.beginLoad(serverUrl);
+        idlingResource.increment();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
+
             webRTCClient.startStream();
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
                 pipViewRenderer.setZOrderOnTop(true);
@@ -230,7 +233,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Toast.makeText(this, "Play started", Toast.LENGTH_SHORT).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
         webRTCClient.getStreamInfoList();
-        urlIdlingResource.endLoad(serverUrl);
+        idlingResource.decrement();
     }
 
     @Override
@@ -238,7 +241,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
-        urlIdlingResource.endLoad(serverUrl);
+        idlingResource.decrement();
     }
 
     @Override
@@ -246,21 +249,20 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        urlIdlingResource.endLoad(serverUrl);
+
     }
 
     @Override
     public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
-        urlIdlingResource.endLoad(serverUrl);
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        urlIdlingResource.endLoad(serverUrl);
+        idlingResource.decrement();
         finish();
     }
 
@@ -268,12 +270,13 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
         Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-        urlIdlingResource.endLoad(serverUrl);
+        idlingResource.decrement();
     }
 
     @Override
     public void onError(String description, String streamId) {
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
+
     }
 
     @Override
@@ -296,8 +299,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        urlIdlingResource.endLoad(serverUrl);
-
+        idlingResource.decrement();
         startStreamingButton.setText("Start " + operationName);
         // handle reconnection attempt
         if (!stoppedStream) {
@@ -490,7 +492,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         }
     }
 
-    public UriIdlingResource getUrlIdlingResource() {
-        return urlIdlingResource;
+    public IdlingResource getIdlingResource() {
+        return idlingResource;
     }
 }
