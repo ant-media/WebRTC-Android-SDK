@@ -43,7 +43,8 @@ public class MainActivityTest {
             = new ActivityScenarioRule<>(MainActivity.class);
     private IdlingResource mIdlingResource;
 
-    @Rule public GrantPermissionRule permissionRule
+    @Rule
+    public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
 
 

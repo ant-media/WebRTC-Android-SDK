@@ -40,7 +40,7 @@ jobs:
         with:
           api-level: 33
           arch: x86_64
-          target: google_apis
+          target: playstore
      #     force-avd-creation: false
      #     disable-animations: true
      #     emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
