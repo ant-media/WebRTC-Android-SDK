@@ -46,9 +46,8 @@ public class MainActivityTest {
             = new ActivityScenarioRule<>(MainActivity.class);
     private UriIdlingResource mIdlingResource;
 
-    //workflow is running in android 10 - api level: 29 and android S is 12 and api level - 31
     @Rule public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_BELOW_ANDROID_S);
+            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
 
 
     @Test
