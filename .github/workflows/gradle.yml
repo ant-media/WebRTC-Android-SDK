@@ -44,8 +44,7 @@ jobs:
      #     force-avd-creation: false
      #     disable-animations: true
      #     emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script:  ./gradlew jacocoTestReport --stacktrace
-    #/bin/bash -c "/Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt"
+          script:  /bin/bash -c "./gradlew jacocoTestReport --stacktrace && /Users/runner/Library/Android/sdk/platform-tools/adb exec-out screencap -p > webrtc-android-sample-app/build/screen.png && /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt"
 
       - name: Archive Test Report
         if: always()
@@ -60,6 +59,7 @@ jobs:
             webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
             webrtc-android-framework/build/reports/androidTests/
             webrtc-android-sample-app/build/logcat.txt
+            webrtc-android-sample-app/build/screen.png
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
         with:
