@@ -44,7 +44,8 @@ jobs:
      #     force-avd-creation: false
      #     disable-animations: true
      #     emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script:  ./gradlew jacocoTestReport --stacktrace & /bin/bash -c "/Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt"
+          script:  ./gradlew jacocoTestReport --stacktrace
+    #/bin/bash -c "/Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt"
 
       - name: Archive Test Report
         if: always()
