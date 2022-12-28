@@ -22,11 +22,11 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
     private List<ActivityLink> activities;
     private GridView list;
 
-    private final String[] PERMISSIONS_UNDER_ANDROID_S = {
+    public static final String[] PERMISSIONS_UNDER_ANDROID_S = {
             Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT
     };
 
-    private final String[] PERMISSIONS_BELOW_ANDROID_S = {
+    public static final String[] PERMISSIONS_BELOW_ANDROID_S = {
             Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA
     };
 
@@ -72,7 +72,7 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         list.setOnItemClickListener(this);
     }
 
-    private boolean hasPermissions(Context context, String... permissions) {
+    public static boolean hasPermissions(Context context, String... permissions) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
             for (String permission : permissions) {
                 if (ActivityCompat.checkSelfPermission(context, permission)

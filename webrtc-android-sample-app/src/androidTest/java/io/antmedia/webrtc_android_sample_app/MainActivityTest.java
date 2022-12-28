@@ -21,6 +21,7 @@ import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,6 +45,11 @@ public class MainActivityTest {
     public ActivityScenarioRule<MainActivity> activityScenarioRule
             = new ActivityScenarioRule<>(MainActivity.class);
     private UriIdlingResource mIdlingResource;
+
+    //workflow is running in android 10 - api level: 29 and android S is 12 and api level - 31
+    @Rule public GrantPermissionRule permissionRule
+            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_BELOW_ANDROID_S);
+
 
     @Test
     public void useAppContext() {
@@ -71,7 +77,7 @@ public class MainActivityTest {
         //1. start stream and check that it's playing
 
         onView(withId(R.id.broadcasting_text_view)).check(matches(not(isDisplayed())));
-        onView(withText("Start Publishing")).perform(click());
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Publishing"))).perform(click());
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Publishing")));
 
