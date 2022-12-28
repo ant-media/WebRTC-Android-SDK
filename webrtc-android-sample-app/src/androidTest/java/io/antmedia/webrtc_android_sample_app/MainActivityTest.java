@@ -73,7 +73,8 @@ public class MainActivityTest {
         //1. start stream and check that it's playing
 
         onView(withId(R.id.broadcasting_text_view)).check(matches(not(isDisplayed())));
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Publishing"))).perform(click());
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Publishing")));
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Publishing")));
 
