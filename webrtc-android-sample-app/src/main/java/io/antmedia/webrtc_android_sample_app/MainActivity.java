@@ -299,7 +299,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        idlingResource.decrement();
+        if (!idlingResource.isIdleNow()) {
+            idlingResource.decrement();
+        }
         startStreamingButton.setText("Start " + operationName);
         // handle reconnection attempt
         if (!stoppedStream) {
