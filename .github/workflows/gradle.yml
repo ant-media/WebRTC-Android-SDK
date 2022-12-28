@@ -11,10 +11,10 @@ jobs:
         with:
           java-version: 11
           distribution: 'adopt'
-      - name: Gradle cache
+      - name: Gradle Cache
         uses: gradle/gradle-build-action@v2
 
-      - name: AVD cache
+      - name: AVD Cache
         uses: actions/cache@v3
         id: avd-cache
         with:
@@ -23,17 +23,17 @@ jobs:
             ~/.android/adb*
           key: avd-33
 
-      - name: create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          arch: x86_64
-          target: google_apis
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
+  #    - name: Create AVD and Generate Snapshot for Caching
+  #      if: steps.avd-cache.outputs.cache-hit != 'true'
+  #      uses: reactivecircus/android-emulator-runner@v2
+  #      with:
+  #        api-level: 33
+  #        arch: x86_64
+  #        target: google_apis
+  #        force-avd-creation: false
+  #        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+  #        disable-animations: false
+  #        script: echo "Generated AVD snapshot for caching."
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
@@ -41,16 +41,12 @@ jobs:
           api-level: 33
           arch: x86_64
           target: google_apis
-          force-avd-creation: false
-          disable-animations: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: ./gradlew jacocoTestReport --stacktrace
+     #     force-avd-creation: false
+     #     disable-animations: true
+     #     emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script:  ./gradlew jacocoTestReport --stacktrace & /bin/bash -c "/Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt"
 
-      - name: Capture logcat
-        if: always()
-        run: /bin/bash -c "/Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt"
-
-      - name: Archive test report
+      - name: Archive Test Report
         if: always()
         uses: actions/upload-artifact@v3
         with:
