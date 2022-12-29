@@ -9,6 +9,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import android.content.Context;
+import android.content.Intent;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.IdlingRegistry;
@@ -69,6 +70,8 @@ public class MainActivityTest {
             public void perform(MainActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+
             }
         });
         //1. start stream and check that it's playing
