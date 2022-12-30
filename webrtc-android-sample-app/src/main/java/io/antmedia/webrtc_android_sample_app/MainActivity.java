@@ -277,6 +277,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     @Override
     public void onError(String description, String streamId) {
+        Log.w(getClass().getSimpleName(), "onError:" + description);
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
 
     }
