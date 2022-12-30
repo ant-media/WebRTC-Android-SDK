@@ -23,17 +23,18 @@ jobs:
             ~/.android/adb*
           key: avd-33
 
-  #    - name: Create AVD and Generate Snapshot for Caching
-  #      if: steps.avd-cache.outputs.cache-hit != 'true'
-  #      uses: reactivecircus/android-emulator-runner@v2
-  #      with:
-  #        api-level: 33
-  #        arch: x86_64
-  #        target: google_apis
-  #        force-avd-creation: false
-  #        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
-  #        disable-animations: false
-  #        script: echo "Generated AVD snapshot for caching."
+      - name: Create AVD and Generate Snapshot for Caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.27.0
+        with:
+          api-level: 33
+          arch: x86_64
+          target: playstore
+          emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
@@ -42,10 +43,10 @@ jobs:
           arch: x86_64
           target: playstore
           emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
-     #     force-avd-creation: false
-     #     disable-animations: true
-     #     emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: /bin/bash -c "./gradlew jacocoTestReport --stacktrace; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit \$EXIT_CODE"
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: "./gradlew jacocoTestReport --stacktrace; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit \${EXIT_CODE}"
 
       - name: Archive Test Report
         if: always()
