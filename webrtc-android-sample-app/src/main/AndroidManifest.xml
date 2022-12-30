@@ -29,7 +29,8 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".HomeActivity">
+        <activity android:name=".HomeActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -57,7 +58,8 @@
         <activity android:name=".MainActivity"
                   android:exported="true"
                   android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
-        <activity android:name=".SettingsActivity"                  android:exported="true"
+        <activity android:name=".SettingsActivity"
+                  android:exported="true"
                   android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
         <activity android:name=".DataChannelActivity"
                   android:exported="true"
