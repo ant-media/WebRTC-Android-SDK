@@ -84,9 +84,9 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     private String uniqueID = UUID.randomUUID().toString();
     private int lastSentMessageNum = 0;
 
-    private String streamId;
     private String tokenId;
     private String serverURL;
+    private EditText streamIdEditText;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -114,13 +114,16 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         messagesView = findViewById(R.id.messages_view);
         messagesView.setAdapter(messageAdapter);
 
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+
+
         webRTCClient = new WebRTCClient( this,this);
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_PORT);
-        streamId = sharedPreferences.getString(getString(R.string.streamId), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_STREAM_ID);
 
         tokenId = "tokenId";
         String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
@@ -169,7 +172,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         cameraViewRenderer = findViewById(R.id.camera_view_renderer);
         pipViewRenderer = findViewById(R.id.pip_view_renderer);
         webRTCClient.setVideoRenderers(cameraViewRenderer, pipViewRenderer);
-        webRTCClient.init(serverURL, streamId, webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverURL, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
     }
 
     @Override

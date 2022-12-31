@@ -71,7 +71,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId;
     private String serverUrl;
     private String restUrl;
 
@@ -102,6 +101,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         }
     };
     private View broadcastingView;
+    private EditText streamIdEditText;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -123,6 +123,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         broadcastingView = findViewById(R.id.broadcasting_text_view);
 
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
@@ -131,7 +134,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
 
         String restUrlScheme = serverPort.equals("5443") ? "https://" : "http://";
         String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
@@ -199,14 +201,15 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
-
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(serverUrl, streamId, webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
 
     }
 
     public void startStreaming(View v) {
+        //update stream id if it is changed
+        webRTCClient.setStreamId(streamIdEditText.getText().toString());
         idlingResource.increment();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);

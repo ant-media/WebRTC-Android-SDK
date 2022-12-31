@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
@@ -32,9 +33,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
-    private String streamId;
     private String tokenId = "tokenId";
     private String serverUrl;
+    private EditText streamIdEditText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +54,8 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         webRTCClient = new WebRTCClient(this, this);
 
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
         //webRTCClient.setOpenFrontCamera(false);
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
@@ -106,11 +109,10 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
 
-        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
         String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
         serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
 
-        webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
     }
 
     @Override

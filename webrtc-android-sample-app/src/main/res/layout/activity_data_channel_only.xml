@@ -6,21 +6,28 @@
     android:orientation="vertical"
     tools:context=".DataChannelOnlyActivity">
 
-    <FrameLayout
+    <LinearLayout
         android:id="@+id/button_frame"
         android:layout_width="match_parent"
         android:layout_height="45dp"
+        android:orientation="horizontal"
+        android:layout_marginTop="3dp"
         android:background="#F3EEE4">
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/stream_id_edittext"
+            android:layout_weight="1"
+            />
+
         <Button
             android:id="@+id/start_streaming_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center"
-            android:layout_marginTop="3dp"
             android:background="@drawable/button_background"
             android:onClick="startStreaming"
             android:text="@string/start" />
-    </FrameLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/call_fragment_container"

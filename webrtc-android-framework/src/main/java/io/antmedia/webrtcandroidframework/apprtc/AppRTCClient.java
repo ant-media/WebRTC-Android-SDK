@@ -25,7 +25,7 @@ public interface AppRTCClient {
    */
   class RoomConnectionParameters {
     public final String roomUrl;
-    public final String roomId;
+    public String roomId;
     public final boolean loopback;
     public final String urlParameters;
     public final String mode;
@@ -38,6 +38,10 @@ public interface AppRTCClient {
       this.urlParameters = urlParameters;
       this.mode = mode;
       this.token = token;
+    }
+
+    public void setRoomId(String roomId) {
+      this.roomId = roomId;
     }
     //public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
     //  this(roomUrl, roomId, loopback, null /* urlParameters */);

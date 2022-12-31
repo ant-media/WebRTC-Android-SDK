@@ -45,6 +45,13 @@
         android:onClick="showSendDataChannelMessageDialog"
         android:layout_centerVertical="true"/>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/stream_id_edittext"
+        android:background="?android:attr/colorBackground"
+        android:layout_above="@id/start_streaming_button"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

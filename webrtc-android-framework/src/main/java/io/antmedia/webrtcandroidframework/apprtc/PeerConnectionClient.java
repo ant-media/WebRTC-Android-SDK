@@ -293,7 +293,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     public final String protocol;
     public final boolean negotiated;
     public final int id;
-    public final String label;
+    public String label;
     public final boolean isDataChannelCreator;
 
     public DataChannelParameters(boolean ordered, int maxRetransmitTimeMs, int maxRetransmits,
@@ -306,6 +306,10 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       this.id = id;
       this.label = label;
       this.isDataChannelCreator = isDataChannelCreator;
+    }
+
+    public void setLabel(String label) {
+      this.label = label;
     }
   }
 
@@ -367,6 +371,10 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       this.enableRtcEventLog = enableRtcEventLog;
       this.dataChannelParameters = dataChannelParameters;
       this.audioCallEnabled = audioCallEnabled;
+    }
+
+    public DataChannelParameters getDataChannelParameters() {
+      return dataChannelParameters;
     }
   }
 

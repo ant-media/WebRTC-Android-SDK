@@ -70,6 +70,12 @@
                 android:text="Rear"/>
         </RadioGroup>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/stream_id_edittext"
+        android:layout_above="@id/start_streaming_button"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -57,8 +57,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Default Camera"));
         activities.add(new ActivityLink(new Intent(this, MultiTrackPlayActivity.class),
                 "Multi Track Play"));
-        activities.add(new ActivityLink(new Intent(this, DataChannelActivity.class),
-                "Data Channel "));
+        activities.add(new ActivityLink(new Intent(this, DataChannelOnlyActivity.class),
+                "Data Channel Only Activity"));
         activities.add(new ActivityLink(new Intent(this, ConferenceActivity.class),
                 "Conference"));
         activities.add(new ActivityLink(new Intent(this, ScreenCaptureActivity.class),

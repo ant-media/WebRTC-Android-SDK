@@ -173,6 +173,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         this.remoteRendererList = rendererList;
     }
 
+    public void setStreamId(String streamId) {
+        this.streamId = streamId;
+        if (roomConnectionParameters != null) {
+            roomConnectionParameters.setRoomId(streamId);
+        }
+        if (peerConnectionParameters != null) {
+            if (peerConnectionParameters.getDataChannelParameters() != null) {
+                peerConnectionParameters.getDataChannelParameters().setLabel(streamId);
+            }
+        }
+    }
+
     @Override
     public void init(String url, String streamId, String mode, String token, Intent intent) {
         if (peerConnectionClient != null) {
@@ -1322,5 +1334,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void setPeerConnectionParametersForTest(@Nullable PeerConnectionClient.PeerConnectionParameters peerConnectionParameters) {
         this.peerConnectionParameters = peerConnectionParameters;
+    }
+
+    public String getStreamId() {
+        return streamId;
     }
 }
