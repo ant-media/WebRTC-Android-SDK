@@ -89,6 +89,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         @Override
         public void run() {
             if (!stoppedStream && !webRTCClient.isStreaming()) {
+                Log.i(getClass().getSimpleName(),"Try to reconnect in reconnectionRunnable");
                 webRTCClient.startStream();
                 if (webRTCMode == IWebRTCClient.MODE_JOIN)
                 {
