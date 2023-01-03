@@ -48,7 +48,7 @@ jobs:
           disable-animations: true
           cores: 3
           emulator-options: -no-snapshot-save -gpu auto -no-window -noaudio -no-boot-anim
-          script: ./gradlew jacocoTestReport --stacktrace; EXIT_CODE=$?; PROCESS_PID=$(/Users/runner/Library/Android/sdk/platform-tools/adb shell pidof -s io.antmedia.webrtc_android_sample_app); echo "PROCESS_PID:$PROCESS_PID"; /Users/runner/Library/Android/sdk/platform-tools/adb shell pidof -s io.antmedia.webrtc_android_sample_app; /Users/runner/Library/Android/sdk/platform-tools/adb logcat --pid=$PROCESS_PID -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
+          script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
 
       - name: Archive Test Report
         if: always()
