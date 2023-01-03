@@ -70,7 +70,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
  * and call view.
  */
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents, IDataChannelMessageSender, IDataChannelObserver {
-    private static final String TAG = "WebRTCClient69";
+    private static final String TAG = "WebRTCClient";
 
     public static final String SOURCE_FILE = "FILE";
     public static final String SOURCE_SCREEN = "SCREEN";
@@ -448,9 +448,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void startStream() {
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
         if (wsHandler == null) {
+            Log.i(TAG, "WebsocketHandler is null and creating a new instance");
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
         } else if (!wsHandler.isConnected()) {
+            Log.i(TAG, "WebSocketHandler already exists but not connected. Disconnecting and creating new one");
             wsHandler.disconnect(true);
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
@@ -716,6 +718,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     private void release() {
+        Log.i(getClass().getSimpleName(), "Releasing resources");
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);

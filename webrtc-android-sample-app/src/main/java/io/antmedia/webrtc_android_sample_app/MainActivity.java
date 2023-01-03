@@ -309,7 +309,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         startStreamingButton.setText("Start " + operationName);
         // handle reconnection attempt
         if (!stoppedStream) {
-            Toast.makeText(this, "Disconnected Attempting to reconnect", Toast.LENGTH_LONG).show();
+            Log.i(getClass().getSimpleName(),"Disconnected. Trying to reconnect");
+            Toast.makeText(this, "Disconnected.Trying to reconnect", Toast.LENGTH_LONG).show();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
                     reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
