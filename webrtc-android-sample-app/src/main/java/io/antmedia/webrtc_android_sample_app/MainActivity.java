@@ -194,7 +194,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             operationName = "P2P";
         }
 
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
@@ -303,6 +302,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     protected void onStop() {
         super.onStop();
         if (webRTCClient != null) {
+            Log.i(getClass().getSimpleName(), "onStop and calling stopStream");
             webRTCClient.stopStream();
         }
         stoppedStream = true;

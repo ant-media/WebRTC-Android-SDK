@@ -966,7 +966,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                     wsHandler.sendConfiguration(roomConnectionParameters.roomId, sdp, "answer");
                 }
             }
-            if (peerConnectionParameters.videoMaxBitrate > 0) {
+            //check peerConnectionClient null because in very slow devices(emulator), it may cause crash
+            if (peerConnectionParameters.videoMaxBitrate > 0 && peerConnectionClient != null) {
                 Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);
                 peerConnectionClient.setVideoMaxBitrate(peerConnectionParameters.videoMaxBitrate);
             }

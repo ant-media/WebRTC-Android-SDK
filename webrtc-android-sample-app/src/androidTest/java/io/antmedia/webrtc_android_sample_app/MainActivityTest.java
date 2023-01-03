@@ -7,11 +7,14 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Bundle;
 
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
@@ -30,6 +33,9 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -39,9 +45,6 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class MainActivityTest {
 
-    @Rule
-    public ActivityScenarioRule<MainActivity> activityScenarioRule
-            = new ActivityScenarioRule<>(MainActivity.class);
     private IdlingResource mIdlingResource;
 
     @Rule
@@ -52,7 +55,7 @@ public class MainActivityTest {
     @Test
     public void useAppContext() {
         // Context of the app under test.
-        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context appContext = getInstrumentation().getTargetContext();
 
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
@@ -63,7 +66,12 @@ public class MainActivityTest {
      */
     @Test
     public void testStartStopStream() {
-        ActivityScenario<MainActivity> scenario = activityScenarioRule.getScenario();
+
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MainActivity.class);
+        intent.putExtra(EXTRA_VIDEO_WIDTH, 160);
+        intent.putExtra(EXTRA_VIDEO_HEIGHT, 120);
+        intent.putExtra(EXTRA_VIDEO_FPS, 15);
+        ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MainActivity>() {
             @Override
@@ -71,7 +79,6 @@ public class MainActivityTest {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-
             }
         });
         //1. start stream and check that it's playing
