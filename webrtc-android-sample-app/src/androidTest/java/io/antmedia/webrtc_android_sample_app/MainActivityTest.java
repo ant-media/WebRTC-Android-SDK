@@ -33,6 +33,7 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
@@ -71,6 +72,7 @@ public class MainActivityTest {
         intent.putExtra(EXTRA_VIDEO_WIDTH, 160);
         intent.putExtra(EXTRA_VIDEO_HEIGHT, 120);
         intent.putExtra(EXTRA_VIDEO_FPS, 15);
+        intent.putExtra(EXTRA_VIDEO_BITRATE, 300);
         ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MainActivity>() {
