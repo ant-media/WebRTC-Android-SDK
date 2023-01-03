@@ -83,13 +83,18 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     // variables for handling reconnection attempts after disconnected
     final int RECONNECTION_PERIOD_MLS = 1000;
+
+    final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
+
     private boolean stoppedStream = false;
     Handler reconnectionHandler = new Handler();
     Runnable reconnectionRunnable = new Runnable() {
         @Override
         public void run() {
             if (!stoppedStream && !webRTCClient.isStreaming()) {
-                Log.i(getClass().getSimpleName(),"Try to reconnect in reconnectionRunnable");
+                Log.i(MainActivity.class.getSimpleName(),"Try to reconnect in reconnectionRunnable");
+                webRTCClient.stopStream();
+
                 webRTCClient.startStream();
                 if (webRTCMode == IWebRTCClient.MODE_JOIN)
                 {
@@ -97,7 +102,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 }
             }
             if (!stoppedStream) {
-                reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
+                reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
             }
         }
     };
@@ -214,6 +219,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         idlingResource.increment();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
+            Log.i(getClass().getSimpleName(), "Calling startStream");
 
             webRTCClient.startStream();
             if (webRTCMode == IWebRTCClient.MODE_JOIN) {
@@ -223,6 +229,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         }
         else {
             ((Button)v).setText("Start " + operationName);
+            Log.i(getClass().getSimpleName(), "Calling stopStream");
             reconnectionHandler.removeCallbacks(reconnectionRunnable);
             webRTCClient.stopStream();
             stoppedStream = true;
@@ -253,6 +260,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
+        idlingResource.decrement();
 
     }
 
@@ -281,7 +289,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void onError(String description, String streamId) {
         Log.w(getClass().getSimpleName(), "onError:" + description);
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
-
+        if (!idlingResource.isIdleNow()) {
+            idlingResource.decrement();
+        }
     }
 
     @Override

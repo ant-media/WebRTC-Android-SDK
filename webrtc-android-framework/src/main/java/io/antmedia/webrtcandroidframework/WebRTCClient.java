@@ -446,6 +446,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     public void startStream() {
+        Log.i(getClass().getSimpleName(), "Starting stream");
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
         if (wsHandler == null) {
             Log.i(TAG, "WebsocketHandler is null and creating a new instance");
@@ -601,6 +602,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void stopStream() {
+        Log.i(getClass().getSimpleName(), "Stopping stream");
         disconnect();
         if (logToast != null) {
             logToast.cancel();
