@@ -32,7 +32,8 @@ jobs:
           target: playstore
           emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          cores: 3
+          emulator-options: -no-window -gpu auto -noaudio -no-boot-anim
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
@@ -45,7 +46,8 @@ jobs:
           emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
           disable-animations: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          cores: 3
+          emulator-options: -no-snapshot-save -gpu auto -no-window -noaudio -no-boot-anim
           script: ./gradlew jacocoTestReport --stacktrace; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
 
       - name: Archive Test Report
