@@ -1,9 +1,6 @@
 name: Android SDK CI
 on: [push, pull_request]
 
-env:
-    ANDROID_SDK_ROOT: /home/ubuntu/android
-
 jobs:
   unit-tests:
     runs-on: macos-latest
