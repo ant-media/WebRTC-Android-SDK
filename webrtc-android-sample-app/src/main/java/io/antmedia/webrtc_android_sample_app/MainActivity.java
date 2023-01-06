@@ -31,6 +31,7 @@ import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
@@ -48,6 +49,7 @@ import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAMERA2;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
@@ -74,6 +76,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
+    private CameraVideoCapturer videoCapturer;
 
 
     // variables for handling reconnection attempts after disconnected
@@ -177,15 +180,17 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             operationName = "P2P";
         }
 
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, enableDataChannel);
 
+        // If you want to use zoom in/out feature, you need to disable CAMERA2
+        this.getIntent().putExtra(EXTRA_CAMERA2, false);
+
         webRTCClient = new WebRTCClient( this,this);
 
-        //webRTCClient.setOpenFrontCamera(false);
+        webRTCClient.setOpenFrontCamera(false);
 
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
@@ -303,6 +308,16 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     @Override
     public void onIceDisconnected(String streamId) {
         //it's called when ice is disconnected
+    }
+
+    public void setZoomIn(View view) {
+        videoCapturer = (CameraVideoCapturer) webRTCClient.getVideoCapturer();
+        videoCapturer.setZoom(10);
+    }
+
+    public void setZoomOut(View view) {
+        videoCapturer = (CameraVideoCapturer) webRTCClient.getVideoCapturer();
+        videoCapturer.setZoom(-10);
     }
 
     public void onOffVideo(View view) {

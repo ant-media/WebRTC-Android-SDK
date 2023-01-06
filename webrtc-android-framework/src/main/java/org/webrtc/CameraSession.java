@@ -33,6 +33,9 @@ interface CameraSession {
     void onFrameCaptured(CameraSession session, VideoFrame frame);
   }
 
+
+  void setZoom(int zoom);
+
   /**
    * Stops the capture. Waits until no more calls to capture observer will be made.
    * If waitCameraStop is true, also waits for the camera to stop.
