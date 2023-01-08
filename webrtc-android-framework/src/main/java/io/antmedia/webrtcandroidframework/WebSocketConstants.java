@@ -410,4 +410,9 @@ public class WebSocketConstants {
      */
     public static final String LEGACY = "legacy";
 
+    /**
+     * It's sent to determine mainTrackId if exists
+     */
+    public static final String MAIN_TRACK = "mainTrack";
+
 }

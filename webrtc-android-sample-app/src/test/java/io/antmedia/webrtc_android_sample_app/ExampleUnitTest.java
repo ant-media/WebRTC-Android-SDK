@@ -65,6 +65,7 @@ public class ExampleUnitTest {
         String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
         String subscriberCode = "code" + RandomStringUtils.random(5);
         String streamName = "stream" + RandomStringUtils.random(5);
+        String mainTrackId = null;
 
         IWebRTCListener listener = mock(IWebRTCListener.class);
         Context context = mock(Context.class);
@@ -96,7 +97,7 @@ public class ExampleUnitTest {
 
         webRTCClient.startStream();
 
-        verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName);
+        verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());

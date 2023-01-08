@@ -425,6 +425,11 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
      * Callback fired once peer connection error happened.
      */
     void onPeerConnectionError(final String description);
+
+    /**
+     * Callback fired once remote track added.
+     */
+    void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
   }
 
   /**
@@ -1305,7 +1310,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       for (IceCandidate candidate : queuedRemoteCandidates) {
         peerConnection.addIceCandidate(candidate);
       }
-      queuedRemoteCandidates = null;
+      queuedRemoteCandidates.clear();
     }
   }
 
@@ -1364,6 +1369,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
       executor.execute(() -> {
         Log.d(TAG, "IceConnectionState: " + newState);
+
         if (newState == IceConnectionState.CONNECTED) {
           events.onIceConnected();
         } else if (newState == IceConnectionState.DISCONNECTED) {
@@ -1377,7 +1383,6 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     @Override
     public void onConnectionChange(final PeerConnection.PeerConnectionState newState) {
       executor.execute(() -> {
-        Log.d(TAG, "PeerConnectionState: " + newState);
         if (newState == PeerConnectionState.CONNECTED) {
           events.onConnected();
         } else if (newState == PeerConnectionState.DISCONNECTED) {
@@ -1415,15 +1420,21 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
         }
         */
 
+        updateVideoTracks();
+      }
+    }
 
-        List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
-        for (int i = 0; i < remoteVideoTrackList.size(); i++)
-        {
-          if (i < remoteSinks.size()) {
-            remoteVideoTrackList.get(i).addSink(remoteSinks.get(i));
-          } else {
-            Log.e(TAG, "There is no enough remote sinks to show video tracks");
-          }
+    private void updateVideoTracks() {
+      List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
+      for (int i = 0; i < remoteVideoTrackList.size(); i++)
+      {
+        VideoTrack videoTrack = remoteVideoTrackList.get(i);
+        Log.d("vu", "remoteVideoTrackList " + i +" " +videoTrack.id()+" s:"+videoTrack.state().name());
+
+        if (i < remoteSinks.size()) {
+          videoTrack.addSink(remoteSinks.get(i));
+        } else {
+          Log.e(TAG, "There is no enough remote sinks to show video tracks");
         }
       }
     }
@@ -1460,18 +1471,22 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
 
     @Override
-    public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {}
+    public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
+      events.onAddTrack(receiver, mediaStreams);
+      updateVideoTracks();
+    }
   }
+
 
   // Implementation detail: handle offer creation/signaling and answer setting,
   // as well as adding remote ICE candidates once the answer SDP is set.
   private class SDPObserver implements SdpObserver {
     @Override
     public void onCreateSuccess(final SessionDescription origSdp) {
-      if (localSdp != null) {
-        reportError("Multiple SDP create.");
-        return;
-      }
+      //if (localSdp != null) {
+      //  reportError("Multiple SDP create.");
+      //  return;
+      //}
       String sdpDescription = origSdp.description;
       if (preferIsac) {
         sdpDescription = preferCodec(sdpDescription, AUDIO_CODEC_ISAC, true);

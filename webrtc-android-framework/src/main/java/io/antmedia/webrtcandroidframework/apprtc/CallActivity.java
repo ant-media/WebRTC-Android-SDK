@@ -41,8 +41,10 @@ import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
+import org.webrtc.MediaStream;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon.ScalingType;
+import org.webrtc.RtpReceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
@@ -995,5 +997,10 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   @Override
   public void onPeerConnectionError(final String description) {
     reportError(description);
+  }
+
+  @Override
+  public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams) {
+
   }
 }
