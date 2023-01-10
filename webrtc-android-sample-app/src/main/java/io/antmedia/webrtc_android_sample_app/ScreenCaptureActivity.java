@@ -2,9 +2,11 @@ package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -30,6 +32,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
+    private String streamId;
+    private String tokenId = "tokenId";
+    private String serverUrl;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,11 +101,16 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
             }
         });
 
-        String streamId = "stream36";
-        String tokenId = "tokenId";
-        String url = "ws://192.168.1.28:5080/WebRTCAppEE/websocket";
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
 
-        webRTCClient.init(url, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
+        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
+
+        webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
     }
 
     @Override

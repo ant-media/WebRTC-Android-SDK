@@ -29,9 +29,8 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".MultitrackConferenceActivity"
-            android:exported="true"
-            android:configChanges="orientation|keyboard|screenSize"> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+        <activity android:name=".HomeActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -47,20 +46,29 @@
             android:exported="true"
             />
 
-        <!--
-        <activity android:name=".ConferenceActivity"/>
-        <activity android:name=".ScreenCaptureActivity"/>
-
-        <activity android:name=".MultiTrackPlayActivity"/>
-        <activity android:name=".MultitrackConferenceActivity"/>
-
-        <activity android:name=".MainActivity"/>
-
-        <activity android:name=".DataChannelActivity"/>
+        <activity android:name=".ConferenceActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+        <activity android:name=".ScreenCaptureActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+        <activity android:name=".MultiTrackPlayActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+        <activity android:name=".MainActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+        <activity android:name=".SettingsActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+        <activity android:name=".DataChannelActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
         <activity android:name=".chat.SettingsActivity"
-            android:parentActivityName=".DataChannelActivity">
-        </activity>
-        -->
+                  android:parentActivityName=".DataChannelActivity"
+                  android:exported="true"
+                  android:configChanges="orientation|keyboard|screenSize"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+
     </application>
 
 </manifest>
