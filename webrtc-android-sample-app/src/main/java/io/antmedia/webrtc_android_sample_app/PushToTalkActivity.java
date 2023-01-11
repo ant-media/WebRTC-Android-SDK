@@ -1,53 +1,45 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_CALL;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.os.Build;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.Toast;
-import android.widget.ToggleButton;
-
-import androidx.annotation.RequiresApi;
 
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.MultitrackConferenceManager;
 import io.antmedia.webrtcandroidframework.StreamInfo;
-import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
-public class MultitrackConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class PushToTalkActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     private MultitrackConferenceManager conferenceManager;
-    private Button audioButton;
-    private Button videoButton;
 
     final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
 
+    @SuppressLint("WrongViewCast")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,18 +52,32 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_conference);
+        this.getIntent().putExtra(EXTRA_VIDEO_CALL, false);
 
-        SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
+        setContentView(R.layout.activity_ptt);
+
         ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
 
-        playViewRenderers.add(findViewById(R.id.play_view_renderer1));
-        playViewRenderers.add(findViewById(R.id.play_view_renderer2));
-        playViewRenderers.add(findViewById(R.id.play_view_renderer3));
-        playViewRenderers.add(findViewById(R.id.play_view_renderer4));
+       // playViewRenderers.add(findViewById(R.id.play_view_renderer1));
 
-        audioButton = findViewById(R.id.control_audio_button);
-        videoButton = findViewById(R.id.control_video_button);
+        View talkButton = findViewById(R.id.talkButton);
+
+        talkButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if(motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    controlAudio(false);
+                    view.setBackgroundColor(Color.RED);
+                    return true;
+                }
+                if(motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    controlAudio(true);
+                    view.setBackgroundColor(Color.GREEN);
+                    return true;
+                }
+                return false;
+            }
+        });
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -84,7 +90,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
-        String streamId = "stream1";
+        String streamId = "stream"+new Random().nextInt(10000);
         String roomId = "room1";
         String serverUrl = "ws://192.168.1.25:5080/WebRTCAppEE/websocket";
         conferenceManager = new MultitrackConferenceManager(
@@ -93,7 +99,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 getIntent(),
                 serverUrl,
                 roomId,
-                publishViewRenderer,
+                null,
                 playViewRenderers,
                 streamId,
                 this
@@ -128,6 +134,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
 
+        runOnUiThread(() -> controlAudio(false));
     }
 
     @Override
@@ -162,8 +169,6 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
     @Override
     protected void onStop() {
         super.onStop();
-        audioButton.setText("Disable Audio");
-        videoButton.setText("Disable Video");
         stoppedStream = true;
     }
 
@@ -176,8 +181,6 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
     public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
-        audioButton.setText("Disable Audio");
-        videoButton.setText("Disable Video");
     }
 
     @Override
@@ -238,26 +241,14 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         Log.e(getClass().getSimpleName(), "SentEvent: " + strDataJson);
     }
 
-    public void controlAudio(View view) {
-        if (conferenceManager.isPublisherAudioOn()) {
-            conferenceManager.disableAudio();
-            audioButton.setText("Enable Audio");
-        } else {
+    public void controlAudio(boolean enable) {
+        if (enable) {
             conferenceManager.enableAudio();
-            audioButton.setText("Disable Audio");
-        }
-    }
-
-    public void controlVideo(View view) {
-        if (conferenceManager.isPublisherVideoOn()) {
-            conferenceManager.disableVideo();
-            videoButton.setText("Enable Video");
-
+            conferenceManager.updateAudioLevel(10);
         } else {
-            conferenceManager.enableVideo();
-            videoButton.setText("Disable Video");
+            conferenceManager.disableAudio();
+            conferenceManager.updateAudioLevel(0);
         }
     }
-
 }
 

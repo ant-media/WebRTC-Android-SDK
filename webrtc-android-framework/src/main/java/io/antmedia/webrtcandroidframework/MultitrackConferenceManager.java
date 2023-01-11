@@ -38,10 +38,12 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     private String streamId;
     private SurfaceViewRenderer publishViewRenderer;
     private final IWebRTCListener webRTCListener;
-    private final IDataChannelObserver dataChannelObserver;
+    private IDataChannelObserver dataChannelObserver;
     private WebSocketHandler wsHandler;
     private Handler handler = new Handler();
     private boolean joined = false;
+    private boolean audioOnly = false;
+
 
     private boolean openFrontCamera = false;
 
@@ -201,6 +203,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         if (!this.playOnlyMode) {
             publishWebRTCClient = new WebRTCClient(webRTCListener, context);
             publishWebRTCClient.setWsHandler(wsHandler);
+            if (dataChannelObserver != null) {
+                publishWebRTCClient.setDataChannelObserver(dataChannelObserver);
+            }
 
             String tokenId = "";
 
@@ -353,9 +358,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void disableAudio() {
         if (publishWebRTCClient != null) {
-            if (publishWebRTCClient.isStreaming()) {
-                publishWebRTCClient.disableAudio();
-            }
+            publishWebRTCClient.disableAudio();
 
             sendNotificationEvent("MIC_MUTED");
         } else {
@@ -411,6 +414,21 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         // call getRoomInfo in web socket handler
         if (wsHandler.isConnected()) {
             wsHandler.getRoomInfo(roomName, streamId);
+        }
+    }
+
+    public void updateAudioLevel(int level) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put("eventType", "UPDATE_AUDIO_LEVEL");
+            json.put("audioLevel", level);
+
+            final ByteBuffer buffer = ByteBuffer.wrap(json.toString().getBytes(StandardCharsets.UTF_8));
+            DataChannel.Buffer buf= new DataChannel.Buffer(buffer,false);
+            publishWebRTCClient.sendMessageViaDataChannel(buf);
+        } catch (JSONException e) {
+            Log.e(this.getClass().getSimpleName(), "Connect to conference room JSON error: " + e.getMessage());
         }
     }
 }

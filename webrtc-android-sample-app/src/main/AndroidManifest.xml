@@ -29,7 +29,7 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".HomeActivity"
+        <activity android:name=".PushToTalkActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
