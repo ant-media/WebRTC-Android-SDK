@@ -17,6 +17,7 @@ import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.Until;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -66,7 +67,7 @@ public class ScreenCaptureActivityTest {
 
         onView(withId(R.id.rbScreen)).perform(click());
 
-        UiObject2 button = device.findObject(By.text("Start now"));
+        UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 10000);
         assertNotNull(button);
         button.click();
 
