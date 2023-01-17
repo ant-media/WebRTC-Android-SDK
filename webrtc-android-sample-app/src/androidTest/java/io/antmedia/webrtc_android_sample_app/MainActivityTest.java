@@ -1,7 +1,9 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
@@ -15,6 +17,7 @@ import android.os.Bundle;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
@@ -38,6 +41,8 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
+import io.antmedia.webrtcandroidframework.IWebRTCClient;
+
 /**
  * Instrumented test, which will execute on an Android device.
  *
@@ -59,6 +64,42 @@ public class MainActivityTest {
         Context appContext = getInstrumentation().getTargetContext();
 
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
+    }
+
+    @Test
+    public void testPlayStream() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MainActivity.class);
+        intent.putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_PLAY);
+
+        ActivityScenario<MainActivity> scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<MainActivity>() {
+            @Override
+            public void perform(MainActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        //stream556677i4d is the stream id in github actions
+        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Playing")));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Playing")));
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        //Stop playing
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
     }
 
     /**

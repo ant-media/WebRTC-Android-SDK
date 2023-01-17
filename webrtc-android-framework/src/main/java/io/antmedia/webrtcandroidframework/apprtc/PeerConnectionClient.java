@@ -1473,6 +1473,9 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       if (!dataChannelEnabled)
         return;
 
+      if (dataChannel == null) {
+        dataChannel = dc;
+      }
       dc.registerObserver(dataChannelInternalObserver);
     }
 

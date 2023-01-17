@@ -17,6 +17,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -77,7 +78,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
-
+    public static final String WEBRTC_MODE = "WebRTC_MODE";
 
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
 
@@ -106,7 +107,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             }
         }
     };
-    private View broadcastingView;
+    private TextView broadcastingView;
     private EditText streamIdEditText;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -180,6 +181,10 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 return;
             }
         }
+        String mode = this.getIntent().getStringExtra(WEBRTC_MODE);
+        if (mode != null) {
+            webRTCMode = mode;
+        }
 
         if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             startStreamingButton.setText("Start Publishing");
@@ -243,6 +248,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Toast.makeText(this, "Play started", Toast.LENGTH_SHORT).show();
         webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
         webRTCClient.getStreamInfoList();
+
+        broadcastingView.setText(R.string.playing);
+        broadcastingView.setVisibility(View.VISIBLE);
         decrementIdle();
     }
 
@@ -267,6 +275,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.GONE);
         decrementIdle();
     }
 

@@ -49,6 +49,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/stream_id_edittext"
+        android:padding="5dp"
         android:background="?android:attr/colorBackground"
         android:layout_above="@id/start_streaming_button"/>
 

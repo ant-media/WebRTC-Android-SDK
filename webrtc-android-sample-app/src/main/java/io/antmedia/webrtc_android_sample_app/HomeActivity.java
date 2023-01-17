@@ -17,7 +17,10 @@ import androidx.core.app.ActivityCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtcandroidframework.IWebRTCClient;
+
 public class HomeActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
+
 
     private List<ActivityLink> activities;
     private GridView list;
@@ -55,6 +58,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         activities = new ArrayList<>();
         activities.add(new ActivityLink(new Intent(this, MainActivity.class),
                 "Default Camera"));
+        activities.add(new ActivityLink(new Intent(this, MainActivity.class).putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_PLAY),
+                "Simple Play"));
         activities.add(new ActivityLink(new Intent(this, MultiTrackPlayActivity.class),
                 "Multi Track Play"));
         activities.add(new ActivityLink(new Intent(this, DataChannelOnlyActivity.class),
