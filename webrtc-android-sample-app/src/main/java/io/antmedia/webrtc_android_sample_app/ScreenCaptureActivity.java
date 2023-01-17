@@ -22,6 +22,9 @@ import org.webrtc.SurfaceViewRenderer;
 import java.util.ArrayList;
 
 import androidx.annotation.RequiresApi;
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
+
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
@@ -36,6 +39,10 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private String tokenId = "tokenId";
     private String serverUrl;
     private EditText streamIdEditText;
+
+    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
+    private View broadcastingView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +64,8 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         streamIdEditText = findViewById(R.id.stream_id_edittext);
         streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
         //webRTCClient.setOpenFrontCamera(false);
+
+        broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.camera_view_renderer);
 
@@ -137,6 +146,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     public void startStreaming(View v) {
 
+        webRTCClient.setStreamId(streamIdEditText.getText().toString());
+        idlingResource.increment();
+
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop Streaming");
             webRTCClient.startStream();
@@ -146,6 +158,13 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
             webRTCClient.stopStream();
         }
     }
+
+    private void decrementIdle() {
+        if (!idlingResource.isIdleNow()) {
+            idlingResource.decrement();
+        }
+    }
+
 
     public void switchCamera(View v) {
         webRTCClient.switchCamera();
@@ -162,12 +181,16 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        broadcastingView.setVisibility(View.VISIBLE);
+        decrementIdle();
     }
 
     @Override
     public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
+        broadcastingView.setVisibility(View.GONE);
+        decrementIdle();
     }
 
     @Override
@@ -186,11 +209,14 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
         Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+        decrementIdle();
     }
 
     @Override
     public void onError(String description, String streamId) {
+        Log.w(getClass().getSimpleName(), "onError:" + description);
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
+        decrementIdle();
     }
 
     @Override
@@ -202,8 +228,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     protected void onDestroy() {
         super.onDestroy();
         webRTCClient.stopStream();
-
-        //webRTCClient.releaseResources();
     }
 
     @Override
@@ -215,6 +239,8 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+        broadcastingView.setVisibility(View.GONE);
+        decrementIdle();
     }
 
     @Override
@@ -240,6 +266,10 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
 
+    }
+
+    public IdlingResource getIdlingResource() {
+        return idlingResource;
     }
 
 

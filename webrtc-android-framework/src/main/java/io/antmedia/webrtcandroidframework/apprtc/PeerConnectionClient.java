@@ -545,7 +545,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       }
     }
 
-    final AudioDeviceModule adm = createJavaAudioDevice();
+    adm = createJavaAudioDevice();
 
     // Create peer connection factory.
     if (options != null) {
