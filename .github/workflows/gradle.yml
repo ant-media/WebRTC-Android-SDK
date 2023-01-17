@@ -38,7 +38,7 @@ jobs:
           script: echo "Generated AVD snapshot for caching."
 
       - uses: FedericoCarboni/setup-ffmpeg@v2
-          id: setup-ffmpeg
+        id: setup-ffmpeg
       - run: ffmpeg -re -i webrtc-android-sample-app/src/androidTest/resources/test_long.flv -codec copy rtmp://test.antmedia.io/LiveApp/stream556677i4d &
 
       - name: Run Tests and Generate Report
