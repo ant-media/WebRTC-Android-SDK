@@ -27,6 +27,10 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
+import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.UiDevice;
+import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.Until;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,6 +54,9 @@ import io.antmedia.webrtcandroidframework.IWebRTCClient;
  */
 @RunWith(AndroidJUnit4.class)
 public class MainActivityTest {
+
+    //match
+    private static final String START_NOW_TEXT = "Start now";
 
     private IdlingResource mIdlingResource;
 
@@ -141,5 +148,47 @@ public class MainActivityTest {
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
+    }
+
+    /**
+     * This test should be in another method but cannot get the full logcat so it's moved here
+     */
+    @Test
+    public void testPublishScreen() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ScreenCaptureActivity.class);
+        ActivityScenario<ScreenCaptureActivity> scenario = ActivityScenario.launch(intent);
+
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<ScreenCaptureActivity>() {
+
+            @Override
+            public void perform(ScreenCaptureActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        UiDevice device = UiDevice.getInstance(getInstrumentation());
+
+        onView(withId(R.id.rbScreen)).perform(click());
+
+        UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 10000);
+        assertNotNull(button);
+        button.click();
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Streaming")));
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        //2. stop stream and check that it's stopped
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 }
