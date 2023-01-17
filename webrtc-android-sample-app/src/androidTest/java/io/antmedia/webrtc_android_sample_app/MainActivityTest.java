@@ -32,6 +32,7 @@ import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,12 +65,15 @@ public class MainActivityTest {
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
 
+    @Before
+    public void before() {
+        //try before method to make @Rule run properly
+    }
 
     @Test
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = getInstrumentation().getTargetContext();
-
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
