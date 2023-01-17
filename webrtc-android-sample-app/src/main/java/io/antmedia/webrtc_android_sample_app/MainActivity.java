@@ -281,7 +281,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
-        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
+        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay for stream:" + streamId);
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
         decrementIdle();
         finish();
