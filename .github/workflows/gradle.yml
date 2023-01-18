@@ -1,6 +1,21 @@
 name: Android SDK CI
 on: [push, pull_request]
 
+#   Important Information:
+#   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
+#    Check this out -> https://developer.android.com/studio/run/emulator-acceleration#vm-linux
+#
+#   - If runner is not working, start the service.
+#     Go to /home/ubuntu/actions-runner and execute the following command
+#       sudo ./svc.sh start
+#     stop and status commands are also available
+#       sudo ./svc.sh status
+#       sudo ./svc.sh stop
+#     for more information -> https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service#customizing-the-self-hosted-runner-service
+#
+#   - For reactivecircus/android-emulator-runner@v2.27.0 , ANDROID_SDK_ROOT env should be set
+#     in later versions, ANDROID_HOME should be set
+
 jobs:
   unit-tests:
     runs-on: self-hosted
@@ -13,8 +28,6 @@ jobs:
           distribution: 'adopt'
       - name: Gradle Cache
         uses: gradle/gradle-build-action@v2
-      #for linux specify the ANDROID_HOME
-      - run: echo "ANDROID_HOME=/home/ubuntu/android/" >> $GITHUB_ENV
 
       - name: AVD Cache
         uses: actions/cache@v3
@@ -70,6 +83,7 @@ jobs:
             webrtc-android-framework/build/reports/androidTests/
             webrtc-android-sample-app/build/logcat.txt
             webrtc-android-sample-app/build/screen.png
+
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
         with:
