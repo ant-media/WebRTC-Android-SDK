@@ -1,8 +1,6 @@
 name: Android SDK CI
 on: [push, pull_request]
 
-env.ANDROID_HOME: '/home/ubuntu/android'
-
 jobs:
   unit-tests:
     runs-on: self-hosted
