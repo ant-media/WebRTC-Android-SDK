@@ -13,6 +13,8 @@ jobs:
           distribution: 'adopt'
       - name: Gradle Cache
         uses: gradle/gradle-build-action@v2
+      #for linux specify the ANDROID_HOME
+      - run: echo "ANDROID_HOME=/home/ubuntu/android/" >> $GITHUB_ENV
 
       - name: AVD Cache
         uses: actions/cache@v3
