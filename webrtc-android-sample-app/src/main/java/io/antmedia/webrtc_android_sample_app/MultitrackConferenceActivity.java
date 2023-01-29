@@ -13,10 +13,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.RequiresApi;
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
 
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -48,6 +51,9 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
     final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
 
+    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
+    private TextView broadcastingView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,6 +67,8 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
         setContentView(R.layout.activity_conference);
+
+        broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
         ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
@@ -128,12 +136,16 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
 
+        broadcastingView.setText("Publishing");
+        broadcastingView.setVisibility(View.VISIBLE);
+
     }
 
     @Override
     public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.GONE);
     }
 
     @Override
@@ -259,5 +271,8 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         }
     }
 
+    public IdlingResource getIdlingResource() {
+        return idlingResource;
+    }
 }
 
