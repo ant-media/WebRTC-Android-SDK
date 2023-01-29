@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 
-import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
-
 /*
  * This class manages the multitrack conference with 2 WebRTCClient;one for publishing the participants video,
  * the other one for playing the main track which includes all participants streams as subtrack.

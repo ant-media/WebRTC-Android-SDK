@@ -63,7 +63,6 @@ import javax.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
@@ -74,7 +73,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
  * and call view.
  */
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents, IDataChannelMessageSender, IDataChannelObserver {
-    private static final String TAG = "WebRTCClient69";
+    private static final String TAG = "WebRTCClient";
 
     public static final String SOURCE_FILE = "FILE";
     public static final String SOURCE_SCREEN = "SCREEN";
@@ -673,7 +672,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            publish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled, subscriberId, subscriberCode, streamName);
+            publish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled, subscriberId, subscriberCode, streamName, null);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
             play(roomConnectionParameters.roomId, roomConnectionParameters.token, null, subscriberId, subscriberCode, viewerInfo);
@@ -1046,11 +1045,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     @Override
     public void onPeerConnectionError(final String description) {
         reportError(description);
-    }
-
-    @Override
-    public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams) {
-
     }
 
     public boolean isStreaming() {

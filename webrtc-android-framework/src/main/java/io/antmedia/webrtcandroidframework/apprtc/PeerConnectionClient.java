@@ -136,7 +136,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   @Nullable
   private PeerConnectionFactory factory;
   @Nullable
-  private PeerConnection peerConnection;
+  public PeerConnection peerConnection;
   @Nullable
   private AudioSource audioSource;
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;

@@ -983,8 +983,4 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     reportError(description);
   }
 
-  @Override
-  public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams) {
-
-  }
 }
