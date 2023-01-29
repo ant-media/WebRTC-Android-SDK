@@ -10,35 +10,34 @@
 
 package org.webrtc;
 
-import android.graphics.ImageFormat;
+import static java.lang.Math.abs;
 
+import android.graphics.ImageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static java.lang.Math.abs;
-
 @SuppressWarnings("deprecation")
 public class CameraEnumerationAndroid {
   private final static String TAG = "CameraEnumerationAndroid";
 
   static final ArrayList<Size> COMMON_RESOLUTIONS = new ArrayList<Size>(Arrays.asList(
-          // 0, Unknown resolution
-          new Size(160, 120), // 1, QQVGA
-          new Size(240, 160), // 2, HQVGA
-          new Size(320, 240), // 3, QVGA
-          new Size(400, 240), // 4, WQVGA
-          new Size(480, 320), // 5, HVGA
-          new Size(640, 360), // 6, nHD
-          new Size(640, 480), // 7, VGA
-          new Size(768, 480), // 8, WVGA
-          new Size(854, 480), // 9, FWVGA
-          new Size(800, 600), // 10, SVGA
-          new Size(960, 540), // 11, qHD
-          new Size(960, 640), // 12, DVGA
-          new Size(1024, 576), // 13, WSVGA
+      // 0, Unknown resolution
+      new Size(160, 120), // 1, QQVGA
+      new Size(240, 160), // 2, HQVGA
+      new Size(320, 240), // 3, QVGA
+      new Size(400, 240), // 4, WQVGA
+      new Size(480, 320), // 5, HVGA
+      new Size(640, 360), // 6, nHD
+      new Size(640, 480), // 7, VGA
+      new Size(768, 480), // 8, WVGA
+      new Size(854, 480), // 9, FWVGA
+      new Size(800, 600), // 10, SVGA
+      new Size(960, 540), // 11, qHD
+      new Size(960, 640), // 12, DVGA
+      new Size(1024, 576), // 13, WSVGA
       new Size(1024, 600), // 14, WVSGA
       new Size(1280, 720), // 15, HD
       new Size(1280, 1024), // 16, SXGA
@@ -153,24 +152,24 @@ public class CameraEnumerationAndroid {
     }
   }
 
-  // Prefer a fps range with an upper bound close to |framerate|. Also prefer a fps range with a low
+  // Prefer a fps range with an upper bound close to `framerate`. Also prefer a fps range with a low
   // lower bound, to allow the framerate to fluctuate based on lightning conditions.
   public static CaptureFormat.FramerateRange getClosestSupportedFramerateRange(
       List<CaptureFormat.FramerateRange> supportedFramerates, final int requestedFps) {
     return Collections.min(
         supportedFramerates, new ClosestComparator<CaptureFormat.FramerateRange>() {
-          // Progressive penalty if the upper bound is further away than |MAX_FPS_DIFF_THRESHOLD|
+          // Progressive penalty if the upper bound is further away than `MAX_FPS_DIFF_THRESHOLD`
           // from requested.
           private static final int MAX_FPS_DIFF_THRESHOLD = 5000;
           private static final int MAX_FPS_LOW_DIFF_WEIGHT = 1;
           private static final int MAX_FPS_HIGH_DIFF_WEIGHT = 3;
 
-          // Progressive penalty if the lower bound is bigger than |MIN_FPS_THRESHOLD|.
+          // Progressive penalty if the lower bound is bigger than `MIN_FPS_THRESHOLD`.
           private static final int MIN_FPS_THRESHOLD = 8000;
           private static final int MIN_FPS_LOW_VALUE_WEIGHT = 1;
           private static final int MIN_FPS_HIGH_VALUE_WEIGHT = 4;
 
-          // Use one weight for small |value| less than |threshold|, and another weight above.
+          // Use one weight for small `value` less than `threshold`, and another weight above.
           private int progressivePenalty(int value, int threshold, int lowWeight, int highWeight) {
             return (value < threshold) ? value * lowWeight
                                        : threshold * lowWeight + (value - threshold) * highWeight;

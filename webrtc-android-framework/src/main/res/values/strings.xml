@@ -32,6 +32,7 @@
     <string name="missing_permissions_try_again">The application is missing permissions. It might not work correctly. Do you want to to try again?</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+
     <!-- Settings strings. -->
     <string name="pref_room_key">room_preference</string>
     <string name="pref_room_list_key">room_list_preference</string>
@@ -81,7 +82,7 @@
     <string name="pref_videocodec_key">videocodec_preference</string>
     <string name="pref_videocodec_title">Default video codec.</string>
     <string name="pref_videocodec_dlg">Select default video codec.</string>
-    <string name="pref_videocodec_default">H264 High</string>
+    <string name="pref_videocodec_default">VP8</string>
 
     <string name="pref_hwcodec_key">hwcodec_preference</string>
     <string name="pref_hwcodec_title">Video codec hardware acceleration.</string>
@@ -222,8 +223,4 @@
     <string name="pref_enable_rtceventlog_key">enable_rtceventlog_key</string>
     <string name="pref_enable_rtceventlog_title">Enable RtcEventLog.</string>
     <string name="pref_enable_rtceventlog_default">false</string>
-
-    <string name="pref_use_legacy_audio_device_key">use_legacy_audio_device_key</string>
-    <string name="pref_use_legacy_audio_device_title">Use legacy audio device.</string>
-    <string name="pref_use_legacy_audio_device_default">false</string>
 </resources>

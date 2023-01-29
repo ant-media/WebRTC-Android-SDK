@@ -50,7 +50,6 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
 
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId;
     String tokenId = "tokenId";
     String serverUrl;
 
@@ -63,6 +62,7 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     Handler reconnectionHandler = new Handler();
     private EditText messageInput;
     private TextView messages;
+    private EditText streamIdEditText;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -89,12 +89,13 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
                 return;
             }
         }
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_PORT);
-        streamId = sharedPreferences.getString(getString(R.string.streamId), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_STREAM_ID);
 
         String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
         serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
@@ -108,10 +109,12 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
         webRTCClient.setDataChannelOnly(true);
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
-        webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
     }
 
     public void startStreaming(View v) {
+        //update stream id if it is changed
+        webRTCClient.setStreamId(streamIdEditText.getText().toString());
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             webRTCClient.startStream();

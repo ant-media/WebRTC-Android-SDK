@@ -13,9 +13,7 @@ package org.webrtc;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-
 import androidx.annotation.Nullable;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -230,13 +228,13 @@ abstract class CameraCapturer implements CameraVideoCapturer {
     }
     if (!deviceNames.contains(this.cameraName)) {
       throw new IllegalArgumentException(
-              "Camera name " + this.cameraName + " does not match any known camera device.");
+          "Camera name " + this.cameraName + " does not match any known camera device.");
     }
   }
 
   @Override
   public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
-                         org.webrtc.CapturerObserver capturerObserver) {
+      org.webrtc.CapturerObserver capturerObserver) {
     this.applicationContext = applicationContext;
     this.capturerObserver = capturerObserver;
     this.surfaceHelper = surfaceTextureHelper;
@@ -382,7 +380,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   private void reportCameraSwitchError(
-          String error, @Nullable CameraSwitchHandler switchEventsHandler) {
+      String error, @Nullable CameraSwitchHandler switchEventsHandler) {
     Logging.e(TAG, error);
     if (switchEventsHandler != null) {
       switchEventsHandler.onCameraSwitchError(error);
@@ -390,13 +388,13 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   private void switchCameraInternal(
-          @Nullable final CameraSwitchHandler switchEventsHandler, final String selectedCameraName) {
+      @Nullable final CameraSwitchHandler switchEventsHandler, final String selectedCameraName) {
     Logging.d(TAG, "switchCamera internal");
     List<String> deviceNames = Arrays.asList(cameraEnumerator.getDeviceNames());
 
     if (!deviceNames.contains(selectedCameraName)) {
       reportCameraSwitchError("Attempted to switch to unknown camera device " + selectedCameraName,
-              switchEventsHandler);
+          switchEventsHandler);
       return;
     }
 

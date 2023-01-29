@@ -48,6 +48,6 @@ public class LegacyAudioDeviceModule implements AudioDeviceModule {
 
   @Override
   public void setMediaProjection(MediaProjection mediaProjection) {
-  }
 
+  }
 }

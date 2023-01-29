@@ -29,5 +29,5 @@ public @interface CalledByNativeUnchecked {
   /*
    *  If present, tells which inner class the method belongs to.
    */
-  String value() default "";
+  public String value() default "";
 }

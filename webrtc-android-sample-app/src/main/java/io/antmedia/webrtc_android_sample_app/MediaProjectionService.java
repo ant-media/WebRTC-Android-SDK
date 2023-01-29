@@ -101,7 +101,12 @@ public class MediaProjectionService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.M)
     private Notification.Action createStopAction() {
         Intent stopIntent = createStopIntent();
-        PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent stopPendingIntent;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            stopPendingIntent = PendingIntent.getForegroundService(this, 0, stopIntent, PendingIntent.FLAG_MUTABLE);
+        } else {
+            stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT);
+        }
         Icon stopIcon = Icon.createWithResource(this, io.antmedia.webrtcandroidframework.R.drawable.abc_vector_test);
         String stopString = "stop";
         Notification.Action.Builder actionBuilder = new Notification.Action.Builder(stopIcon, stopString, stopPendingIntent);

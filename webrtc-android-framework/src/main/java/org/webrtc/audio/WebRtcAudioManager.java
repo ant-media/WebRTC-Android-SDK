@@ -17,9 +17,8 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.os.Build;
-
-import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
+import org.webrtc.CalledByNative;
 
 /**
  * This class contains static functions to query sample rate and input/output audio buffer sizes.
@@ -65,7 +64,7 @@ class WebRtcAudioManager {
     // as well. The NDK doc states that: "As of API level 21, lower latency
     // audio input is supported on select devices. To take advantage of this
     // feature, first confirm that lower latency output is available".
-    return Build.VERSION.SDK_INT >= 21 && isLowLatencyOutputSupported(context);
+    return isLowLatencyOutputSupported(context);
   }
 
   /**
@@ -86,18 +85,12 @@ class WebRtcAudioManager {
   }
 
   private static int getSampleRateForApiLevel(AudioManager audioManager) {
-    if (Build.VERSION.SDK_INT < 17) {
-      return DEFAULT_SAMPLE_RATE_HZ;
-    }
     String sampleRateString = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
     return (sampleRateString == null) ? DEFAULT_SAMPLE_RATE_HZ : Integer.parseInt(sampleRateString);
   }
 
   // Returns the native output buffer size for low-latency output streams.
   private static int getLowLatencyFramesPerBuffer(AudioManager audioManager) {
-    if (Build.VERSION.SDK_INT < 17) {
-      return DEFAULT_FRAME_PER_BUFFER;
-    }
     String framesPerBuffer =
         audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER);
     return framesPerBuffer == null ? DEFAULT_FRAME_PER_BUFFER : Integer.parseInt(framesPerBuffer);

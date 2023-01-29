@@ -26,7 +26,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.DataChannel;
@@ -36,6 +35,7 @@ import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.ScreenCapturerAndroid;
@@ -60,7 +60,6 @@ import javax.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
@@ -71,7 +70,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPA
  * and call view.
  */
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, PeerConnectionClient.PeerConnectionEvents, IDataChannelMessageSender, IDataChannelObserver {
-    private static final String TAG = "WebRTCClient69";
+    private static final String TAG = "WebRTCClient";
 
     public static final String SOURCE_FILE = "FILE";
     public static final String SOURCE_SCREEN = "SCREEN";
@@ -172,6 +171,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void setRemoteRendererList(List<SurfaceViewRenderer> rendererList) {
         this.remoteRendererList = rendererList;
+    }
+
+    public void setStreamId(String streamId) {
+        this.streamId = streamId;
+        if (roomConnectionParameters != null) {
+            roomConnectionParameters.setRoomId(streamId);
+        }
+        if (peerConnectionParameters != null) {
+            if (peerConnectionParameters.getDataChannelParameters() != null) {
+                peerConnectionParameters.getDataChannelParameters().setLabel(streamId);
+            }
+        }
     }
 
     @Override
@@ -435,11 +446,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     public void startStream() {
+        Log.i(getClass().getSimpleName(), "Starting stream");
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
         if (wsHandler == null) {
+            Log.i(TAG, "WebsocketHandler is null and creating a new instance");
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
         } else if (!wsHandler.isConnected()) {
+            Log.i(TAG, "WebSocketHandler already exists but not connected. Disconnecting and creating new one");
             wsHandler.disconnect(true);
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(roomConnectionParameters.roomUrl);
@@ -588,6 +602,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void stopStream() {
+        Log.i(getClass().getSimpleName(), "Stopping stream");
         disconnect();
         if (logToast != null) {
             logToast.cancel();
@@ -705,6 +720,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     private void release() {
+        Log.i(getClass().getSimpleName(), "Releasing resources");
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);
@@ -950,7 +966,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                     wsHandler.sendConfiguration(roomConnectionParameters.roomId, sdp, "answer");
                 }
             }
-            if (peerConnectionParameters.videoMaxBitrate > 0) {
+            //check peerConnectionClient null because in very slow devices(emulator), it may cause crash
+            if (peerConnectionParameters.videoMaxBitrate > 0 && peerConnectionClient != null) {
                 Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);
                 peerConnectionClient.setVideoMaxBitrate(peerConnectionParameters.videoMaxBitrate);
             }
@@ -1010,12 +1027,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void onPeerConnectionClosed() {}
 
     @Override
-    public void onPeerConnectionStatsReady(StatsReport[] reports) {
+    public void onPeerConnectionStatsReady(RTCStatsReport report) {
         this.handler.post(() -> {
             if (!isError && iceConnected) {
                 //hudFragment.updateEncoderStatistics(reports);
                 Log.i(TAG, "onPeerConnectionStatsReady");
-                Log.i(TAG, reports.toString());
+                Log.i(TAG, report.toString());
             }
         });
     }
@@ -1323,5 +1340,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void setPeerConnectionParametersForTest(@Nullable PeerConnectionClient.PeerConnectionParameters peerConnectionParameters) {
         this.peerConnectionParameters = peerConnectionParameters;
+    }
+
+    public String getStreamId() {
+        return streamId;
     }
 }

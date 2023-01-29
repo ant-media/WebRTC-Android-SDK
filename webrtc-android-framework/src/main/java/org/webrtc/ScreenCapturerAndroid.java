@@ -10,7 +10,6 @@
 
 package org.webrtc;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -19,7 +18,6 @@ import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.view.Surface;
-
 import androidx.annotation.Nullable;
 
 /**
@@ -32,10 +30,7 @@ import androidx.annotation.Nullable;
  * place on the HandlerThread of the given {@code SurfaceTextureHelper}. When done with each frame,
  * the native code returns the buffer to the  {@code SurfaceTextureHelper} to be used for new
  * frames. At any time, at most one frame is being processed.
- *
- * @note This class is only supported on Android Lollipop and above.
  */
-@TargetApi(21)
 public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private static final int DISPLAY_FLAGS =
       DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
@@ -51,11 +46,6 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
   @Nullable private CapturerObserver capturerObserver;
   private long numCapturedFrames;
-
-  @Nullable
-  public MediaProjection getMediaProjection() {
-    return mediaProjection;
-  }
 
   @Nullable public MediaProjection mediaProjection;
   @Nullable public MediaProjectionManager mediaProjectionManager;
@@ -88,6 +78,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     }
   }
 
+  @Nullable
+  public MediaProjection getMediaProjection() {
+    return mediaProjection;
+  }
+
   @Override
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
@@ -106,7 +101,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     this.surfaceTextureHelper = surfaceTextureHelper;
 
     mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
-              Context.MEDIA_PROJECTION_SERVICE);
+        Context.MEDIA_PROJECTION_SERVICE);
   }
 
   public void setMediaProjection(@Nullable MediaProjection mediaProjection) {

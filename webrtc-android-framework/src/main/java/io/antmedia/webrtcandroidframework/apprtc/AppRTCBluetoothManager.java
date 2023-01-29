@@ -25,15 +25,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Process;
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
-import org.webrtc.ThreadUtils;
-
 import java.util.List;
 import java.util.Set;
-
 import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
+import org.webrtc.ThreadUtils;
 
 /**
  * AppRTCProximitySensor manages functions related to Bluetoth devices in the
@@ -368,7 +364,7 @@ public class AppRTCBluetoothManager {
    * Use the BluetoothHeadset proxy object (controls the Bluetooth Headset
    * Service via IPC) to update the list of connected devices for the HEADSET
    * profile. The internal state will change to HEADSET_UNAVAILABLE or to
-   * HEADSET_AVAILABLE and |bluetoothDevice| will be mapped to the connected
+   * HEADSET_AVAILABLE and `bluetoothDevice` will be mapped to the connected
    * device if available.
    */
   public void updateDevice() {

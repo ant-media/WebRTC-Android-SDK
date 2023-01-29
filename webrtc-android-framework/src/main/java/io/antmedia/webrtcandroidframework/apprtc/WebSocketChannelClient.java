@@ -10,25 +10,20 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-
 import android.os.Handler;
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
-
-import de.tavendo.autobahn.WebSocket.WebSocketConnectionObserver;
-import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection;
 import io.antmedia.webrtcandroidframework.apprtc.util.AsyncHttpURLConnection.AsyncHttpEvents;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * WebSocket client implementation.
@@ -222,16 +217,15 @@ public class WebSocketChannelClient {
     String postUrl = postServerUrl + "/" + roomID + "/" + clientID;
     Log.d(TAG, "WS " + method + " : " + postUrl + " : " + message);
     AsyncHttpURLConnection httpConnection =
-            new AsyncHttpURLConnection(method, postUrl, message, new AsyncHttpEvents() {
-              @Override
-              public void onHttpError(String errorMessage) {
-                reportError("WS " + method + " error: " + errorMessage);
-              }
+        new AsyncHttpURLConnection(method, postUrl, message, new AsyncHttpEvents() {
+          @Override
+          public void onHttpError(String errorMessage) {
+            reportError("WS " + method + " error: " + errorMessage);
+          }
 
-              @Override
-              public void onHttpComplete(String response) {
-              }
-            });
+          @Override
+          public void onHttpComplete(String response) {}
+        });
     httpConnection.send();
   }
 

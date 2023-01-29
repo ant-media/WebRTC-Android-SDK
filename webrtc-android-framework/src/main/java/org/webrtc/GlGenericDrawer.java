@@ -12,10 +12,11 @@ package org.webrtc;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-
 import androidx.annotation.Nullable;
-
 import java.nio.FloatBuffer;
+import org.webrtc.GlShader;
+import org.webrtc.GlUtil;
+import org.webrtc.RendererCommon;
 
 /**
  * Helper class to implement an instance of RendererCommon.GlDrawer that can accept multiple input
@@ -35,13 +36,13 @@ class GlGenericDrawer implements RendererCommon.GlDrawer {
    * The different shader types representing different input sources. YUV here represents three
    * separate Y, U, V textures.
    */
-  public enum ShaderType {OES, RGB, YUV}
+  public static enum ShaderType { OES, RGB, YUV }
 
   /**
    * The shader callbacks is used to customize behavior for a GlDrawer. It provides a hook to set
    * uniform variables in the shader before a frame is drawn.
    */
-  public interface ShaderCallbacks {
+  public static interface ShaderCallbacks {
     /**
      * This callback is called when a new shader has been compiled and created. It will be called
      * for the first frame as well as when the shader type is changed. This callback can be used to
@@ -54,7 +55,7 @@ class GlGenericDrawer implements RendererCommon.GlDrawer {
      * the shader that needs to happen every frame.
      */
     void onPrepareShader(GlShader shader, float[] texMatrix, int frameWidth, int frameHeight,
-                         int viewportWidth, int viewportHeight);
+        int viewportWidth, int viewportHeight);
   }
 
   private static final String INPUT_VERTEX_COORDINATE_NAME = "in_pos";
@@ -218,11 +219,14 @@ class GlGenericDrawer implements RendererCommon.GlDrawer {
       shader = currentShader;
     } else {
       // Allocate new shader.
-      currentShaderType = shaderType;
+      currentShaderType = null;
       if (currentShader != null) {
         currentShader.release();
+        currentShader = null;
       }
+
       shader = createShader(shaderType);
+      currentShaderType = shaderType;
       currentShader = shader;
 
       shader.useProgram();

@@ -11,16 +11,15 @@
 package org.webrtc.audio;
 
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.media.projection.MediaProjection;
 import android.os.Build;
-
 import androidx.annotation.RequiresApi;
-
+import java.util.concurrent.ScheduledExecutorService;
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
-import android.media.AudioRecord;
-import android.media.projection.MediaProjection;
 
 /**
  * AudioDeviceModule implemented using android.media.AudioRecord as input and
@@ -35,6 +34,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
 
   public static class Builder {
     private final Context context;
+    private ScheduledExecutorService scheduler;
     private final AudioManager audioManager;
     private int inputSampleRate;
     private int outputSampleRate;
@@ -49,12 +49,22 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     private boolean useHardwareNoiseSuppressor = isBuiltInNoiseSuppressorSupported();
     private boolean useStereoInput;
     private boolean useStereoOutput;
+    private AudioAttributes audioAttributes;
+    private boolean useLowLatency;
+    private boolean enableVolumeLogger;
 
     private Builder(Context context) {
       this.context = context;
       this.audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
       this.inputSampleRate = WebRtcAudioManager.getSampleRate(audioManager);
       this.outputSampleRate = WebRtcAudioManager.getSampleRate(audioManager);
+      this.useLowLatency = false;
+      this.enableVolumeLogger = true;
+    }
+
+    public Builder setScheduler(ScheduledExecutorService scheduler) {
+      this.scheduler = scheduler;
+      return this;
     }
 
     /**
@@ -191,10 +201,32 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     }
 
     /**
+     * Control if the low-latency mode should be used. The default is disabled.
+     */
+    public Builder setUseLowLatency(boolean useLowLatency) {
+      this.useLowLatency = useLowLatency;
+      return this;
+    }
+
+    /**
+     * Set custom {@link AudioAttributes} to use.
+     */
+    public Builder setAudioAttributes(AudioAttributes audioAttributes) {
+      this.audioAttributes = audioAttributes;
+      return this;
+    }
+
+    /** Disables the volume logger on the audio output track. */
+    public Builder setEnableVolumeLogger(boolean enableVolumeLogger) {
+      this.enableVolumeLogger = enableVolumeLogger;
+      return this;
+    }
+
+    /**
      * Construct an AudioDeviceModule based on the supplied arguments. The caller takes ownership
      * and is responsible for calling release().
      */
-    public AudioDeviceModule createAudioDeviceModule() {
+    public JavaAudioDeviceModule createAudioDeviceModule() {
       Logging.d(TAG, "createAudioDeviceModule");
       if (useHardwareNoiseSuppressor) {
         Logging.d(TAG, "HW NS will be used.");
@@ -212,11 +244,22 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         }
         Logging.d(TAG, "HW AEC will not be used.");
       }
-      final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, audioManager, audioSource,
-          audioFormat, audioRecordErrorCallback, audioRecordStateCallback, samplesReadyCallback,
-          useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
-      final WebRtcAudioTrack audioOutput = new WebRtcAudioTrack(
-          context, audioManager, audioTrackErrorCallback, audioTrackStateCallback);
+      // Low-latency mode was introduced in API version 26, see
+      // https://developer.android.com/reference/android/media/AudioTrack#PERFORMANCE_MODE_LOW_LATENCY
+      final int MIN_LOW_LATENCY_SDK_VERSION = 26;
+      if (useLowLatency && Build.VERSION.SDK_INT >= MIN_LOW_LATENCY_SDK_VERSION) {
+        Logging.d(TAG, "Low latency mode will be used.");
+      }
+      ScheduledExecutorService executor = this.scheduler;
+      if (executor == null) {
+        executor = WebRtcAudioRecord.newDefaultScheduler();
+      }
+      final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, executor, audioManager,
+          audioSource, audioFormat, audioRecordErrorCallback, audioRecordStateCallback,
+          samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
+      final WebRtcAudioTrack audioOutput =
+          new WebRtcAudioTrack(context, audioManager, audioAttributes, audioTrackErrorCallback,
+              audioTrackStateCallback, useLowLatency, enableVolumeLogger);
       return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput,
           inputSampleRate, outputSampleRate, useStereoInput, useStereoOutput);
     }
@@ -229,20 +272,15 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     AUDIO_RECORD_START_STATE_MISMATCH,
   }
 
-  public interface AudioRecordErrorCallback {
+  public static interface AudioRecordErrorCallback {
     void onWebRtcAudioRecordInitError(String errorMessage);
-
     void onWebRtcAudioRecordStartError(AudioRecordStartErrorCode errorCode, String errorMessage);
-
     void onWebRtcAudioRecordError(String errorMessage);
   }
 
-  /**
-   * Called when audio recording starts and stops.
-   */
-  public interface AudioRecordStateCallback {
+  /** Called when audio recording starts and stops. */
+  public static interface AudioRecordStateCallback {
     void onWebRtcAudioRecordStart();
-
     void onWebRtcAudioRecordStop();
   }
 
@@ -283,10 +321,8 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     }
   }
 
-  /**
-   * Called when new audio samples are ready. This should only be set for debug purposes
-   */
-  public interface SamplesReadyCallback {
+  /** Called when new audio samples are ready. This should only be set for debug purposes */
+  public static interface SamplesReadyCallback {
     void onWebRtcAudioRecordSamplesReady(AudioSamples samples);
   }
 
@@ -297,20 +333,15 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     AUDIO_TRACK_START_STATE_MISMATCH,
   }
 
-  public interface AudioTrackErrorCallback {
+  public static interface AudioTrackErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
-
     void onWebRtcAudioTrackStartError(AudioTrackStartErrorCode errorCode, String errorMessage);
-
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
-  /**
-   * Called when audio playout starts and stops.
-   */
-  public interface AudioTrackStateCallback {
+  /** Called when audio playout starts and stops. */
+  public static interface AudioTrackStateCallback {
     void onWebRtcAudioTrackStart();
-
     void onWebRtcAudioTrackStop();
   }
 
