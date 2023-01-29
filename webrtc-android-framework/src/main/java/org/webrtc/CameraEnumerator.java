@@ -15,14 +15,11 @@ import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 import java.util.List;
 
 public interface CameraEnumerator {
-    String[] getDeviceNames();
+  public String[] getDeviceNames();
+  public boolean isFrontFacing(String deviceName);
+  public boolean isBackFacing(String deviceName);
+  public List<CaptureFormat> getSupportedFormats(String deviceName);
 
-    boolean isFrontFacing(String deviceName);
-
-    boolean isBackFacing(String deviceName);
-
-    List<CaptureFormat> getSupportedFormats(String deviceName);
-
-    CameraVideoCapturer createCapturer(
-            String deviceName, CameraVideoCapturer.CameraEventsHandler eventsHandler);
+  public CameraVideoCapturer createCapturer(
+      String deviceName, CameraVideoCapturer.CameraEventsHandler eventsHandler);
 }

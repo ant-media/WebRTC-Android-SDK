@@ -11,20 +11,17 @@
 package io.antmedia.webrtcandroidframework.apprtc;
 
 import android.util.Log;
-
 import androidx.annotation.Nullable;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.webrtc.IceCandidate;
-import org.webrtc.SessionDescription;
-
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.webrtc.IceCandidate;
+import org.webrtc.SessionDescription;
 
 /**
  * Implementation of AppRTCClient that uses direct TCP connection as the signaling channel.
@@ -323,7 +320,7 @@ public class DirectRTCClient implements AppRTCClient, TCPChannelClient.TCPChanne
     });
   }
 
-  // Put a |key|->|value| mapping in |json|.
+  // Put a `key`->`value` mapping in `json`.
   private static void jsonPut(JSONObject json, String key, Object value) {
     try {
       json.put(key, value);

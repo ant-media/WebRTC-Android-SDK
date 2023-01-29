@@ -10,7 +10,6 @@
 
 package io.antmedia.webrtcandroidframework.apprtc;
 
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -38,14 +37,11 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import androidx.annotation.Nullable;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-
 import java.util.ArrayList;
 import java.util.Random;
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import io.antmedia.webrtcandroidframework.R;
 

@@ -10,7 +10,6 @@
 
 package org.webrtc.voiceengine;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
@@ -18,14 +17,12 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Process;
-
 import androidx.annotation.Nullable;
-
+import java.lang.Thread;
+import java.nio.ByteBuffer;
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
-
-import java.nio.ByteBuffer;
 
 public class WebRtcAudioTrack {
   private static final boolean DEBUG = false;
@@ -48,7 +45,7 @@ public class WebRtcAudioTrack {
 
   // By default, WebRTC creates audio tracks with a usage attribute
   // corresponding to voice communications, such as telephony or VoIP.
-  private static final int DEFAULT_USAGE = getDefaultUsageAttribute();
+  private static final int DEFAULT_USAGE = AudioAttributes.USAGE_VOICE_COMMUNICATION;
   private static int usageAttribute = DEFAULT_USAGE;
 
   // This method overrides the default usage attribute and allows the user
@@ -62,15 +59,6 @@ public class WebRtcAudioTrack {
     usageAttribute = usage;
   }
 
-  private static int getDefaultUsageAttribute() {
-    if (Build.VERSION.SDK_INT >= 21) {
-      return AudioAttributes.USAGE_VOICE_COMMUNICATION;
-    } else {
-      // Not used on SDKs lower than 21.
-      return 0;
-    }
-  }
-
   private final long nativeAudioTrack;
   private final AudioManager audioManager;
   private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
@@ -80,7 +68,7 @@ public class WebRtcAudioTrack {
   private @Nullable AudioTrack audioTrack;
   private @Nullable AudioTrackThread audioThread;
 
-  // Samples to be played are replaced by zeros if |speakerMute| is set to true.
+  // Samples to be played are replaced by zeros if `speakerMute` is set to true.
   // Can be used to ensure that the speaker is fully muted.
   private static volatile boolean speakerMute;
   private byte[] emptyBytes;
@@ -92,27 +80,21 @@ public class WebRtcAudioTrack {
   }
 
   @Deprecated
-  public interface WebRtcAudioTrackErrorCallback {
+  public static interface WebRtcAudioTrackErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
-
     void onWebRtcAudioTrackStartError(String errorMessage);
-
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
   // TODO(henrika): upgrade all clients to use this new interface instead.
-  public interface ErrorCallback {
+  public static interface ErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
-
     void onWebRtcAudioTrackStartError(AudioTrackStartErrorCode errorCode, String errorMessage);
-
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
-  private static @Nullable
-  WebRtcAudioTrackErrorCallback errorCallbackOld;
-  private static @Nullable
-  ErrorCallback errorCallback;
+  private static @Nullable WebRtcAudioTrackErrorCallback errorCallbackOld;
+  private static @Nullable ErrorCallback errorCallback;
 
   @Deprecated
   public static void setErrorCallback(WebRtcAudioTrackErrorCallback errorCallback) {
@@ -162,7 +144,7 @@ public class WebRtcAudioTrack {
           byteBuffer.put(emptyBytes);
           byteBuffer.position(0);
         }
-        int bytesWritten = writeBytes(audioTrack, byteBuffer, sizeInBytes);
+        int bytesWritten = audioTrack.write(byteBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
         if (bytesWritten != sizeInBytes) {
           Logging.e(TAG, "AudioTrack.write played invalid number of bytes: " + bytesWritten);
           // If a write() returns a negative value, an error has occurred.
@@ -196,14 +178,6 @@ public class WebRtcAudioTrack {
       }
     }
 
-    private int writeBytes(AudioTrack audioTrack, ByteBuffer byteBuffer, int sizeInBytes) {
-      if (Build.VERSION.SDK_INT >= 21) {
-        return audioTrack.write(byteBuffer, sizeInBytes, AudioTrack.WRITE_BLOCKING);
-      } else {
-        return audioTrack.write(byteBuffer.array(), byteBuffer.arrayOffset(), sizeInBytes);
-      }
-    }
-
     // Stops the inner thread loop which results in calling AudioTrack.stop().
     // Does not block the calling thread.
     public void stopThread() {
@@ -217,7 +191,7 @@ public class WebRtcAudioTrack {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioTrack = nativeAudioTrack;
     audioManager =
-            (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }
@@ -226,8 +200,8 @@ public class WebRtcAudioTrack {
   private int initPlayout(int sampleRate, int channels, double bufferSizeFactor) {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG,
-            "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels
-                    + ", bufferSizeFactor=" + bufferSizeFactor + ")");
+        "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels
+            + ", bufferSizeFactor=" + bufferSizeFactor + ")");
     final int bytesPerFrame = channels * (BITS_PER_SAMPLE / 8);
     byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * (sampleRate / BUFFERS_PER_SECOND));
     Logging.d(TAG, "byteBuffer.capacity: " + byteBuffer.capacity());
@@ -242,14 +216,14 @@ public class WebRtcAudioTrack {
     // Note that this size doesn't guarantee a smooth playback under load.
     final int channelConfig = channelCountToConfiguration(channels);
     final int minBufferSizeInBytes = (int) (AudioTrack.getMinBufferSize(sampleRate, channelConfig,
-            AudioFormat.ENCODING_PCM_16BIT)
-            * bufferSizeFactor);
+                                                AudioFormat.ENCODING_PCM_16BIT)
+        * bufferSizeFactor);
     Logging.d(TAG, "minBufferSizeInBytes: " + minBufferSizeInBytes);
     // For the streaming mode, data must be written to the audio sink in
     // chunks of size (given by byteBuffer.capacity()) less than or equal
-    // to the total buffer size |minBufferSizeInBytes|. But, we have seen
+    // to the total buffer size `minBufferSizeInBytes`. But, we have seen
     // reports of "getMinBufferSize(): error querying hardware". Hence, it
-    // can happen that |minBufferSizeInBytes| contains an invalid value.
+    // can happen that `minBufferSizeInBytes` contains an invalid value.
     if (minBufferSizeInBytes < byteBuffer.capacity()) {
       reportWebRtcAudioTrackInitError("AudioTrack.getMinBufferSize returns an invalid value.");
       return -1;
@@ -265,19 +239,12 @@ public class WebRtcAudioTrack {
       // Create an AudioTrack object and initialize its associated audio buffer.
       // The size of this buffer determines how long an AudioTrack can play
       // before running out of data.
-      if (Build.VERSION.SDK_INT >= 21) {
-        // If we are on API level 21 or higher, it is possible to use a special AudioTrack
-        // constructor that uses AudioAttributes and AudioFormat as input. It allows us to
-        // supersede the notion of stream types for defining the behavior of audio playback,
-        // and to allow certain platforms or routing policies to use this information for more
-        // refined volume or routing decisions.
-        audioTrack = createAudioTrackOnLollipopOrHigher(
-            sampleRate, channelConfig, minBufferSizeInBytes);
-      } else {
-        // Use default constructor for API levels below 21.
-        audioTrack =
-            createAudioTrackOnLowerThanLollipop(sampleRate, channelConfig, minBufferSizeInBytes);
-      }
+      // As we are on API level 21 or higher, it is possible to use a special AudioTrack
+      // constructor that uses AudioAttributes and AudioFormat as input. It allows us to
+      // supersede the notion of stream types for defining the behavior of audio playback,
+      // and to allow certain platforms or routing policies to use this information for more
+      // refined volume or routing decisions.
+      audioTrack = createAudioTrack(sampleRate, channelConfig, minBufferSizeInBytes);
     } catch (IllegalArgumentException e) {
       reportWebRtcAudioTrackInitError(e.getMessage());
       releaseAudioResources();
@@ -361,18 +328,12 @@ public class WebRtcAudioTrack {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "setStreamVolume(" + volume + ")");
     assertTrue(audioManager != null);
-    if (isVolumeFixed()) {
+    if (audioManager.isVolumeFixed()) {
       Logging.e(TAG, "The device implements a fixed volume policy.");
       return false;
     }
     audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, volume, 0);
     return true;
-  }
-
-  private boolean isVolumeFixed() {
-    if (Build.VERSION.SDK_INT < 21)
-      return false;
-    return audioManager.isVolumeFixed();
   }
 
   /** Get current volume level for a phone call audio stream. */
@@ -395,10 +356,9 @@ public class WebRtcAudioTrack {
   // Creates and AudioTrack instance using AudioAttributes and AudioFormat as input.
   // It allows certain platforms or routing policies to use this information for more
   // refined volume or routing decisions.
-  @TargetApi(21)
-  private static AudioTrack createAudioTrackOnLollipopOrHigher(
+  private static AudioTrack createAudioTrack(
       int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
-    Logging.d(TAG, "createAudioTrackOnLollipopOrHigher");
+    Logging.d(TAG, "createAudioTrack");
     // TODO(henrika): use setPerformanceMode(int) with PERFORMANCE_MODE_LOW_LATENCY to control
     // performance when Android O is supported. Add some logging in the mean time.
     final int nativeOutputSampleRate =
@@ -423,14 +383,7 @@ public class WebRtcAudioTrack {
           .build(),
         bufferSizeInBytes,
         AudioTrack.MODE_STREAM,
-            AudioManager.AUDIO_SESSION_ID_GENERATE);
-  }
-
-  @SuppressWarnings("deprecation") // Deprecated in API level 25.
-  private static AudioTrack createAudioTrackOnLowerThanLollipop(
-          int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
-    return new AudioTrack(AudioManager.STREAM_VOICE_CALL, sampleRateInHz, channelConfig,
-            AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes, AudioTrack.MODE_STREAM);
+        AudioManager.AUDIO_SESSION_ID_GENERATE);
   }
 
   private void logBufferSizeInFrames() {
@@ -451,9 +404,9 @@ public class WebRtcAudioTrack {
   private void logBufferCapacityInFrames() {
     if (Build.VERSION.SDK_INT >= 24) {
       Logging.d(TAG,
-              "AudioTrack: "
-                      // Maximum size of the AudioTrack buffer in frames.
-                      + "buffer capacity in frames: " + audioTrack.getBufferCapacityInFrames());
+          "AudioTrack: "
+              // Maximum size of the AudioTrack buffer in frames.
+              + "buffer capacity in frames: " + audioTrack.getBufferCapacityInFrames());
     }
   }
 
@@ -489,7 +442,7 @@ public class WebRtcAudioTrack {
 
   private native void nativeGetPlayoutData(int bytes, long nativeAudioRecord);
 
-  // Sets all samples to be played out to zero if |mute| is true, i.e.,
+  // Sets all samples to be played out to zero if `mute` is true, i.e.,
   // ensures that the speaker is muted.
   public static void setSpeakerMute(boolean mute) {
     Logging.w(TAG, "setSpeakerMute(" + mute + ")");

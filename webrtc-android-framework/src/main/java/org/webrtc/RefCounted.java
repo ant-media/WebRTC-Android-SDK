@@ -17,16 +17,12 @@ package org.webrtc;
  * object by default - calling release is not necessary unless retain is called.
  */
 public interface RefCounted {
-  /**
-   * Increases ref count by one.
-   */
-  @CalledByNative
-  void retain();
+  /** Increases ref count by one. */
+  @CalledByNative void retain();
 
   /**
    * Decreases ref count by one. When the ref count reaches zero, resources related to the object
    * will be freed.
    */
-  @CalledByNative
-  void release();
+  @CalledByNative void release();
 }

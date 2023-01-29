@@ -10,7 +10,6 @@
 
 package org.webrtc;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -23,16 +22,12 @@ import android.hardware.camera2.CaptureRequest;
 import android.os.Handler;
 import android.util.Range;
 import android.view.Surface;
-
 import androidx.annotation.Nullable;
-
-import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
-@TargetApi(21)
 class Camera2Session implements CameraSession {
   private static final String TAG = "Camera2Session";
 
@@ -43,7 +38,7 @@ class Camera2Session implements CameraSession {
   private static final Histogram camera2ResolutionHistogram = Histogram.createEnumeration(
       "WebRTC.Android.Camera2.Resolution", CameraEnumerationAndroid.COMMON_RESOLUTIONS.size());
 
-  private enum SessionState {RUNNING, STOPPED}
+  private static enum SessionState { RUNNING, STOPPED }
 
   private final Handler cameraThreadHandler;
   private final CreateSessionCallback callback;
@@ -234,14 +229,16 @@ class Camera2Session implements CameraSession {
       // If no optical mode is available, try software.
       final int[] availableVideoStabilization = cameraCharacteristics.get(
           CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
-      for (int mode : availableVideoStabilization) {
-        if (mode == CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON) {
-          captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-              CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
-          captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
-              CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF);
-          Logging.d(TAG, "Using video stabilization.");
-          return;
+      if (availableVideoStabilization != null) {
+        for (int mode : availableVideoStabilization) {
+          if (mode == CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON) {
+            captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
+                CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
+            captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,
+                CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF);
+            Logging.d(TAG, "Using video stabilization.");
+            return;
+          }
         }
       }
       Logging.d(TAG, "Stabilization not available.");
@@ -305,18 +302,21 @@ class Camera2Session implements CameraSession {
 
     try {
       cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
-    } catch (final CameraAccessException e) {
+    } catch (CameraAccessException | IllegalArgumentException e) {
       reportError("getCameraCharacteristics(): " + e.getMessage());
       return;
     }
-
+    cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
     isCameraFrontFacing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING)
         == CameraMetadata.LENS_FACING_FRONT;
 
-    int sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-    calculateCameraOrientation(sensorOrientation);
-
     findCaptureFormat();
+
+    if (captureFormat == null) {
+      // findCaptureFormat reports an error already.
+      return;
+    }
+
     openCamera();
   }
 
@@ -355,7 +355,7 @@ class Camera2Session implements CameraSession {
 
     try {
       cameraManager.openCamera(cameraId, new CameraStateCallback(), cameraThreadHandler);
-    } catch (CameraAccessException e) {
+    } catch (CameraAccessException | IllegalArgumentException | SecurityException e) {
       reportError("Failed to open camera: " + e);
       return;
     }
@@ -407,28 +407,6 @@ class Camera2Session implements CameraSession {
       callback.onFailure(FailureType.ERROR, error);
     } else {
       events.onCameraError(this, error);
-    }
-  }
-
-  private void calculateCameraOrientation(int sensorOrientation) {
-    cameraOrientation = 0;
-    switch (sensorOrientation) {
-      case 90:
-        cameraOrientation = 270;
-        break;
-      case 180:
-        cameraOrientation = 0;
-        break;
-      case 270:
-        cameraOrientation = 90;
-        break;
-      case 0:
-        cameraOrientation = 180;
-        break;
-    }
-
-    if (isCameraFrontFacing) {
-      cameraOrientation = 360 - cameraOrientation;
     }
   }
 

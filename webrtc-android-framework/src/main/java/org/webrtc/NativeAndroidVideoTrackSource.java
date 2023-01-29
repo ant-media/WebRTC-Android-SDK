@@ -11,6 +11,8 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoProcessor;
 
 /**
  * This class is meant to be a simple layer that only handles the JNI wrapping of a C++
@@ -63,11 +65,11 @@ class NativeAndroidVideoTrackSource {
    * the requested fps.
    */
   public void adaptOutputFormat(VideoSource.AspectRatio targetLandscapeAspectRatio,
-                                @Nullable Integer maxLandscapePixelCount, VideoSource.AspectRatio targetPortraitAspectRatio,
-                                @Nullable Integer maxPortraitPixelCount, @Nullable Integer maxFps) {
+      @Nullable Integer maxLandscapePixelCount, VideoSource.AspectRatio targetPortraitAspectRatio,
+      @Nullable Integer maxPortraitPixelCount, @Nullable Integer maxFps) {
     nativeAdaptOutputFormat(nativeAndroidVideoTrackSource, targetLandscapeAspectRatio.width,
-            targetLandscapeAspectRatio.height, maxLandscapePixelCount, targetPortraitAspectRatio.width,
-            targetPortraitAspectRatio.height, maxPortraitPixelCount, maxFps);
+        targetLandscapeAspectRatio.height, maxLandscapePixelCount, targetPortraitAspectRatio.width,
+        targetPortraitAspectRatio.height, maxPortraitPixelCount, maxFps);
   }
 
   public void setIsScreencast(boolean isScreencast) {
@@ -76,26 +78,22 @@ class NativeAndroidVideoTrackSource {
 
   @CalledByNative
   static VideoProcessor.FrameAdaptationParameters createFrameAdaptationParameters(int cropX,
-                                                                                  int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight, long timestampNs,
-                                                                                  boolean drop) {
+      int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight, long timestampNs,
+      boolean drop) {
     return new VideoProcessor.FrameAdaptationParameters(
-            cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight, timestampNs, drop);
+        cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight, timestampNs, drop);
   }
 
   private static native void nativeSetIsScreencast(
-          long nativeAndroidVideoTrackSource, boolean isScreencast);
-
+      long nativeAndroidVideoTrackSource, boolean isScreencast);
   private static native void nativeSetState(long nativeAndroidVideoTrackSource, boolean isLive);
-
   private static native void nativeAdaptOutputFormat(long nativeAndroidVideoTrackSource,
-                                                     int landscapeWidth, int landscapeHeight, @Nullable Integer maxLandscapePixelCount,
-                                                     int portraitWidth, int portraitHeight, @Nullable Integer maxPortraitPixelCount,
-                                                     @Nullable Integer maxFps);
-
+      int landscapeWidth, int landscapeHeight, @Nullable Integer maxLandscapePixelCount,
+      int portraitWidth, int portraitHeight, @Nullable Integer maxPortraitPixelCount,
+      @Nullable Integer maxFps);
   @Nullable
   private static native VideoProcessor.FrameAdaptationParameters nativeAdaptFrame(
-          long nativeAndroidVideoTrackSource, int width, int height, int rotation, long timestampNs);
-
+      long nativeAndroidVideoTrackSource, int width, int height, int rotation, long timestampNs);
   private static native void nativeOnFrameCaptured(
-          long nativeAndroidVideoTrackSource, int rotation, long timestampNs, VideoFrame.Buffer buffer);
+      long nativeAndroidVideoTrackSource, int rotation, long timestampNs, VideoFrame.Buffer buffer);
 }

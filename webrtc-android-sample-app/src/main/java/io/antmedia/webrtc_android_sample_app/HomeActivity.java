@@ -17,14 +17,20 @@ import androidx.core.app.ActivityCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtcandroidframework.IWebRTCClient;
+
 public class HomeActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
+
 
     private List<ActivityLink> activities;
     private GridView list;
 
-    private final String[] PERMISSIONS = {
-            Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    public static final String[] PERMISSIONS_UNDER_ANDROID_S = {
+            Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT
+    };
+
+    public static final String[] PERMISSIONS_BELOW_ANDROID_S = {
+            Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA
     };
 
     @Override
@@ -36,19 +42,28 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         createList();
         setListAdapter(activities);
 
-        if (!hasPermissions(this, PERMISSIONS)) {
-            ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!hasPermissions(this, PERMISSIONS_UNDER_ANDROID_S)) {
+                requestPermissions(PERMISSIONS_UNDER_ANDROID_S, 1);
+            }
+        } else {
+            if (!hasPermissions(this, PERMISSIONS_BELOW_ANDROID_S)) {
+                ActivityCompat.requestPermissions(this, PERMISSIONS_BELOW_ANDROID_S, 1);
+            }
         }
+
     }
 
     private void createList() {
         activities = new ArrayList<>();
         activities.add(new ActivityLink(new Intent(this, MainActivity.class),
                 "Default Camera"));
+        activities.add(new ActivityLink(new Intent(this, MainActivity.class).putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_PLAY),
+                "Simple Play"));
         activities.add(new ActivityLink(new Intent(this, MultiTrackPlayActivity.class),
                 "Multi Track Play"));
-        activities.add(new ActivityLink(new Intent(this, DataChannelActivity.class),
-                "Data Channel "));
+        activities.add(new ActivityLink(new Intent(this, DataChannelOnlyActivity.class),
+                "Data Channel Only Activity"));
         activities.add(new ActivityLink(new Intent(this, ConferenceActivity.class),
                 "Conference"));
         activities.add(new ActivityLink(new Intent(this, ScreenCaptureActivity.class),
@@ -62,7 +77,7 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         list.setOnItemClickListener(this);
     }
 
-    private boolean hasPermissions(Context context, String... permissions) {
+    public static boolean hasPermissions(Context context, String... permissions) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
             for (String permission : permissions) {
                 if (ActivityCompat.checkSelfPermission(context, permission)
@@ -76,17 +91,30 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        if (hasPermissions(this, PERMISSIONS)) {
-            ActivityLink link = activities.get(i);
-            startActivity(link.getIntent());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (hasPermissions(this, PERMISSIONS_UNDER_ANDROID_S)) {
+                ActivityLink link = activities.get(i);
+                startActivity(link.getIntent());
+            } else {
+                showPermissionsErrorAndRequest();
+            }
         } else {
-            showPermissionsErrorAndRequest();
+            if (hasPermissions(this, PERMISSIONS_BELOW_ANDROID_S)) {
+                ActivityLink link = activities.get(i);
+                startActivity(link.getIntent());
+            } else {
+                showPermissionsErrorAndRequest();
+            }
         }
     }
 
     private void showPermissionsErrorAndRequest() {
         Toast.makeText(this, "You need permissions before", Toast.LENGTH_SHORT).show();
-        ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.requestPermissions(this, PERMISSIONS_UNDER_ANDROID_S, 1);
+        } else {
+            ActivityCompat.requestPermissions(this, PERMISSIONS_BELOW_ANDROID_S, 1);
+        }
     }
 
 }
