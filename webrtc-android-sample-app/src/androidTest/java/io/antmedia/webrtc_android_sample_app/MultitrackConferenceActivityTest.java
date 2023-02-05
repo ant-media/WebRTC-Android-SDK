@@ -84,7 +84,7 @@ public class MultitrackConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
         try {
-            Thread.sleep(2000);
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
