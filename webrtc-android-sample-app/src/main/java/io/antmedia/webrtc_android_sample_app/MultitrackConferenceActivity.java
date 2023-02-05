@@ -94,7 +94,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
 
         String streamId = "stream1";
         String roomId = "room1";
-        String serverUrl = "ws://192.168.1.25:5080/WebRTCAppEE/websocket";
+        String serverUrl = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
         conferenceManager = new MultitrackConferenceManager(
                 this,
                 this,

@@ -82,12 +82,16 @@ public class MultitrackConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Leave")));
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        onView(withId(R.id.join_conference_button)).perform(click());
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
