@@ -76,6 +76,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public static final String SOURCE_SCREEN = "SCREEN";
     public static final String SOURCE_FRONT = "FRONT";
     public static final String SOURCE_REAR = "REAR";
+    public static final String SOURCE_CUSTOM = "CUSTOM";
+
 
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
@@ -120,6 +122,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String errorString = null;
     private String streamMode;
     private boolean openFrontCamera = true;
+
+    public VideoCapturer getVideoCapturer() {
+        return videoCapturer;
+    }
+
     private VideoCapturer videoCapturer;
 
     private VideoTrack localVideoTrack;
@@ -147,6 +154,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public MediaProjection mediaProjection;
     public MediaProjectionManager mediaProjectionManager;
+
+
+
+    private boolean customCapturerEnabled = false;
 
     public void setDataChannelObserver(IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
@@ -397,6 +408,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
             if (videoFileAsCamera != null) {
                 source = SOURCE_FILE;
+            }
+            else if(customCapturerEnabled) {
+                source = SOURCE_CUSTOM;
             }
             else if(screencaptureEnabled) {
                 source = SOURCE_SCREEN;
@@ -860,6 +874,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             }
         } else if (SOURCE_SCREEN.equals(source)) {
             return createScreenCapturer();
+        } else if (SOURCE_CUSTOM.equals(source)) {
+            return new CustomVideoCapturer();
         } else {
             if (!captureToTexture()) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
@@ -1344,5 +1360,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public String getStreamId() {
         return streamId;
+    }
+
+    public void setCustomCapturerEnabled(boolean customCapturerEnabled) {
+        this.customCapturerEnabled = customCapturerEnabled;
     }
 }

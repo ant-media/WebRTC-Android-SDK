@@ -14,7 +14,7 @@ public class SettingsActivity extends Activity {
 
     public static final String DEFAULT_SERVER_ADDRESS = "test.antmedia.io";
     public static final String DEFAULT_SERVER_PORT = "5080";
-    public static final String DEFAULT_APP_NAME = "LiveApp";
+    public static final String DEFAULT_APP_NAME = "WebRTCAppEE";
     public static final String DEFAULT_ROOM_NAME = "room1";
 
     private Button saveButton;

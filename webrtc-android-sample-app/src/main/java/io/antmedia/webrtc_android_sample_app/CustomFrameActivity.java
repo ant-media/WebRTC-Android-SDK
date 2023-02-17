@@ -1,5 +1,10 @@
 package io.antmedia.webrtc_android_sample_app;
 
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
+
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -7,6 +12,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -24,7 +30,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
-import androidx.test.espresso.idling.net.UriIdlingResource;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -36,16 +41,23 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
+import org.webrtc.JavaI420Buffer;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoFrame;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtcandroidframework.CustomVideoCapturer;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
@@ -53,17 +65,7 @@ import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
-
-public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
-
-    /**
-     * Mode can Publish, Play or P2P
-     */
-    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
+public class CustomFrameActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     private boolean enableDataChannel = true;
 
@@ -78,7 +80,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
-    public static final String WEBRTC_MODE = "WebRTC_MODE";
 
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
 
@@ -93,14 +94,10 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         @Override
         public void run() {
             if (!stoppedStream && !webRTCClient.isStreaming()) {
-                Log.i(MainActivity.class.getSimpleName(),"Try to reconnect in reconnectionRunnable");
+                Log.i(CustomFrameActivity.class.getSimpleName(),"Try to reconnect in reconnectionRunnable");
                 webRTCClient.stopStream();
 
                 webRTCClient.startStream();
-                if (webRTCMode == IWebRTCClient.MODE_JOIN)
-                {
-                    pipViewRenderer.setZOrderOnTop(true);
-                }
             }
             if (!stoppedStream) {
                 reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
@@ -135,45 +132,9 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
-        streamInfoListSpinner = findViewById(R.id.stream_info_list);
+        serverUrl = "wss://ovh36.antmedia.io:5443/WebRTCAppEE/websocket";
 
-        SharedPreferences sharedPreferences =
-                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-        String appName = sharedPreferences.getString(getString(R.string.app_name), SettingsActivity.DEFAULT_APP_NAME);
 
-        String restUrlScheme = serverPort.equals("5443") ? "https://" : "http://";
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-        restUrl = restUrlScheme + serverAddress + "/" + appName + "/rest/v2";
-
-        if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
-            streamInfoListSpinner.setVisibility(View.INVISIBLE);
-        }
-        else {
-
-            streamInfoListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                boolean firstCall = true;
-                @Override
-                public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                    //for some reason in android onItemSelected is called automatically at first.
-                    //there are some discussions about it in stackoverflow
-                    //so we just have simple check
-                    if (firstCall) {
-                        firstCall = false;
-                        return;
-                    }
-                    webRTCClient.forceStreamQuality(Integer.parseInt((String) adapterView.getSelectedItem()));
-                    Log.i("MainActivity", "Spinner onItemSelected");
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> adapterView) {
-
-                }
-            });
-        }
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -182,23 +143,10 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 return;
             }
         }
-        String mode = this.getIntent().getStringExtra(WEBRTC_MODE);
-        if (mode != null) {
-            webRTCMode = mode;
-        }
 
-        if (webRTCMode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            startStreamingButton.setText("Start Publishing");
-            operationName = "Publishing";
-        }
-        else  if (webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
-            startStreamingButton.setText("Start Playing");
-            operationName = "Playing";
-        }
-        else if (webRTCMode.equals(IWebRTCClient.MODE_JOIN)) {
-            startStreamingButton.setText("Start P2P");
-            operationName = "P2P";
-        }
+        startStreamingButton.setText("Start Publishing");
+        operationName = "Publishing";
+
 
         this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);
@@ -210,27 +158,38 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         //webRTCClient.setOpenFrontCamera(false);
 
         String tokenId = "tokenId";
-        webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
+        webRTCClient.setVideoRenderers(null, null);
+        webRTCClient.setCustomCapturerEnabled(true);
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
 
     }
 
     public void startStreaming(View v) {
         //update stream id if it is changed
-        webRTCClient.setStreamId(streamIdEditText.getText().toString());
+        webRTCClient.setStreamId("stream2");//streamIdEditText.getText().toString());
         idlingResource.increment();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             Log.i(getClass().getSimpleName(), "Calling startStream");
 
             webRTCClient.startStream();
-            if (webRTCMode == IWebRTCClient.MODE_JOIN) {
-                pipViewRenderer.setZOrderOnTop(true);
-            }
+
             stoppedStream = false;
+
+            Timer timer = new Timer();
+            TimerTask tt = new TimerTask() {
+                @Override
+                public void run() {
+                    VideoFrame videoFrame = getNextFrame();
+                    ((CustomVideoCapturer)webRTCClient.getVideoCapturer()).writeFrame(videoFrame);
+                }
+            };
+
+            timer.schedule(tt, 0, 50);
+
         }
         else {
             ((Button)v).setText("Start " + operationName);
@@ -244,23 +203,16 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     }
 
     @Override
-    public void onPlayStarted(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPlayStarted");
-        Toast.makeText(this, "Play started", Toast.LENGTH_SHORT).show();
-        webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
-        webRTCClient.getStreamInfoList();
-
-        broadcastingView.setText(R.string.playing);
-        broadcastingView.setVisibility(View.VISIBLE);
-        decrementIdle();
-    }
-
-    @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
         decrementIdle();
+    }
+
+    @Override
+    public void onPlayStarted(String streamId) {
+
     }
 
     @Override
@@ -358,23 +310,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         //it's called when ice is disconnected
     }
 
-    public void onOffVideo(View view) {
-        if (webRTCClient.isVideoOn()) {
-            webRTCClient.disableVideo();
-        }
-        else {
-            webRTCClient.enableVideo();
-        }
-    }
 
-    public void onOffAudio(View view) {
-        if (webRTCClient.isAudioOn()) {
-            webRTCClient.disableAudio();
-        }
-        else {
-            webRTCClient.enableAudio();
-        }
-    }
 
     @Override
     public void onTrackList(String[] tracks) {
@@ -391,76 +327,17 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-        String[] stringArray = new String[streamInfoList.size()];
-        int i = 0;
-        for (StreamInfo si : streamInfoList) {
-            stringArray[i++] = si.getHeight()+"";
-        }
-        ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
-        streamInfoListSpinner.setAdapter(modeAdapter);
-    }
-
-    /**
-     * This method is used in an experiment. It's not for production
-     * @param streamId
-     */
-    public void calculateAbsoluteLatency(String streamId) {
-        String url = restUrl + "/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            Log.i("MainActivity", "recevied response " + response);
-                            JSONObject jsonObject = new JSONObject(response);
-                            long absoluteStartTimeMs = jsonObject.getLong("absoluteTimeMs");
-                            //this is the frame id in sending the rtp packet. Actually it's rtp timestamp
-                            long frameId = jsonObject.getLong("frameId");
-                            long relativeCaptureTimeMs = jsonObject.getLong("captureTimeMs");
-                            long captureTimeMs = frameId / 90;
-                            Map<Long, Long> captureTimeMsList = WebRTCClient.getCaptureTimeMsMapList();
-
-                            long absoluteDecodeTimeMs = 0;
-                            if (captureTimeMsList.containsKey(captureTimeMs)) {
-                                absoluteDecodeTimeMs = captureTimeMsList.get(captureTimeMs);
-                            }
-
-                            long absoluteLatency = absoluteDecodeTimeMs - relativeCaptureTimeMs - absoluteStartTimeMs;
-                            Log.i("MainActivity", "recevied absolute start time: " + absoluteStartTimeMs
-                                                        + " frameId: " + frameId + " relativeLatencyMs : " + relativeCaptureTimeMs
-                                                        + " absoluteDecodeTimeMs: " + absoluteDecodeTimeMs
-                                                        + " absoluteLatency: " + absoluteLatency);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("MainActivity", "That didn't work!");
-
-            }
-        });
-
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
 
     }
 
     @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(MainActivity.class.getName(), "Data channel buffered amount changed: ");
+        Log.d(CustomFrameActivity.class.getName(), "Data channel buffered amount changed: ");
     }
 
     @Override
     public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(MainActivity.class.getName(), "Data channel state changed: ");
+        Log.d(CustomFrameActivity.class.getName(), "Data channel state changed: ");
     }
 
     @Override
@@ -525,5 +402,39 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     public IdlingResource getIdlingResource() {
         return idlingResource;
+    }
+
+    public VideoFrame getNextFrame() {
+        int frameWidth = 1080;
+        int frameHeight = 1920;
+
+        final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+        final JavaI420Buffer buffer = JavaI420Buffer.allocate(frameWidth, frameHeight);
+        final ByteBuffer dataY = buffer.getDataY();
+        final ByteBuffer dataU = buffer.getDataU();
+        final ByteBuffer dataV = buffer.getDataV();
+        final int chromaHeight = (frameHeight + 1) / 2;
+        final int sizeY = frameHeight * buffer.getStrideY();
+        final int sizeU = chromaHeight * buffer.getStrideU();
+        final int sizeV = chromaHeight * buffer.getStrideV();
+
+        int R = (int) (Math.random()*255);
+        int G = (int) (Math.random()*255);;
+        int B = (int) (Math.random()*255);;
+        int Y = (int) (0.257 * R + 0.504 * G + 0.098 * B +  16);
+        int U = (int) (-0.148 * R - 0.291 * G + 0.439 * B + 128);
+        int V = (int) (0.439 * R - 0.368 * G - 0.071 * B + 128);
+
+        for (int i = 0; i < sizeY; i++) {
+            dataY.put((byte)Y);
+        }
+        for (int i = 0; i < sizeU; i++) {
+            dataU.put((byte)U);
+        }
+        for (int i = 0; i < sizeV; i++) {
+            dataV.put((byte)V);
+        }
+
+        return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
     }
 }

@@ -98,10 +98,10 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-
+        String appName = sharedPreferences.getString(getString(R.string.app_name), SettingsActivity.DEFAULT_APP_NAME);
         String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
+        String websocketUrlScheme = serverPort.equals("5443") || serverPort.equals("443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + appName + "/websocket";
 
         String streamId = null; //"stream1";
         conferenceManager = new ConferenceManager(
