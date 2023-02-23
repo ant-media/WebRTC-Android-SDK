@@ -90,4 +90,5 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel:2.5.1"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
     debugImplementation "androidx.test:core:1.5.0"
+    implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
 }

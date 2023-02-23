@@ -9,6 +9,13 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.ImageFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
+import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -46,7 +53,9 @@ import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoFrame;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -64,6 +73,8 @@ import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
+import io.github.crow_misia.libyuv.AbgrBuffer;
+import io.github.crow_misia.libyuv.I420Buffer;
 
 public class CustomFrameActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
@@ -106,6 +117,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     };
     private TextView broadcastingView;
     private EditText streamIdEditText;
+    private Bitmap bitmapImage;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -161,7 +173,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         webRTCClient.setVideoRenderers(null, null);
         webRTCClient.setCustomCapturerEnabled(true);
 
-       // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
+        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
 
@@ -179,6 +191,9 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
 
             stoppedStream = false;
 
+            bitmapImage = BitmapFactory.decodeResource(getResources(), R.drawable.test);
+            bitmapImage = Bitmap.createScaledBitmap(bitmapImage, 360, 640, false);
+
             Timer timer = new Timer();
             TimerTask tt = new TimerTask() {
                 @Override
@@ -192,7 +207,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
 
         }
         else {
-            ((Button)v).setText("Start " + operationName);
+            ((Button)startStreamingButton).setText("Start " + operationName);
             Log.i(getClass().getSimpleName(), "Calling stopStream");
             reconnectionHandler.removeCallbacks(reconnectionRunnable);
             webRTCClient.stopStream();
@@ -382,7 +397,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
                     // send data from the AlertDialog to the Activity
                     EditText editText = customLayout.findViewById(R.id.message_text_input);
                     sendTextMessage(editText.getText().toString());
-                   // sendDialogDataToActivity(editText.getText().toString());
+                    // sendDialogDataToActivity(editText.getText().toString());
                 }
             });
             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -405,34 +420,105 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     }
 
     public VideoFrame getNextFrame() {
-        int frameWidth = 1080;
-        int frameHeight = 1920;
+        final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+
+        int frameWidth = bitmapImage.getWidth();
+        int frameHeight = bitmapImage.getHeight();
+        AbgrBuffer originalBuffer = AbgrBuffer.Factory.allocate(frameWidth, frameHeight);
+        I420Buffer i420Buffer = I420Buffer.Factory.allocate(frameWidth, frameHeight);
+
+        bitmapImage.copyPixelsToBuffer(originalBuffer.asBuffer());
+        originalBuffer.convertTo(i420Buffer);
+
+        int ySize = frameWidth * frameHeight;
+        int uvSize = ySize / 4;
+
+        final JavaI420Buffer buffer = JavaI420Buffer.wrap(frameWidth, frameHeight,
+                i420Buffer.getPlaneY().getBuffer(), i420Buffer.getPlaneY().getRowStride(),
+                i420Buffer.getPlaneU().getBuffer(), i420Buffer.getPlaneU().getRowStride(),
+                i420Buffer.getPlaneV().getBuffer(), i420Buffer.getPlaneV().getRowStride(),
+                null);
+
+        return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
+    }
+
+    public VideoFrame getNextFrame3() {
 
         final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmapImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+        byte[] jpegData = outputStream.toByteArray();
+        YuvImage yuvImage = new YuvImage(jpegData, ImageFormat.NV21, bitmapImage.getWidth(), bitmapImage.getHeight(), null);
+
+        int frameWidth = yuvImage.getWidth();
+        int frameHeight = yuvImage.getHeight();
+
         final JavaI420Buffer buffer = JavaI420Buffer.allocate(frameWidth, frameHeight);
         final ByteBuffer dataY = buffer.getDataY();
         final ByteBuffer dataU = buffer.getDataU();
         final ByteBuffer dataV = buffer.getDataV();
-        final int chromaHeight = (frameHeight + 1) / 2;
-        final int sizeY = frameHeight * buffer.getStrideY();
-        final int sizeU = chromaHeight * buffer.getStrideU();
-        final int sizeV = chromaHeight * buffer.getStrideV();
 
-        int R = (int) (Math.random()*255);
-        int G = (int) (Math.random()*255);;
-        int B = (int) (Math.random()*255);;
-        int Y = (int) (0.257 * R + 0.504 * G + 0.098 * B +  16);
-        int U = (int) (-0.148 * R - 0.291 * G + 0.439 * B + 128);
-        int V = (int) (0.439 * R - 0.368 * G - 0.071 * B + 128);
+        byte[] yuvData = yuvImage.getYuvData();
 
-        for (int i = 0; i < sizeY; i++) {
-            dataY.put((byte)Y);
+        int ySize = frameWidth * frameHeight;
+        int uvSize = ySize / 4;
+        byte[] yPlane = new byte[ySize];
+        byte[] uPlane = new byte[uvSize];
+        byte[] vPlane = new byte[uvSize];
+
+        // Copy Y plane from NV21 to YUV420
+        System.arraycopy(yuvData, 0, yPlane, 0, ySize);
+
+        // Copy interleaved V and U planes from NV21 to YUV420
+        int uvIndex = ySize;
+        for (int i = 0; i < uvSize; i++) {
+            vPlane[i] = yuvData[uvIndex++];
+            uPlane[i] = yuvData[uvIndex++];
         }
-        for (int i = 0; i < sizeU; i++) {
-            dataU.put((byte)U);
-        }
-        for (int i = 0; i < sizeV; i++) {
-            dataV.put((byte)V);
+
+        dataY.put(yPlane);
+        dataU.put(uPlane);
+        dataV.put(vPlane);
+
+        return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
+    }
+
+    public VideoFrame getNextFrame2() {
+
+        final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+
+        int frameWidth = bitmapImage.getWidth();
+        int frameHeight = bitmapImage.getHeight();
+
+        final JavaI420Buffer buffer = JavaI420Buffer.allocate(frameWidth, frameHeight);
+        final ByteBuffer dataY = buffer.getDataY();
+        final ByteBuffer dataU = buffer.getDataU();
+        final ByteBuffer dataV = buffer.getDataV();
+
+        int[] pixels = new int[frameWidth*frameHeight];
+        bitmapImage.getPixels(pixels, 0, frameWidth, 0, 0, frameWidth, frameHeight);
+
+        for (int y=0; y<frameHeight; y++) {
+            for (int x=0; x<frameWidth; x++) {
+                int p = pixels[y*frameWidth+x];
+
+                int r = (p >> 16);
+                int g = (p >> 8) & 0xFF;
+                int b = (p >> 8) & 0xFF;
+
+                int yy = (int) (0.257 * r + 0.504 * g + 0.098 * b +  16);
+                dataY.put((byte)yy);
+
+                if ((x % 2 == 0) && (y % 2 == 0)) {
+                    int u = (int) (-0.148 * r - 0.291 * g + 0.439 * b + 128);
+                    dataU.put((byte)u);
+                }
+                else {
+                    int v = (int) (0.439 * r - 0.368 * g - 0.071 * b + 128);
+                    dataV.put((byte)v);
+                }
+            }
         }
 
         return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);

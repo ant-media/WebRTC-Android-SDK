@@ -152,7 +152,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
         }
         else {
-
+            streamInfoListSpinner.setVisibility(View.VISIBLE);
             streamInfoListSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 boolean firstCall = true;
                 @Override
