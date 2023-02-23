@@ -18,6 +18,8 @@ import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.view.Surface;
+import android.view.WindowManager;
+
 import androidx.annotation.Nullable;
 
 /**
@@ -52,6 +54,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   private boolean isDisposed;
 
+  private WindowManager windowManager;
+  private boolean isOrientationPortrait;
+  private Context applicationContext;
+
   /**
    * Constructs a new Screen Capturer.
    *
@@ -83,6 +89,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     return mediaProjection;
   }
 
+  public void setWindowManager(WindowManager windowManager) {
+    this.windowManager = windowManager;
+  }
+
   @Override
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
@@ -99,6 +109,11 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
       throw new RuntimeException("surfaceTextureHelper not set.");
     }
     this.surfaceTextureHelper = surfaceTextureHelper;
+
+    if (applicationContext == null) {
+      throw new RuntimeException("Application Context not set.");
+    }
+    this.applicationContext = applicationContext;
 
     mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
         Context.MEDIA_PROJECTION_SERVICE);
@@ -117,6 +132,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
     this.width = width;
     this.height = height;
+
+    this.windowManager = (WindowManager) applicationContext.getSystemService(
+            Context.WINDOW_SERVICE);
+    this.isOrientationPortrait = isDeviceOrientationPortrait();
 
     // It means that it will use old method(without running in MediaProjectionService)
     if(mediaProjection == null){
@@ -179,7 +198,9 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
       final int width, final int height, final int ignoredFramerate) {
-    checkNotDisposed();
+    if (isDisposed) {
+      return;
+    }
 
     this.width = width;
     this.height = height;
@@ -192,16 +213,30 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     // Create a new virtual display on the surfaceTextureHelper thread to avoid interference
     // with frame processing, which happens on the same thread (we serialize events by running
     // them on the same thread).
+    if (surfaceTextureHelper == null) {
+      return;
+    }
+    if (surfaceTextureHelper.getHandler() == null) {
+      return;
+    }
     ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
       @Override
       public void run() {
-        virtualDisplay.release();
+        if (virtualDisplay != null) {
+          virtualDisplay.release();
+        }
         createVirtualDisplay();
       }
     });
   }
 
   private void createVirtualDisplay() {
+    if (surfaceTextureHelper == null
+            || surfaceTextureHelper.getSurfaceTexture() == null
+            || surfaceTextureHelper.getHandler() == null
+            || mediaProjection == null) {
+      return;
+    }
     surfaceTextureHelper.setTextureSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
         VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
@@ -212,7 +247,19 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
-    capturerObserver.onFrameCaptured(frame);
+    if ((numCapturedFrames % 20) == 0) {
+      final boolean isOrientationPortrait = isDeviceOrientationPortrait();
+      // if the device orientation has changed, we need to change the output video's aspect ratio
+      if (isOrientationPortrait != this.isOrientationPortrait) {
+        this.isOrientationPortrait = isOrientationPortrait;
+
+        // Reverse width and height.
+        this.changeCaptureFormat(height, width, 0);
+      }
+    }
+    if (capturerObserver != null && frame != null) {
+      capturerObserver.onFrameCaptured(frame);
+    }
   }
 
   @Override
@@ -222,5 +269,14 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   public long getNumCapturedFrames() {
     return numCapturedFrames;
+  }
+
+  public boolean isDeviceOrientationPortrait() {
+    if (windowManager == null || windowManager.getDefaultDisplay() == null) {
+      return this.isOrientationPortrait;
+    }
+    final int surfaceRotation = windowManager.getDefaultDisplay().getRotation();
+
+    return surfaceRotation != Surface.ROTATION_90 && surfaceRotation != Surface.ROTATION_270;
   }
 }
