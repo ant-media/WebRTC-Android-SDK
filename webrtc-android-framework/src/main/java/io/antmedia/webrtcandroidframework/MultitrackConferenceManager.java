@@ -110,6 +110,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
         wsHandler.leaveFromTheConferenceRoom(roomName);
         joined = false;
+        playMessageSent = false;
 
         // remove periodic room information polling
         clearGetRoomInfoSchedule();

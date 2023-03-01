@@ -3,10 +3,12 @@ package io.antmedia.webrtc_android_sample_app;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -92,9 +94,16 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
-        String streamId = "stream1";
-        String roomId = "room1";
-        String serverUrl = "ws://ovh36.antmedia.io:5080/WebRTCAppEE/websocket";
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+
+        String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
+        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
+        String serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
+        String streamId = null;
+
         conferenceManager = new MultitrackConferenceManager(
                 this,
                 this,
