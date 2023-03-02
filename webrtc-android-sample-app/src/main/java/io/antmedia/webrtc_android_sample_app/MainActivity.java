@@ -141,11 +141,13 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        String appName = sharedPreferences.getString(getString(R.string.app_name), "LiveApp");
 
-        String restUrlScheme = serverPort.equals("5443") ? "https://" : "http://";
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-        restUrl = restUrlScheme + serverAddress + "/" + SettingsActivity.DEFAULT_APP_NAME + "/rest/v2";
+
+        String restUrlScheme = serverPort.equals("5443") || serverPort.equals("443")? "https://" : "http://";
+        String websocketUrlScheme = serverPort.equals("5443") || serverPort.equals("443")? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + appName + "/websocket";
+        restUrl = restUrlScheme + serverAddress + "/" + appName + "/rest/v2";
 
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
@@ -199,7 +201,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             operationName = "P2P";
         }
 
-        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
+        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 24);
+
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, enableDataChannel);

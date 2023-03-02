@@ -1065,6 +1065,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       for (RtpParameters.Encoding encoding : parameters.encodings) {
         // Null value means no limit.
         encoding.maxBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS;
+        encoding.minBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS / 2;
       }
       if (!localVideoSender.setParameters(parameters)) {
         Log.e(TAG, "RtpSender.setParameters failed.");
