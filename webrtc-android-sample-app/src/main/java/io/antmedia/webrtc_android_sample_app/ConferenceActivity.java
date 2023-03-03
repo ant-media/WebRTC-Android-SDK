@@ -31,6 +31,8 @@ import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
 public class ConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
@@ -91,6 +93,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
             }
         }
 
+        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 24);
+        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1000);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
