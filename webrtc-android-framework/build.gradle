@@ -1,6 +1,8 @@
 apply plugin: 'com.android.library'
 apply plugin: 'jacoco'
-
+apply plugin:'maven-publish'
+apply plugin:'signing'
+apply from: '../loadCredentials.gradle'
 android {
     compileSdkVersion 33
 
@@ -80,3 +82,73 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
 }
 
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'webrtc-android-framework'
+
+    publishedGroupId = 'io.antmedia'
+    libraryName = 'webrtc-android-framework'
+    artifact = 'webrtc-android-framework'
+
+    libraryDescription = 'WebRTC Android SDK to build andoid app with ant media server '
+
+    siteUrl = 'https://github.com/ant-media/WebRTC-Android-SDK'
+    gitUrl = 'https://github.com/ant-media/WebRTC-Android-SDK.git'
+
+    libraryVersion = '1.0.0'
+
+    developerId = 'mekya'
+    developerName = 'Ahmet Oguz Mermerkaya'
+    developerEmail = 'ahmetmermerkaya@gmail.com'
+
+    licenseName = 'MIT License'
+    licenseUrl = 'https://github.com/ant-media/WebRTC-Android-SDK/blob/master/LICENSE.md'
+}
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+
+                groupId = publishedGroupId
+                artifactId = artifact
+                version = libraryVersion
+
+                artifact bundleReleaseAar
+                pom {
+                    name = libraryName
+                    description = libraryDescription
+                    url = siteUrl
+                    licenses {
+                        license {
+                            name = licenseName
+                            url = licenseUrl
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = developerId
+                            name = developerName
+                            email = developerEmail
+                        }
+                    }
+
+                    scm {
+                        connection = gitUrl
+                        developerConnection = gitUrl
+                        url = siteUrl
+                    }
+                }
+
+            }
+        }
+        signing {
+            useInMemoryPgpKeys(
+                    rootProject.ext["signing.keyId"],
+                    rootProject.ext["signing.key"],
+                    rootProject.ext["signing.password"],
+            )
+            sign publishing.publications.release
+        }
+    }
+}
