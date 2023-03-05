@@ -44,10 +44,10 @@ nexusPublishing {
         sonatype {
             username = ossrhUsername
             password = ossrhPassword
-            stagingProfileId =sonatypeStagingProfileId
+            stagingProfileId = sonatypeStagingProfileId
             nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
             snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-        }
 
+        }
     }
 }

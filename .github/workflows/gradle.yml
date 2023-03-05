@@ -59,7 +59,8 @@ jobs:
             webrtc-android-framework/build/reports/tests/testDebugUnitTest/
             webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
             webrtc-android-framework/build/reports/androidTests/
-            webrtc-android-sample-app/build/logcat.txt
+
+              webrtc-android-sample-app/build/logcat.txt
             webrtc-android-sample-app/build/screen.png
 
       - name: Upload Test Report to Codecov
