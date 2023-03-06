@@ -87,7 +87,7 @@ ext {
     bintrayRepo = 'maven'
     bintrayName = 'webrtc-android-framework'
 
-    publishedGroupId = 'io.antmedia'
+    publishedGroupId = 'io.github.USAMAWIZARD'
     libraryName = 'webrtc-android-framework'
     artifact = 'webrtc-android-framework'
 
@@ -96,7 +96,7 @@ ext {
     siteUrl = 'https://github.com/ant-media/WebRTC-Android-SDK'
     gitUrl = 'https://github.com/ant-media/WebRTC-Android-SDK.git'
 
-    libraryVersion = '1.0.0'
+    libraryVersion = '4.13.5-SNAPSHOT'
 
     developerId = 'mekya'
     developerName = 'Ahmet Oguz Mermerkaya'
@@ -142,6 +142,20 @@ afterEvaluate {
 
             }
         }
+            repositories {
+                maven {
+                    credentials {
+                        username ossrhUsername
+                        password ossrhPassword
+                    }
+
+                    def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/'
+                    def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+                    url = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+                }
+
+        }
+    }
         signing {
             useInMemoryPgpKeys(
                     rootProject.ext["signing.keyId"],
@@ -149,6 +163,6 @@ afterEvaluate {
                     rootProject.ext["signing.password"],
             )
             sign publishing.publications.release
-        }
+
     }
 }
