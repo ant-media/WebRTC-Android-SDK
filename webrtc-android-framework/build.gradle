@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'jacoco'
 apply plugin:'maven-publish'
 apply plugin:'signing'
-apply from: '../loadCredentials.gradle'
+
 android {
     compileSdkVersion 33
 
