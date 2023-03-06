@@ -14,10 +14,6 @@ buildscript {
         // in the individual module build.gradle files
     }
 }
-
-plugins {
-    id("io.github.gradle-nexus.publish-plugin").version("1.1.0")
-}
 apply from: './loadCredentials.gradle'
 
 allprojects {
@@ -36,18 +32,5 @@ tasks.withType(Test) {
         events "started", "skipped", "passed", "failed"
         showStandardStreams true
         showStackTraces = true
-    }
-}
-
-nexusPublishing {
-    repositories {
-        sonatype {
-            username = ossrhUsername
-            password = ossrhPassword
-            stagingProfileId = sonatypeStagingProfileId
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-
-        }
     }
 }
