@@ -47,7 +47,7 @@ jobs:
           emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
           script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
       - name: Deploy to maven
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/upload_sdk_to_maven_with_ci'
         run: ./gradlew publish
       - name: Archive Test Report
         if: always()
