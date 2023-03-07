@@ -87,7 +87,7 @@ ext {
     bintrayRepo = 'maven'
     bintrayName = 'webrtc-android-framework'
 
-    publishedGroupId = 'io.github.USAMAWIZARD'
+    publishedGroupId = 'io.antmedia'
     libraryName = 'webrtc-android-framework'
     artifact = 'webrtc-android-framework'
 
@@ -96,7 +96,7 @@ ext {
     siteUrl = 'https://github.com/ant-media/WebRTC-Android-SDK'
     gitUrl = 'https://github.com/ant-media/WebRTC-Android-SDK.git'
 
-    libraryVersion = '4.13.5-SNAPSHOT'
+    libraryVersion = '1.0.0-SNAPSHOT'
 
     developerId = 'mekya'
     developerName = 'Ahmet Oguz Mermerkaya'
@@ -151,7 +151,7 @@ afterEvaluate {
 
                     def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/'
                     def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-                    url = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
                 }
 
         }
