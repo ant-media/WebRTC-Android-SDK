@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -22,6 +23,10 @@ public class SettingsActivity extends Activity {
     private EditText serverPortEditText;
     private EditText applicationNameEditText;
     private EditText roomNameEditText;
+    private EditText bitrateEditText;
+    private EditText fpsEditText;
+    private CheckBox viewerOnlyRadioButton;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +38,11 @@ public class SettingsActivity extends Activity {
         serverPortEditText = findViewById(R.id.server_port);
         applicationNameEditText = findViewById(R.id.application_name);
         roomNameEditText = findViewById(R.id.room_name);
+        bitrateEditText = findViewById(R.id.bitrate);
+        fpsEditText = findViewById(R.id.fps);
+        viewerOnlyRadioButton = findViewById(R.id.viewer_only);
+
+
 
         SharedPreferences sharedPreferences =
                 android.preference.PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
@@ -40,6 +50,11 @@ public class SettingsActivity extends Activity {
         serverPortEditText.setText(sharedPreferences.getString(getString(R.string.serverPort), DEFAULT_SERVER_PORT));
         applicationNameEditText.setText(sharedPreferences.getString(getString(R.string.app_name), DEFAULT_APP_NAME));
         roomNameEditText.setText(sharedPreferences.getString(getString(R.string.roomId), DEFAULT_ROOM_NAME));
+        bitrateEditText.setText(sharedPreferences.getString(getString(R.string.bitrate), "1500"));
+        fpsEditText.setText(sharedPreferences.getString(getString(R.string.fps), "30"));
+        String isVieverOnly = sharedPreferences.getString(getString(R.string.viewer_only), "false");
+        viewerOnlyRadioButton.setChecked(isVieverOnly.equals("true"));
+
 
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -54,12 +69,20 @@ public class SettingsActivity extends Activity {
         String serverPort = serverPortEditText.getText().toString();
         String applicationName = applicationNameEditText.getText().toString();
         String roomName = roomNameEditText.getText().toString();
+        String bitrate = bitrateEditText.getText().toString();
+        String fps = fpsEditText.getText().toString();
+        boolean isViewerOnly = viewerOnlyRadioButton.isChecked();
 
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
         editor.putString(getString(R.string.serverAddress), serverAddress);
         editor.putString(getString(R.string.serverPort), serverPort);
         editor.putString(getString(R.string.app_name), applicationName);
         editor.putString(getString(R.string.roomId), roomName);
+        editor.putString(getString(R.string.bitrate), bitrate);
+        editor.putString(getString(R.string.fps), fps);
+        editor.putString(getString(R.string.viewer_only), isViewerOnly+"");
+
+
         editor.apply();
 
         Toast.makeText(this, "Saved", Toast.LENGTH_LONG).show();

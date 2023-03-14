@@ -12,4 +12,7 @@
     <string name="send_image_button_name">Send Image</string>
     <string name="playing">Playing</string>
     <string name="data_channel_not_available">"Data channel is not available. Enable data channel in both Android and Server side and then restart Streaming</string>
+    <string name="viewer_only">viewer_only</string>
+    <string name="fps">fps</string>
+    <string name="bitrate">bitrate</string>
 </resources>

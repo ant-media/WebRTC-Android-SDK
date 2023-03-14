@@ -43,7 +43,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     private Button videoButton;
     private String serverUrl;
 
-    final int RECONNECTION_PERIOD_MLS = 1000;
+    final int RECONNECTION_PERIOD_MLS = 1200;
     private boolean stoppedStream = false;
     Handler reconnectionHandler = new Handler();
     Runnable reconnectionRunnable = new Runnable() {
@@ -93,17 +93,20 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
             }
         }
 
-        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 24);
-        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1000);
-        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
-
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
         String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
         String appName = sharedPreferences.getString(getString(R.string.app_name), "LiveApp");
+        String bitrate = sharedPreferences.getString(getString(R.string.bitrate), "1500");
+        String fps = sharedPreferences.getString(getString(R.string.fps), "24");
+        String isViewerOnly = sharedPreferences.getString(getString(R.string.viewer_only), "false");
 
+
+        this.getIntent().putExtra(EXTRA_VIDEO_FPS, Integer.parseInt(fps));
+        this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, Integer.parseInt(bitrate));
+        this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
+        //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
         String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         String websocketUrlScheme = serverPort.equals("5443") || serverPort.equals("443") ? "wss://" : "ws://";
@@ -122,7 +125,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
                 this
         );
 
-        conferenceManager.setPlayOnlyMode(false);
+        conferenceManager.setPlayOnlyMode(isViewerOnly.equals("true"));
         conferenceManager.setOpenFrontCamera(true);
     }
     public void joinConference(View v) {
