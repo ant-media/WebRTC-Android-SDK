@@ -39,9 +39,11 @@ import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
+import org.webrtc.MediaStream;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon.ScalingType;
+import org.webrtc.RtpReceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceViewRenderer;
@@ -980,4 +982,5 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public void onPeerConnectionError(final String description) {
     reportError(description);
   }
+
 }
