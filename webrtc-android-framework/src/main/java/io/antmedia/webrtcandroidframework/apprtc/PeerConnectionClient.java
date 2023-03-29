@@ -136,7 +136,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   @Nullable
   private PeerConnectionFactory factory;
   @Nullable
-  private PeerConnection peerConnection;
+  public PeerConnection peerConnection;
   @Nullable
   private AudioSource audioSource;
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
@@ -435,6 +435,7 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
      * Callback fired once peer connection error happened.
      */
     void onPeerConnectionError(final String description);
+
   }
 
   /**
@@ -1450,15 +1451,20 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
         }
         */
 
+        updateVideoTracks();
+      }
+    }
 
-        List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
-        for (int i = 0; i < remoteVideoTrackList.size(); i++)
-        {
-          if (i < remoteSinks.size()) {
-            remoteVideoTrackList.get(i).addSink(remoteSinks.get(i));
-          } else {
-            Log.e(TAG, "There is no enough remote sinks to show video tracks");
-          }
+    private void updateVideoTracks() {
+      List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
+      for (int i = 0; i < remoteVideoTrackList.size(); i++)
+      {
+        VideoTrack videoTrack = remoteVideoTrackList.get(i);
+
+        if (i < remoteSinks.size()) {
+          videoTrack.addSink(remoteSinks.get(i));
+        } else {
+          Log.e(TAG, "There is no enough remote sinks to show video tracks");
         }
       }
     }
@@ -1486,10 +1492,15 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
     }
 
     @Override
-    public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {}
+    public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
+      //events.onAddTrack(receiver, mediaStreams);
+      updateVideoTracks();
+    }
 
     @Override
-    public void onRemoveTrack(final RtpReceiver receiver) {}
+    public void onRemoveTrack(RtpReceiver receiver) {
+      Log.d("antmedia","on remove track");
+    }
   }
 
   // Implementation detail: handle offer creation/signaling and answer setting,
@@ -1497,10 +1508,10 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
   private class SDPObserver implements SdpObserver {
     @Override
     public void onCreateSuccess(final SessionDescription desc) {
-      if (localDescription != null) {
-        reportError("Multiple SDP create.");
-        return;
-      }
+      //if (localDescription != null) {
+      //  reportError("Multiple SDP create.");
+      //  return;
+      //}
       String sdp = desc.description;
       if (preferIsac) {
         sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
