@@ -16,6 +16,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
@@ -24,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Random;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
@@ -91,7 +91,7 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
-        String streamId = "stream"+generateRandomString(5);
+        String streamId = "stream"+ RandomStringUtils.randomNumeric(5);
         String roomId = "room1";
         String serverUrl = "ws://192.168.1.25:5080/WebRTCAppEE/websocket";
         conferenceManager = new MultitrackConferenceManager(
@@ -108,14 +108,6 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
 
         conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
-    }
-
-    String generateRandomString(int length) {
-        SecureRandom secRandom = new SecureRandom();
-
-        byte[] result = new byte[length];
-        secRandom.nextBytes(result);
-        return new String(result);
     }
 
     public void joinConference(View v) {

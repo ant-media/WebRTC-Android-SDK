@@ -70,6 +70,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Screen Capture"));
         activities.add(new ActivityLink(new Intent(this, SettingsActivity.class),
                 "Settings"));
+        activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
+                "Multitrack Conference"));
     }
 
     private void setListAdapter(List<ActivityLink> activities) {
