@@ -1460,7 +1460,6 @@ public class PeerConnectionClient implements IDataChannelMessageSender {
       for (int i = 0; i < remoteVideoTrackList.size(); i++)
       {
         VideoTrack videoTrack = remoteVideoTrackList.get(i);
-        Log.d("vu", "remoteVideoTrackList " + i +" " +videoTrack.id()+" s:"+videoTrack.state().name());
 
         if (i < remoteSinks.size()) {
           videoTrack.addSink(remoteSinks.get(i));
