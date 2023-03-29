@@ -17,7 +17,10 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.util.Log;
 import android.view.Surface;
+import android.view.WindowManager;
+
 import androidx.annotation.Nullable;
 
 /**
@@ -51,6 +54,8 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable public MediaProjectionManager mediaProjectionManager;
 
   private boolean isDisposed;
+  private WindowManager windowManager;
+  private int deviceRotation = 0;
 
   /**
    * Constructs a new Screen Capturer.
@@ -102,6 +107,8 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
     mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
         Context.MEDIA_PROJECTION_SERVICE);
+
+    windowManager = (WindowManager)applicationContext.getSystemService(Context.WINDOW_SERVICE);
   }
 
   public void setMediaProjection(@Nullable MediaProjection mediaProjection) {
@@ -212,6 +219,12 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
+    int rotation = windowManager.getDefaultDisplay().getRotation();
+    if (deviceRotation != rotation) {
+      Log.w("Rotation", "onFrame: " + rotation);
+      deviceRotation = rotation;
+      surfaceTextureHelper.setFrameRotation(deviceRotation*90);
+    }
     capturerObserver.onFrameCaptured(frame);
   }
 
