@@ -64,12 +64,14 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Multi Track Play"));
         activities.add(new ActivityLink(new Intent(this, DataChannelOnlyActivity.class),
                 "Data Channel Only Activity"));
-        activities.add(new ActivityLink(new Intent(this, ConferenceActivity.class),
+        activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
                 "Conference"));
         activities.add(new ActivityLink(new Intent(this, ScreenCaptureActivity.class),
                 "Screen Capture"));
         activities.add(new ActivityLink(new Intent(this, SettingsActivity.class),
                 "Settings"));
+        activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
+                "Multitrack Conference"));
     }
 
     private void setListAdapter(List<ActivityLink> activities) {
