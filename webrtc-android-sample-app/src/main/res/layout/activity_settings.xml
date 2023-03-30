@@ -11,48 +11,10 @@
         android:layout_marginTop="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:text="Server Address" />
+        android:text="Server Websocket URL" />
 
     <EditText
         android:id="@+id/server_address"
-        android:hint=""
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:inputType="text"
-        android:minHeight="48dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:text="Server Port" />
-
-    <EditText
-        android:id="@+id/server_port"
-        android:hint=""
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:inputType="text"
-        android:minHeight="48dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:text="Application Name" />
-
-    <EditText
-        android:id="@+id/application_name"
         android:hint=""
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
@@ -96,13 +95,9 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-
         String streamId = null; //"stream1";
         conferenceManager = new ConferenceManager(
                 this,
