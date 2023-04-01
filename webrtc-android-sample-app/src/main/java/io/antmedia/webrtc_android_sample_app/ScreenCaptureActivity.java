@@ -61,7 +61,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         webRTCClient = new WebRTCClient(this, this);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
         //webRTCClient.setOpenFrontCamera(false);
 
         broadcastingView = findViewById(R.id.broadcasting_text_view);
@@ -83,12 +83,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        //this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 1000);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 360);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 640);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 2000);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 540);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 960);
         //this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        //webRTCClient.setCameraOrientationFix(90);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 25);
 
         bg = findViewById(R.id.rbGroup);
         bg.check(R.id.rbFront);

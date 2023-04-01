@@ -69,7 +69,7 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
 
         //webRTCClient.setOpenFrontCamera(false);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);

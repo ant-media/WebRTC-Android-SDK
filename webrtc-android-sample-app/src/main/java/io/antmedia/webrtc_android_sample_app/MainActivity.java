@@ -128,7 +128,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
 

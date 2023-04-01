@@ -219,6 +219,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
+    Log.i("frame", "Frame received " + numCapturedFrames);
     int rotation = windowManager.getDefaultDisplay().getRotation();
     if (deviceRotation != rotation) {
       Log.w("Rotation", "onFrame: " + rotation);

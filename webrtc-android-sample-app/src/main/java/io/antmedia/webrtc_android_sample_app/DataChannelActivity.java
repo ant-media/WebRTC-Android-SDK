@@ -115,7 +115,7 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         messagesView.setAdapter(messageAdapter);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
 
         webRTCClient = new WebRTCClient( this,this);
