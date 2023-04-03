@@ -193,6 +193,9 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 else if (definition.equals(WebSocketConstants.PLAY_FINISHED)) {
                     signallingListener.onPlayFinished(streamId);
                 }
+                else if (definition.equals(WebSocketConstants.SESSION_RESTORED_DESCRIPTION)) {
+                    signallingListener.onPublishStarted(streamId);
+                }
                 else if (definition.equals(WebSocketConstants.JOINED_THE_ROOM)) {
                     String[] streams = null;
                     if(json.has(WebSocketConstants.STREAMS_IN_ROOM) && !json.isNull(WebSocketConstants.STREAMS_IN_ROOM)) {

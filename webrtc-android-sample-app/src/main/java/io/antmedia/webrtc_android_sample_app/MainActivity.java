@@ -36,12 +36,15 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
+import org.webrtc.NetworkChangeDetector;
+import org.webrtc.NetworkMonitorAutoDetect;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -109,6 +112,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     };
     private TextView broadcastingView;
     private EditText streamIdEditText;
+    private NetworkMonitorAutoDetect networkDetector;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -137,6 +141,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
 
+        createNetworkChangeObserver();
+
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
@@ -144,8 +150,8 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         String appName = sharedPreferences.getString(getString(R.string.app_name), SettingsActivity.DEFAULT_APP_NAME);
 
         String restUrlScheme = serverPort.equals("5443") ? "https://" : "http://";
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
+        String websocketUrlScheme = serverPort.equals("5443") || serverPort.equals("443") || serverPort.equals("443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + appName + "/websocket";
         restUrl = restUrlScheme + serverAddress + "/" + appName + "/rest/v2";
 
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
@@ -215,7 +221,44 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
+        webRTCClient.setReconnectionEnabled(true);
 
+        setPublishBitrate(networkDetector.getCurrentConnectionType());
+    }
+
+    private void createNetworkChangeObserver() {
+        networkDetector = new NetworkMonitorAutoDetect(new NetworkChangeDetector.Observer() {
+            @Override
+            public void onConnectionTypeChanged(NetworkChangeDetector.ConnectionType newConnectionType) {
+                //setPublishBitrate(newConnectionType);
+            }
+
+            @Override
+            public void onNetworkConnect(NetworkChangeDetector.NetworkInformation networkInfo) {
+
+            }
+
+            @Override
+            public void onNetworkDisconnect(long networkHandle) {
+
+            }
+
+            @Override
+            public void onNetworkPreference(List<NetworkChangeDetector.ConnectionType> types, int preference) {
+
+            }
+        }, this);
+
+    }
+
+    public void setPublishBitrate(NetworkChangeDetector.ConnectionType newConnectionType) {
+        if (newConnectionType.equals(NetworkChangeDetector.ConnectionType.CONNECTION_WIFI)) {
+            Log.d("MainActivity", "Network Wifi");
+            webRTCClient.setBitrate(2000);
+        } else {
+            Log.d("MainActivity", "newConnectionType:" + newConnectionType);
+            webRTCClient.setBitrate(500);
+        }
     }
 
     public void startStreaming(View v) {
@@ -325,7 +368,14 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
     @Override
     public void onDisconnected(String streamId) {
+        Log.w(getClass().getSimpleName(), "disconnected");
+        Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.GONE);
+        decrementIdle();
+        startStreamingButton.setText("Start " + operationName);
+    }
 
+    public void deleteThis(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);

@@ -11,11 +11,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.ImageFormat;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
-import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,8 +20,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -38,29 +31,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.webrtc.DataChannel;
 import org.webrtc.JavaI420Buffer;
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoFrame;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.URL;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -118,6 +97,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private Bitmap bitmapImage;
+    private Timer frameFeedTimer;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -140,13 +120,18 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + RandomStringUtils.randomNumeric(5));
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
-        serverUrl = "wss://ovh36.antmedia.io:5443/WebRTCAppEE/websocket";
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
+        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        String appName = sharedPreferences.getString(getString(R.string.app_name), SettingsActivity.DEFAULT_APP_NAME);
 
-
+        String websocketUrlScheme = serverPort.equals("5443") || serverPort.equals("443") ? "wss://" : "ws://";
+        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + appName + "/websocket";
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -194,7 +179,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
             bitmapImage = BitmapFactory.decodeResource(getResources(), R.drawable.test);
             bitmapImage = Bitmap.createScaledBitmap(bitmapImage, 360, 640, false);
 
-            Timer timer = new Timer();
+            frameFeedTimer = new Timer();
             TimerTask tt = new TimerTask() {
                 @Override
                 public void run() {
@@ -203,7 +188,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
                 }
             };
 
-            timer.schedule(tt, 0, 50);
+            frameFeedTimer.schedule(tt, 0, 50);
 
         }
         else {
@@ -212,7 +197,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
             reconnectionHandler.removeCallbacks(reconnectionRunnable);
             webRTCClient.stopStream();
             stoppedStream = true;
-
+            frameFeedTimer.cancel();
         }
 
     }
@@ -419,6 +404,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         return idlingResource;
     }
 
+
     public VideoFrame getNextFrame() {
         final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
 
@@ -434,11 +420,12 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         int uvSize = ySize / 4;
 
         final JavaI420Buffer buffer = JavaI420Buffer.wrap(frameWidth, frameHeight,
-                i420Buffer.getPlaneY().getBuffer(), i420Buffer.getPlaneY().getRowStride(),
-                i420Buffer.getPlaneU().getBuffer(), i420Buffer.getPlaneU().getRowStride(),
-                i420Buffer.getPlaneV().getBuffer(), i420Buffer.getPlaneV().getRowStride(),
-                null);
+                    i420Buffer.getPlaneY().getBuffer(), i420Buffer.getPlaneY().getRowStride(),
+                    i420Buffer.getPlaneU().getBuffer(), i420Buffer.getPlaneU().getRowStride(),
+                    i420Buffer.getPlaneV().getBuffer(), i420Buffer.getPlaneV().getRowStride(),
+                    null);
 
+        originalBuffer.close();
         return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
     }
 }

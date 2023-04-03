@@ -63,7 +63,7 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         activities.add(new ActivityLink(new Intent(this, MultiTrackPlayActivity.class),
                 "Multi Track Play"));
         activities.add(new ActivityLink(new Intent(this, DataChannelOnlyActivity.class),
-                "Data Channel Only Activity"));
+                "Data Channel Only"));
         activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
                 "Conference"));
         activities.add(new ActivityLink(new Intent(this, ScreenCaptureActivity.class),
@@ -71,7 +71,9 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         activities.add(new ActivityLink(new Intent(this, SettingsActivity.class),
                 "Settings"));
         activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
-                "Multitrack Conference"));
+                "Multi Track Conference"));
+        activities.add(new ActivityLink(new Intent(this, CustomFrameActivity.class),
+                "Custom Frame Feed"));
     }
 
     private void setListAdapter(List<ActivityLink> activities) {

@@ -53,6 +53,7 @@ import org.webrtc.VideoTrack;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,6 +126,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String errorString = null;
     private String streamMode;
     private boolean openFrontCamera = true;
+    private boolean streamStoppedByUser = false;
+
+    private boolean reconnectionInProgress = false;
+
+    private boolean autoPlayTracks = false;
+    private boolean renderersInited = false;
 
     public VideoCapturer getVideoCapturer() {
         return videoCapturer;
@@ -145,9 +152,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private IDataChannelObserver dataChannelObserver;
 
     private String streamId;
-	  private String url;
-	  private String token;
-	  private boolean dataChannelOnly = false;
+	private String url;
+	private String token;
+	private boolean dataChannelOnly = false;
     private String subscriberId = "";
     private String subscriberCode = "";
     private String streamName = "";
@@ -169,6 +176,32 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     private static Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
+
+    private Handler reconnectionHandler = new Handler();
+
+    private boolean reconnectionEnabled = false;
+
+    final int RECONNECTION_PERIOD_MLS = 1000;
+
+    final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
+
+    Runnable reconnectionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!streamStoppedByUser && !isStreaming()) {
+                Log.i(TAG,"Try to reconnect in reconnectionRunnable");
+                stopStream(false);
+                startStream();
+                if (streamMode == IWebRTCClient.MODE_JOIN)
+                {
+                    pipRenderer.setZOrderOnTop(true);
+                }
+            }
+            if(!streamStoppedByUser && reconnectionInProgress) {
+                reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
+            }
+        }
+    };
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -245,19 +278,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
 
 
+        eglBase = EglBase.create();
+
 
         if (remoteRendererList != null) {
-            int size = remoteRendererList.size();
-            for (int i = 0; i < size; i++)
-            {
-                CallActivity.ProxyVideoSink remoteVideoSink = new CallActivity.ProxyVideoSink();
-                remoteSinks.add(remoteVideoSink);
+            for (SurfaceViewRenderer renderer : remoteRendererList) {
+                //if we are performing reconnection, we shouldn't add remote sinks again
+                if (!renderersInited) {
+                    CallActivity.ProxyVideoSink remoteVideoSink = new CallActivity.ProxyVideoSink();
+                    remoteSinks.add(remoteVideoSink);
+                }
+
+                renderer.init(eglBase.getEglBaseContext(), null);
+                renderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+                renderer.setEnableHardwareScaler(true);
             }
+            renderersInited = true;
         }
         else {
             remoteSinks.add(remoteProxyRenderer);
         }
-        eglBase = EglBase.create();
 
         // Create video renderers.
         if (pipRenderer != null) {
@@ -287,15 +327,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         if (pipRenderer != null) {
             pipRenderer.setZOrderMediaOverlay(true);
             pipRenderer.setEnableHardwareScaler(true /* enabled */);
-        }
-
-
-        if (remoteRendererList != null) {
-            for (SurfaceViewRenderer renderer : remoteRendererList) {
-                renderer.init(eglBase.getEglBaseContext(), null);
-                renderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
-                renderer.setEnableHardwareScaler(true);
-            }
         }
 
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
@@ -378,6 +409,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode ,token);
+        mainTrackId = roomConnectionParameters.roomId;
 
 
         // For command line execution run connection for <runTimeMs> and exit.
@@ -467,6 +499,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void startStream() {
         Log.i(getClass().getSimpleName(), "Starting stream");
         init(this.url, this.streamId, this.streamMode, this.token, this.intent);
+        streamStoppedByUser = false;
         if (wsHandler == null) {
             Log.i(TAG, "WebsocketHandler is null and creating a new instance");
             wsHandler = new WebSocketHandler(this, handler);
@@ -621,13 +654,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void stopStream() {
+       stopStream(true);
+    }
+
+    public void stopStream(boolean byUser) {
         Log.i(getClass().getSimpleName(), "Stopping stream");
+        streamStoppedByUser = byUser;
         disconnect();
         if (logToast != null) {
             logToast.cancel();
         }
         activityRunning = false;
-
     }
 
     // CallFragment.OnCallEvents interface implementation.
@@ -753,6 +790,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         if (pipRenderer != null) {
             pipRenderer.release();
            // pipRenderer = null; Do not make renderer null, we can re-use
+        }
+
+        if (remoteRendererList != null) {
+            for (SurfaceViewRenderer renderer : remoteRendererList) {
+                renderer.release();
+            }
         }
 
         if (fullscreenRenderer != null) {
@@ -924,6 +967,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public void setWsHandler(WebSocketHandler wsHandler) {
         this.wsHandler = wsHandler;
     }
+
+    private void setUpReconnection() {
+        if(!streamStoppedByUser) {
+            Log.i(getClass().getSimpleName(),"Disconnected. Trying to reconnect");
+            reconnectionInProgress = true;
+            Toast.makeText(context, "Disconnected.Trying to reconnect "+streamStoppedByUser, Toast.LENGTH_LONG).show();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
+                    reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+                }
+            } else {
+                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
+            }
+        }
+    }
+
 
     @Override
     public void setVideoRenderers(SurfaceViewRenderer pipRenderer, SurfaceViewRenderer fullscreenRenderer) {
@@ -1134,18 +1193,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onPublishStarted(String streamId) {
-        this.handler.post(() -> {
+        streamStoppedByUser = false;
+        reconnectionInProgress = false;
 
+        this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onPublishStarted(streamId);
             }
-
         });
 
     }
 
     @Override
     public void onPlayStarted(String streamId) {
+        streamStoppedByUser = false;
+        reconnectionInProgress = false;
+
         this.handler.post(() -> {
             if (webRTCListener != null) {
                 webRTCListener.onPlayStarted(streamId);
@@ -1213,6 +1276,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             if (webRTCListener != null) {
                 webRTCListener.onDisconnected(streamId);
             }
+
+            if(reconnectionEnabled && !reconnectionInProgress) {
+                setUpReconnection();
+            }
         });
 
     }
@@ -1224,6 +1291,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 webRTCListener.onTrackList(tracks);
             }
         });
+
+        if(autoPlayTracks) {
+            play(mainTrackId, token, (String[]) tracks);
+        }
     }
 
     @Override
@@ -1372,5 +1443,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
     public void setMainTrackId(String mainTrackId) {
         this.mainTrackId = mainTrackId;
+    }
+
+    public boolean isReconnectionEnabled() {
+        return reconnectionEnabled;
+    }
+
+    public void setReconnectionEnabled(boolean reconnectionEnabled) {
+        this.reconnectionEnabled = reconnectionEnabled;
+    }
+
+    public void setAutoPlayTracks(boolean autoPlayTracks) {
+        this.autoPlayTracks = autoPlayTracks;
+    }
+
+    public boolean isReconnectionInProgress() {
+        return reconnectionInProgress;
     }
 }

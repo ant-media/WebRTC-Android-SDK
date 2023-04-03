@@ -47,6 +47,8 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     private int ROOM_INFO_POLLING_MILLIS = 5000;
 
+    private boolean reconnectionEnabled = false;
+
     private LinkedHashMap<SurfaceViewRenderer, String> playRendererAllocationMap = new LinkedHashMap<>();
 
     private Runnable getRoomInfoRunnable = new Runnable() {
@@ -129,6 +131,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     //AntMediaSignallingEvents
     @Override
     public void onPublishStarted(String streamId) {
+        if(publishWebRTCClient.isReconnectionInProgress()) {
+            joinTheConference();
+        }
         publishWebRTCClient.onPublishStarted(streamId);
     }
 
@@ -202,6 +207,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         if (!this.playOnlyMode) {
             publishWebRTCClient = new WebRTCClient(webRTCListener, context);
             publishWebRTCClient.setWsHandler(wsHandler);
+            publishWebRTCClient.setReconnectionEnabled(reconnectionEnabled);
             if (dataChannelObserver != null) {
                 publishWebRTCClient.setDataChannelObserver(dataChannelObserver);
             }
@@ -226,7 +232,10 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     @Override
     public void onJoinedTheRoom(String streamId, String[] streams) {
         Log.w(this.getClass().getSimpleName(), "On Joined the Room ");
-        publishStream(streamId);
+        //is first join ie. not rejoin
+        if(publishWebRTCClient == null) {
+            publishStream(streamId);
+        }
         joined = true;
         // start periodic polling of room info
         scheduleGetRoomInfo();
@@ -237,8 +246,10 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         if(!playMessageSent) {
            playWebRTCClient = new WebRTCClient(webRTCListener, context);
            playWebRTCClient.setWsHandler(wsHandler);
+           playWebRTCClient.setReconnectionEnabled(reconnectionEnabled);
            playWebRTCClient.setRemoteRendererList(new ArrayList<>(playRendererAllocationMap.keySet()));
-
+           playWebRTCClient.setAutoPlayTracks(true);
+           playWebRTCClient.setMainTrackId(roomName);
            String tokenId = "";
 
            if (dataChannelObserver != null) {
@@ -247,9 +258,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
            playWebRTCClient.init(serverUrl, roomName, IWebRTCClient.MODE_MULTI_TRACK_PLAY, tokenId, intent);
 
-           String[] tracks = Arrays.copyOf(streams, streams.length+1);
-           tracks[streams.length] = "!"+streamId;
-           playWebRTCClient.play(roomName, tokenId, (String[]) tracks);
+           playWebRTCClient.startStream();
            playMessageSent = true;
        }
     }
@@ -289,7 +298,32 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     @Override
     public void onTrackList(String[] tracks) {
+        boolean onwTrackInTheList = false;
+        for (int i = 0; i < tracks.length; i++) {
+            if(tracks[i].equals(streamId)) {
+                onwTrackInTheList = true;
+                break;
+            }
+        }
 
+        String[] tracksBePlayed;
+        if(onwTrackInTheList) {
+            //find and add !
+            tracksBePlayed = Arrays.copyOf(tracks, tracks.length);
+            for (int i = 0; i < tracksBePlayed.length; i++) {
+                if(tracksBePlayed[i].equals(streamId)) {
+                    tracksBePlayed[i] =  "!"+streamId;
+                    break;
+                }
+            }
+        }
+        else {
+            //add the list as !+streamId
+            tracksBePlayed = Arrays.copyOf(tracks, tracks.length+1);
+            tracksBePlayed[tracksBePlayed.length] = "!"+streamId;
+        }
+
+        playWebRTCClient.onTrackList(tracksBePlayed);
     }
 
     @Override
@@ -429,5 +463,13 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         } catch (JSONException e) {
             Log.e(this.getClass().getSimpleName(), "Connect to conference room JSON error: " + e.getMessage());
         }
+    }
+
+    public boolean isReconnectionEnabled() {
+        return reconnectionEnabled;
+    }
+
+    public void setReconnectionEnabled(boolean reconnectionEnabled) {
+        this.reconnectionEnabled = reconnectionEnabled;
     }
 }
