@@ -176,10 +176,15 @@ public class MainActivityTest {
         UiDevice device = UiDevice.getInstance(getInstrumentation());
 
         onView(withId(R.id.rbScreen)).perform(click());
-
         UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 10000);
         assertNotNull(button);
         button.click();
+
+        //this switch operation causes to crash so that it's added here as test
+        onView(withId(R.id.rbFront)).perform(click());
+        onView(withId(R.id.rbScreen)).perform(click());
+
+
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
         Espresso.closeSoftKeyboard();
@@ -190,8 +195,21 @@ public class MainActivityTest {
 
         //2. stop stream and check that it's stopped
         onView(withId(R.id.start_streaming_button)).perform(click());
-
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+
+        //Publish again without because it was failing
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        //Check it's publishing again
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Streaming")));
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        //Stop publishing
+        onView(withId(R.id.start_streaming_button)).perform(click());
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }

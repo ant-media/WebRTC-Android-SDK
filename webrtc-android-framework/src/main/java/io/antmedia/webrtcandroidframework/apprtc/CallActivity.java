@@ -457,7 +457,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       reportError("User didn't give permission to capture the screen.");
       return null;
     }
-    return new ScreenCapturerAndroid(null,
+    return new ScreenCapturerAndroid(
         mediaProjectionPermissionResultData, new MediaProjection.Callback() {
       @Override
       public void onStop() {

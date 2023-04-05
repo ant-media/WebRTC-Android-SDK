@@ -1,9 +1,14 @@
 package io.antmedia.webrtc_android_sample_app;
 
+import static io.antmedia.webrtc_android_sample_app.MediaProjectionService.EXTRA_MEDIA_PROJECTION_DATA;
+
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -21,6 +26,7 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 
+import androidx.annotation.RequiresApi;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
@@ -39,6 +45,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private String serverUrl;
     private EditText streamIdEditText;
 
+    private static final String TAG = ScreenCaptureActivity.class.getSimpleName();
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private View broadcastingView;
 
@@ -52,6 +59,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
      For samsung devices: Motion smoothness
 
      */
+
+    //TODO: I think opening the camera at first does not make sense. I mean expectation is to open the screen. @mekya.
+    //TODO: Try to provide a better experience
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -133,14 +143,14 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         // Otherwise media projection will work without service
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
 
-            MediaProjectionService service = new MediaProjectionService();
-
-            service.setListener(mediaProjection -> {
+            MediaProjectionService.setListener(mediaProjection -> {
                 webRTCClient.setMediaProjection(mediaProjection);
                 webRTCClient.onActivityResult(requestCode, resultCode, data);
             });
 
-            service.start(getApplicationContext(), data);
+            Intent serviceIntent = new Intent(this, MediaProjectionService.class);
+            serviceIntent.putExtra(EXTRA_MEDIA_PROJECTION_DATA, data);
+            startForegroundService(serviceIntent);
         }
         else{
             webRTCClient.onActivityResult(requestCode, resultCode, data);
@@ -155,6 +165,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         streamIdEditText.requestFocus();
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop Streaming");
+            Log.i(TAG, "Starting streaming");
             webRTCClient.startStream();
         }
         else {

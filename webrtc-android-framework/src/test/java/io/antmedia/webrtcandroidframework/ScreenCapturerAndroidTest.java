@@ -22,7 +22,7 @@ public class ScreenCapturerAndroidTest {
     @Test
     public void testOnFrameRotation() {
 
-        ScreenCapturerAndroid screenCapturerAndroid = spy(new ScreenCapturerAndroid(null, null, null));
+        ScreenCapturerAndroid screenCapturerAndroid = spy(new ScreenCapturerAndroid(null, null));
         WindowManager windowManager = Mockito.spy(WindowManager.class);
         screenCapturerAndroid.setWindowManager(windowManager);
 

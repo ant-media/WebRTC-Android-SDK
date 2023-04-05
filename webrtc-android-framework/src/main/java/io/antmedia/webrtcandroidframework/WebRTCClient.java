@@ -26,7 +26,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
-import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.DataChannel;
@@ -34,16 +33,13 @@ import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
-import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
-import org.webrtc.RtpReceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
-import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
@@ -146,7 +142,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private String streamName = "";
     private String viewerInfo = "";
     private String currentSource;
-    private boolean screenPersmisonNeeded = true;
+    private boolean screenPermissionNeeded = true;
 
     public MediaProjection mediaProjection;
     public MediaProjectionManager mediaProjectionManager;
@@ -288,7 +284,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
         setSwappedFeeds(true /* isSwappedFeeds */);
 
-
         boolean loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
         boolean tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
 
@@ -370,7 +365,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             (new Handler()).postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    disconnect();
+                    release(false);
                 }
             }, runTimeMs);
         }
@@ -390,7 +385,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         // because other implementations of VideoCapturer doesn't have a dispose() method.
         if (peerConnectionParameters.videoCallEnabled
                 && (videoCapturer == null
-                || (videoCapturer instanceof ScreenCapturerAndroid && ((ScreenCapturerAndroid) videoCapturer).isDisposed()))
+                || (videoCapturer instanceof ScreenCapturerAndroid))
             ) {
 
             String source = SOURCE_REAR;
@@ -409,6 +404,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             videoCapturer = createVideoCapturer(source);
             
             currentSource = source;
+        }
+        else {
+            Log.i(TAG, "Video capturer:" + videoCapturer +" is being reused");
         }
 
         if (localVideoTrack != null) {
@@ -499,8 +497,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             reportError("User didn't give permission to capture the screen.");
             return null;
         }
-        return new ScreenCapturerAndroid(mediaProjection,
-                mediaProjectionPermissionResultData, new MediaProjection.Callback() {
+        return new ScreenCapturerAndroid(mediaProjectionPermissionResultData, new MediaProjection.Callback() {
             @Override
             public void onStop() {
                 reportError("User revoked permission to capture the screen.");
@@ -515,7 +512,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         mediaProjectionPermissionResultCode = resultCode;
         mediaProjectionPermissionResultData = data;
 
-        screenPersmisonNeeded = false;
+        screenPermissionNeeded = false;
         changeVideoSource(SOURCE_SCREEN);
     }
 
@@ -604,19 +601,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     @Override
     public void stopStream() {
         Log.i(getClass().getSimpleName(), "Stopping stream");
-        disconnect();
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.stop(streamId);
+        }
         if (logToast != null) {
             logToast.cancel();
         }
         activityRunning = false;
-
     }
 
     // CallFragment.OnCallEvents interface implementation.
     @Override
     public void onCallHangUp() {
         Log.i(TAG, "onCallHangUp");
-        disconnect();
+        release(false);
     }
 
     @Override
@@ -720,15 +718,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.
-    private void release() {
+    private void release(boolean closeWebsocket) {
         Log.i(getClass().getSimpleName(), "Releasing resources");
         activityRunning = false;
         iceConnected = false;
         remoteProxyRenderer.setTarget(null);
 
-        //signalling listener is not ConferenceManager in Conference mode so that
-        // below method does not disconnect websocket connection in ConferenceManager
-        if (wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
+        if (closeWebsocket && wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
             wsHandler.disconnect(true);
             wsHandler = null;
         }
@@ -757,14 +753,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
-    private void disconnect() {
-        release();
-    }
 
     private void disconnectWithErrorMessage(final String errorMessage) {
         if (commandLineRun || !activityRunning) {
             Log.e(TAG, "Critical error: " + errorMessage);
-            disconnect();
+            release(true);
         } else {
             new AlertDialog.Builder(this.context)
                     .setTitle(this.context.getText(R.string.channel_error_title))
@@ -775,7 +768,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                                 @Override
                                 public void onClick(DialogInterface dialog, int id) {
                                     dialog.cancel();
-                                    disconnect();
+                                    release(true);
                                 }
                             })
                     .create()
@@ -811,7 +804,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public void changeVideoSource(String newSource) {
         if(!currentSource.equals(newSource)) {
-            if(newSource.equals(SOURCE_SCREEN) && screenPersmisonNeeded) {
+            if(newSource.equals(SOURCE_SCREEN) && screenPermissionNeeded) {
                 startScreenCapture();
                 return;
             } else if(newSource.equals(SOURCE_REAR)) {
@@ -1009,7 +1002,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         {
             logAndToast("ICE disconnected");
             iceConnected = false;
-            disconnect();
+            release(false);
             if (webRTCListener != null) {
                 webRTCListener.onIceDisconnected(streamId);
             }
@@ -1091,7 +1084,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             if (webRTCListener != null) {
                 webRTCListener.onPublishFinished(streamId);
             }
-            disconnect();
+            release(false);
         });
 
     }
@@ -1100,10 +1093,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     @Override
     public void onPlayFinished(String streamId) {
         this.handler.post(() -> {
+            release(false);
             if (webRTCListener != null) {
                 webRTCListener.onPlayFinished(streamId);
             }
-            disconnect();
+
         });
     }
 
@@ -1113,11 +1107,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     @Override
     public void onPublishStarted(String streamId) {
         this.handler.post(() -> {
-
             if (webRTCListener != null) {
                 webRTCListener.onPublishStarted(streamId);
             }
-
         });
 
     }
