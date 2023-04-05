@@ -99,5 +99,35 @@ public class MultitrackConferenceActivityTest {
 
     }
 
+    @Test
+    public void testJoinConfereceActivity() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ConferenceActivity.class);
+
+        ActivityScenario<ConferenceActivity> scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+            @Override
+            public void perform(ConferenceActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
+    }
+
 
 }
