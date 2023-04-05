@@ -37,7 +37,7 @@ import androidx.annotation.VisibleForTesting;
  */
 public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private static final int DISPLAY_FLAGS =
-      DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
+          DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
   public static final int VIRTUAL_DISPLAY_DPI = 400;
 
@@ -50,14 +50,13 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
   @Nullable private CapturerObserver capturerObserver;
   private long numCapturedFrames;
-
-  @Nullable public MediaProjection mediaProjection;
-  @Nullable public MediaProjectionManager mediaProjectionManager;
-
+  @Nullable private MediaProjection mediaProjection;
   private boolean isDisposed;
   private WindowManager windowManager;
   private int deviceRotation = 0;
   private static final String TAG =  ScreenCapturerAndroid.class.getSimpleName();
+
+  @Nullable private MediaProjectionManager mediaProjectionManager;
 
   /**
    * Constructs a new Screen Capturer.
@@ -68,9 +67,8 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
    * @param mediaProjectionCallback MediaProjection callback to implement application specific
    *     logic in events such as when the user revokes a previously granted capture permission.
   **/
-  public ScreenCapturerAndroid(MediaProjection mediaProjection, Intent mediaProjectionPermissionResultData,
+  public ScreenCapturerAndroid(Intent mediaProjectionPermissionResultData,
       MediaProjection.Callback mediaProjectionCallback) {
-    this.mediaProjection = mediaProjection;
     this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
     this.mediaProjectionCallback = mediaProjectionCallback;
   }
@@ -94,7 +92,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
-      final Context applicationContext, final CapturerObserver capturerObserver) {
+                                      final Context applicationContext, final CapturerObserver capturerObserver) {
     checkNotDisposed();
 
     if (capturerObserver == null) {
@@ -121,17 +119,14 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void startCapture(
-      final int width, final int height, final int ignoredFramerate) {
+          final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
 
     this.width = width;
     this.height = height;
 
-    // It means that it will use old method(without running in MediaProjectionService)
-    if(mediaProjection == null){
-      mediaProjection = mediaProjectionManager.getMediaProjection(
-              Activity.RESULT_OK, mediaProjectionPermissionResultData);
-    }
+    mediaProjection = mediaProjectionManager.getMediaProjection(
+            Activity.RESULT_OK, mediaProjectionPermissionResultData);
 
     // Let MediaProjection callback use the SurfaceTextureHelper thread.
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());
@@ -172,6 +167,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void dispose() {
+    Log.i(TAG, "ScreenCapturer is disposed");
     isDisposed = true;
   }
 
@@ -187,7 +183,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
-      final int width, final int height, final int ignoredFramerate) {
+          final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
 
     this.width = width;
@@ -213,8 +209,8 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private void createVirtualDisplay() {
     surfaceTextureHelper.setTextureSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
-        VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
-        null /* callback */, null /* callback handler */);
+            VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
+            null /* callback */, null /* callback handler */);
   }
 
   // This is called on the internal looper thread of {@Code SurfaceTextureHelper}.
