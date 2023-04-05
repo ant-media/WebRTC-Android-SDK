@@ -22,6 +22,7 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 /**
  * An implementation of VideoCapturer to capture the screen content as a video stream.
@@ -38,7 +39,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private static final int DISPLAY_FLAGS =
       DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
-  private static final int VIRTUAL_DISPLAY_DPI = 400;
+  public static final int VIRTUAL_DISPLAY_DPI = 400;
 
   private final Intent mediaProjectionPermissionResultData;
   private final MediaProjection.Callback mediaProjectionCallback;
@@ -245,5 +246,29 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   public long getNumCapturedFrames() {
     return numCapturedFrames;
+  }
+
+  public void setWindowManager(WindowManager windowManager) {
+    this.windowManager = windowManager;
+  }
+
+  public void setVirtualDisplay(VirtualDisplay virtualDisplay) {
+    this.virtualDisplay = virtualDisplay;
+  }
+
+  public void setSurfaceTextureHelper(SurfaceTextureHelper surfaceTextureHelper) {
+    this.surfaceTextureHelper = surfaceTextureHelper;
+  }
+
+  public void setCapturerObserver(CapturerObserver capturerObserver) {
+    this.capturerObserver = capturerObserver;
+  }
+
+  public void setWidth(int width) {
+    this.width = width;
+  }
+
+  public void setHeight(int height) {
+    this.height = height;
   }
 }
