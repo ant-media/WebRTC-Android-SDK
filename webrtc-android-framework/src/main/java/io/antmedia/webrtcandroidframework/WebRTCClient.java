@@ -63,6 +63,8 @@ import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_URLPARAMETERS;
 
+import androidx.annotation.VisibleForTesting;
+
 
 /**
  * Activity for peer connection call setup, call waiting
@@ -75,6 +77,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     public static final String SOURCE_SCREEN = "SCREEN";
     public static final String SOURCE_FRONT = "FRONT";
     public static final String SOURCE_REAR = "REAR";
+
+    public static final String ERROR_USER_REVOKED_CAPTURE_SCREEN_PERMISSION = "USER_REVOKED_CAPTURE_SCREEN_PERMISSION";
 
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
@@ -405,9 +409,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
             
             currentSource = source;
         }
-        else {
-            Log.i(TAG, "Video capturer:" + videoCapturer +" is being reused");
-        }
 
         if (localVideoTrack != null) {
             peerConnectionClient.setLocalVideoTrack(localVideoTrack);
@@ -462,7 +463,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
 
     @TargetApi(17)
-    private DisplayMetrics getDisplayMetrics() {
+    public DisplayMetrics getDisplayMetrics() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         WindowManager windowManager =
                 (WindowManager) this.context.getSystemService(Context.WINDOW_SERVICE);
@@ -492,7 +493,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     @TargetApi(21)
-    private @Nullable VideoCapturer createScreenCapturer() {
+    public @Nullable VideoCapturer createScreenCapturer() {
         if (mediaProjectionPermissionResultCode != Activity.RESULT_OK) {
             reportError("User didn't give permission to capture the screen.");
             return null;
@@ -500,7 +501,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         return new ScreenCapturerAndroid(mediaProjectionPermissionResultData, new MediaProjection.Callback() {
             @Override
             public void onStop() {
-                reportError("User revoked permission to capture the screen.");
+                //this is self-explanatory error code
+                reportError(ERROR_USER_REVOKED_CAPTURE_SCREEN_PERMISSION);
             }
         });
     }
@@ -786,7 +788,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         //logToast.show();
     }
 
-    private void reportError(final String description) {
+    public void reportError(final String description) {
         this.handler.post(() -> {
 
             if (!isError) {
@@ -803,7 +805,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     public void changeVideoSource(String newSource) {
-        if(!currentSource.equals(newSource)) {
+        if(currentSource == null || !currentSource.equals(newSource)) {
             if(newSource.equals(SOURCE_SCREEN) && screenPermissionNeeded) {
                 startScreenCapture();
                 return;
@@ -834,7 +836,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
-    private @Nullable VideoCapturer createVideoCapturer(String source) {
+    public @Nullable VideoCapturer createVideoCapturer(String source) {
         final VideoCapturer videoCapturer;
 
         if (SOURCE_FRONT.equals(source)) {

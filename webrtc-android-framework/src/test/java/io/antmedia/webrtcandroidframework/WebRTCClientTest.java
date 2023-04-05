@@ -1,18 +1,25 @@
 package io.antmedia.webrtcandroidframework;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.content.Context;
+import android.media.projection.MediaProjection;
+import android.util.DisplayMetrics;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -22,8 +29,12 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.webrtc.ScreenCapturerAndroid;
+import org.webrtc.VideoCapturer;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
+import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 /**
@@ -159,5 +170,45 @@ public class WebRTCClientTest {
         }
 
         assertEquals(json.toString(), jsonCaptor.getValue());
+    }
+
+    @Test
+    public void testCreateScreenCapturer() {
+
+        IWebRTCListener listener = mock(IWebRTCListener.class);
+        Context context = mock(Context.class);
+        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
+
+        ScreenCapturerAndroid screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
+        assertNull(screenCapturer);
+
+        webRTCClient.setMediaProjectionParams(Activity.RESULT_OK, null);
+        screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
+        assertNotNull(screenCapturer);
+
+        MediaProjection.Callback callback = Mockito.spy(screenCapturer.getMediaProjectionCallback());
+        callback.onStop();
+
+        Mockito.verify(webRTCClient).reportError("USER_REVOKED_CAPTURE_SCREEN_PERMISSION");
+    }
+
+    @Test
+    public void testOnActivityResult() {
+        IWebRTCListener listener = mock(IWebRTCListener.class);
+        Context context = mock(Context.class);
+        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
+
+        webRTCClient.changeVideoSource(WebRTCClient.SOURCE_SCREEN);
+        Mockito.verify(webRTCClient).startScreenCapture();
+
+        webRTCClient.onActivityResult(0, Activity.RESULT_OK, null);
+        assertNotEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
+
+        Mockito.doReturn(new DisplayMetrics()).when(webRTCClient).getDisplayMetrics();
+        webRTCClient.onActivityResult(CallActivity.CAPTURE_PERMISSION_REQUEST_CODE, Activity.RESULT_OK, null);
+        assertEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
+
+        Mockito.verify(webRTCClient).createVideoCapturer(WebRTCClient.SOURCE_SCREEN);
+
     }
 }

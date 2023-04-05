@@ -267,4 +267,8 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   public void setHeight(int height) {
     this.height = height;
   }
+
+  public MediaProjection.Callback getMediaProjectionCallback() {
+    return mediaProjectionCallback;
+  }
 }
