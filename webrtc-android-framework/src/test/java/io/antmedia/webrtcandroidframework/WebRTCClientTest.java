@@ -155,7 +155,7 @@ public class WebRTCClientTest {
                 new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
         webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
 
-
+        webRTCClient.setStreamId(streamId);
         PeerConnectionClient.PeerConnectionParameters peerConnectionParameters
                 = new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, false, false, 0, 0, 0,
                 0, "", false, false, 0, "",
