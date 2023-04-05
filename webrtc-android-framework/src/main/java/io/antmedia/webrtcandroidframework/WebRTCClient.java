@@ -113,7 +113,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private boolean micEnabled = true;
     private boolean screencaptureEnabled = false;
     private static Intent mediaProjectionPermissionResultData;
-    private static int mediaProjectionPermissionResultCode;
+    private int mediaProjectionPermissionResultCode;
     // True if local view is in the fullscreen renderer.
     private boolean isSwappedFeeds;
     private Context context;
@@ -937,7 +937,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         return audioOn;
     }
 
-    public static int getMediaProjectionPermissionResultCode() {
+    public int getMediaProjectionPermissionResultCode() {
         return mediaProjectionPermissionResultCode;
     }
 
