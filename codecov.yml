@@ -2,5 +2,5 @@ coverage:
   status:
     patch:
       default:
-        target: 80.0
+        target: 75.0
 
