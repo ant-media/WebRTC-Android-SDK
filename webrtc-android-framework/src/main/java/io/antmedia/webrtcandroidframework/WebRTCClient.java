@@ -101,7 +101,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private VideoFileRenderer videoFileRenderer;
     private final List<VideoSink> remoteSinks = new ArrayList<>();
     private Toast logToast;
-    private boolean commandLineRun;
     private boolean activityRunning;
     private AppRTCClient.RoomConnectionParameters roomConnectionParameters;
     @Nullable
@@ -352,9 +351,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                         audioCallEnabled);
 
 
-        commandLineRun = intent.getBooleanExtra(CallActivity.EXTRA_CMDLINE, false);
-        int runTimeMs = intent.getIntExtra(CallActivity.EXTRA_RUNTIME, 0);
-
         Log.d(TAG, "VIDEO_FILE: '" + intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA) + "'");
 
         // Create connection parameters.
@@ -362,17 +358,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode ,token);
-
-
-        // For command line execution run connection for <runTimeMs> and exit.
-        if (commandLineRun && runTimeMs > 0) {
-            (new Handler()).postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    release(false);
-                }
-            }, runTimeMs);
-        }
 
         // Create peer connection client.
         peerConnectionClient = new PeerConnectionClient(
@@ -668,16 +653,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     private void startCall() {
         logAndToast(this.context.getString(R.string.connecting_to, roomConnectionParameters.roomUrl));
         if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            publish(roomConnectionParameters.roomId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+            publish(streamId, roomConnectionParameters.token, peerConnectionParameters.videoCallEnabled, peerConnectionParameters.audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_PLAY)) {
-            play(roomConnectionParameters.roomId, roomConnectionParameters.token, null, subscriberId, subscriberCode, viewerInfo);
+            play(streamId, roomConnectionParameters.token, null, subscriberId, subscriberCode, viewerInfo);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_JOIN)) {
-            wsHandler.joinToPeer(roomConnectionParameters.roomId, roomConnectionParameters.token);
+            wsHandler.joinToPeer(streamId, roomConnectionParameters.token);
         }
         else if (roomConnectionParameters.mode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
-            wsHandler.getTrackList(roomConnectionParameters.roomId, roomConnectionParameters.token);
+            wsHandler.getTrackList(streamId, roomConnectionParameters.token);
         }
     }
 
@@ -720,7 +705,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.
-    private void release(boolean closeWebsocket) {
+    public void release(boolean closeWebsocket) {
         Log.i(getClass().getSimpleName(), "Releasing resources");
         activityRunning = false;
         iceConnected = false;
@@ -757,25 +742,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
 
     private void disconnectWithErrorMessage(final String errorMessage) {
-        if (commandLineRun || !activityRunning) {
-            Log.e(TAG, "Critical error: " + errorMessage);
-            release(true);
-        } else {
-            new AlertDialog.Builder(this.context)
-                    .setTitle(this.context.getText(R.string.channel_error_title))
-                    .setMessage(errorMessage)
-                    .setCancelable(false)
-                    .setNeutralButton(R.string.ok,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int id) {
-                                    dialog.cancel();
-                                    release(true);
-                                }
-                            })
-                    .create()
-                    .show();
-        }
+        Log.e(TAG, "Critical error: " + errorMessage);
+        release(true);
     }
 
     // Log |msg| and Toast about it.
@@ -1082,29 +1050,31 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onPublishFinished(String streamId) {
-        this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.onPublishFinished(streamId);
-            }
-            release(false);
-        });
+        this.handler.post(() ->
+            handleOnPublishFinished(streamId));
+    }
 
+    public void handleOnPublishFinished(String streamId) {
+        if (webRTCListener != null) {
+            webRTCListener.onPublishFinished(streamId);
+        }
+        release(false);
     }
 
 
     @Override
     public void onPlayFinished(String streamId) {
         this.handler.post(() -> {
-            release(false);
-            if (webRTCListener != null) {
-                webRTCListener.onPlayFinished(streamId);
-            }
-
+            handleOnPlayFinished(streamId);
         });
     }
 
-
-
+    public void handleOnPlayFinished(String streamId) {
+        release(false);
+        if (webRTCListener != null) {
+            webRTCListener.onPlayFinished(streamId);
+        }
+    }
 
     @Override
     public void onPublishStarted(String streamId) {

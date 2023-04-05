@@ -73,7 +73,7 @@ public class WebRTCClientTest {
         AppRTCClient.RoomConnectionParameters roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
         webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
-
+        webRTCClient.setStreamId(streamId);
 
         PeerConnectionClient.PeerConnectionParameters peerConnectionParameters
                 = new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, false, false, 0, 0, 0,
@@ -105,6 +105,21 @@ public class WebRTCClientTest {
         }
 
         assertEquals(json.toString(), jsonCaptor.getValue());
+
+        webRTCClient.stopStream();
+
+        verify(wsHandler, times(1)).stop(streamId);
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
+        json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
     }
 
 
@@ -209,6 +224,23 @@ public class WebRTCClientTest {
         assertEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
 
         Mockito.verify(webRTCClient).createVideoCapturer(WebRTCClient.SOURCE_SCREEN);
-
     }
+
+    @Test
+    public void testReleaseCallback() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+
+        webRTCClient.handleOnPublishFinished("streamId");
+
+        Mockito.verify(webRTCClient).release(false);
+
+        webRTCClient.handleOnPlayFinished("streamId");
+        Mockito.verify(webRTCClient, times(2)).release(false);
+    }
+
+
+
+
 }

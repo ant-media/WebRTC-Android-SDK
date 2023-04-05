@@ -390,61 +390,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         streamInfoListSpinner.setAdapter(modeAdapter);
     }
 
-    /**
-     * This method is used in an experiment. It's not for production
-     * @param streamId
-     */
-    public void calculateAbsoluteLatency(String streamId) {
-        String url = null; // "https://YOUR_SERVER_NAME:5443/{YOUR_APP}/rest/v2/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            Log.i("MainActivity", "recevied response " + response);
-                            JSONObject jsonObject = new JSONObject(response);
-                            long absoluteStartTimeMs = jsonObject.getLong("absoluteTimeMs");
-                            //this is the frame id in sending the rtp packet. Actually it's rtp timestamp
-                            long frameId = jsonObject.getLong("frameId");
-                            long relativeCaptureTimeMs = jsonObject.getLong("captureTimeMs");
-                            long captureTimeMs = frameId / 90;
-                            Map<Long, Long> captureTimeMsList = WebRTCClient.getCaptureTimeMsMapList();
-
-                            long absoluteDecodeTimeMs = 0;
-                            if (captureTimeMsList.containsKey(captureTimeMs)) {
-                                absoluteDecodeTimeMs = captureTimeMsList.get(captureTimeMs);
-                            }
-
-                            long absoluteLatency = absoluteDecodeTimeMs - relativeCaptureTimeMs - absoluteStartTimeMs;
-                            Log.i("MainActivity", "recevied absolute start time: " + absoluteStartTimeMs
-                                                        + " frameId: " + frameId + " relativeLatencyMs : " + relativeCaptureTimeMs
-                                                        + " absoluteDecodeTimeMs: " + absoluteDecodeTimeMs
-                                                        + " absoluteLatency: " + absoluteLatency);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("MainActivity", "That didn't work!");
-
-            }
-        });
-
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
-
-    }
-
-
-
     @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         Log.d(MainActivity.class.getName(), "Data channel buffered amount changed: ");
