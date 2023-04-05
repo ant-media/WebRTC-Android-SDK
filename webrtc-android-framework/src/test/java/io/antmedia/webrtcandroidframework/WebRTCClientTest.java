@@ -185,6 +185,21 @@ public class WebRTCClientTest {
         }
 
         assertEquals(json.toString(), jsonCaptor.getValue());
+
+        roomConnectionParameters =
+                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", IWebRTCClient.MODE_JOIN, token);
+        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
+
+        webRTCClient.startStream();
+        verify(wsHandler, times(1)).joinToPeer(streamId, token);
+
+        roomConnectionParameters =
+                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", IWebRTCClient.MODE_MULTI_TRACK_PLAY, token);
+        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
+
+        webRTCClient.startStream();
+        verify(wsHandler, times(1)).getTrackList(streamId, token);
+
     }
 
     @Test
@@ -238,6 +253,13 @@ public class WebRTCClientTest {
 
         webRTCClient.handleOnPlayFinished("streamId");
         Mockito.verify(webRTCClient, times(2)).release(false);
+
+        webRTCClient.disconnectWithErrorMessage("error");
+        Mockito.verify(webRTCClient, times(1)).release(true);
+
+        webRTCClient.handleOnIceDisconnected();
+        Mockito.verify(webRTCClient, times(3)).release(false);
+
     }
 
 

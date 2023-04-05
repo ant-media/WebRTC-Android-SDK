@@ -271,4 +271,8 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   public MediaProjection.Callback getMediaProjectionCallback() {
     return mediaProjectionCallback;
   }
+
+  public void setMediaProjectionManager(MediaProjectionManager mediaProjectionManager) {
+    this.mediaProjectionManager = mediaProjectionManager;
+  }
 }

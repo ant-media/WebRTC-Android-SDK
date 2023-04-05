@@ -506,7 +506,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   }
 
   // CallFragment.OnCallEvents interface implementation.
-  @Override
   public void onCallHangUp() {
     disconnect();
   }

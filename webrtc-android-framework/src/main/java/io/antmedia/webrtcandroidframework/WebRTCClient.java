@@ -597,13 +597,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         activityRunning = false;
     }
 
-    // CallFragment.OnCallEvents interface implementation.
-    @Override
-    public void onCallHangUp() {
-        Log.i(TAG, "onCallHangUp");
-        release(false);
-    }
-
     @Override
     public void switchCamera() {
         openFrontCamera = !openFrontCamera;
@@ -741,7 +734,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     }
 
 
-    private void disconnectWithErrorMessage(final String errorMessage) {
+    public void disconnectWithErrorMessage(final String errorMessage) {
         Log.e(TAG, "Critical error: " + errorMessage);
         release(true);
     }
@@ -968,16 +961,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     @Override
     public void onIceDisconnected() {
-        this.handler.post(() ->
-        {
-            logAndToast("ICE disconnected");
-            iceConnected = false;
-            release(false);
-            if (webRTCListener != null) {
-                webRTCListener.onIceDisconnected(streamId);
-            }
+        this.handler.post(() -> handleOnIceDisconnected());
+    }
 
-        });
+    public void handleOnIceDisconnected() {
+        logAndToast("ICE disconnected");
+        iceConnected = false;
+        release(false);
+        if (webRTCListener != null) {
+            webRTCListener.onIceDisconnected(streamId);
+        }
     }
 
     @Override
