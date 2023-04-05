@@ -363,8 +363,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         // Create connection parameters.
         String urlParameters = intent.getStringExtra(EXTRA_URLPARAMETERS);
 
-
-
         roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters(url, streamId, loopback, urlParameters, mode ,token);
 

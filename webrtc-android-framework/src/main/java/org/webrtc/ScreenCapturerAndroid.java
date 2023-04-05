@@ -56,6 +56,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private boolean isDisposed;
   private WindowManager windowManager;
   private int deviceRotation = 0;
+  private static final String TAG =  ScreenCapturerAndroid.class.getSimpleName();
 
   /**
    * Constructs a new Screen Capturer.
@@ -219,7 +220,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
-    Log.d("frame", "Frame received " + numCapturedFrames);
+    Log.v(TAG, "Frame received " + numCapturedFrames);
     int rotation = windowManager.getDefaultDisplay().getRotation();
     if (deviceRotation != rotation) {
       Log.w("Rotation", "onFrame: " + rotation);
