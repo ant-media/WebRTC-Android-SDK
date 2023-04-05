@@ -233,8 +233,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
 
-
-
         if (remoteRendererList != null) {
             int size = remoteRendererList.size();
             for (int i = 0; i < size; i++)
@@ -495,6 +493,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
     }
 
+    @TargetApi(21)
+    private @Nullable VideoCapturer createScreenCapturer() {
+        if (mediaProjectionPermissionResultCode != Activity.RESULT_OK) {
+            reportError("User didn't give permission to capture the screen.");
+            return null;
+        }
+        return new ScreenCapturerAndroid(mediaProjection,
+                mediaProjectionPermissionResultData, new MediaProjection.Callback() {
+            @Override
+            public void onStop() {
+                reportError("User revoked permission to capture the screen.");
+            }
+        });
+    }
+
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode != CallActivity.CAPTURE_PERMISSION_REQUEST_CODE)
@@ -564,21 +577,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         }
 
         return null;
-    }
-
-    @TargetApi(21)
-    private @Nullable VideoCapturer createScreenCapturer() {
-        if (mediaProjectionPermissionResultCode != Activity.RESULT_OK) {
-            reportError("User didn't give permission to capture the screen.");
-            return null;
-        }
-        return new ScreenCapturerAndroid(mediaProjection,
-                mediaProjectionPermissionResultData, new MediaProjection.Callback() {
-            @Override
-            public void onStop() {
-                reportError("User revoked permission to capture the screen.");
-            }
-        });
     }
 
     @Override
@@ -851,8 +849,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         } else if (SOURCE_REAR.equals(source)) {
             openFrontCamera = false;
         }
-
-
         if (source.equals(SOURCE_FILE)) {
             String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
             try {

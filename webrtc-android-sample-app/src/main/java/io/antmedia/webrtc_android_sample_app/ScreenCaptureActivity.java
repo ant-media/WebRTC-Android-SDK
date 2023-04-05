@@ -132,6 +132,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         // If the device version is v29 or higher, screen sharing will work service due to media projection policy.
         // Otherwise media projection will work without service
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+
             MediaProjectionService service = new MediaProjectionService();
 
             service.setListener(mediaProjection -> {
