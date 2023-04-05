@@ -43,6 +43,15 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private View broadcastingView;
 
 
+    /*
+     ATTENTION: Android refresh rate changes according to the screen changes.
+     In order to have consistent behavior in all cases you need to set the Refresh rate to Standard.
+     Check how to set refresh rate in android
+     One Scenario: Tap Display. Tap Advanced. Tap Smooth Display.
+                    Toggle the switch off or on to enable or disable the higher refresh rate
+     For samsung devices: Motion smoothness
+
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,11 +92,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 2000);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 2500);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 540);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 960);
         //this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 25);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 30);
 
         bg = findViewById(R.id.rbGroup);
         bg.check(R.id.rbFront);
@@ -141,7 +150,8 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
         idlingResource.increment();
-
+        //focus edit text to make the system update the frames
+        streamIdEditText.requestFocus();
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop Streaming");
             webRTCClient.startStream();

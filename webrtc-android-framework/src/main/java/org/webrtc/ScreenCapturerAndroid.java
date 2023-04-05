@@ -219,12 +219,20 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
-    Log.i("frame", "Frame received " + numCapturedFrames);
+    Log.d("frame", "Frame received " + numCapturedFrames);
     int rotation = windowManager.getDefaultDisplay().getRotation();
     if (deviceRotation != rotation) {
       Log.w("Rotation", "onFrame: " + rotation);
       deviceRotation = rotation;
-      surfaceTextureHelper.setFrameRotation(deviceRotation*90);
+
+      if (deviceRotation*90 % 180 != 0) {
+        virtualDisplay.resize(height, width, VIRTUAL_DISPLAY_DPI);
+        surfaceTextureHelper.setTextureSize(height, width);
+      }
+      else {
+        virtualDisplay.resize(width, height, VIRTUAL_DISPLAY_DPI);
+        surfaceTextureHelper.setTextureSize(width, height);
+      }
     }
     capturerObserver.onFrameCaptured(frame);
   }
