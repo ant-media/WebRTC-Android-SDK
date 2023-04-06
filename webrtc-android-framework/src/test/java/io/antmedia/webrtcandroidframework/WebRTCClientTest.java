@@ -1,18 +1,25 @@
 package io.antmedia.webrtcandroidframework;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import android.content.Context;
+import android.media.projection.MediaProjection;
+import android.util.DisplayMetrics;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -22,8 +29,12 @@ import org.json.JSONObject;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.webrtc.ScreenCapturerAndroid;
+import org.webrtc.VideoCapturer;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
+import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 /**
@@ -62,7 +73,7 @@ public class WebRTCClientTest {
         AppRTCClient.RoomConnectionParameters roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
         webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
-
+        webRTCClient.setStreamId(streamId);
 
         PeerConnectionClient.PeerConnectionParameters peerConnectionParameters
                 = new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, false, false, 0, 0, 0,
@@ -94,6 +105,21 @@ public class WebRTCClientTest {
         }
 
         assertEquals(json.toString(), jsonCaptor.getValue());
+
+        webRTCClient.stopStream();
+
+        verify(wsHandler, times(1)).stop(streamId);
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
+        json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
     }
 
 
@@ -129,7 +155,7 @@ public class WebRTCClientTest {
                 new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
         webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
 
-
+        webRTCClient.setStreamId(streamId);
         PeerConnectionClient.PeerConnectionParameters peerConnectionParameters
                 = new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, false, false, 0, 0, 0,
                 0, "", false, false, 0, "",
@@ -159,5 +185,84 @@ public class WebRTCClientTest {
         }
 
         assertEquals(json.toString(), jsonCaptor.getValue());
+
+        roomConnectionParameters =
+                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", IWebRTCClient.MODE_JOIN, token);
+        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
+
+        webRTCClient.startStream();
+        verify(wsHandler, times(1)).joinToPeer(streamId, token);
+
+        roomConnectionParameters =
+                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", IWebRTCClient.MODE_MULTI_TRACK_PLAY, token);
+        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
+
+        webRTCClient.startStream();
+        verify(wsHandler, times(1)).getTrackList(streamId, token);
+
     }
+
+    @Test
+    public void testCreateScreenCapturer() {
+
+        IWebRTCListener listener = mock(IWebRTCListener.class);
+        Context context = mock(Context.class);
+        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
+
+        ScreenCapturerAndroid screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
+        assertNull(screenCapturer);
+
+        webRTCClient.setMediaProjectionParams(Activity.RESULT_OK, null);
+        screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
+        assertNotNull(screenCapturer);
+
+        MediaProjection.Callback callback = Mockito.spy(screenCapturer.getMediaProjectionCallback());
+        callback.onStop();
+
+        Mockito.verify(webRTCClient).reportError("USER_REVOKED_CAPTURE_SCREEN_PERMISSION");
+    }
+
+    @Test
+    public void testOnActivityResult() {
+        IWebRTCListener listener = mock(IWebRTCListener.class);
+        Context context = mock(Context.class);
+        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
+
+        webRTCClient.changeVideoSource(WebRTCClient.SOURCE_SCREEN);
+        Mockito.verify(webRTCClient).startScreenCapture();
+
+        webRTCClient.onActivityResult(0, Activity.RESULT_OK, null);
+        assertNotEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
+
+        Mockito.doReturn(new DisplayMetrics()).when(webRTCClient).getDisplayMetrics();
+        webRTCClient.onActivityResult(CallActivity.CAPTURE_PERMISSION_REQUEST_CODE, Activity.RESULT_OK, null);
+        assertEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
+
+        Mockito.verify(webRTCClient).createVideoCapturer(WebRTCClient.SOURCE_SCREEN);
+    }
+
+    @Test
+    public void testReleaseCallback() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+
+        webRTCClient.handleOnPublishFinished("streamId");
+
+        Mockito.verify(webRTCClient).release(false);
+
+        webRTCClient.handleOnPlayFinished("streamId");
+        Mockito.verify(webRTCClient, times(2)).release(false);
+
+        webRTCClient.disconnectWithErrorMessage("error");
+        Mockito.verify(webRTCClient, times(1)).release(true);
+
+        webRTCClient.handleOnIceDisconnected();
+        Mockito.verify(webRTCClient, times(3)).release(false);
+
+    }
+
+
+
+
 }

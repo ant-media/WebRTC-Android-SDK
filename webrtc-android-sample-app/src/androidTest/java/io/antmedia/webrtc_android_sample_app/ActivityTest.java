@@ -13,7 +13,7 @@ import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentat
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
+import android.content.SharedPreferences;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
@@ -21,10 +21,7 @@ import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
-import androidx.test.espresso.idling.net.UriIdlingResource;
 import androidx.test.espresso.matcher.ViewMatchers;
-import androidx.test.ext.junit.rules.ActivityScenarioRule;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.By;
@@ -41,6 +38,7 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.*;
+import static io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_WEBSOCKET_URL;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
@@ -54,7 +52,7 @@ import io.antmedia.webrtcandroidframework.IWebRTCClient;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 @RunWith(AndroidJUnit4.class)
-public class MainActivityTest {
+public class ActivityTest {
 
     //match
     private static final String START_NOW_TEXT = "Start now";
@@ -176,10 +174,15 @@ public class MainActivityTest {
         UiDevice device = UiDevice.getInstance(getInstrumentation());
 
         onView(withId(R.id.rbScreen)).perform(click());
-
         UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 10000);
         assertNotNull(button);
         button.click();
+
+        //this switch operation causes to crash so that it's added here as test
+        onView(withId(R.id.rbFront)).perform(click());
+        onView(withId(R.id.rbScreen)).perform(click());
+
+
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
         Espresso.closeSoftKeyboard();
@@ -190,9 +193,107 @@ public class MainActivityTest {
 
         //2. stop stream and check that it's stopped
         onView(withId(R.id.start_streaming_button)).perform(click());
-
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
+
+        //Publish again without because it was failing
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        //Check it's publishing again
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Streaming")));
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        //Stop publishing
+        onView(withId(R.id.start_streaming_button)).perform(click());
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    @Test
+    public void testDataChannelOnlyActivityScreen() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), DataChannelOnlyActivity.class);
+        ActivityScenario<DataChannelOnlyActivity> scenario = ActivityScenario.launch(intent);
+
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<DataChannelOnlyActivity>() {
+
+            @Override
+            public void perform(DataChannelOnlyActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        UiDevice device = UiDevice.getInstance(getInstrumentation());
+
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.message_text_input)).perform(typeText("hello"));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.send_message_button)).perform(click());
+
+        //2. stop stream and check that it's stopped
+        onView(withId(R.id.start_streaming_button)).perform(click());
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    @Test
+    public void testSettingsActivity() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), SettingsActivity.class);
+        ActivityScenario<SettingsActivity> scenario = ActivityScenario.launch(intent);
+
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<SettingsActivity>() {
+
+            @Override
+            public void perform(SettingsActivity activity) {
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        UiDevice device = UiDevice.getInstance(getInstrumentation());
+
+        //if default value has changed, it fails.
+        onView(withId(R.id.server_address)).check(matches(withText(DEFAULT_WEBSOCKET_URL)));
+
+        String websocketURL = "ws://example.com/WebRTCAppEE/websocket";
+        onView(withId(R.id.server_address)).perform(clearText());
+        onView(withId(R.id.server_address)).perform(typeText(websocketURL));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.save_button)).perform(click());
+
+
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<SettingsActivity>() {
+
+            @Override
+            public void perform(SettingsActivity activity) {
+                SharedPreferences sharedPreferences =
+                        android.preference.PreferenceManager.getDefaultSharedPreferences(activity /* Activity context */);
+                String url = sharedPreferences.getString(activity.getString(R.string.serverAddress), DEFAULT_WEBSOCKET_URL);
+                assertEquals(websocketURL, url);
+
+            }
+        });
+
+        onView(withId(R.id.server_address)).perform(clearText());
+        onView(withId(R.id.server_address)).perform(typeText(DEFAULT_WEBSOCKET_URL));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.save_button)).perform(click());
+
+
     }
 }

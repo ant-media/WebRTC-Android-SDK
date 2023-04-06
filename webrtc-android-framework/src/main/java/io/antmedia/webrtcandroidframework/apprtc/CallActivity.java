@@ -119,7 +119,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_ID = "org.appspot.apprtc.ID";
   public static final String EXTRA_ENABLE_RTCEVENTLOG = "org.appspot.apprtc.ENABLE_RTCEVENTLOG";
 
-  public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
+  public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1234;
 
   // List of mandatory application permissions.
   public static final String[] MANDATORY_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
@@ -457,7 +457,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       reportError("User didn't give permission to capture the screen.");
       return null;
     }
-    return new ScreenCapturerAndroid(null,
+    return new ScreenCapturerAndroid(
         mediaProjectionPermissionResultData, new MediaProjection.Callback() {
       @Override
       public void onStop() {
@@ -506,7 +506,6 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   }
 
   // CallFragment.OnCallEvents interface implementation.
-  @Override
   public void onCallHangUp() {
     disconnect();
   }

@@ -24,7 +24,6 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
-import androidx.test.espresso.idling.net.UriIdlingResource;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -43,7 +42,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Random;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
@@ -73,7 +71,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private Button startStreamingButton;
     private String operationName = "";
     private String serverUrl;
-    private String restUrl;
 
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
@@ -131,7 +128,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
@@ -139,13 +136,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-
-        String restUrlScheme = serverPort.equals("5443") ? "https://" : "http://";
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-        restUrl = restUrlScheme + serverAddress + "/" + SettingsActivity.DEFAULT_APP_NAME + "/rest/v2";
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
@@ -397,59 +388,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         }
         ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
         streamInfoListSpinner.setAdapter(modeAdapter);
-    }
-
-    /**
-     * This method is used in an experiment. It's not for production
-     * @param streamId
-     */
-    public void calculateAbsoluteLatency(String streamId) {
-        String url = restUrl + "/broadcasts/" + streamId + "/rtmp-to-webrtc-stats";
-
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            Log.i("MainActivity", "recevied response " + response);
-                            JSONObject jsonObject = new JSONObject(response);
-                            long absoluteStartTimeMs = jsonObject.getLong("absoluteTimeMs");
-                            //this is the frame id in sending the rtp packet. Actually it's rtp timestamp
-                            long frameId = jsonObject.getLong("frameId");
-                            long relativeCaptureTimeMs = jsonObject.getLong("captureTimeMs");
-                            long captureTimeMs = frameId / 90;
-                            Map<Long, Long> captureTimeMsList = WebRTCClient.getCaptureTimeMsMapList();
-
-                            long absoluteDecodeTimeMs = 0;
-                            if (captureTimeMsList.containsKey(captureTimeMs)) {
-                                absoluteDecodeTimeMs = captureTimeMsList.get(captureTimeMs);
-                            }
-
-                            long absoluteLatency = absoluteDecodeTimeMs - relativeCaptureTimeMs - absoluteStartTimeMs;
-                            Log.i("MainActivity", "recevied absolute start time: " + absoluteStartTimeMs
-                                                        + " frameId: " + frameId + " relativeLatencyMs : " + relativeCaptureTimeMs
-                                                        + " absoluteDecodeTimeMs: " + absoluteDecodeTimeMs
-                                                        + " absoluteLatency: " + absoluteLatency);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("MainActivity", "That didn't work!");
-
-            }
-        });
-
-        // Add the request to the RequestQueue.
-        queue.add(stringRequest);
-
     }
 
     @Override

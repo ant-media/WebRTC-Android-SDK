@@ -42,7 +42,6 @@ public class CallFragment extends Fragment {
    * Call control interface for container activity.
    */
   public interface OnCallEvents {
-    void onCallHangUp();
     void onCameraSwitch();
     void onVideoScalingSwitch(ScalingType scalingType);
     void onCaptureFormatChange(int width, int height, int framerate);
@@ -67,7 +66,7 @@ public class CallFragment extends Fragment {
     disconnectButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View view) {
-        callEvents.onCallHangUp();
+        //callEvents.onCallHangUp();
       }
     });
 

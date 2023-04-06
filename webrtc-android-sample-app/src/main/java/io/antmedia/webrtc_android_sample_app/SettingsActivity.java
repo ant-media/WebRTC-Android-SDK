@@ -12,15 +12,11 @@ import androidx.preference.PreferenceManager;
 
 public class SettingsActivity extends Activity {
 
-    public static final String DEFAULT_SERVER_ADDRESS = "test.antmedia.io";
-    public static final String DEFAULT_SERVER_PORT = "5080";
-    public static final String DEFAULT_APP_NAME = "LiveApp";
+    public static final String DEFAULT_WEBSOCKET_URL = "wss://test.antmedia.io:5443/LiveApp/websocket";
     public static final String DEFAULT_ROOM_NAME = "room1";
 
     private Button saveButton;
     private EditText serverAddressEditText;
-    private EditText serverPortEditText;
-    private EditText applicationNameEditText;
     private EditText roomNameEditText;
 
     @Override
@@ -30,15 +26,11 @@ public class SettingsActivity extends Activity {
 
         saveButton = findViewById(R.id.save_button);
         serverAddressEditText = findViewById(R.id.server_address);
-        serverPortEditText = findViewById(R.id.server_port);
-        applicationNameEditText = findViewById(R.id.application_name);
         roomNameEditText = findViewById(R.id.room_name);
 
         SharedPreferences sharedPreferences =
                 android.preference.PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        serverAddressEditText.setText(sharedPreferences.getString(getString(R.string.serverAddress), DEFAULT_SERVER_ADDRESS));
-        serverPortEditText.setText(sharedPreferences.getString(getString(R.string.serverPort), DEFAULT_SERVER_PORT));
-        applicationNameEditText.setText(sharedPreferences.getString(getString(R.string.app_name), DEFAULT_APP_NAME));
+        serverAddressEditText.setText(sharedPreferences.getString(getString(R.string.serverAddress), DEFAULT_WEBSOCKET_URL));
         roomNameEditText.setText(sharedPreferences.getString(getString(R.string.roomId), DEFAULT_ROOM_NAME));
 
         saveButton.setOnClickListener(new View.OnClickListener() {
@@ -50,15 +42,11 @@ public class SettingsActivity extends Activity {
     }
 
     private void saveSettings() {
-        String serverAddress = serverAddressEditText.getText().toString();
-        String serverPort = serverPortEditText.getText().toString();
-        String applicationName = applicationNameEditText.getText().toString();
+        String serverWebsocketURL = serverAddressEditText.getText().toString();
         String roomName = roomNameEditText.getText().toString();
 
         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
-        editor.putString(getString(R.string.serverAddress), serverAddress);
-        editor.putString(getString(R.string.serverPort), serverPort);
-        editor.putString(getString(R.string.app_name), applicationName);
+        editor.putString(getString(R.string.serverAddress), serverWebsocketURL);
         editor.putString(getString(R.string.roomId), roomName);
         editor.apply();
 
