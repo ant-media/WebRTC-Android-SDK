@@ -10,7 +10,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -31,11 +30,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.webrtc.ScreenCapturerAndroid;
-import org.webrtc.VideoCapturer;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.PeerConnectionClient;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -72,16 +69,8 @@ public class WebRTCClientTest {
 
         AppRTCClient.RoomConnectionParameters roomConnectionParameters =
                 new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
-        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
+
         webRTCClient.setStreamId(streamId);
-
-        PeerConnectionClient.PeerConnectionParameters peerConnectionParameters
-                = new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, false, false, 0, 0, 0,
-                0, "", false, false, 0, "",
-                false, false, false, false, false, false, false, false,
-                false, null, audioCallEnabled);
-        webRTCClient.setPeerConnectionParametersForTest(peerConnectionParameters);
-
 
         webRTCClient.startStream();
 
@@ -151,18 +140,7 @@ public class WebRTCClientTest {
         doNothing().when(wsHandler).checkIfCalledOnValidThread();
         doNothing().when(wsHandler).sendTextMessage(anyString());
 
-        AppRTCClient.RoomConnectionParameters roomConnectionParameters =
-                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
-        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
-
         webRTCClient.setStreamId(streamId);
-        PeerConnectionClient.PeerConnectionParameters peerConnectionParameters
-                = new PeerConnectionClient.PeerConnectionParameters(videoCallEnabled, false, false, 0, 0, 0,
-                0, "", false, false, 0, "",
-                false, false, false, false, false, false, false, false,
-                false, null, audioCallEnabled);
-        webRTCClient.setPeerConnectionParametersForTest(peerConnectionParameters);
-
 
         webRTCClient.startStream();
 
@@ -186,17 +164,9 @@ public class WebRTCClientTest {
 
         assertEquals(json.toString(), jsonCaptor.getValue());
 
-        roomConnectionParameters =
-                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", IWebRTCClient.MODE_JOIN, token);
-        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
-
         webRTCClient.startStream();
         verify(wsHandler, times(1)).joinToPeer(streamId, token);
-
-        roomConnectionParameters =
-                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", IWebRTCClient.MODE_MULTI_TRACK_PLAY, token);
-        webRTCClient.setRoomConnectionParametersForTest(roomConnectionParameters);
-
+        
         webRTCClient.startStream();
         verify(wsHandler, times(1)).getTrackList(streamId, token);
 
