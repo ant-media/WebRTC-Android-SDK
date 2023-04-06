@@ -132,6 +132,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     private boolean autoPlayTracks = false;
     private boolean renderersInited = false;
+    private boolean checkStreamIdValidity = true;
 
     public VideoCapturer getVideoCapturer() {
         return videoCapturer;
@@ -252,7 +253,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         // Get Intent parameters.
         //String roomId = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_ROOMID);
         //Log.d(TAG, "Room ID: " + roomId);
-        if (streamId == null || streamId.length() == 0) {
+        if (checkStreamIdValidity && (streamId == null || streamId.length() == 0)) {
             logAndToast(this.context.getString(R.string.missing_stream_id));
             Log.e(TAG, "Incorrect room ID in intent!");
             return;
@@ -1459,5 +1460,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
 
     public boolean isReconnectionInProgress() {
         return reconnectionInProgress;
+    }
+
+    public void setCheckStreamIdValidity(boolean checkStreamIdValidity) {
+        this.checkStreamIdValidity = checkStreamIdValidity;
     }
 }

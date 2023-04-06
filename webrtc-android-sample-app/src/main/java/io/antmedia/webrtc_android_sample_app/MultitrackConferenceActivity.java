@@ -23,6 +23,7 @@ import androidx.annotation.RequiresApi;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
@@ -68,7 +69,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
-        setContentView(R.layout.activity_conference);
+        setContentView(R.layout.activity_multitrack_conference);
 
         broadcastingView = findViewById(R.id.broadcasting_text_view);
 
@@ -102,7 +103,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
         String serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-        String streamId = null;
+        String streamId = "participant"+ RandomStringUtils.randomNumeric(5);
 
         conferenceManager = new MultitrackConferenceManager(
                 this,
@@ -116,7 +117,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 this
         );
 
-        conferenceManager.setPlayOnlyMode(false);
+        conferenceManager.setPlayOnlyMode(true);
         conferenceManager.setOpenFrontCamera(true);
         conferenceManager.setReconnectionEnabled(true);
     }

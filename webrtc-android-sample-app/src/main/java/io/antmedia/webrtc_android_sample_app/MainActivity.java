@@ -112,7 +112,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     };
     private TextView broadcastingView;
     private EditText streamIdEditText;
-    private NetworkMonitorAutoDetect networkDetector;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -140,8 +139,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         startStreamingButton = findViewById(R.id.start_streaming_button);
 
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
-
-        createNetworkChangeObserver();
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
@@ -222,43 +219,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setReconnectionEnabled(true);
-
-        setPublishBitrate(networkDetector.getCurrentConnectionType());
-    }
-
-    private void createNetworkChangeObserver() {
-        networkDetector = new NetworkMonitorAutoDetect(new NetworkChangeDetector.Observer() {
-            @Override
-            public void onConnectionTypeChanged(NetworkChangeDetector.ConnectionType newConnectionType) {
-                //setPublishBitrate(newConnectionType);
-            }
-
-            @Override
-            public void onNetworkConnect(NetworkChangeDetector.NetworkInformation networkInfo) {
-
-            }
-
-            @Override
-            public void onNetworkDisconnect(long networkHandle) {
-
-            }
-
-            @Override
-            public void onNetworkPreference(List<NetworkChangeDetector.ConnectionType> types, int preference) {
-
-            }
-        }, this);
-
-    }
-
-    public void setPublishBitrate(NetworkChangeDetector.ConnectionType newConnectionType) {
-        if (newConnectionType.equals(NetworkChangeDetector.ConnectionType.CONNECTION_WIFI)) {
-            Log.d("MainActivity", "Network Wifi");
-            webRTCClient.setBitrate(2000);
-        } else {
-            Log.d("MainActivity", "newConnectionType:" + newConnectionType);
-            webRTCClient.setBitrate(500);
-        }
     }
 
     public void startStreaming(View v) {

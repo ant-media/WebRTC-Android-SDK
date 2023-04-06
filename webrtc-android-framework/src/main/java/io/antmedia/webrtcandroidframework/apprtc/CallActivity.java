@@ -144,6 +144,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     synchronized public void setTarget(VideoSink target) {
       this.target = target;
     }
+    synchronized public VideoSink getTarget() {
+      return target;
+    }
   }
 
   private final ProxyVideoSink remoteProxyRenderer = new ProxyVideoSink();
