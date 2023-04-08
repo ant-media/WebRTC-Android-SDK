@@ -101,7 +101,7 @@ import io.antmedia.webrtcandroidframework.apprtc.RtcEventLog;
  * Activity for peer connection call setup, call waiting
  * and call view.
  */
-public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, IDataChannelMessageSender, IDataChannelObserver {
+public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, IDataChannelMessageSender {
     private static final String TAG = "WebRTCClient";
     public static final String SOURCE_FILE = "FILE";
     public static final String SOURCE_SCREEN = "SCREEN";
@@ -805,8 +805,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public void release(boolean closeWebsocket) {
         Log.i(getClass().getSimpleName(), "Releasing resources");
         iceConnected = false;
+        initialized = false;
         remoteProxyRenderer.setTarget(null);
-
+        localVideoTrack = null;
+        localAudioTrack = null;
         if (closeWebsocket && wsHandler != null && wsHandler.getSignallingListener().equals(this)) {
             wsHandler.disconnect(true);
             wsHandler = null;
@@ -866,7 +868,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             } else if(newSource.equals(SOURCE_FRONT)) {
                 openFrontCamera = true;
             }
-            videoCapturer = createVideoCapturer(newSource);
+            VideoCapturer newVideoCapturer = createVideoCapturer(newSource);
 
             int videoWidth = intent.getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
             int videoHeight = intent.getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
@@ -881,7 +883,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             /* When user try to change video source after stopped the publishing
             * peerConnectionClient will null, until start another broadcast
             */
-            changeVideoCapturer(videoCapturer, videoWidth, videoHeight);
+            changeVideoCapturer(newVideoCapturer);
             currentSource = newSource;
         }
     }
@@ -1257,38 +1259,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.streamName = streamName;
     }
 
-    @Override
-    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        if(dataChannelObserver == null) return;
-        this.handler.post(() -> dataChannelObserver.onBufferedAmountChange(previousAmount, dataChannelLabel));
-    }
-
-    @Override
-    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        if(dataChannelObserver == null) return;
-        this.handler.post(() -> dataChannelObserver.onStateChange(state, dataChannelLabel));
-    }
-
-    @Override
-    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
-        if(dataChannelObserver == null) return;
-        // byte[] data = new byte[buffer.data.capacity()];
-        // buffer.data.get(data);
-        // ByteBuffer.wrap(data)
-        ByteBuffer copyByteBuffer = ByteBuffer.allocate(buffer.data.capacity());
-        copyByteBuffer.put(buffer.data);
-        copyByteBuffer.rewind();
-
-        boolean binary = buffer.binary;
-        DataChannel.Buffer bufferCopy = new DataChannel.Buffer(copyByteBuffer, binary);
-        this.handler.post(() -> dataChannelObserver.onMessage(bufferCopy, dataChannelLabel));
-    }
-
-    @Override
-    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-        this.handler.post(() -> dataChannelObserver.onMessageSent(buffer, successful));
-    }
-
     public static void insertFrameId(long captureTimeMs) {
         captureTimeMsMap.put(captureTimeMs, System.currentTimeMillis());
     }
@@ -1319,21 +1289,25 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         public void onBufferedAmountChange(long previousAmount) {
             if(dataChannelObserver == null) return;
             Log.d(TAG, "Data channel buffered amount changed: " + dataChannel.label() + ": " + dataChannel.state());
-            dataChannelObserver.onBufferedAmountChange(previousAmount, dataChannel.label());
+            handler.post(() -> dataChannelObserver.onBufferedAmountChange(previousAmount, dataChannel.label()));
         }
 
         @Override
         public void onStateChange() {
-            if(dataChannelObserver == null) return;
-            Log.d(TAG, "Data channel state changed: " + dataChannel.label() + ": " + dataChannel.state());
-            dataChannelObserver.onStateChange(dataChannel.state(), dataChannel.label());
+            handler.post(() -> {
+                if(dataChannelObserver == null || dataChannel == null) return;
+                Log.d(TAG, "Data channel state changed: " + dataChannel.label() + ": " + dataChannel.state());
+                dataChannelObserver.onStateChange(dataChannel.state(), dataChannel.label());
+            });
         }
 
         @Override
         public void onMessage(final DataChannel.Buffer buffer) {
-            if(dataChannelObserver == null) return;
-            Log.d(TAG, "Received Message: " + dataChannel.label() + ": " + dataChannel.state());
-            dataChannelObserver.onMessage(buffer,dataChannel.label());
+            handler.post(() -> {
+                if(dataChannelObserver == null || dataChannel == null) return;
+                Log.d(TAG, "Received Message: " + dataChannel.label() + ": " + dataChannel.state());
+                dataChannelObserver.onMessage(buffer, dataChannel.label());
+            });
         }
     };
 
@@ -1347,9 +1321,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                     buffer.data.rewind();
                     if (dataChannelObserver != null) {
                         if (success) {
-                            dataChannelObserver.onMessageSent(buffer, true);
+                            handler.post(() -> dataChannelObserver.onMessageSent(buffer, true));
                         } else {
-                            dataChannelObserver.onMessageSent(buffer, false);
+                            handler.post(() -> dataChannelObserver.onMessageSent(buffer, false));
                             reportError("Failed to send the message via Data Channel ");
                         }
                     }
@@ -1357,7 +1331,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                     reportError("An error occurred when sending the message via Data Channel " + e.getMessage());
                     if (dataChannelObserver != null) {
                         buffer.data.rewind();
-                        dataChannelObserver.onMessageSent(buffer, false);
+                        handler.post(() -> dataChannelObserver.onMessageSent(buffer, false));
                     }
                 }
             });
@@ -1370,16 +1344,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.localVideoTrack = localVideoTrack;
     }
 
-    public void changeVideoCapturer(VideoCapturer videoCapturer, int width, int height) {
-        this.videoWidth = width;
-        this.videoHeight = height;
+    public void changeVideoCapturer(VideoCapturer newVideoCapturer) {
         try {
             this.videoCapturer.stopCapture();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
         videoCapturerStopped = true;
-        this.videoCapturer = videoCapturer;
+        this.videoCapturer = newVideoCapturer;
         this.localVideoTrack = null;
 
         MediaStreamTrack newTrack = (MediaStreamTrack) createVideoTrack(this.videoCapturer);
@@ -1708,17 +1680,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         rtcEventLog.start(createRtcEventLogOutputFile());
     }
 
-    private void closeInternal() {
+    public void closeInternal() {
         if (factory != null && aecDump) {
             factory.stopAecDump();
         }
         Log.d(TAG, "Closing peer connection.");
         statsTimer.cancel();
-        if (dataChannel != null) {
-            dataChannel.dispose();
-            dataChannel = null;
-        }
-        dataChannelObserver = null;
 
         if (rtcEventLog != null) {
             // RtcEventLog should stop before the peer connection is disposed.
@@ -1729,21 +1696,25 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             peerConnection.dispose();
             peerConnection = null;
         }
+        if (dataChannel != null) {
+            dataChannel.dispose();
+            dataChannel = null;
+        }
         Log.d(TAG, "Closing audio source.");
         if (audioSource != null) {
             audioSource.dispose();
             audioSource = null;
         }
         Log.d(TAG, "Stopping capture.");
-        if (videoCapturer != null) {
+        if (videoCapturer != null && !videoCapturerStopped) {
             try {
                 videoCapturer.stopCapture();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
             videoCapturerStopped = true;
-            videoCapturer.dispose();
-            videoCapturer = null;
+            //videoCapturer.dispose();
+            //videoCapturer = null;
         }
         Log.d(TAG, "Closing video source.");
         if (videoSource != null) {
@@ -1759,14 +1730,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             saveRecordedAudioToFile.stop();
             saveRecordedAudioToFile = null;
         }
-        localRender = null;
-        remoteSinks = null;
         Log.d(TAG, "Closing peer connection factory.");
         if (factory != null) {
             factory.dispose();
             factory = null;
         }
-        eglBase.release();
+        if(eglBase != null) {
+            eglBase.release();
+            eglBase = null;
+        }
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
         PeerConnectionFactory.stopInternalTracingCapture();
@@ -1802,6 +1774,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void setAudioEnabled(final boolean enable) {
+        this.audioCallEnabled = enable;
+
         executor.execute(() -> {
             enableAudio = enable;
             if (localAudioTrack != null) {
@@ -1811,6 +1785,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void setVideoEnabled(final boolean enable) {
+        this.videoCallEnabled = enable;
         executor.execute(() -> {
             renderVideo = enable;
             if (localVideoTrack != null) {
@@ -2232,6 +2207,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setDataChannelObserver(@androidx.annotation.Nullable IDataChannelObserver dataChannelObserver) {
         this.dataChannelObserver = dataChannelObserver;
+    }
+
+    public void setStreamMode(String streamMode) {
+        this.streamMode = streamMode;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     // Implementation detail: observe ICE & stream changes and react accordingly.

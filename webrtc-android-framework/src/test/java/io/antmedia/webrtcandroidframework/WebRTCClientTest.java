@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -67,10 +68,11 @@ public class WebRTCClientTest {
         doNothing().when(wsHandler).checkIfCalledOnValidThread();
         doNothing().when(wsHandler).sendTextMessage(anyString());
 
-        AppRTCClient.RoomConnectionParameters roomConnectionParameters =
-                new AppRTCClient.RoomConnectionParameters("", streamId, false, "", mode, token);
-
         webRTCClient.setStreamId(streamId);
+        webRTCClient.setStreamMode(mode);
+        webRTCClient.setAudioEnabled(audioCallEnabled);
+        webRTCClient.setVideoEnabled(videoCallEnabled);
+        webRTCClient.setToken(token);
 
         webRTCClient.startStream();
 
@@ -141,6 +143,10 @@ public class WebRTCClientTest {
         doNothing().when(wsHandler).sendTextMessage(anyString());
 
         webRTCClient.setStreamId(streamId);
+        webRTCClient.setStreamMode(mode);
+        webRTCClient.setAudioEnabled(audioCallEnabled);
+        webRTCClient.setVideoEnabled(videoCallEnabled);
+        webRTCClient.setToken(token);
 
         webRTCClient.startStream();
 
@@ -164,9 +170,13 @@ public class WebRTCClientTest {
 
         assertEquals(json.toString(), jsonCaptor.getValue());
 
+        webRTCClient.setStreamMode(IWebRTCClient.MODE_JOIN);
+
         webRTCClient.startStream();
         verify(wsHandler, times(1)).joinToPeer(streamId, token);
-        
+
+        webRTCClient.setStreamMode(IWebRTCClient.MODE_MULTI_TRACK_PLAY);
+
         webRTCClient.startStream();
         verify(wsHandler, times(1)).getTrackList(streamId, token);
 
@@ -204,6 +214,7 @@ public class WebRTCClientTest {
         webRTCClient.onActivityResult(0, Activity.RESULT_OK, null);
         assertNotEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
 
+        Mockito.doNothing().when(webRTCClient).changeVideoCapturer(any());
         Mockito.doReturn(new DisplayMetrics()).when(webRTCClient).getDisplayMetrics();
         webRTCClient.onActivityResult(CallActivity.CAPTURE_PERMISSION_REQUEST_CODE, Activity.RESULT_OK, null);
         assertEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
@@ -216,6 +227,7 @@ public class WebRTCClientTest {
         IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
         Context context = Mockito.mock(Context.class);
         WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+        Mockito.doNothing().when(webRTCClient).release(anyBoolean());
 
         webRTCClient.handleOnPublishFinished("streamId");
 
