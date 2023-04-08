@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.util.DisplayMetrics;
 
@@ -242,6 +243,27 @@ public class WebRTCClientTest {
         webRTCClient.handleOnIceDisconnected();
         Mockito.verify(webRTCClient, times(3)).release(false);
 
+    }
+
+    @Test
+    public void testInitilization() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doNothing().when(webRTCClient).initializePeerConnectionFactory();
+        Mockito.doNothing().when(webRTCClient).initializeVideoCapturer();
+        Mockito.doNothing().when(webRTCClient).initializeAudioManager();
+
+        when(context.getString(R.string.pref_maxvideobitratevalue_default)).thenReturn("500");
+        when(context.getString(R.string.pref_startaudiobitratevalue_default)).thenReturn("500");
+
+        Intent intent = Mockito.mock(Intent.class);
+        when(intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true)).thenReturn(false);
+
+        webRTCClient.init("http://my.ams:5080/myapp/websocket","stream", WebRTCClient.MODE_PUBLISH, "token", intent);
+
+        assertEquals(false, webRTCClient.videoCallEnabled);
     }
 
 

@@ -44,7 +44,6 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.RTCStatsCollectorCallback;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
@@ -70,7 +69,6 @@ import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -215,9 +213,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private VideoSource videoSource;
     private boolean preferIsac;
     private boolean videoCapturerStopped;
-    @androidx.annotation.Nullable
-    private VideoSink localRender;
-
     private MediaConstraints audioConstraints;
     private MediaConstraints sdpMediaConstraints;
     // Queued remote ICE candidates are consumed only after both local and
@@ -315,15 +310,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
         this.url = url;
 
-        // Get Intent parameters.
-        //String roomId = this.activity.getIntent().getStringExtra(CallActivity.EXTRA_ROOMID);
-        //Log.d(TAG, "Room ID: " + roomId);
         if (streamId == null || streamId.length() == 0) {
             Log.d(TAG, this.context.getString(R.string.missing_stream_id));
             Log.e(TAG, "Incorrect room ID in intent!");
             return;
         }
-
         this.streamId = streamId;
 
         if (mode == null || mode.length() == 0) {
@@ -332,17 +323,95 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             return;
         }
         this.streamMode = mode;
-
         this.token = token;
-
         if (intent != null) {
             this.intent = intent;
         }
+
         iceConnected = false;
         signalingParameters = null;
-
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
 
+        initializeRenderers();
+
+        initializeParameters();
+
+        initializePeerConnectionFactory();
+
+        initializeVideoCapturer();
+
+        initializeAudioManager();
+
+        initialized = true;
+    }
+
+
+
+    private void initializeParameters() {
+        loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
+        tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
+
+        videoWidth = intent.getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
+        videoHeight = intent.getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
+
+        screencaptureEnabled = intent.getBooleanExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
+        // If capturing format is not specified for screencapture, use screen resolution.
+        if (screencaptureEnabled && videoWidth == 0 && videoHeight == 0) {
+            DisplayMetrics displayMetrics = getDisplayMetrics();
+            videoWidth = displayMetrics.widthPixels;
+            videoHeight = displayMetrics.heightPixels;
+        }
+
+        dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, false);
+        if (dataChannelEnabled) {
+            dataChannelOrdered = intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true);
+            dataChannelMaxRetransmitTimeMs = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1);
+            dataChannelMaxRetransmits = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1);
+            dataChannelProtocol = intent.getStringExtra(CallActivity.EXTRA_PROTOCOL);
+            dataChannelNegotiated = intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false);
+            dataChannelId = intent.getIntExtra(CallActivity.EXTRA_ID, -1);
+            dataChannelCreator = streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN);
+        }
+
+        videoFps = intent.getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
+
+        videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
+        if (videoCodec == null) {
+            videoCodec = this.context.getString(R.string.pref_videocodec_default);
+        }
+        videoStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
+
+        if (videoStartBitrate == 0) {
+            videoStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_maxvideobitratevalue_default));
+        }
+
+        audioStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
+        if (audioStartBitrate == 0) {
+            audioStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_startaudiobitratevalue_default));
+        }
+
+        videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
+
+        if (streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY) || isDataChannelOnly()) {
+            videoCallEnabled = false;
+            audioCallEnabled = false;
+        }
+
+        hwCodecAcceleration = intent.getBooleanExtra(CallActivity.EXTRA_HWCODEC_ENABLED, true);
+        videoFlexfecEnabled = intent.getBooleanExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, false);
+        audioCodec = intent.getStringExtra(CallActivity.EXTRA_AUDIOCODEC);
+        noAudioProcessing = intent.getBooleanExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, false);
+        aecDump = intent.getBooleanExtra(CallActivity.EXTRA_AECDUMP_ENABLED, false);
+        saveInputAudioToFile = intent.getBooleanExtra(CallActivity.EXTRA_SAVE_INPUT_AUDIO_TO_FILE_ENABLED, false);
+        useOpenSLES = intent.getBooleanExtra(CallActivity.EXTRA_OPENSLES_ENABLED, false);
+        disableBuiltInAEC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, false);
+        disableBuiltInAGC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AGC, false);
+        disableBuiltInNS = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, false);
+        disableWebRtcAGCAndHPF = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false);
+        enableRtcEventLog = intent.getBooleanExtra(CallActivity.EXTRA_ENABLE_RTCEVENTLOG, false);
+    }
+
+    public void initializeRenderers() {
         if (remoteRendererList != null) {
             int size = remoteRendererList.size();
             for (int i = 0; i < size; i++)
@@ -397,76 +466,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
         setSwappedFeeds(true /* isSwappedFeeds */);
+    }
 
-        loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
-        tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
-
-        videoWidth = intent.getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
-        videoHeight = intent.getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
-
-        screencaptureEnabled = intent.getBooleanExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
-        // If capturing format is not specified for screencapture, use screen resolution.
-        if (screencaptureEnabled && videoWidth == 0 && videoHeight == 0) {
-            DisplayMetrics displayMetrics = getDisplayMetrics();
-            videoWidth = displayMetrics.widthPixels;
-            videoHeight = displayMetrics.heightPixels;
-        }
-
-        dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, false);
-        if (dataChannelEnabled) {
-            dataChannelOrdered = intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true);
-            dataChannelMaxRetransmitTimeMs = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1);
-            dataChannelMaxRetransmits = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1);
-            dataChannelProtocol = intent.getStringExtra(CallActivity.EXTRA_PROTOCOL);
-            dataChannelNegotiated = intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false);
-            dataChannelId = intent.getIntExtra(CallActivity.EXTRA_ID, -1);
-            dataChannelCreator = streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN);
-        }
-
-        videoFps = intent.getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
-        
-        videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
-        if (videoCodec == null) {
-            videoCodec = this.context.getString(R.string.pref_videocodec_default);
-        }
-        videoStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
-
-        if (videoStartBitrate == 0) {
-            videoStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_maxvideobitratevalue_default));
-        }
-
-        audioStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
-        if (audioStartBitrate == 0) {
-            audioStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_startaudiobitratevalue_default));
-        }
-
-        videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
-
-        if (mode.equals(MODE_PLAY) || mode.equals(MODE_MULTI_TRACK_PLAY) || isDataChannelOnly()) {
-            videoCallEnabled = false;
-            audioCallEnabled = false;
-        }
-        
-        hwCodecAcceleration = intent.getBooleanExtra(CallActivity.EXTRA_HWCODEC_ENABLED, true);
-        videoFlexfecEnabled = intent.getBooleanExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, false);
-        audioCodec = intent.getStringExtra(CallActivity.EXTRA_AUDIOCODEC);
-        noAudioProcessing = intent.getBooleanExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, false);
-        aecDump = intent.getBooleanExtra(CallActivity.EXTRA_AECDUMP_ENABLED, false);
-        saveInputAudioToFile = intent.getBooleanExtra(CallActivity.EXTRA_SAVE_INPUT_AUDIO_TO_FILE_ENABLED, false);
-        useOpenSLES = intent.getBooleanExtra(CallActivity.EXTRA_OPENSLES_ENABLED, false);
-        disableBuiltInAEC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, false);
-        disableBuiltInAGC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AGC, false);
-        disableBuiltInNS = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, false);
-        disableWebRtcAGCAndHPF = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false);
-        enableRtcEventLog = intent.getBooleanExtra(CallActivity.EXTRA_ENABLE_RTCEVENTLOG, false);
-
-
-        Log.d(TAG, "VIDEO_FILE: '" + intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA) + "'");
-
-
+    public void initializePeerConnectionFactory() {
         // Create peer connection client.
         Log.d(TAG, "Preferred video codec: " + getSdpVideoCodecName(videoCodec));
-
         final String fieldTrials = getFieldTrials(videoFlexfecEnabled, disableWebRtcAGCAndHPF);
         executor.execute(() -> {
             Log.d(TAG, "Initialize WebRTC. Field trials: " + fieldTrials);
@@ -484,14 +488,32 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
         //options.disableEncryption = true;
         createPeerConnectionFactory(options);
+    }
 
+    public void initializeAudioManager() {
+        if (audioCallEnabled) {
+            // Create and audio manager that will take care of audio routing,
+            // audio modes, audio device enumeration etc.
+            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
+            // Store existing audio settings and change audio mode to
+            // MODE_IN_COMMUNICATION for best possible VoIP performance.
+            Log.d(TAG, "Starting the audio manager...");
+            audioManager.start((audioDevice, availableAudioDevices) ->
+            {
+                // This method will be called each time the number of available audio devices has changed.
+                onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
+            });
+        }
+    }
+
+    public void initializeVideoCapturer() {
         // if video capture is null or disposed, we should recreate it.
         // we should also check if video capturer is an instance of ScreenCapturerAndroid
         // because other implementations of VideoCapturer doesn't have a dispose() method.
         if (videoCallEnabled
                 && (videoCapturer == null
                 || (videoCapturer instanceof ScreenCapturerAndroid))
-            ) {
+        ) {
 
             String source = SOURCE_REAR;
             String videoFileAsCamera = this.intent.getStringExtra(CallActivity.EXTRA_VIDEO_FILE_AS_CAMERA);
@@ -507,37 +529,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
 
             videoCapturer = createVideoCapturer(source);
-            
+
             currentSource = source;
         }
-
-        if (localVideoTrack != null) {
-            setLocalVideoTrack(localVideoTrack);
-        }
-
-        this.localRender = localProxyVideoSink;
 
         executor.execute(() -> {
             createMediaConstraintsInternal();
             createVideoTrack(videoCapturer);
             createAudioTrack();
         });
-
-        if (audioCallEnabled) {
-            // Create and audio manager that will take care of audio routing,
-            // audio modes, audio device enumeration etc.
-            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
-            // Store existing audio settings and change audio mode to
-            // MODE_IN_COMMUNICATION for best possible VoIP performance.
-            Log.d(TAG, "Starting the audio manager...");
-            audioManager.start((audioDevice, availableAudioDevices) ->
-            {
-                // This method will be called each time the number of available audio devices has changed.
-                onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
-            });
-        }
-
-        initialized = true;
     }
 
     public void setMediaProjection(MediaProjection mediaProjection){
@@ -1297,7 +1297,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             handler.post(() -> {
                 if(dataChannelObserver == null || dataChannel == null) return;
                 Log.d(TAG, "Data channel state changed: " + dataChannel.label() + ": " + dataChannel.state());
-                dataChannelObserver.onStateChange(dataChannel.state(), dataChannel.label());
+
+                //TODO: dataChannelObserver.onStateChange(dataChannel.state(), dataChannel.label());
             });
         }
 
@@ -1946,7 +1947,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
             localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
             localVideoTrack.setEnabled(renderVideo);
-            localVideoTrack.addSink(localRender);
+            localVideoTrack.addSink(localProxyVideoSink);
         }
         return localVideoTrack;
     }
