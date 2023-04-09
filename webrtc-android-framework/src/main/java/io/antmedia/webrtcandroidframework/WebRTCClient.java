@@ -273,6 +273,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean disableWebRtcAGCAndHPF;
     private boolean enableRtcEventLog;
     private boolean audioCallEnabled = true;
+    private boolean captureToTexture;
 
     //DataChannel Parameters
     private boolean dataChannelOrdered;
@@ -282,6 +283,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean dataChannelNegotiated;
     private int dataChannelId;
     private boolean dataChannelCreator;
+
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -409,6 +411,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         disableBuiltInNS = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, false);
         disableWebRtcAGCAndHPF = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false);
         enableRtcEventLog = intent.getBooleanExtra(CallActivity.EXTRA_ENABLE_RTCEVENTLOG, false);
+        captureToTexture = intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
     }
 
     public void initializeRenderers() {
@@ -622,10 +625,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     private boolean useCamera2() {
         return Camera2Enumerator.isSupported(this.context) && this.intent.getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
-    }
-
-    private boolean captureToTexture() {
-        return this.intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
     }
 
     public void setOpenFrontCamera(boolean openFrontCamera) {
@@ -907,7 +906,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         } else if (SOURCE_SCREEN.equals(source)) {
             return createScreenCapturer();
         } else {
-            if (!captureToTexture()) {
+            if (!captureToTexture) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
                 return null;
             }
