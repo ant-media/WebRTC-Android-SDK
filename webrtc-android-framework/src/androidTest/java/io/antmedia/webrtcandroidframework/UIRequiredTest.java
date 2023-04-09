@@ -63,25 +63,4 @@ public class UIRequiredTest {
 
         });
     }
-
-    /**
-     * This test should be in another method but cannot get the full logcat so it's moved here
-     */
-    @Test
-    public void testVideoCapturer() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Intent intent = Mockito.mock(Intent.class);
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
-
-
-            Context context = InstrumentationRegistry.getInstrumentation().getContext();
-
-            WebRTCClient webRTCClient = new WebRTCClient(null, context);
-            VideoCapturer capturer = webRTCClient.createVideoCapturer(WebRTCClient.SOURCE_FRONT);
-
-            //webRTCClient.init("http://my.ams:5080/myapp/websocket","stream", WebRTCClient.MODE_PUBLISH, "token", intent);
-            webRTCClient.initializeRenderers();
-        });
-    }
-
 }
