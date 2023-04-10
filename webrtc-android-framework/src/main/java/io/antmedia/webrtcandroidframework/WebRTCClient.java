@@ -251,7 +251,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean initialized = false;
 
     //PeerConnection Parameters
-    public boolean videoCallEnabled;
+    private boolean videoCallEnabled;
     public boolean loopback;
     public boolean tracing;
     private int videoWidth;
@@ -284,6 +284,216 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private int dataChannelId;
     private boolean dataChannelCreator;
 
+    // Implementation detail: observe ICE & stream changes and react accordingly.
+    private class PCObserver implements PeerConnection.Observer {
+        @Override
+        public void onIceCandidate(final IceCandidate candidate) {
+            executor.execute(() -> handler.post(() -> {
+                if (wsHandler != null) {
+                    wsHandler.sendLocalIceCandidate(streamId, candidate);
+                }
+            }));
+        }
+
+        @Override
+        public void onIceCandidateError(final IceCandidateErrorEvent event) {
+            Log.d(TAG,
+                    "IceCandidateError address: " + event.address + ", port: " + event.port + ", url: "
+                            + event.url + ", errorCode: " + event.errorCode + ", errorText: " + event.errorText);
+        }
+
+        @Override
+        public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
+            executor.execute(() -> {
+                //not implemented because there is no counterpart on AMS
+            });
+        }
+
+        @Override
+        public void onSignalingChange(PeerConnection.SignalingState newState) {
+            Log.d(TAG, "SignalingState: " + newState);
+        }
+
+        @Override
+        public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
+            executor.execute(() -> {
+                Log.d(TAG, "IceConnectionState: " + newState);
+                if (newState == PeerConnection.IceConnectionState.CONNECTED) {
+                    onIceConnected();
+                } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
+                    onIceDisconnected();
+                } else if (newState == PeerConnection.IceConnectionState.FAILED) {
+                    reportError("ICE connection failed.");
+                }
+            });
+        }
+
+        @Override
+        public void onConnectionChange(final PeerConnection.PeerConnectionState newState) {
+            executor.execute(() -> {
+                Log.d(TAG, "PeerConnectionState: " + newState);
+                if (newState == PeerConnection.PeerConnectionState.CONNECTED) {
+                    onConnected();
+                } else if (newState == PeerConnection.PeerConnectionState.DISCONNECTED) {
+                    onDisconnected();
+                } else if (newState == PeerConnection.PeerConnectionState.FAILED) {
+                    reportError("DTLS connection failed.");
+                }
+            });
+        }
+
+        @Override
+        public void onIceGatheringChange(PeerConnection.IceGatheringState newState) {
+            Log.d(TAG, "IceGatheringState: " + newState);
+        }
+
+        @Override
+        public void onIceConnectionReceivingChange(boolean receiving) {
+            Log.d(TAG, "IceConnectionReceiving changed to " + receiving);
+        }
+
+        @Override
+        public void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {
+            Log.d(TAG, "Selected candidate pair changed because: " + event);
+        }
+
+        @Override
+        public void onAddStream(final MediaStream stream) {
+            if (!isVideoCallEnabled() && !isAudioEnabled())
+            {
+                // this is the case in play mode
+        /*VideoTrack remoteVideoTrack = getRemoteVideoTrack();
+        remoteVideoTrack.setEnabled(true);
+        for (VideoSink remoteSink : remoteSinks) {
+          remoteVideoTrack.addSink(remoteSink);
+        }
+        */
+
+                updateVideoTracks();
+            }
+        }
+
+        private void updateVideoTracks() {
+            List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
+            for (int i = 0; i < remoteVideoTrackList.size(); i++)
+            {
+                VideoTrack videoTrack = remoteVideoTrackList.get(i);
+
+                if (i < remoteSinks.size()) {
+                    videoTrack.addSink(remoteSinks.get(i));
+                } else {
+                    Log.e(TAG, "There is no enough remote sinks to show video tracks");
+                }
+            }
+        }
+
+        @Override
+        public void onRemoveStream(final MediaStream stream) {}
+
+        @Override
+        public void onDataChannel(final DataChannel dc) {
+            Log.d(TAG, "New Data channel " + dc.label());
+
+            if (!dataChannelEnabled)
+                return;
+
+            if (dataChannel == null) {
+                dataChannel = dc;
+            }
+            dc.registerObserver(dataChannelInternalObserver);
+        }
+
+        @Override
+        public void onRenegotiationNeeded() {
+            // No need to do anything; AppRTC follows a pre-agreed-upon
+            // signaling/negotiation protocol.
+        }
+
+        @Override
+        public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
+            //events.onAddTrack(receiver, mediaStreams);
+            updateVideoTracks();
+        }
+
+        @Override
+        public void onRemoveTrack(RtpReceiver receiver) {
+            Log.d("antmedia","on remove track");
+        }
+    }
+
+    // Implementation detail: handle offer creation/signaling and answer setting,
+    // as well as adding remote ICE candidates once the answer SDP is set.
+    private class SDPObserver implements SdpObserver {
+        @Override
+        public void onCreateSuccess(final SessionDescription desc) {
+            //if (localDescription != null) {
+            //  reportError("Multiple SDP create.");
+            //  return;
+            //}
+            String sdp = desc.description;
+            if (preferIsac) {
+                sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
+            }
+            if (isVideoCallEnabled()) {
+                sdp = preferCodec(sdp, getSdpVideoCodecName(videoCodec), false);
+            }
+            final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
+            localDescription = newDesc;
+            executor.execute(() -> {
+                if (peerConnection != null && !isError) {
+                    Log.d(TAG, "Set local SDP from " + desc.type);
+                    peerConnection.setLocalDescription(sdpObserver, newDesc);
+                }
+            });
+        }
+
+        @Override
+        public void onSetSuccess() {
+            executor.execute(() -> {
+                if (peerConnection == null || isError) {
+                    return;
+                }
+                if (isInitiator) {
+                    // For offering peer connection we first create offer and set
+                    // local SDP, then after receiving answer set remote SDP.
+                    if (peerConnection.getRemoteDescription() == null) {
+                        // We've just set our local SDP so time to send it.
+                        Log.d(TAG, "Local SDP set succesfully");
+                        onLocalDescription(localDescription);
+                    } else {
+                        // We've just set remote description, so drain remote
+                        // and send local ICE candidates.
+                        Log.d(TAG, "Remote SDP set succesfully");
+                        drainCandidates();
+                    }
+                } else {
+                    // For answering peer connection we set remote SDP and then
+                    // create answer and set local SDP.
+                    if (peerConnection.getLocalDescription() != null) {
+                        // We've just set our local SDP so time to send it, drain
+                        // remote and send local ICE candidates.
+                        Log.d(TAG, "Local SDP set succesfully");
+                        onLocalDescription(localDescription);
+                        drainCandidates();
+                    } else {
+                        // We've just set remote SDP - do nothing for now -
+                        // answer will be created soon.
+                        Log.d(TAG, "Remote SDP set succesfully");
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onCreateFailure(final String error) {
+            reportError("createSDP error: " + error);
+        }
+
+        @Override
+        public void onSetFailure(final String error) {
+            reportError("setSDP error: " + error);
+        }
+    }
 
     public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
         this.webRTCListener = webRTCListener;
@@ -623,7 +833,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         changeVideoSource(SOURCE_SCREEN);
     }
 
-    private boolean useCamera2() {
+    public boolean useCamera2() {
         return Camera2Enumerator.isSupported(this.context) && this.intent.getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
     }
 
@@ -1229,7 +1439,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     @Override
     public boolean isDataChannelEnabled() {
-        return dataChannel != null && dataChannel.state() == DataChannel.State.OPEN;
+        return dataChannelEnabled;
     }
 
     @Override
@@ -2213,219 +2423,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.streamMode = streamMode;
     }
 
+    public String getStreamMode() {
+        return streamMode;
+    }
+
     public void setToken(String token) {
         this.token = token;
     }
 
-    // Implementation detail: observe ICE & stream changes and react accordingly.
-    private class PCObserver implements PeerConnection.Observer {
-        @Override
-        public void onIceCandidate(final IceCandidate candidate) {
-            executor.execute(() -> handler.post(() -> {
-                if (wsHandler != null) {
-                    wsHandler.sendLocalIceCandidate(streamId, candidate);
-                }
-            }));
-        }
-
-        @Override
-        public void onIceCandidateError(final IceCandidateErrorEvent event) {
-            Log.d(TAG,
-                    "IceCandidateError address: " + event.address + ", port: " + event.port + ", url: "
-                            + event.url + ", errorCode: " + event.errorCode + ", errorText: " + event.errorText);
-        }
-
-        @Override
-        public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-            executor.execute(() -> {
-                //not implemented because there is no counterpart on AMS
-            });
-        }
-
-        @Override
-        public void onSignalingChange(PeerConnection.SignalingState newState) {
-            Log.d(TAG, "SignalingState: " + newState);
-        }
-
-        @Override
-        public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
-            executor.execute(() -> {
-                Log.d(TAG, "IceConnectionState: " + newState);
-                if (newState == PeerConnection.IceConnectionState.CONNECTED) {
-                    onIceConnected();
-                } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
-                    onIceDisconnected();
-                } else if (newState == PeerConnection.IceConnectionState.FAILED) {
-                    reportError("ICE connection failed.");
-                }
-            });
-        }
-
-        @Override
-        public void onConnectionChange(final PeerConnection.PeerConnectionState newState) {
-            executor.execute(() -> {
-                Log.d(TAG, "PeerConnectionState: " + newState);
-                if (newState == PeerConnection.PeerConnectionState.CONNECTED) {
-                    onConnected();
-                } else if (newState == PeerConnection.PeerConnectionState.DISCONNECTED) {
-                    onDisconnected();
-                } else if (newState == PeerConnection.PeerConnectionState.FAILED) {
-                    reportError("DTLS connection failed.");
-                }
-            });
-        }
-
-        @Override
-        public void onIceGatheringChange(PeerConnection.IceGatheringState newState) {
-            Log.d(TAG, "IceGatheringState: " + newState);
-        }
-
-        @Override
-        public void onIceConnectionReceivingChange(boolean receiving) {
-            Log.d(TAG, "IceConnectionReceiving changed to " + receiving);
-        }
-
-        @Override
-        public void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {
-            Log.d(TAG, "Selected candidate pair changed because: " + event);
-        }
-
-        @Override
-        public void onAddStream(final MediaStream stream) {
-            if (!isVideoCallEnabled() && !isAudioEnabled())
-            {
-                // this is the case in play mode
-        /*VideoTrack remoteVideoTrack = getRemoteVideoTrack();
-        remoteVideoTrack.setEnabled(true);
-        for (VideoSink remoteSink : remoteSinks) {
-          remoteVideoTrack.addSink(remoteSink);
-        }
-        */
-
-                updateVideoTracks();
-            }
-        }
-
-        private void updateVideoTracks() {
-            List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList();
-            for (int i = 0; i < remoteVideoTrackList.size(); i++)
-            {
-                VideoTrack videoTrack = remoteVideoTrackList.get(i);
-
-                if (i < remoteSinks.size()) {
-                    videoTrack.addSink(remoteSinks.get(i));
-                } else {
-                    Log.e(TAG, "There is no enough remote sinks to show video tracks");
-                }
-            }
-        }
-
-        @Override
-        public void onRemoveStream(final MediaStream stream) {}
-
-        @Override
-        public void onDataChannel(final DataChannel dc) {
-            Log.d(TAG, "New Data channel " + dc.label());
-
-            if (!dataChannelEnabled)
-                return;
-
-            if (dataChannel == null) {
-                dataChannel = dc;
-            }
-            dc.registerObserver(dataChannelInternalObserver);
-        }
-
-        @Override
-        public void onRenegotiationNeeded() {
-            // No need to do anything; AppRTC follows a pre-agreed-upon
-            // signaling/negotiation protocol.
-        }
-
-        @Override
-        public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
-            //events.onAddTrack(receiver, mediaStreams);
-            updateVideoTracks();
-        }
-
-        @Override
-        public void onRemoveTrack(RtpReceiver receiver) {
-            Log.d("antmedia","on remove track");
-        }
+    public void setVideoCallEnabled(boolean videoCallEnabled) {
+        this.videoCallEnabled = videoCallEnabled;
     }
 
-    // Implementation detail: handle offer creation/signaling and answer setting,
-    // as well as adding remote ICE candidates once the answer SDP is set.
-    private class SDPObserver implements SdpObserver {
-        @Override
-        public void onCreateSuccess(final SessionDescription desc) {
-            //if (localDescription != null) {
-            //  reportError("Multiple SDP create.");
-            //  return;
-            //}
-            String sdp = desc.description;
-            if (preferIsac) {
-                sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
-            }
-            if (isVideoCallEnabled()) {
-                sdp = preferCodec(sdp, getSdpVideoCodecName(videoCodec), false);
-            }
-            final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
-            localDescription = newDesc;
-            executor.execute(() -> {
-                if (peerConnection != null && !isError) {
-                    Log.d(TAG, "Set local SDP from " + desc.type);
-                    peerConnection.setLocalDescription(sdpObserver, newDesc);
-                }
-            });
-        }
+    public boolean getVideoCallEnabled() {
+        return videoCallEnabled;
+    }
 
-        @Override
-        public void onSetSuccess() {
-            executor.execute(() -> {
-                if (peerConnection == null || isError) {
-                    return;
-                }
-                if (isInitiator) {
-                    // For offering peer connection we first create offer and set
-                    // local SDP, then after receiving answer set remote SDP.
-                    if (peerConnection.getRemoteDescription() == null) {
-                        // We've just set our local SDP so time to send it.
-                        Log.d(TAG, "Local SDP set succesfully");
-                        onLocalDescription(localDescription);
-                    } else {
-                        // We've just set remote description, so drain remote
-                        // and send local ICE candidates.
-                        Log.d(TAG, "Remote SDP set succesfully");
-                        drainCandidates();
-                    }
-                } else {
-                    // For answering peer connection we set remote SDP and then
-                    // create answer and set local SDP.
-                    if (peerConnection.getLocalDescription() != null) {
-                        // We've just set our local SDP so time to send it, drain
-                        // remote and send local ICE candidates.
-                        Log.d(TAG, "Local SDP set succesfully");
-                        onLocalDescription(localDescription);
-                        drainCandidates();
-                    } else {
-                        // We've just set remote SDP - do nothing for now -
-                        // answer will be created soon.
-                        Log.d(TAG, "Remote SDP set succesfully");
-                    }
-                }
-            });
-        }
-
-        @Override
-        public void onCreateFailure(final String error) {
-            reportError("createSDP error: " + error);
-        }
-
-        @Override
-        public void onSetFailure(final String error) {
-            reportError("setSDP error: " + error);
-        }
+    public String getCurrentSource() {
+        return currentSource;
     }
 
 }

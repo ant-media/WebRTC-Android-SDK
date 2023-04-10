@@ -125,7 +125,7 @@ public class WebRTCClientTest {
         String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
         String subscriberCode = "code" + RandomStringUtils.random(5);
         String viewerInfo = "info" + RandomStringUtils.random(5);
-        String [] tracks = null;
+        String[] tracks = null;
 
 
         IWebRTCListener listener = mock(IWebRTCListener.class);
@@ -260,12 +260,40 @@ public class WebRTCClientTest {
 
         Intent intent = Mockito.mock(Intent.class);
         when(intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true)).thenReturn(false);
+        when(intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, false)).thenReturn(true);
 
-        webRTCClient.init("http://my.ams:5080/myapp/websocket","stream", WebRTCClient.MODE_PUBLISH, "token", intent);
+        webRTCClient.init("http://my.ams:5080/myapp/websocket", "stream", WebRTCClient.MODE_PUBLISH, "token", intent);
 
-        assertEquals(false, webRTCClient.videoCallEnabled);
+        assertEquals(false, webRTCClient.getVideoCallEnabled());
+        assertEquals(true, webRTCClient.isDataChannelEnabled());
     }
 
+    @Test
+    public void testInitilizeVideoCapturer() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doReturn(true).when(webRTCClient).useCamera2();
+
+        webRTCClient.setVideoCallEnabled(true);
+        webRTCClient.initializeVideoCapturer();
+
+        assertEquals(WebRTCClient.SOURCE_FRONT, webRTCClient.getCurrentSource());
+    }
+
+
+    @Test
+    public void testAccessors() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+
+        webRTCClient.setStreamMode(IWebRTCClient.MODE_PLAY);
+        assertEquals(IWebRTCClient.MODE_PLAY, webRTCClient.getStreamMode());
+
+
+    }
 
 
 
