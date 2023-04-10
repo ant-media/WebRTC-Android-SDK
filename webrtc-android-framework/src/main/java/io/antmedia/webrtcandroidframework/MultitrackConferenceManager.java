@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +31,9 @@ import java.util.List;
  *
  */
 public class MultitrackConferenceManager implements AntMediaSignallingEvents, IDataChannelMessageSender {
+    public static final String TAG = "Multitrack Conf";
+    public static final int MAX_BITRATE = 2000;
+    public static final int MIN_BITRATE = 500;
     private final Context context;
     private final Intent intent;
     private final String serverUrl;
@@ -65,6 +69,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     private boolean playMessageSent = false;
 
     private NetworkMonitorAutoDetect networkDetector;
+    private int minABRResolution;
 
     public MultitrackConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId, IDataChannelObserver dataChannelObserver) {
         this.context = context;
@@ -288,7 +293,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     @Override
     public void onRoomInformation(String[] streams) {
-
+        if (playWebRTCClient != null && !playWebRTCClient.isStreaming()) {
+            playWebRTCClient.startStream();
+        }
     }
 
     public void switchCamera()
@@ -341,6 +348,12 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+        String[] stringArray = new String[streamInfoList.size()];
+        minABRResolution = 0; //automatic abr
+        int i = 0;
+        for (StreamInfo si : streamInfoList) {
+            minABRResolution = minABRResolution > si.getHeight() || minABRResolution == 0 ? si.getHeight() : minABRResolution;
+        }
 
     }
 
@@ -376,9 +389,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void disableVideo() {
         if (publishWebRTCClient != null) {
-            if (publishWebRTCClient.isStreaming()) {
+            //if (publishWebRTCClient.isStreaming()) {
                 publishWebRTCClient.disableVideo();
-            }
+           // }
 
             sendNotificationEvent("CAM_TURNED_OFF");
         } else {
@@ -388,9 +401,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void enableVideo() {
         if (publishWebRTCClient != null) {
-            if (publishWebRTCClient.isStreaming()) {
+            //if (publishWebRTCClient.isStreaming()) {
                 publishWebRTCClient.enableVideo();
-            }
+            //}
             sendNotificationEvent("CAM_TURNED_ON");
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
@@ -409,9 +422,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void enableAudio() {
         if (publishWebRTCClient != null) {
-            if (publishWebRTCClient.isStreaming()) {
+            //if (publishWebRTCClient.isStreaming()) {
                 publishWebRTCClient.enableAudio();
-            }
+            //}
             sendNotificationEvent("MIC_UNMUTED");
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
@@ -479,18 +492,30 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void setReconnectionEnabled(boolean reconnectionEnabled) {
         this.reconnectionEnabled = reconnectionEnabled;
+        if(publishWebRTCClient != null) {
+            publishWebRTCClient.setReconnectionEnabled(reconnectionEnabled);
+        }
+        if(playWebRTCClient != null) {
+            playWebRTCClient.setReconnectionEnabled(reconnectionEnabled);
+        }
     }
 
     public void setPublishBitrate(NetworkChangeDetector.ConnectionType newConnectionType) {
         if (newConnectionType.equals(NetworkChangeDetector.ConnectionType.CONNECTION_WIFI)) {
-            Log.d("MainActivity", "Network Wifi");
+            Log.d(TAG, "Network Wifi");
             if(publishWebRTCClient != null) {
-                publishWebRTCClient.setBitrate(2000);
+                publishWebRTCClient.setBitrate(MAX_BITRATE);
+            }
+            if(playWebRTCClient != null && playWebRTCClient.isStreaming()) {
+                playWebRTCClient.forceStreamQuality(-1); //unlimited
             }
         } else {
-            Log.d("MainActivity", "newConnectionType:" + newConnectionType);
+            Log.d(TAG, "newConnectionType:" + newConnectionType);
             if(publishWebRTCClient != null) {
-                publishWebRTCClient.setBitrate(500);
+                publishWebRTCClient.setBitrate(MIN_BITRATE);
+            }
+            if(playWebRTCClient != null) {
+                playWebRTCClient.forceStreamQuality(minABRResolution);
             }
         }
     }

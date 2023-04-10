@@ -37,6 +37,7 @@ import org.webrtc.Logging;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.ScalingType;
@@ -51,6 +52,7 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,7 +192,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
         @Override
         public void run() {
             if (!streamStoppedByUser && !isStreaming()) {
-                Log.i(TAG,"Try to reconnect in reconnectionRunnable");
+                Log.i(TAG,"Try to reconnect in reconnectionRunnable "+streamMode);
                 stopStream(false);
                 startStream();
                 if (streamMode == IWebRTCClient.MODE_JOIN)
@@ -293,6 +295,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 renderer.init(eglBase.getEglBaseContext(), null);
                 renderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
                 renderer.setEnableHardwareScaler(true);
+
             }
             renderersInited = true;
         }
@@ -494,7 +497,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
     };
 
     public void setBitrate(int bitrate) {
-        peerConnectionClient.setVideoMaxBitrate(bitrate);
+        if(peerConnectionClient != null) {
+            peerConnectionClient.setVideoMaxBitrate(bitrate);
+        }
     }
 
     public void startStream() {
@@ -1114,8 +1119,41 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, Pe
                 //hudFragment.updateEncoderStatistics(reports);
                 Log.i(TAG, "onPeerConnectionStatsReady");
                 Log.i(TAG, report.toString());
+
+                logStatsSummary(report);
             }
         });
+    }
+
+    private static final String OUTBOUND_RTP = "outbound-rtp";
+    private static final String AUDIO = "audio";
+    private static final String MEDIA_TYPE = "mediaType";
+    private static final String PACKETS_SENT = "packetsSent";
+    private static final String BYTES_SENT = "bytesSent";
+    private static final String VIDEO = "video";
+    private void logStatsSummary(RTCStatsReport report) {
+        Map<String, RTCStats> statsMap = report.getStatsMap();
+        StringBuilder sb = new StringBuilder("Report:\n");
+        for (Map.Entry<String, RTCStats> entry : statsMap.entrySet()) {
+            RTCStats value = entry.getValue();
+            if (OUTBOUND_RTP.equals(value.getType()))
+            {
+                if (AUDIO.equals(value.getMembers().get(MEDIA_TYPE)))
+                {
+                    long packetsSent = (long)value.getMembers().get(PACKETS_SENT);
+                    BigInteger bytesSent = ((BigInteger) value.getMembers().get(BYTES_SENT));
+                    sb.append("audio:"+packetsSent+"   "+bytesSent);
+                    sb.append("\n");
+                }
+                else if (VIDEO.equals(value.getMembers().get(MEDIA_TYPE))) {
+                    long packetsSent = (long)value.getMembers().get(PACKETS_SENT);
+                    BigInteger bytesSent = ((BigInteger)value.getMembers().get(BYTES_SENT));
+                    sb.append("video:"+packetsSent+"   "+bytesSent);
+                    sb.append("\n");
+                }
+            }
+        }
+        Log.i(TAG, sb.toString());
     }
 
     @Override

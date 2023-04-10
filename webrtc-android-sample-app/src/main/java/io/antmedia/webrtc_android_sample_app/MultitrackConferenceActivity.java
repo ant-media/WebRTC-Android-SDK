@@ -82,7 +82,10 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         playViewRenderers.add(findViewById(R.id.play_view_renderer4));
 
         audioButton = findViewById(R.id.control_audio_button);
+        audioButton.setOnClickListener((view)->controlAudio(view));
+
         videoButton = findViewById(R.id.control_video_button);
+        videoButton.setOnClickListener((view)->controlVideo(view));
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -117,7 +120,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 this
         );
 
-        conferenceManager.setPlayOnlyMode(true);
+        conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
         conferenceManager.setReconnectionEnabled(true);
     }
