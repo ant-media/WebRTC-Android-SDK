@@ -112,7 +112,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
     //private final List<CallActivity.ProxyVideoSink> remoteProxyRendererList = new ArrayList<>();
     private final IWebRTCListener webRTCListener;
-
     @Nullable
     private AppRTCClient.SignalingParameters signalingParameters;
     @Nullable
@@ -140,7 +139,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private VideoCapturer videoCapturer;
     private VideoTrack localVideoTrack;
     private Intent intent = new Intent();
-    private final Handler handler = new Handler();
+    private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
     private final String stunServerUri = "stun:stun1.l.google.com:19302";
     private final ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
@@ -197,8 +196,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     // peer connection API calls to ensure new peer connection factory is
     // created on the same thread as previously destroyed factory.
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    private final PCObserver pcObserver = new PCObserver();
+    public final PCObserver pcObserver = new PCObserver();
     private final SDPObserver sdpObserver = new SDPObserver();
     private final Timer statsTimer = new Timer();
     @androidx.annotation.Nullable
@@ -285,14 +283,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean dataChannelCreator;
 
     // Implementation detail: observe ICE & stream changes and react accordingly.
-    private class PCObserver implements PeerConnection.Observer {
+    class PCObserver implements PeerConnection.Observer {
         @Override
         public void onIceCandidate(final IceCandidate candidate) {
-            executor.execute(() -> handler.post(() -> {
+            executor.execute(() -> {
                 if (wsHandler != null) {
                     wsHandler.sendLocalIceCandidate(streamId, candidate);
                 }
-            }));
+            });
         }
 
         @Override
@@ -423,7 +421,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     // Implementation detail: handle offer creation/signaling and answer setting,
     // as well as adding remote ICE candidates once the answer SDP is set.
-    private class SDPObserver implements SdpObserver {
+    class SDPObserver implements SdpObserver {
         @Override
         public void onCreateSuccess(final SessionDescription desc) {
             //if (localDescription != null) {
@@ -2441,6 +2439,35 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public String getCurrentSource() {
         return currentSource;
+    }
+
+    public PCObserver getPcObserver() {
+        return pcObserver;
+    }
+
+    public void setPeerConnection(@androidx.annotation.Nullable PeerConnection peerConnection) {
+        this.peerConnection = peerConnection;
+    }
+
+    public List<VideoSink> getRemoteSinks() {
+        return remoteSinks;
+    }
+
+
+    public SDPObserver getSdpObserver() {
+        return sdpObserver;
+    }
+
+    public void setInitiator(boolean initiator) {
+        isInitiator = initiator;
+    }
+
+    public void setHandler(Handler handler) {
+        this.handler = handler;
+    }
+
+    public void setSignalingParameters(@Nullable AppRTCClient.SignalingParameters signalingParameters) {
+        this.signalingParameters = signalingParameters;
     }
 
 }

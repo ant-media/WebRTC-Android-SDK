@@ -7,11 +7,15 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.endsWith;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,10 +24,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
+import android.os.Handler;
+import android.os.Message;
 import android.util.DisplayMetrics;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
+import org.awaitility.Awaitility;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,7 +38,24 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.webrtc.CandidatePairChangeEvent;
+import org.webrtc.DataChannel;
+import org.webrtc.IceCandidate;
+import org.webrtc.IceCandidateErrorEvent;
+import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
+import org.webrtc.PeerConnection;
+import org.webrtc.RtpReceiver;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
+import org.webrtc.SessionDescription;
+import org.webrtc.VideoSink;
+import org.webrtc.VideoTrack;
+
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
@@ -295,6 +319,115 @@ public class WebRTCClientTest {
 
     }
 
+    @Test
+    public void testPCObserver() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = new WebRTCClient(listener, context);
+
+        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
+        webRTCClient.setWsHandler(wsHandler);
+
+        String streamId = "stream1";
+        webRTCClient.setStreamId(streamId);
+
+        WebRTCClient.PCObserver pcObserver = webRTCClient.getPcObserver();
+        assertNotNull(pcObserver);
+
+        IceCandidate iceCandidate = mock(IceCandidate.class);
+        pcObserver.onIceCandidate(iceCandidate);
+        verify(wsHandler, timeout(1000)).sendLocalIceCandidate(streamId, iceCandidate);
+
+        pcObserver.onIceCandidateError(new IceCandidateErrorEvent("address", 5090, "url", 5, "errorText"));
+        pcObserver.onSignalingChange(PeerConnection.SignalingState.CLOSED);
+
+        pcObserver.onConnectionChange(PeerConnection.PeerConnectionState.CONNECTED);
+        pcObserver.onConnectionChange(PeerConnection.PeerConnectionState.DISCONNECTED);
+        //verify(listener, timeout(1000)).onDisconnected(streamId);
+
+        pcObserver.onConnectionChange(PeerConnection.PeerConnectionState.FAILED);
+        //verify(listener, timeout(1000)).onError(anyString(), eq(streamId));
+
+        pcObserver.onIceGatheringChange(PeerConnection.IceGatheringState.COMPLETE);
+        pcObserver.onIceConnectionReceivingChange(true);
+        pcObserver.onAddStream(new MediaStream(0));
+        pcObserver.onRemoveStream(new MediaStream(0));
+        pcObserver.onRenegotiationNeeded();
+        pcObserver.onDataChannel(mock(DataChannel.class));
+
+        webRTCClient.getRemoteSinks().add(mock(VideoSink.class));
+        MediaStream[] tracks = {new MediaStream(0)};
+        PeerConnection pc = mock(PeerConnection.class);
+        RtpTransceiver transceiver = mock(RtpTransceiver.class);
+        RtpReceiver receiver = mock(RtpReceiver.class);
+        when(transceiver.getReceiver()).thenReturn(receiver);
+        VideoTrack videoTrack= mock(VideoTrack.class);
+        when(receiver.track()).thenReturn(videoTrack);
+        when(pc.getTransceivers()).thenReturn(Arrays.asList(transceiver));
+        webRTCClient.setPeerConnection(pc);
+        pcObserver.onAddTrack(mock(RtpReceiver.class), tracks);
+        verify(videoTrack, times(1)).addSink(any(VideoSink.class));
+
+        pcObserver.onRemoveTrack(mock(RtpReceiver.class));
+        assertNotNull(webRTCClient);
+
+    }
+
+    @Test
+    public void testSDPObserver() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = new WebRTCClient(listener, context);
+
+        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
+        when(wsHandler.getSignallingListener()).thenReturn(webRTCClient);
+        webRTCClient.setWsHandler(wsHandler);
+
+        final Handler handler = mock(Handler.class);
+        when(handler.post(any(Runnable.class))).thenAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                invocation.getArgumentAt(0, Runnable.class).run();
+                return null;
+            }
+
+        });
+        webRTCClient.setHandler(handler);
+
+        String streamId = "stream1";
+        webRTCClient.setStreamId(streamId);
+
+        WebRTCClient.SDPObserver sdpObserver = webRTCClient.getSdpObserver();
+        assertNotNull(sdpObserver);
+
+        PeerConnection pc = mock(PeerConnection.class);
+        webRTCClient.setPeerConnection(pc);
+
+        SessionDescription sessionDescription = mock(SessionDescription.class);
+        sdpObserver.onCreateSuccess(sessionDescription);
+        verify(pc, timeout(1000)).setLocalDescription(eq(sdpObserver), any());
+
+        {
+            webRTCClient.setInitiator(true);
+            AppRTCClient.SignalingParameters signallingParameters = new AppRTCClient.SignalingParameters(
+                    null, true, null, null, null, null, null);
+            webRTCClient.setSignalingParameters(signallingParameters);
+            sdpObserver.onSetSuccess();
+            verify(wsHandler, timeout(1000)).sendConfiguration(eq(streamId), any(), eq("offer"));
+        }
+        {
+            webRTCClient.setInitiator(true);
+            AppRTCClient.SignalingParameters signallingParameters = new AppRTCClient.SignalingParameters(
+                    null, false, null, null, null, null, null);
+            webRTCClient.setSignalingParameters(signallingParameters);
+            sdpObserver.onSetSuccess();
+            verify(wsHandler, timeout(1000)).sendConfiguration(eq(streamId), any(), eq("answer"));
+        }
+        sdpObserver.onCreateFailure("error");
+        sdpObserver.onSetFailure("error");
+
+        verify(wsHandler, timeout(1000)).disconnect(true);
+    }
 
 
 }
