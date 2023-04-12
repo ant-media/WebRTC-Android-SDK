@@ -286,11 +286,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     class PCObserver implements PeerConnection.Observer {
         @Override
         public void onIceCandidate(final IceCandidate candidate) {
-            executor.execute(() -> {
+            executor.execute(() -> handler.post(() -> {
                 if (wsHandler != null) {
                     wsHandler.sendLocalIceCandidate(streamId, candidate);
                 }
-            });
+            }));
         }
 
         @Override

@@ -328,6 +328,17 @@ public class WebRTCClientTest {
         WebSocketHandler wsHandler = mock(WebSocketHandler.class);
         webRTCClient.setWsHandler(wsHandler);
 
+        final Handler handler = mock(Handler.class);
+        when(handler.post(any(Runnable.class))).thenAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                invocation.getArgumentAt(0, Runnable.class).run();
+                return null;
+            }
+
+        });
+        webRTCClient.setHandler(handler);
+
         String streamId = "stream1";
         webRTCClient.setStreamId(streamId);
 
