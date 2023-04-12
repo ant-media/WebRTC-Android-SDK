@@ -740,7 +740,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
 
             videoCapturer = createVideoCapturer(source);
-
             currentSource = source;
         }
 
@@ -2155,6 +2154,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
             localVideoTrack.setEnabled(renderVideo);
             localVideoTrack.addSink(localProxyVideoSink);
+            videoCapturerStopped = false;
         }
         return localVideoTrack;
     }
