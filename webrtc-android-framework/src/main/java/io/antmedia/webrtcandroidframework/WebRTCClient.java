@@ -24,6 +24,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Toast;
+
 import org.webrtc.AddIceObserver;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -70,6 +72,7 @@ import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1366,11 +1369,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         Log.i(TAG, sb.toString());
     }
 
-    @Override
-    public void onPeerConnectionError(final String description) {
-        reportError(description);
-    }
-
     public boolean isStreaming() {
         return iceConnected;
     }
@@ -2593,9 +2591,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setCustomCapturerEnabled(boolean customCapturerEnabled) {
         this.customCapturerEnabled = customCapturerEnabled;
-    }
-    public void setMainTrackId(String mainTrackId) {
-        this.mainTrackId = mainTrackId;
     }
 
     public boolean isReconnectionEnabled() {
