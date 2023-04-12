@@ -115,20 +115,15 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         messagesView.setAdapter(messageAdapter);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
 
         webRTCClient = new WebRTCClient( this,this);
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_PORT);
-
+        serverURL = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_WEBSOCKET_URL);
         tokenId = "tokenId";
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverURL = websocketUrlScheme + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
-
         webRTCMode = sharedPreferences.getString(getString(R.string.stream_mode), IWebRTCClient.MODE_JOIN);
 
         cameraViewRenderer = findViewById(R.id.camera_view_renderer);

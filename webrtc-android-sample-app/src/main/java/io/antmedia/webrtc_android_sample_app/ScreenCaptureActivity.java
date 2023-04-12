@@ -1,9 +1,14 @@
 package io.antmedia.webrtc_android_sample_app;
 
+import static io.antmedia.webrtc_android_sample_app.MediaProjectionService.EXTRA_MEDIA_PROJECTION_DATA;
+
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -40,10 +45,23 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private String serverUrl;
     private EditText streamIdEditText;
 
+    private static final String TAG = ScreenCaptureActivity.class.getSimpleName();
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private View broadcastingView;
 
 
+    /*
+     ATTENTION: Android refresh rate changes according to the screen changes.
+     In order to have consistent behavior in all cases you need to set the Refresh rate to Standard.
+     Check how to set refresh rate in android
+     One Scenario: Tap Display. Tap Advanced. Tap Smooth Display.
+                    Toggle the switch off or on to enable or disable the higher refresh rate
+     For samsung devices: Motion smoothness
+
+     */
+
+    //TODO: I think opening the camera at first does not make sense. I mean expectation is to open the screen. @mekya.
+    //TODO: Try to provide a better experience
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,7 +80,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         webRTCClient = new WebRTCClient(this, this);
 
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-        streamIdEditText.setText("streamId" + (int)(Math.random()*99999));
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
         //webRTCClient.setOpenFrontCamera(false);
 
         broadcastingView = findViewById(R.id.broadcasting_text_view);
@@ -84,12 +102,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         }
 
         this.getIntent().putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
-        //this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 1000);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 360);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 640);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 2500);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 540);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 960);
         //this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        //webRTCClient.setCameraOrientationFix(90);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 30);
 
         bg = findViewById(R.id.rbGroup);
         bg.check(R.id.rbFront);
@@ -115,12 +132,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
     }
 
@@ -130,14 +142,15 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         // If the device version is v29 or higher, screen sharing will work service due to media projection policy.
         // Otherwise media projection will work without service
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-            MediaProjectionService service = new MediaProjectionService();
 
-            service.setListener(mediaProjection -> {
+            MediaProjectionService.setListener(mediaProjection -> {
                 webRTCClient.setMediaProjection(mediaProjection);
                 webRTCClient.onActivityResult(requestCode, resultCode, data);
             });
 
-            service.start(getApplicationContext(), data);
+            Intent serviceIntent = new Intent(this, MediaProjectionService.class);
+            serviceIntent.putExtra(EXTRA_MEDIA_PROJECTION_DATA, data);
+            startForegroundService(serviceIntent);
         }
         else{
             webRTCClient.onActivityResult(requestCode, resultCode, data);
@@ -148,9 +161,11 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
         idlingResource.increment();
-
+        //focus edit text to make the system update the frames
+        streamIdEditText.requestFocus();
         if (!webRTCClient.isStreaming()) {
             ((Button)v).setText("Stop Streaming");
+            Log.i(TAG, "Starting streaming");
             webRTCClient.startStream();
         }
         else {

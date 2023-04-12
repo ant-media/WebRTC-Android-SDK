@@ -100,13 +100,10 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        String serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-        String streamId = "participant"+ RandomStringUtils.randomNumeric(5);
+        String streamId = null;
 
         conferenceManager = new MultitrackConferenceManager(
                 this,
@@ -122,7 +119,6 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
 
         conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
-        conferenceManager.setReconnectionEnabled(true);
     }
     public void joinConference(View v) {
 

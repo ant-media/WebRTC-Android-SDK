@@ -5,9 +5,11 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,8 +17,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
-
-import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
@@ -91,9 +91,11 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
-        String streamId = "stream"+ RandomStringUtils.randomNumeric(5);
+        String streamId = "stream"+  (int)(Math.random()*9999);
         String roomId = "room1";
-        String serverUrl = "ws://192.168.1.25:5080/WebRTCAppEE/websocket";
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
+        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         conferenceManager = new MultitrackConferenceManager(
                 this,
                 this,
