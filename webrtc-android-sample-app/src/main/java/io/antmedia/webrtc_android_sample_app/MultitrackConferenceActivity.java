@@ -5,45 +5,35 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
-import androidx.annotation.RequiresApi;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
-import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.MultitrackConferenceManager;
 import io.antmedia.webrtcandroidframework.StreamInfo;
-import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 public class MultitrackConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
@@ -56,6 +46,9 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
 
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private TextView broadcastingView;
+    private ArrayList<SurfaceViewRenderer> playViewRenderers;
+    private int rendererIndex = 0;
+    private Switch playOnlySwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,18 +67,25 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
         broadcastingView = findViewById(R.id.broadcasting_text_view);
 
         SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
-        ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
+
+        playViewRenderers = new ArrayList<>();
 
         playViewRenderers.add(findViewById(R.id.play_view_renderer1));
         playViewRenderers.add(findViewById(R.id.play_view_renderer2));
         playViewRenderers.add(findViewById(R.id.play_view_renderer3));
         playViewRenderers.add(findViewById(R.id.play_view_renderer4));
 
+        playOnlySwitch = findViewById(R.id.play_only_switch);
+        playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
+            conferenceManager.setPlayOnlyMode(b);
+            publishViewRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
+        });
+
         audioButton = findViewById(R.id.control_audio_button);
-        audioButton.setOnClickListener((view)->controlAudio(view));
+        audioButton.setOnClickListener((view) -> controlAudio(view));
 
         videoButton = findViewById(R.id.control_video_button);
-        videoButton.setOnClickListener((view)->controlVideo(view));
+        videoButton.setOnClickListener((view) -> controlVideo(view));
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -112,23 +112,24 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 serverUrl,
                 roomId,
                 publishViewRenderer,
-                playViewRenderers,
+                null,//playViewRenderers,
                 streamId,
                 this
         );
 
         conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
+        conferenceManager.setReconnectionEnabled(true);
     }
+
     public void joinConference(View v) {
 
         if (!conferenceManager.isJoined()) {
             Log.w(getClass().getSimpleName(), "Joining Conference");
-            ((Button)v).setText("Leave");
+            ((Button) v).setText("Leave");
             conferenceManager.joinTheConference();
-        }
-        else {
-            ((Button)v).setText("Join");
+        } else {
+            ((Button) v).setText("Join");
             conferenceManager.leaveFromConference();
             stoppedStream = true;
         }
@@ -178,7 +179,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
 
     @Override
     public void onError(String description, String streamId) {
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "Error: " + description, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -225,6 +226,19 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
 
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+        if(!track.id().contains(conferenceManager.getStreamId())) {
+            SurfaceViewRenderer renderer = playViewRenderers.get(rendererIndex++);
+            conferenceManager.addTrackToRenderer(track, renderer);
+        }
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
+        Toast.makeText(this, "Video track ended:" + track.id(), Toast.LENGTH_LONG).show();
     }
 
     @Override

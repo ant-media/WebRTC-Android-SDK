@@ -25,23 +25,14 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Map;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
@@ -388,6 +379,16 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         }
         ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
         streamInfoListSpinner.setAdapter(modeAdapter);
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
+
     }
 
     @Override

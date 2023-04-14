@@ -20,6 +20,7 @@ import androidx.annotation.RequiresApi;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -253,6 +254,16 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
 
     }
 }

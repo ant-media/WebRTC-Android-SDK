@@ -17,6 +17,7 @@ import android.widget.Toast;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -231,6 +232,16 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
 
     }
 

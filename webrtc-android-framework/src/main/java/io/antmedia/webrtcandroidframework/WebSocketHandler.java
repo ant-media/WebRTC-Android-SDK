@@ -229,19 +229,19 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
                 String definition= json.getString(DEFINITION);
                 Log.d(TAG, "error command received: "+ definition);
-                stopPingPongTimer();
+                //stopPingPongTimer();
 
                 signallingListener.onError(streamId, definition);
 
                 if (definition.equals(WebSocketConstants.NO_STREAM_EXIST))
                 {
                     signallingListener.noStreamExistsToPlay(streamId);
-                    disconnect(true);
+                    //disconnect(true);
                 }
                 if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
-                signallingListener.streamIdInUse(streamId);
-                disconnect(true);
-            }
+                    signallingListener.streamIdInUse(streamId);
+                    disconnect(true);
+                }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
                 disconnect(true);

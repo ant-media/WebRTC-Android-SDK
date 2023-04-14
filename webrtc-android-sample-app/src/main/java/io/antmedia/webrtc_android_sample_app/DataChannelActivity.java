@@ -29,6 +29,7 @@ import androidx.annotation.RequiresApi;
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -378,6 +379,16 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
 
     }
 

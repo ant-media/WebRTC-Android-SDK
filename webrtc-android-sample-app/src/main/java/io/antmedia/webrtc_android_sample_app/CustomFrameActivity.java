@@ -36,6 +36,7 @@ import org.webrtc.DataChannel;
 import org.webrtc.JavaI420Buffer;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoFrame;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -126,12 +127,7 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-        String appName = sharedPreferences.getString(getString(R.string.app_name), SettingsActivity.DEFAULT_APP_NAME);
-
-        String websocketUrlScheme = serverPort.equals("5443") || serverPort.equals("443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + appName + "/websocket";
+        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         // Check for mandatory permissions.
         for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
@@ -327,6 +323,16 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
 
     }
 

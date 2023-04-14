@@ -17,8 +17,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.webrtc.DataChannel;
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -253,6 +253,16 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
 
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
+
     }
 
     @Override

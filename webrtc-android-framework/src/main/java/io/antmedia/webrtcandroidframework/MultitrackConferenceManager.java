@@ -7,16 +7,18 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.ArrayAdapter;
+import android.view.View;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.NetworkChangeDetector;
 import org.webrtc.NetworkMonitorAutoDetect;
 import org.webrtc.SessionDescription;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Random;
 
 /*
  * This class manages the multitrack conference with 2 WebRTCClient;one for publishing the participants video,
@@ -38,6 +41,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     private final Intent intent;
     private final String serverUrl;
     private final String roomName;
+    private final ArrayList<SurfaceViewRenderer> playViewRenderers;
     private WebRTCClient publishWebRTCClient;
     private WebRTCClient playWebRTCClient;
     private String streamId;
@@ -75,6 +79,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         this.context = context;
         this.intent = intent;
         this.publishViewRenderer = publishViewRenderer;
+        this.playViewRenderers = playViewRenderers;
         if (playViewRenderers != null) {
             for (SurfaceViewRenderer svr : playViewRenderers) {
                 this.playRendererAllocationMap.put(svr, null);
@@ -83,16 +88,18 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         this.serverUrl = serverUrl;
         this.roomName = roomName;
         this.webRTCListener = webRTCListener;
-        this.streamId = streamId;
+        this.streamId = streamId == null ? "stream"+new Random().nextInt(99999) : streamId;
         this.dataChannelObserver = dataChannelObserver;
         if (dataChannelObserver != null) {
             this.intent.putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
         }
         initWebSocketHandler();
-        createNetworkChangeObserver();
+        //createNetworkChangeObserver();
         if (!this.playOnlyMode) {
             initPublishWebRTCClient();
         }
+
+        initPlayWebRTCClient();
 
     }
 
@@ -110,10 +117,24 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         //publishWebRTCClient.setOpenFrontCamera(openFrontCamera);
         publishWebRTCClient.setVideoRenderers(null, publishViewRenderer);
 
-        publishWebRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PUBLISH, tokenId, intent);
         publishWebRTCClient.setMainTrackId(roomName);
+        publishWebRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PUBLISH, tokenId, intent);
+    }
 
-        this.streamId = streamId;
+    private void initPlayWebRTCClient() {
+        playWebRTCClient = new WebRTCClient(webRTCListener, context);
+        playWebRTCClient.setWsHandler(wsHandler);
+        playWebRTCClient.setReconnectionEnabled(reconnectionEnabled);
+        playWebRTCClient.setRemoteRendererList(playViewRenderers);
+        playWebRTCClient.setAutoPlayTracks(true);
+        playWebRTCClient.setMainTrackId(roomName);
+        String tokenId = "";
+
+        if (dataChannelObserver != null) {
+            playWebRTCClient.setDataChannelObserver(dataChannelObserver);
+        }
+
+        playWebRTCClient.init(serverUrl, roomName, IWebRTCClient.MODE_MULTI_TRACK_PLAY, tokenId, intent);
     }
 
     public void setPlayOnlyMode(boolean playOnlyMode) {
@@ -173,29 +194,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         }
 
         publishWebRTCClient.onPublishStarted(streamId);
-
-        startPlaying();
-    }
-
-    private void startPlaying() {
-        if(!playMessageSent) {
-            playWebRTCClient = new WebRTCClient(webRTCListener, context);
-            playWebRTCClient.setWsHandler(wsHandler);
-            playWebRTCClient.setReconnectionEnabled(reconnectionEnabled);
-            playWebRTCClient.setRemoteRendererList(new ArrayList<>(playRendererAllocationMap.keySet()));
-            playWebRTCClient.setAutoPlayTracks(true);
-            playWebRTCClient.setMainTrackId(roomName);
-            String tokenId = "";
-
-            if (dataChannelObserver != null) {
-                playWebRTCClient.setDataChannelObserver(dataChannelObserver);
-            }
-
-            playWebRTCClient.init(serverUrl, roomName, IWebRTCClient.MODE_MULTI_TRACK_PLAY, tokenId, intent);
-
-            playWebRTCClient.startStream();
-            playMessageSent = true;
-        }
     }
 
     @Override
@@ -267,7 +265,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     public void publishStream(String streamId) {
         if (!this.playOnlyMode) {
             publishWebRTCClient.startStream();
-            setPublishBitrate(networkDetector.getCurrentConnectionType());
+            //setPublishBitrate(networkDetector.getCurrentConnectionType());
         }
         else {
             Log.i(getClass().getSimpleName(), "Play only mode. No publishing");
@@ -289,11 +287,22 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         joined = true;
         // start periodic polling of room info
         scheduleGetRoomInfo();
+        if(streams.length > 0) {
+            //on track list triggers start playing
+            onTrackList(streams);
+        }
+    }
+
+    private void startPlaying() {
+        if(!playMessageSent) {
+            playWebRTCClient.startStream();
+            playMessageSent = true;
+        }
     }
 
     @Override
     public void onRoomInformation(String[] streams) {
-        if (playWebRTCClient != null && !playWebRTCClient.isStreaming()) {
+        if (playWebRTCClient != null && !playWebRTCClient.isStreamStarted()) {
             playWebRTCClient.startStream();
         }
     }
@@ -335,6 +344,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     public void onTrackList(String[] tracks) {
         //add own stream id  to the list as !+streamId
         ArrayList<String> trackList = new ArrayList<>();
+        trackList.addAll(Arrays.asList(tracks));
         trackList.remove(streamId);
         trackList.add("!"+streamId);
 
@@ -359,7 +369,12 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     @Override
     public void onError(String streamId, String definition) {
-
+        if(streamId.equals(this.streamId)) {
+            publishWebRTCClient.onError(streamId, definition);
+        }
+        else if(streamId.equals(this.roomName)) {
+            playWebRTCClient.onError(streamId, definition);
+        }
     }
 
     @Override
@@ -543,5 +558,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
             }
         }, context);
 
+    }
+
+    public void addTrackToRenderer(VideoTrack track, SurfaceViewRenderer renderer) {
+        playWebRTCClient.addTrackToRenderer(track, renderer);
     }
 }
