@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -21,9 +23,12 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
+import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import androidx.annotation.RequiresApi;
@@ -31,13 +36,17 @@ import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtc_android_sample_app.chat.ImageMessage;
+import io.antmedia.webrtc_android_sample_app.chat.Message;
+import io.antmedia.webrtc_android_sample_app.chat.TextMessage;
+import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
+public class ScreenCaptureActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
@@ -285,6 +294,32 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
     public IdlingResource getIdlingResource() {
         return idlingResource;
+    }
+
+    @Override
+    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
+
+    }
+
+    @Override
+    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
+
+    }
+
+    @Override
+    public void onMessage(final DataChannel.Buffer buffer, String dataChannelLabel) {
+        if (!buffer.binary) { //
+            ByteBuffer data = buffer.data;
+            String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
+
+            //TODO: handle data
+            webRTCClient.rotateFrame(true);
+        }
+    }
+
+    @Override
+    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
+
     }
 
 

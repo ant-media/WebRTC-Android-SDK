@@ -717,6 +717,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
     }
 
+    public void rotateFrame(Boolean direction) {
+        if (videoCapturer != null && videoCapturer instanceof ScreenCapturerAndroid) {
+            ((ScreenCapturerAndroid) videoCapturer).rotateFrame(direction);
+        }
+    }
+
     public void initializeVideoCapturer() {
         // if video capture is null or disposed, we should recreate it.
         // we should also check if video capturer is an instance of ScreenCapturerAndroid
