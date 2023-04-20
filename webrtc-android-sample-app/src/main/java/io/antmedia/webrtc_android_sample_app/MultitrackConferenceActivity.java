@@ -3,8 +3,10 @@ package io.antmedia.webrtc_android_sample_app;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -231,7 +233,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
     @Override
     public void onNewVideoTrack(VideoTrack track) {
         if(!track.id().contains(conferenceManager.getStreamId())) {
-            SurfaceViewRenderer renderer = playViewRenderers.get(rendererIndex++);
+            SurfaceViewRenderer renderer = playViewRenderers.get(rendererIndex++%4);
             conferenceManager.addTrackToRenderer(track, renderer);
         }
     }
@@ -297,6 +299,11 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
 
     public IdlingResource getIdlingResource() {
         return idlingResource;
+    }
+
+    public void changeWifiState(boolean state) {
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifiManager.setWifiEnabled(state);
     }
 }
 

@@ -92,4 +92,8 @@ dependencies {
     debugImplementation "androidx.test:core:1.5.0"
     implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
     implementation 'org.apache.commons:commons-lang3:3.0'
+    androidTestImplementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    androidTestImplementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
+    androidTestImplementation 'com.google.code.gson:gson:2.8.9'
+
 }

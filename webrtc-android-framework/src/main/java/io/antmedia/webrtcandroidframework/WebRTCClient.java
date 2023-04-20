@@ -349,9 +349,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             List<VideoTrack> currentTracks = mediaStream.videoTracks;
 
             if (currentTracks.size() > 0) {
-                for (VideoTrack track : currentTracks) {
-                    if (!videoTracks.contains(track)) {
-                        videoTracks.add(track);
+                for (VideoTrack track : videoTracks) {
+                    boolean trackLive = false;
+                    for (VideoTrack currentTrack : currentTracks) {
+                        if (currentTrack.id().equals(track.id())) {
+                            trackLive = true;
+                            break;
+                        }
+                    }
+                    if(!trackLive) {
+                        videoTracks.remove(track);
                         handler.post(() -> {
                             webRTCListener.onVideoTrackEnded(track);
                         });
@@ -370,7 +377,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     };
 
-    TrackCheckTask trackCheckerTask = new TrackCheckTask();
+    TrackCheckTask trackCheckerTask;
     private Timer trackCheckerTimer;
 
 
@@ -408,7 +415,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         @Override
         public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
             executor.execute(() -> {
-                Log.d(TAG, "aaaaaa IceConnectionState: " + newState);
+                Log.d(TAG, "IceConnectionState: " + newState);
                 if (newState == PeerConnection.IceConnectionState.CONNECTED) {
                     onIceConnected();
                 } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
@@ -450,10 +457,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         @Override
         public void onAddStream(final MediaStream stream) {
-            trackCheckerTask = new TrackCheckTask();
             trackCheckerTask.setStream(stream);
-            trackCheckerTimer = new Timer();
-            trackCheckerTimer.schedule(trackCheckerTask, TRACK_CHECK_PERIDOD_MS, TRACK_CHECK_PERIDOD_MS);
+
             if (!isVideoCallEnabled() && !isAudioEnabled())
             {
                 if(renderersProvidedAtStart) {
@@ -644,6 +649,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         iceConnected = false;
         signalingParameters = null;
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
+
+        if(streamMode.equals(MODE_MULTI_TRACK_PLAY) && trackCheckerTask == null) {
+            trackCheckerTask = new TrackCheckTask();
+            trackCheckerTimer = new Timer();
+            trackCheckerTimer.schedule(trackCheckerTask, TRACK_CHECK_PERIDOD_MS, TRACK_CHECK_PERIDOD_MS);
+        }
 
         initializeRenderers();
 
@@ -2279,8 +2290,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             Log.d(TAG, "Set remote SDP.");
             SessionDescription sdpRemote = new SessionDescription(desc.type, sdp);
             peerConnection.setRemoteDescription(sdpObserver, sdpRemote);
-
-            Log.i(TAG, "setRemoteDescription: aaaaaa");
         });
     }
 
