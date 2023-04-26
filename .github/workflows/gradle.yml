@@ -68,7 +68,9 @@ jobs:
           files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           fail_ci_if_error: true
 
-      - name: Deploy to SonaType
+      - name: Deploy to Sonatype
+        #deploy only in master branches
+        if: github.ref == 'refs/heads/master'
         run: ./gradlew publish
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
