@@ -33,6 +33,7 @@ jobs:
         id: setup-ffmpeg
         #send test stream to the server to play test
       - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
+      - run: ifconfig
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
