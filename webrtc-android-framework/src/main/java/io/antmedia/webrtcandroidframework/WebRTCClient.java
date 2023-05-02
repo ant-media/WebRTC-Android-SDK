@@ -150,6 +150,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean autoPlayTracks = false;
     private boolean renderersInited = false;
     private boolean checkStreamIdValidity = true;
+
     private boolean renderersProvidedAtStart = false;
     private ConcurrentLinkedQueue<SurfaceViewRenderer> dynamicRenderers = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<VideoSink>  dynamicRemoteSinks = new ConcurrentLinkedQueue<>();
@@ -457,8 +458,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         @Override
         public void onAddStream(final MediaStream stream) {
-            trackCheckerTask.setStream(stream);
-
+            if(trackCheckerTask != null) {
+                trackCheckerTask.setStream(stream);
+            }
             if (!isVideoCallEnabled() && !isAudioEnabled())
             {
                 if(renderersProvidedAtStart) {
@@ -2704,5 +2706,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
     public boolean isStreamStarted() {
         return streamStarted;
+    }
+
+    public void setRenderersProvidedAtStart(boolean renderersProvidedAtStart) {
+        this.renderersProvidedAtStart = renderersProvidedAtStart;
     }
 }
