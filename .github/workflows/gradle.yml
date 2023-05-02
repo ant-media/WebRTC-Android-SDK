@@ -43,7 +43,7 @@ jobs:
         run: pip3 install requests selenium flask
        
       - name: Run Multitrack Conference Test Server
-        run: python3 multitrack-conference-server.py
+        run: python3 multitrack-conference-server.py &
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
