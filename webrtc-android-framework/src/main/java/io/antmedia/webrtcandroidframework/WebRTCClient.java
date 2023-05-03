@@ -152,6 +152,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean checkStreamIdValidity = true;
 
     private boolean renderersProvidedAtStart = false;
+    //dynamic means created after stream started on the fly
     private ConcurrentLinkedQueue<SurfaceViewRenderer> dynamicRenderers = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<VideoSink>  dynamicRemoteSinks = new ConcurrentLinkedQueue<>();
     private boolean streamStarted = false;
@@ -378,7 +379,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     };
 
+    /**
+     * This task is used to check if video track is still alive
+     * Different than others SDKs, WebRTC doesn't have any callback in Android for track ended
+     */
     TrackCheckTask trackCheckerTask;
+
+    //Timer to check if video track check task
     private Timer trackCheckerTimer;
 
 
@@ -463,7 +470,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
             if (!isVideoCallEnabled() && !isAudioEnabled())
             {
-                if(renderersProvidedAtStart) {
+                if(renderersProvidedAtStart || !remoteSinks.isEmpty()) {
                     updateVideoTracks();
                 }
             }
@@ -510,9 +517,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             if(receiver.track() instanceof VideoTrack) {
                 VideoTrack videoTrack = (VideoTrack) receiver.track();
                 webRTCListener.onNewVideoTrack(videoTrack);
-                trackCheckerTask.getVideoTracks().add(videoTrack);
+                if(streamMode.equals(MODE_MULTI_TRACK_PLAY)) {
+                    trackCheckerTask.getVideoTracks().add(videoTrack);
+                }
             }
-            if(renderersProvidedAtStart) {
+            if(renderersProvidedAtStart || !remoteSinks.isEmpty()) {
                 updateVideoTracks();
             }
         }
@@ -770,6 +779,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
             }
             renderersInited = true;
+        }
+        else {
+            remoteSinks.add(remoteProxyRenderer);
         }
       //  else if(remoteProxyRenderer != null){
        //     remoteSinks.add(remoteProxyRenderer);
