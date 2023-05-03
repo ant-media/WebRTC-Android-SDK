@@ -1300,14 +1300,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         else if (this.streamMode.equals(MODE_PLAY)) {
             remoteProxyRenderer.setTarget(fullscreenRenderer);
         }
-        else if (this.streamMode.equals(MODE_MULTI_TRACK_PLAY))
+        else if (this.streamMode.equals(MODE_MULTI_TRACK_PLAY) && renderersProvidedAtStart)
         {
             for (int i = 0; i < remoteSinks.size(); i++)
             {
                 ((CallActivity.ProxyVideoSink)remoteSinks.get(i)).setTarget(remoteRendererList.get(i));
             }
         }
-        else {
+        else if(fullscreenRenderer != null && pipRenderer != null) {
             // True if local view is in the fullscreen renderer.
             localProxyVideoSink.setTarget(isSwappedFeeds ? fullscreenRenderer : pipRenderer);
             remoteProxyRenderer.setTarget(isSwappedFeeds ? pipRenderer : fullscreenRenderer);
