@@ -14,10 +14,13 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.webrtc.AudioSource;
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
 
@@ -439,5 +442,21 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
   public void setMediaProjection(MediaProjection mediaProjection){
     audioInput.setMediaProjection(mediaProjection);
   }
+
+  @Override
+  public void createAudioRecord() {
+    audioInput.createAudioRecord();
+  }
+
+  @Override
+  public void startRecording() {
+    audioInput.startRecording();
+  }
+
+  @Override
+  public void stopRecording() {
+    audioInput.stopRecording();
+  }
+
 
 }

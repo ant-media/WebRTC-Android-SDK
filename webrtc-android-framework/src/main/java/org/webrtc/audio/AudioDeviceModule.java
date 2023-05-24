@@ -41,4 +41,10 @@ public interface AudioDeviceModule {
   /** Set media projection for the audio record. */
   void setMediaProjection(MediaProjection mediaProjection);
 
+  void createAudioRecord();
+
+  void startRecording();
+
+  void stopRecording();
+
 }

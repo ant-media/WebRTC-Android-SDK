@@ -7,11 +7,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -23,6 +25,7 @@ import android.widget.Toast;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.audio.AudioDeviceModule;
 
 import java.util.ArrayList;
 
@@ -121,15 +124,29 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 String newSource = "";
                 if(checkedId == R.id.rbScreen) {
                     newSource = WebRTCClient.SOURCE_SCREEN;
+                    //if source screen is checked while streaming, stop audio record.
+                    //It will start recording system audio when permission is granted onActivityResult
+                    if(webRTCClient.isStreaming()){
+                        stopAdmRecording();
+                    }
                     getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
                 }
                 else if(checkedId == R.id.rbFront) {
                     newSource = WebRTCClient.SOURCE_FRONT;
                     getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
+                    //if user switches back from screen streaming to source front camera, restart adm recording to capture microphone back.
+                    if(webRTCClient.isStreaming()){
+                        restartAdmRecording();
+                    }
+                    webRTCClient.setScreenPermissionNeeded(true);
                 }
                 else if(checkedId == R.id.rbRear) {
                     newSource = WebRTCClient.SOURCE_REAR;
                     getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
+                    if(webRTCClient.isStreaming()){
+                        restartAdmRecording();
+                    }
+                    webRTCClient.setScreenPermissionNeeded(true);
                 }
                 webRTCClient.changeVideoSource(newSource);
             }
@@ -139,6 +156,23 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+
+    }
+
+    private void stopAdmRecording(){
+       webRTCClient.stopAdmRecording();
+    }
+
+    private void restartAdmRecording(){
+        webRTCClient.restartAdmRecording();
+    }
+
+    private void createAudioRecord(){
+        webRTCClient.createAudioRecord();
+    }
+
+    private void startRecording(){
+        webRTCClient.startRecording();
     }
 
     @Override
@@ -150,6 +184,12 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
 
             MediaProjectionService.setListener(mediaProjection -> {
                 webRTCClient.setMediaProjection(mediaProjection);
+                if(webRTCClient.isStreaming()){
+                    //create audio record with media projection(system audio)
+                    createAudioRecord();
+                    //start getting system audio
+                    startRecording();
+                }
                 webRTCClient.onActivityResult(requestCode, resultCode, data);
             });
 
@@ -161,7 +201,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
             webRTCClient.onActivityResult(requestCode, resultCode, data);
         }
     }
-
+    
     public void startStreaming(View v) {
 
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
@@ -291,6 +331,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public IdlingResource getIdlingResource() {
         return idlingResource;
     }
+
 
 
 }

@@ -24,6 +24,7 @@ import android.media.MediaRecorder.AudioSource;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.Process;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import java.lang.System;
@@ -111,6 +112,10 @@ class WebRtcAudioRecord {
   private final @Nullable SamplesReadyCallback audioSamplesReadyCallback;
   private final boolean isAcousticEchoCancelerSupported;
   private final boolean isNoiseSuppressorSupported;
+  private int channels;
+  private int sampleRate;
+  private int bufferSizeInBytes;
+  private int channelConfig;
 
   /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
@@ -279,6 +284,8 @@ class WebRtcAudioRecord {
 
   @CalledByNative
   private int initRecording(int sampleRate, int channels) {
+    this.sampleRate = sampleRate;
+    this.channels = channels;
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     if (audioRecord != null) {
       reportWebRtcAudioRecordInitError("InitRecording called twice without StopRecording.");
@@ -301,8 +308,8 @@ class WebRtcAudioRecord {
     // Get the minimum buffer size required for the successful creation of
     // an AudioRecord object, in byte units.
     // Note that this size doesn't guarantee a smooth recording under load.
-    final int channelConfig = channelCountToConfiguration(channels);
-    int minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
+    this.channelConfig = channelCountToConfiguration(channels);
+    int minBufferSize = AudioRecord.getMinBufferSize(sampleRate, this.channelConfig, audioFormat);
     if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
       reportWebRtcAudioRecordInitError("AudioRecord.getMinBufferSize failed: " + minBufferSize);
       return -1;
@@ -313,32 +320,9 @@ class WebRtcAudioRecord {
     // AudioRecord instance to ensure smooth recording under load. It has been
     // verified that it does not increase the actual recording latency.
     int bufferSizeInBytes = Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
+    this.bufferSizeInBytes = bufferSizeInBytes;
     Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
-    try {
-      if(mediaProjection != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-        audioRecord = createAudioRecordOnQOrHigher(
-                audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes,mediaProjection);
-      }
-      else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        // Use the AudioRecord.Builder class on Android M (23) and above.
-        // Throws IllegalArgumentException.
-        audioRecord = createAudioRecordOnMOrHigher(
-            audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
-        audioSourceMatchesRecordingSessionRef.set(null);
-        if (preferredDevice != null) {
-          setPreferredDevice(preferredDevice);
-        }
-      } else {
-        // Use the old AudioRecord constructor for API levels below 23.
-        // Throws UnsupportedOperationException.
-        audioRecord = createAudioRecordOnLowerThanM(
-            audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
-        audioSourceMatchesRecordingSessionRef.set(null);
-      }
-    } catch (IllegalArgumentException | UnsupportedOperationException e) {
-      // Report of exception message is sufficient. Example: "Cannot create AudioRecord".
-      reportWebRtcAudioRecordInitError(e.getMessage());
-      releaseAudioResources();
+    if(createAudioRecord() == -1){
       return -1;
     }
     if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -347,6 +331,7 @@ class WebRtcAudioRecord {
       return -1;
     }
     effects.enable(audioRecord.getAudioSessionId());
+
     logMainParameters();
     logMainParametersExtended();
     // Check number of active recording sessions. Should be zero but we have seen conflict cases
@@ -380,7 +365,7 @@ class WebRtcAudioRecord {
   }
 
   @CalledByNative
-  private boolean startRecording() {
+  public boolean startRecording() {
     Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
@@ -404,7 +389,7 @@ class WebRtcAudioRecord {
   }
 
   @CalledByNative
-  private boolean stopRecording() {
+  public boolean stopRecording() {
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     if (future != null) {
@@ -541,6 +526,37 @@ class WebRtcAudioRecord {
     microphoneMute = mute;
   }
 
+  public int createAudioRecord(){
+    try {
+      if(mediaProjection != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+        audioRecord = createAudioRecordOnQOrHigher(
+                audioSource, this.sampleRate, channelConfig, audioFormat, this.bufferSizeInBytes,mediaProjection);
+      }
+      else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        // Use the AudioRecord.Builder class on Android M (23) and above.
+        // Throws IllegalArgumentException.
+        audioRecord = createAudioRecordOnMOrHigher(
+                audioSource, this.sampleRate, channelConfig, audioFormat, this.bufferSizeInBytes);
+        audioSourceMatchesRecordingSessionRef.set(null);
+        if (preferredDevice != null) {
+          setPreferredDevice(preferredDevice);
+        }
+      } else {
+        // Use the old AudioRecord constructor for API levels below 23.
+        // Throws UnsupportedOperationException.
+        audioRecord = createAudioRecordOnLowerThanM(
+                audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
+        audioSourceMatchesRecordingSessionRef.set(null);
+      }
+    } catch (IllegalArgumentException | UnsupportedOperationException e) {
+      // Report of exception message is sufficient. Example: "Cannot create AudioRecord".
+      reportWebRtcAudioRecordInitError(e.getMessage());
+      releaseAudioResources();
+      return -1;
+    }
+    return 0;
+  }
+
   // Releases the native AudioRecord resources.
   private void releaseAudioResources() {
     Logging.d(TAG, "releaseAudioResources");
@@ -554,6 +570,8 @@ class WebRtcAudioRecord {
   public void setMediaProjection(MediaProjection mediaProjection){
     this.mediaProjection = mediaProjection;
   }
+
+
 
   private void reportWebRtcAudioRecordInitError(String errorMessage) {
     Logging.e(TAG, "Init recording error: " + errorMessage);

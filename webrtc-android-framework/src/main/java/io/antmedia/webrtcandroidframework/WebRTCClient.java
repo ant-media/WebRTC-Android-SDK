@@ -158,6 +158,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private String streamName = "";
     private String viewerInfo = "";
     private String currentSource;
+
     private boolean screenPermissionNeeded = true;
 
     public MediaProjection mediaProjection;
@@ -241,6 +242,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     // recorded audio samples to an output file.
     @androidx.annotation.Nullable
     private RecordedAudioToFileController saveRecordedAudioToFile;
+
 
     @androidx.annotation.Nullable
     public AudioDeviceModule adm;
@@ -918,6 +920,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         openFrontCamera = !openFrontCamera;
         executor.execute(this ::switchCameraInternal);
     }
+
+
 
     @Override
     public void onCameraSwitch() {
@@ -1628,6 +1632,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         adm = createJavaAudioDevice();
 
+
         // Create peer connection factory.
         if (options != null) {
             Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
@@ -2145,6 +2150,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @androidx.annotation.Nullable
     private VideoTrack createVideoTrack(VideoCapturer capturer) {
         if (localVideoTrack == null && capturer != null) {
+
             surfaceTextureHelper =
                     SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
             videoSource = factory.createVideoSource(capturer.isScreencast());
@@ -2470,4 +2476,43 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.signalingParameters = signalingParameters;
     }
 
+    @androidx.annotation.Nullable
+    public AudioDeviceModule getAdm() {
+        return adm;
+    }
+
+    public void restartAdmRecording(){
+        stopAdmRecording();
+        //if media projection is null, microphone will be used to record audio.
+        setMediaProjection(null);
+        //media projection is set to null thus it will capture microphone.
+        createAudioRecord();
+        startRecording();
+    }
+
+    public void createAudioRecord(){
+        if(adm != null){
+            adm.createAudioRecord();
+        }
+    }
+
+    public void startRecording(){
+        if(adm != null){
+            adm.startRecording();
+        }
+    }
+
+    public void stopAdmRecording(){
+        if(adm != null){
+            adm.stopRecording();
+        }
+    }
+
+    public boolean isScreenPermissionNeeded() {
+        return screenPermissionNeeded;
+    }
+
+    public void setScreenPermissionNeeded(boolean screenPermissionNeeded) {
+        this.screenPermissionNeeded = screenPermissionNeeded;
+    }
 }
