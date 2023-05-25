@@ -12,6 +12,7 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -113,6 +114,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         //this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 30);
 
+        String newSource = WebRTCClient.SOURCE_SCREEN;
+        webRTCClient.changeVideoSource(newSource);
+
         bg = findViewById(R.id.rbGroup);
         bg.check(R.id.rbFront);
         bg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -139,6 +143,10 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+        idlingResource.increment();
+        webRTCClient.setStreamId(streamIdEditText.getText().toString());
+        Log.i(TAG, "Starting streaming");
+        webRTCClient.startStream();
     }
 
     @Override
@@ -203,6 +211,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
         broadcastingView.setVisibility(View.VISIBLE);
         decrementIdle();
+        moveTaskToBack(true);
     }
 
     @Override

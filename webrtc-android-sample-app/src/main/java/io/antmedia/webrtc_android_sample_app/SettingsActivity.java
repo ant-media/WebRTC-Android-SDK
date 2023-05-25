@@ -12,7 +12,7 @@ import androidx.preference.PreferenceManager;
 
 public class SettingsActivity extends Activity {
 
-    public static final String DEFAULT_WEBSOCKET_URL = "wss://test.antmedia.io:5443/LiveApp/websocket";
+    public static final String DEFAULT_WEBSOCKET_URL = "wss://ovh36.antmedia.io:5443/LiveApp/websocket";
     public static final String DEFAULT_ROOM_NAME = "room1";
 
     private Button saveButton;

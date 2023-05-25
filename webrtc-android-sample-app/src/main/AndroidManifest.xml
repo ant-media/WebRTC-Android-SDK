@@ -29,7 +29,7 @@
         android:theme="@style/AppTheme"
         android:requestLegacyExternalStorage="true">
 
-        <activity android:name=".HomeActivity"
+        <activity android:name=".ScreenCaptureActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight">
             <intent-filter>
@@ -50,7 +50,7 @@
                   android:exported="true"
                   android:theme="@style/Theme.AppCompat.DayNight"
                   android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
-        <activity android:name=".ScreenCaptureActivity"
+        <activity android:name=".HomeActivity"
                   android:exported="true"
                   android:theme="@style/Theme.AppCompat.DayNight"
                   android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
