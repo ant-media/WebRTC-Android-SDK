@@ -1005,6 +1005,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         Log.d(TAG, "onAudioManagerDevicesChanged: " + availableDevices + ", "
                 + "selected: " + device);
         // TODO(henrika): add callback handler.
+        audioManager.selectAudioDevice(device);
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.
