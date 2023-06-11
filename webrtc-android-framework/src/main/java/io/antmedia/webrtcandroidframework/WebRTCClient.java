@@ -14,6 +14,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioDeviceInfo;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -557,7 +558,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
 
 
-    private void initializeParameters() {
+    public void initializeParameters() {
         loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
         tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
 
@@ -602,10 +603,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
 
-        if (streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY) || isDataChannelOnly()) {
+        if (isDataChannelOnly()) {
             videoCallEnabled = false;
             audioCallEnabled = false;
         }
+
+        if(streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY)){
+            videoCallEnabled = false;
+            audioCallEnabled = true;
+        }
+
+
 
         hwCodecAcceleration = intent.getBooleanExtra(CallActivity.EXTRA_HWCODEC_ENABLED, true);
         videoFlexfecEnabled = intent.getBooleanExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, false);
@@ -716,6 +724,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             });
         }
     }
+
 
     public void initializeVideoCapturer() {
         // if video capture is null or disposed, we should recreate it.
@@ -2435,6 +2444,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public boolean getVideoCallEnabled() {
         return videoCallEnabled;
+    }
+
+    public boolean getAudioCallEnabled() {
+        return audioCallEnabled;
     }
 
     public String getCurrentSource() {
