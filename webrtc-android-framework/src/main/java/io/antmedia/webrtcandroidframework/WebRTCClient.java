@@ -558,7 +558,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
 
 
-    private void initializeParameters() {
+    public void initializeParameters() {
         loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
         tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
 
@@ -2444,6 +2444,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public boolean getVideoCallEnabled() {
         return videoCallEnabled;
+    }
+
+    public boolean getAudioCallEnabled() {
+        return audioCallEnabled;
     }
 
     public String getCurrentSource() {
