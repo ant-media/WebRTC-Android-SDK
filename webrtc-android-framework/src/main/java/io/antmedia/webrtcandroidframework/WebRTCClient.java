@@ -68,7 +68,9 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.CustomWebRtcAudioRecord;
 import org.webrtc.audio.JavaAudioDeviceModule;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -158,6 +160,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean streamStarted = false;
     private long TRACK_CHECK_PERIDOD_MS = 3000;
     private boolean waitingForPlay = false;
+
+    private int inputSampleRate = 48000;
+    private boolean stereoInput = false;
+    private int audioInputFormat;
+    private boolean customAudioFeed;
 
     public VideoCapturer getVideoCapturer() {
         return videoCapturer;
@@ -272,7 +279,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private RecordedAudioToFileController saveRecordedAudioToFile;
 
     @androidx.annotation.Nullable
-    public AudioDeviceModule adm;
+    public JavaAudioDeviceModule adm;
 
     private static final Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
     private boolean initialized = false;
@@ -855,6 +862,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 // This method will be called each time the number of available audio devices has changed.
                 onAudioManagerDevicesChanged(audioDevice, availableAudioDevices);
             });
+
+
         }
     }
 
@@ -1840,7 +1849,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         }
 
-        adm = createJavaAudioDevice();
+        adm = (JavaAudioDeviceModule) createJavaAudioDevice();
 
         // Create peer connection factory.
         if (options != null) {
@@ -1950,6 +1959,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         };
 
         return JavaAudioDeviceModule.builder(context)
+                .setCustomAudioFeed(customAudioFeed)
                 .setSamplesReadyCallback(saveRecordedAudioToFile)
                 .setUseHardwareAcousticEchoCanceler(!disableBuiltInAEC)
                 .setUseHardwareNoiseSuppressor(!disableBuiltInNS)
@@ -2722,5 +2732,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setRenderersProvidedAtStart(boolean renderersProvidedAtStart) {
         this.renderersProvidedAtStart = renderersProvidedAtStart;
+    }
+
+    public void setInputSampleRate(int sampleRate) {
+        this.inputSampleRate = sampleRate;
+    }
+
+
+    public void setStereoInput(boolean stereoInput) {
+        this.stereoInput = stereoInput;
+    }
+
+    public void setAudioInputFormat(int audioFormat) {
+        this.audioInputFormat = audioFormat;
+    }
+
+    public void setCustomAudioFeed(boolean customAudioFeed) {
+        this.customAudioFeed = customAudioFeed;
+    }
+
+    public CustomWebRtcAudioRecord getAudioInput() {
+        return adm.getAudioInput();
     }
 }

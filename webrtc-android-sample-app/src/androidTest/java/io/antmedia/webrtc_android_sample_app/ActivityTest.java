@@ -61,7 +61,7 @@ public class ActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
+            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_BELOW_ANDROID_S);
 
     @Before
     public void before() {
