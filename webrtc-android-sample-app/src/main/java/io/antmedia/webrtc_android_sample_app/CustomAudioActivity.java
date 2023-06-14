@@ -15,6 +15,7 @@ import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Process;
 import android.preference.PreferenceManager;
@@ -22,8 +23,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -36,16 +35,14 @@ import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
 import org.webrtc.DataChannel;
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.CustomWebRtcAudioRecord;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -59,6 +56,7 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 public class CustomAudioActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
+    private static final int DESIRED_SAMPLE_RATE = 48000;
     /**
      * Mode can Publish, Play or P2P
      */
@@ -91,6 +89,7 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
     private EditText streamIdEditText;
     private boolean audioPushingEnabled = false;
     private String TAG = CustomAudioActivity.class.getSimpleName();
+    private MP3Publisher mp3Publisher;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -150,11 +149,8 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
-        webRTCClient.setInputSampleRate(48000);
-        webRTCClient.setStereoInput(false);
-        //default AudioFormat.ENCODING_PCM_16BIT
-        webRTCClient.setAudioInputFormat(CustomWebRtcAudioRecord.DEFAULT_AUDIO_FORMAT);
-        webRTCClient.setCustomAudioFeed(true);
+        String path = Environment.getExternalStorageDirectory() + "/sample_44100_stereo.mp3";
+        mp3Publisher = new MP3Publisher(webRTCClient, this, path);
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
@@ -171,31 +167,9 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
             ((Button) v).setText("Stop " + operationName);
             Log.i(getClass().getSimpleName(), "Calling startStream");
 
+            mp3Publisher.startStreaming();
             webRTCClient.startStream();
             stoppedStream = false;
-
-            new Thread() {
-                @Override
-                public void run() {
-                    CustomWebRtcAudioRecord audioInput = webRTCClient.getAudioInput();
-                    while (audioInput.isStarted() == false) {
-                        //It means that it's not initialized
-                        try {
-                            Thread.sleep(10);
-                            Log.i("Audio", "Audio input is not initialized");
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    CustomAudioActivity.this.audioPushingEnabled = true;
-                    Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
-
-                    Log.i("Audio ", "Audio input is started");
-                    while (true) {
-                        pushAudio();
-                    }
-                }
-            }.start();
 
         }
         else {
@@ -203,170 +177,9 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
             Log.i(getClass().getSimpleName(), "Calling stopStream");
             webRTCClient.stopStream();
             stoppedStream = true;
+            mp3Publisher.stopStreaming();
         }
 
-    }
-
-    public void pushAudio2() {
-        CustomWebRtcAudioRecord audioInput = webRTCClient.getAudioInput();
-
-
-        //WebRTC stack receives 10ms of audio data
-        //By default it receives 48Khz, single channel(mono) and PCM data  AudioFormat.ENCODING_PCM_16BIT
-        //It means 480 sample per ms * 10ms = 480 sample
-        //It's PCM_16BIT, it's 2 byte. 480 * 2 byte = 960 byte
-        //It's mono then 960 byte * 1 channel = 960 bytes
-
-        /*
-        lengths of formats
-          AudioFormat.ENCODING_PCM_8BIT: 1
-
-          AudioFormat.ENCODING_PCM_16BIT: 2 - s16le is this one
-          AudioFormat.ENCODING_IEC61937: 2
-          AudioFormat.ENCODING_DEFAULT: 2
-
-          AudioFormat.ENCODING_PCM_FLOAT: 4
-         */
-
-        //We set these values above like this
-        /*
-         webRTCClient.setInputSampleRate(48000);
-         webRTCClient.setStereoInput(false);
-        //default AudioFormat.ENCODING_PCM_16BIT
-          webRTCClient.setAudioInputFormat(WebRtcAudioRecord.DEFAULT_AUDIO_FORMAT);
-         */
-
-        //decoded_audio is 48Khz, 1 channel and s16le(ENCODING_PCM_16BIT) format
-
-        int bufferLength = audioInput.getBufferByteLength(); // this is the length of 10ms data
-        InputStream inputStream = getResources().openRawResource(R.raw.decoded_audio_long);
-
-        byte[] data = new byte[bufferLength];
-        int length;
-        try {
-            while ((length = inputStream.read(data, 0, data.length)) > 0) {
-                audioInput.pushAudio(data, length);
-                Log.i("Audio", "push audio: " + data[0] + " : " + data[1] + " : " + data[2] + " : " + data[3] + " : " );
-                //emulate real time streaming by waiting 10ms because we're reading from the file directly
-                //When you decode the audio from incoming RTSP stream, you don't need to sleep, just send it immediately when you get
-
-                Thread.sleep(10);
-
-                if (!this.audioPushingEnabled) {
-                    break;
-                }
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    public void pushAudio() {
-            try {
-                CustomWebRtcAudioRecord audioInput = webRTCClient.getAudioInput();
-
-                int bufferLength = audioInput.getBufferByteLength(); // this is the length of 10ms data
-
-                ByteBuffer rawAudioBuffer = ByteBuffer.allocate(bufferLength*20);
-
-                final String uriPath="android.resource://"+getPackageName()+"/raw/"+R.raw.sample4;
-
-                final Uri uri= Uri.parse(uriPath);
-                MediaExtractor extractor = new MediaExtractor();
-                extractor.setDataSource(this, uri, null);
-
-                // Find and select the MP3 track
-                MediaFormat format = null;
-                int trackCount = extractor.getTrackCount();
-                for (int i = 0; i < trackCount; i++) {
-                    format = extractor.getTrackFormat(i);
-                    String mime = format.getString(MediaFormat.KEY_MIME);
-                    if (mime != null && mime.startsWith("audio/")) {
-                        extractor.selectTrack(i);
-                        break;
-                    }
-                }
-
-                if (format == null) {
-                    Log.e(TAG, "No audio track found in MP3 file");
-                    return;
-                }
-
-                // Create a MediaCodec to decode the MP3 file
-                MediaCodec codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
-                codec.configure(format, null, null, 0);
-                codec.start();
-
-                ByteBuffer[] inputBuffers = codec.getInputBuffers();
-                ByteBuffer[] outputBuffers = codec.getOutputBuffers();
-
-                MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-                boolean isEOS = false;
-                long presentationTimeUs = 0;
-
-
-                // Decode the MP3 file to PCM
-                while (!isEOS) {
-                    int inputBufferIndex = codec.dequeueInputBuffer(10000);
-                    if (inputBufferIndex >= 0) {
-                        ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
-                        int sampleSize = extractor.readSampleData(inputBuffer, 0);
-                        if (sampleSize < 0) {
-                            codec.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            isEOS = true;
-                        } else {
-                            presentationTimeUs = extractor.getSampleTime();
-                            codec.queueInputBuffer(inputBufferIndex, 0, sampleSize, presentationTimeUs, 0);
-                            extractor.advance();
-                        }
-                    }
-
-                    int outputBufferIndex = codec.dequeueOutputBuffer(info, 10000);
-                    if (outputBufferIndex >= 0) {
-                        ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
-                        rawAudioBuffer.put(outputBuffer);
-                        int length = rawAudioBuffer.position();
-
-                        rawAudioBuffer.position(0);
-                        Log.d(TAG, "pushAudio: length: " + length + " bufferLength: " + bufferLength);
-                        while(length - rawAudioBuffer.position() >= bufferLength) {
-                            byte[] pcmData = new byte[bufferLength];
-                            rawAudioBuffer.get(pcmData);
-
-                            Log.d(TAG, "length: " + length+ " position: " + rawAudioBuffer.position());
-
-
-                            audioInput.pushAudio(pcmData, pcmData.length);
-                            Log.i("Audio", "push audio: " + pcmData[0] + " : " + pcmData[1] + " : " + pcmData[2] + " : " + pcmData[3] + " : ");
-                            //emulate real time streaming by waiting 10ms because we're reading from the file directly
-                            //When you decode the audio from incoming RTSP stream, you don't need to sleep, just send it immediately when you get
-                            Thread.sleep(10);
-                        }
-
-                        byte[] moreData = new byte[length - rawAudioBuffer.position()];
-                        rawAudioBuffer.get(moreData);
-                        rawAudioBuffer.clear();
-                        rawAudioBuffer.put(moreData);
-
-
-
-                        codec.releaseOutputBuffer(outputBufferIndex, false);
-                    } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                        format = codec.getOutputFormat();
-                    }
-                }
-
-                // Release resources
-                codec.stop();
-                codec.release();
-                extractor.release();
-            } catch (IOException e) {
-                Log.e(TAG, "Error decoding MP3 to PCM: " + e.getMessage());
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
     }
 
     @Override
