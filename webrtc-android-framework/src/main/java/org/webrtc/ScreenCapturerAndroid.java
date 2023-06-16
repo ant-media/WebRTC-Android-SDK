@@ -213,25 +213,28 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
             null /* callback */, null /* callback handler */);
   }
 
+  public void rotateScreen(int rotation) {
+    if (deviceRotation != rotation) {
+      Log.w("Rotation", "onFrame: " + rotation);
+      deviceRotation = rotation;
+
+      if (deviceRotation == 0) {
+        virtualDisplay.resize(width, height, VIRTUAL_DISPLAY_DPI);
+        surfaceTextureHelper.setTextureSize(width, height);
+      } else if (deviceRotation == 180) {
+        // 180 degree is not supported by MediaProjection
+      } else {
+        virtualDisplay.resize(height, width, VIRTUAL_DISPLAY_DPI);
+        surfaceTextureHelper.setTextureSize(height, width);
+      }
+    }
+  }
+
   // This is called on the internal looper thread of {@Code SurfaceTextureHelper}.
   @Override
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
     Log.v(TAG, "Frame received " + numCapturedFrames);
-    int rotation = windowManager.getDefaultDisplay().getRotation();
-    if (deviceRotation != rotation) {
-      Log.w("Rotation", "onFrame: " + rotation);
-      deviceRotation = rotation;
-
-      if (deviceRotation*90 % 180 != 0) {
-        virtualDisplay.resize(height, width, VIRTUAL_DISPLAY_DPI);
-        surfaceTextureHelper.setTextureSize(height, width);
-      }
-      else {
-        virtualDisplay.resize(width, height, VIRTUAL_DISPLAY_DPI);
-        surfaceTextureHelper.setTextureSize(width, height);
-      }
-    }
     capturerObserver.onFrameCaptured(frame);
   }
 

@@ -137,7 +137,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private String errorString = null;
     private String streamMode;
     private boolean openFrontCamera = true;
-    private VideoCapturer videoCapturer;
+    public VideoCapturer videoCapturer;
     private VideoTrack localVideoTrack;
     private Intent intent = new Intent();
     private Handler handler = new Handler();
