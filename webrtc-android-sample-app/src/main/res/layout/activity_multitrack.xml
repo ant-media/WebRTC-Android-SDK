@@ -41,6 +41,7 @@
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#ffffff"
         android:id="@+id/stream_id_edittext"
         android:layout_above="@id/start_streaming_button"/>
 
