@@ -29,9 +29,14 @@ import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
 import static org.hamcrest.CoreMatchers.allOf;
@@ -66,6 +71,13 @@ public class ActivityTest {
     @Before
     public void before() {
         //try before method to make @Rule run properly
+        System.out.println("before runned!");
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        //try before method to make @Rule run properly
+        System.out.println("beforeClass runned!");
     }
 
     @Test
@@ -74,6 +86,21 @@ public class ActivityTest {
         Context appContext = getInstrumentation().getTargetContext();
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+
+        protected void failed(Throwable e, Description description) {
+            System.out.println("Failed test: " + description.getMethodName() + " e: " + ExceptionUtils.getStackTrace(e));
+        };
+
+        protected void finished(Description description) {
+            System.out.println("Finishing test: " + description.getMethodName());
+        };
+    };
 
     @Test
     public void testPlayStream() {
