@@ -115,26 +115,26 @@ public class ActivityTest {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+
+                //stream556677i4d is the stream id in github actions
+                onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+                onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Playing")));
+                Espresso.closeSoftKeyboard();
+                onView(withId(R.id.start_streaming_button)).perform(click());
+
+
+                onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Playing")));
+
+                onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+                //Stop playing
+                onView(withId(R.id.start_streaming_button)).perform(click());
+
+                onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+                IdlingRegistry.getInstance().unregister(mIdlingResource);
             }
         });
-
-        //stream556677i4d is the stream id in github actions
-        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Playing")));
-        Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Playing")));
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
-
-        //Stop playing
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
 
