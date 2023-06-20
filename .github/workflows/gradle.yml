@@ -46,36 +46,3 @@ jobs:
           cores: 3
           emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
           script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
-
-      - name: Archive Test Report
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: Test report
-          path: |
-            webrtc-android-sample-app/build/reports/tests/testDebugUnitTest/
-            webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/
-            webrtc-android-sample-app/build/reports/androidTests/
-            webrtc-android-framework/build/reports/tests/testDebugUnitTest/
-            webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
-            webrtc-android-framework/build/reports/androidTests/
-            webrtc-android-sample-app/build/logcat.txt
-            webrtc-android-sample-app/build/screen.png
-
-      - name: Upload Test Report to Codecov
-        uses: codecov/codecov-action@v3.1.1
-        with:
-          files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-          fail_ci_if_error: true
-
-      - name: Deploy to Sonatype
-        #deploy only in master branches
-        if: github.ref == 'refs/heads/master'
-        run: ./gradlew publish
-        env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
-          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-
