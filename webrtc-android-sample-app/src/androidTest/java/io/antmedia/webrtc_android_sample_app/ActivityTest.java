@@ -73,6 +73,11 @@ public class ActivityTest {
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before runned!");
+        try {
+            UiDevice.getInstance(getInstrumentation()).wakeUp();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @BeforeClass
