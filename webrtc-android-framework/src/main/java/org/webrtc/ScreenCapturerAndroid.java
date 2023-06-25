@@ -53,7 +53,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable private MediaProjection mediaProjection;
   private boolean isDisposed;
   private WindowManager windowManager;
-  private int deviceRotation = 0;
+  public int deviceRotation = 0;
   private static final String TAG =  ScreenCapturerAndroid.class.getSimpleName();
 
   @Nullable private MediaProjectionManager mediaProjectionManager;
