@@ -441,5 +441,39 @@ public class WebRTCClientTest {
         verify(wsHandler, timeout(1000)).disconnect(true);
     }
 
+    @Test
+    public void testAudioVideoEnablement() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+
+        when(context.getString(R.string.pref_maxvideobitratevalue_default)).thenReturn("500");
+        when(context.getString(R.string.pref_startaudiobitratevalue_default)).thenReturn("500");
+
+        Intent intent = Mockito.mock(Intent.class);
+
+        webRTCClient.setStreamMode(WebRTCClient.MODE_PLAY);
+        webRTCClient.initializeParameters();
+        assertEquals(false, webRTCClient.getVideoCallEnabled());
+        assertEquals(true, webRTCClient.getAudioCallEnabled());
+
+        webRTCClient.setVideoEnabled(false);
+        webRTCClient.setAudioEnabled(false);
+
+        webRTCClient.setStreamMode(WebRTCClient.MODE_MULTI_TRACK_PLAY);
+        webRTCClient.initializeParameters();
+        assertEquals(false, webRTCClient.getVideoCallEnabled());
+        assertEquals(true, webRTCClient.getAudioCallEnabled());
+
+        webRTCClient.setVideoEnabled(false);
+        webRTCClient.setAudioEnabled(false);
+
+        webRTCClient.setStreamMode("some other mode");
+        webRTCClient.initializeParameters();
+        assertEquals(false, webRTCClient.getVideoCallEnabled());
+        assertEquals(false, webRTCClient.getAudioCallEnabled());
+
+
+    }
 
 }

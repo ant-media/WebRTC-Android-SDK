@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -41,6 +42,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private String tokenId = "tokenId";
     private String serverUrl;
     private EditText streamIdEditText;
+    private int videoWidth ,videoHeight = 0;
 
     private static final String TAG = ScreenCaptureActivity.class.getSimpleName();
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
@@ -97,11 +99,15 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                 return;
             }
         }
+        // fix:- to remove the black boarder issue
+        DisplayMetrics displayMetrics = webRTCClient.getDisplayMetrics();
+        videoWidth = displayMetrics.widthPixels;
+        videoHeight = displayMetrics.heightPixels;
 
         this.getIntent().putExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_BITRATE, 2500);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, 540);
-        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 960);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
+        this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
         //this.getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, true);
         this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 30);
 
