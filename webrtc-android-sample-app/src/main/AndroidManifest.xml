@@ -89,7 +89,6 @@
                   android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
 
         <activity android:name=".CustomFrameActivity"
-            android:parentActivityName=".DataChannelActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
