@@ -174,6 +174,8 @@ public class MultitrackConferenceActivityTest {
 
                 response = client.get("join");
                 assertNotNull(response);
+
+                Log.i("RemoteParticipant", "join: " + response);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -186,6 +188,9 @@ public class MultitrackConferenceActivityTest {
 
                 response = client.get("delete");
                 assertNotNull(response);
+
+                Log.i("RemoteParticipant", "leave: " + response);
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
