@@ -56,7 +56,7 @@ jobs:
           disable-animations: true
           cores: 3
           emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
-          script: /Users/runner/Library/Android/sdk/platform-tools/adb logcat -c; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt &; ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
+          script: /Users/runner/Library/Android/sdk/platform-tools/adb logcat -c; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > logcat.txt &; ./gradlew jacocoTestReport; EXIT_CODE=$?; cp logcat.txt webrtc-android-sample-app/build/; exit $EXIT_CODE
 
       - name: Archive Test Report
         if: always()
