@@ -78,6 +78,7 @@ public class MultitrackConferenceActivityTest {
     @Before
     public void before() {
         //try before method to make @Rule run properly
+        System.out.println("before test");
     }
 
     @Test
