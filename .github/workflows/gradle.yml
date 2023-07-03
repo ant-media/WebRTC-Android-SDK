@@ -54,10 +54,9 @@ jobs:
           emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
           disable-animations: true
-          capture-logcat: true
           cores: 3
           emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
-          script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
+          script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -c; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
 
       - name: Archive Test Report
         if: always()
