@@ -235,6 +235,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
     Log.v(TAG, "Frame received " + numCapturedFrames);
+    if (deviceRotation != 0) {
+      //frame.retain();
+      frame = new VideoFrame(frame.getBuffer(), 90, frame.getTimestampNs());
+    }
     capturerObserver.onFrameCaptured(frame);
   }
 
