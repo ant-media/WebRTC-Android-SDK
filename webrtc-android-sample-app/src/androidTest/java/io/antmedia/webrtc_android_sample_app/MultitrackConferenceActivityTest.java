@@ -73,7 +73,7 @@ public class MultitrackConferenceActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
+            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_BELOW_ANDROID_S);
 
     @Before
     public void before() {
@@ -198,7 +198,7 @@ public class MultitrackConferenceActivityTest {
         }
     }
 
-    //@Test
+    @Test
     public void testJoinWithExternalParticipant() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
@@ -247,7 +247,7 @@ public class MultitrackConferenceActivityTest {
     }
 
 
-    //@Test
+    @Test
     public void testJoinWithoutVideo() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
@@ -292,7 +292,7 @@ public class MultitrackConferenceActivityTest {
     }
 
 
-    //@Test
+    @Test
     public void testJoinPlayOnlyAsFirstPerson() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
@@ -324,7 +324,7 @@ public class MultitrackConferenceActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testReconnect() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 

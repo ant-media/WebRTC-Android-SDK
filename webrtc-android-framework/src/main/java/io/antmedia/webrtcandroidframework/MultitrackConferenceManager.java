@@ -369,10 +369,10 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     @Override
     public void onError(String streamId, String definition) {
-        if(streamId.equals(this.streamId)) {
+        if(streamId != null && streamId.equals(this.streamId)) {
             publishWebRTCClient.onError(streamId, definition);
         }
-        else if(streamId.equals(this.roomName)) {
+        else if(streamId != null && streamId.equals(this.roomName)) {
             playWebRTCClient.onError(streamId, definition);
         }
     }
