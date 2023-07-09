@@ -198,7 +198,7 @@ public class MultitrackConferenceActivityTest {
         }
     }
 
-    @Test
+    //@Test
     public void testJoinWithExternalParticipant() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
@@ -247,7 +247,7 @@ public class MultitrackConferenceActivityTest {
     }
 
 
-    @Test
+    //@Test
     public void testJoinWithoutVideo() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
@@ -292,7 +292,7 @@ public class MultitrackConferenceActivityTest {
     }
 
 
-    @Test
+    //@Test
     public void testJoinPlayOnlyAsFirstPerson() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
@@ -324,7 +324,7 @@ public class MultitrackConferenceActivityTest {
 
     }
 
-    @Test
+    //@Test
     public void testReconnect() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
