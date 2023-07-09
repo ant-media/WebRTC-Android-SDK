@@ -100,7 +100,7 @@ public class CustomWebRtcAudioRecord extends WebRtcAudioRecord{
     final int bytesPerFrame = channels * getBytesPerSample(audioFormat);
     final int framesPerBuffer = sampleRate / BUFFERS_PER_SECOND;
 
-    byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
+    allocateBuffer(bytesPerFrame, framesPerBuffer);
     if (!(byteBuffer.hasArray())) {
       reportWebRtcAudioRecordInitError("ByteBuffer does not have backing array.");
       return -1;
@@ -182,13 +182,18 @@ public class CustomWebRtcAudioRecord extends WebRtcAudioRecord{
     return framesPerBuffer;
   }
 
+  @Nullable
+  public void allocateBuffer(int bytesPerFrame, int framesPerBuffer) {
+    byteBuffer = ByteBuffer.allocateDirect(bytesPerFrame * framesPerBuffer);
+  }
+
   /**
    * Prefer a specific {@link AudioDeviceInfo} device for recording. Calling after recording starts
    * is valid but may cause a temporary interruption if the audio routing changes.
    */
   @RequiresApi(Build.VERSION_CODES.M)
   @TargetApi(Build.VERSION_CODES.M)
-  void setPreferredDevice(@Nullable AudioDeviceInfo preferredDevice) {
+  public void setPreferredDevice(@Nullable AudioDeviceInfo preferredDevice) {
     Logging.d(
             TAG, "setPreferredDevice " + (preferredDevice != null ? preferredDevice.getId() : null));
     this.preferredDevice = preferredDevice;
@@ -273,5 +278,9 @@ public class CustomWebRtcAudioRecord extends WebRtcAudioRecord{
 
   public int getBufferByteLength() {
     return bufferByteLength;
+  }
+
+  public void setStarted(boolean started) {
+    this.started = started;
   }
 }

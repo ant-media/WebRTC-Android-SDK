@@ -48,14 +48,14 @@ import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStartErrorCode;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStateCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
 
-class WebRtcAudioRecord {
+public class WebRtcAudioRecord {
   private static final String TAG = "WebRtcAudioRecordExternal";
 
   // Requested size of each recorded buffer provided to the client.
   static final int CALLBACK_BUFFER_SIZE_MS = 10;
 
   // Average number of callbacks per second.
-  static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
+  public static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
   // We ask for a native buffer size of BUFFER_SIZE_FACTOR * (minimum required
   // buffer size). The extra space is allocated to guard against glitches under
@@ -66,7 +66,7 @@ class WebRtcAudioRecord {
   // but the wait times out afther this amount of time.
   static final long AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS = 2000;
 
-  static final int DEFAULT_AUDIO_SOURCE = AudioSource.VOICE_COMMUNICATION;
+  public static final int DEFAULT_AUDIO_SOURCE = AudioSource.VOICE_COMMUNICATION;
 
   // Default audio data format is PCM 16 bit per sample.
   // Guaranteed to be supported by all devices.
@@ -88,11 +88,12 @@ class WebRtcAudioRecord {
   final int audioSource;
   final int audioFormat;
 
-  long nativeAudioRecord;
+  public long nativeAudioRecord;
 
   final WebRtcAudioEffects effects = new WebRtcAudioEffects();
 
-  @Nullable ByteBuffer byteBuffer;
+  @Nullable
+  public ByteBuffer byteBuffer;
 
   @Nullable AudioRecord audioRecord;
   public MediaProjection mediaProjection;
@@ -533,9 +534,9 @@ class WebRtcAudioRecord {
     return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
   }
 
-  native void nativeCacheDirectBufferAddress(
+  public native void nativeCacheDirectBufferAddress(
           long nativeAudioRecordJni, ByteBuffer byteBuffer);
-  native void nativeDataIsRecorded(
+  public native void nativeDataIsRecorded(
           long nativeAudioRecordJni, int bytes, long captureTimestampNs);
 
   // Sets all recorded samples to zero if `mute` is true, i.e., ensures that
@@ -559,7 +560,7 @@ class WebRtcAudioRecord {
     this.mediaProjection = mediaProjection;
   }
 
-  void reportWebRtcAudioRecordInitError(String errorMessage) {
+  public void reportWebRtcAudioRecordInitError(String errorMessage) {
     Logging.e(TAG, "Init recording error: " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     logRecordingConfigurations(audioRecord, false /* verifyAudioConfig */);
