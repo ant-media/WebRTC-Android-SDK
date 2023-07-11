@@ -167,9 +167,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private int audioInputFormat;
     private boolean customAudioFeed;
 
-    public VideoCapturer getVideoCapturer() {
-        return videoCapturer;
-    }private boolean customCapturerEnabled = false;
+    private boolean customCapturerEnabled = false;
 
     private VideoCapturer videoCapturer;
     private VideoTrack localVideoTrack;
@@ -1294,6 +1292,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         } else if (SOURCE_SCREEN.equals(source)) {
             return createScreenCapturer();
+        } else if (SOURCE_CUSTOM.equals(source)) {
+            return new CustomVideoCapturer();
         } else {
             if (!captureToTexture) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
@@ -2766,5 +2766,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public CustomWebRtcAudioRecord getAudioInput() {
         return adm.getAudioInput();
+    }
+
+    public VideoCapturer getVideoCapturer() {
+        return videoCapturer;
     }
 }
