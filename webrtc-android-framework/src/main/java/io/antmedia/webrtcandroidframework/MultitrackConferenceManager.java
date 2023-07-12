@@ -70,6 +70,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         }
     };
     private boolean playOnlyMode = false;
+
     private boolean playMessageSent = false;
 
     private NetworkMonitorAutoDetect networkDetector;
@@ -93,6 +94,9 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         if (dataChannelObserver != null) {
             this.intent.putExtra(EXTRA_DATA_CHANNEL_ENABLED, true);
         }
+    }
+
+    public void init() {
         initWebSocketHandler();
         //createNetworkChangeObserver();
         if (!this.playOnlyMode) {
@@ -100,7 +104,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         }
 
         initPlayWebRTCClient();
-
     }
 
     private void initPublishWebRTCClient() {
@@ -153,7 +156,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         wsHandler.joinToConferenceRoom(roomName, streamId);
     }
 
-    private void initWebSocketHandler() {
+    public void initWebSocketHandler() {
         if (wsHandler == null) {
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(serverUrl);
@@ -562,5 +565,17 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void addTrackToRenderer(VideoTrack track, SurfaceViewRenderer renderer) {
         playWebRTCClient.addTrackToRenderer(track, renderer);
+    }
+
+    public void setWsHandler(WebSocketHandler wsHandler) {
+        this.wsHandler = wsHandler;
+    }
+
+    public boolean isPlayMessageSent() {
+        return playMessageSent;
+    }
+
+    public void setPublishWebRTCClient(WebRTCClient publishWebRTCClient) {
+        this.publishWebRTCClient = publishWebRTCClient;
     }
 }

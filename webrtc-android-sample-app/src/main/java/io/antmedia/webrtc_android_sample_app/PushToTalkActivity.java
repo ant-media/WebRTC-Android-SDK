@@ -108,6 +108,7 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
                 this
         );
 
+        conferenceManager.init();
         conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
     }

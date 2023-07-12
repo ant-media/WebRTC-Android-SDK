@@ -119,6 +119,7 @@ public class MultitrackConferenceActivity extends Activity implements IWebRTCLis
                 this
         );
 
+        conferenceManager.init();
         conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
         conferenceManager.setReconnectionEnabled(true);
