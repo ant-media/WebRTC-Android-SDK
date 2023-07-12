@@ -59,7 +59,7 @@ jobs:
           script: |
             touch emulator.log               
             chmod 777 emulator.log
-            /Users/runner/Library/Android/sdk/platform-tools/adb logcat > emulator.log
+            adb logcat > emulator.log
             ./gradlew jacocoTestReport; EXIT_CODE=$?; mv emulator.log webrtc-android-sample-app/build/; exit $EXIT_CODE
 
       - name: Archive Test Report
