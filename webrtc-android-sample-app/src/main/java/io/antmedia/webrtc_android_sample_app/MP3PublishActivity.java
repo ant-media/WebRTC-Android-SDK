@@ -9,15 +9,10 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.media.MediaCodec;
-import android.media.MediaExtractor;
-import android.media.MediaFormat;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Process;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -37,12 +32,8 @@ import androidx.test.espresso.idling.CountingIdlingResource;
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
-import org.webrtc.audio.CustomWebRtcAudioRecord;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -50,11 +41,12 @@ import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.MP3Publisher;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-public class CustomAudioActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class MP3PublishActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     private static final int DESIRED_SAMPLE_RATE = 48000;
     /**
@@ -88,7 +80,7 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private boolean audioPushingEnabled = false;
-    private String TAG = CustomAudioActivity.class.getSimpleName();
+    private String TAG = MP3PublishActivity.class.getSimpleName();
     private MP3Publisher mp3Publisher;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -149,7 +141,7 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
         String tokenId = "tokenId";
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
-        String path = Environment.getExternalStorageDirectory() + "/sample_44100_stereo.mp3";
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath() + "/sample_44100_stereo.mp3";
         mp3Publisher = new MP3Publisher(webRTCClient, this, path);
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
@@ -286,12 +278,12 @@ public class CustomAudioActivity extends Activity implements IWebRTCListener, ID
 
     @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(CustomAudioActivity.class.getName(), "Data channel buffered amount changed: ");
+        Log.d(MP3PublishActivity.class.getName(), "Data channel buffered amount changed: ");
     }
 
     @Override
     public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(CustomAudioActivity.class.getName(), "Data channel state changed: ");
+        Log.d(MP3PublishActivity.class.getName(), "Data channel state changed: ");
     }
 
     @Override

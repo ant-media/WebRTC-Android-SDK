@@ -93,7 +93,7 @@
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
 
-        <activity android:name=".CustomAudioActivity"
+        <activity android:name=".MP3PublishActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
