@@ -123,6 +123,12 @@ public class MP3PublishActivityTest {
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Publishing")));
         onView(withId(R.id.start_streaming_button)).perform(click());
 
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Publishing")));
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));

@@ -80,21 +80,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
 
     private boolean stoppedStream = false;
-    Handler reconnectionHandler = new Handler();
-    Runnable reconnectionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!stoppedStream && !webRTCClient.isStreaming()) {
-                Log.i(CustomFrameActivity.class.getSimpleName(),"Try to reconnect in reconnectionRunnable");
-                webRTCClient.stopStream();
-
-                webRTCClient.startStream();
-            }
-            if (!stoppedStream) {
-                reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
-            }
-        }
-    };
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private Bitmap bitmapImage;
@@ -190,7 +175,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         else {
             ((Button)startStreamingButton).setText("Start " + operationName);
             Log.i(getClass().getSimpleName(), "Calling stopStream");
-            reconnectionHandler.removeCallbacks(reconnectionRunnable);
             webRTCClient.stopStream();
             stoppedStream = true;
             frameFeedTimer.cancel();
@@ -279,20 +263,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         broadcastingView.setVisibility(View.GONE);
         decrementIdle();
         startStreamingButton.setText("Start " + operationName);
-        // handle reconnection attempt
-        if (!stoppedStream) {
-            Log.i(getClass().getSimpleName(),"Disconnected. Trying to reconnect");
-            Toast.makeText(this, "Disconnected.Trying to reconnect", Toast.LENGTH_LONG).show();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
-                    reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
-                }
-            } else {
-                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
-            }
-        } else {
-            Toast.makeText(this, "Stopped the stream", Toast.LENGTH_LONG).show();
-        }
     }
 
     @Override
@@ -348,62 +318,10 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
 
     @Override
     public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
-        ByteBuffer data = buffer.data;
-        String messageText = new String(data.array(), StandardCharsets.UTF_8);
-        Toast.makeText(this, "New Message: " + messageText, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-        if (successful) {
-            ByteBuffer data = buffer.data;
-            final byte[] bytes = new byte[data.capacity()];
-            data.get(bytes);
-            String messageText = new String(bytes, StandardCharsets.UTF_8);
-
-            Toast.makeText(this, "Message is sent", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    public void sendTextMessage(String messageToSend) {
-        final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
-        DataChannel.Buffer buf = new DataChannel.Buffer(buffer, false);
-        webRTCClient.sendMessageViaDataChannel(buf);
-    }
-
-    public void showSendDataChannelMessageDialog(View view) {
-        if (webRTCClient != null && webRTCClient.isDataChannelEnabled()) {
-            // create an alert builder
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Send Message via Data Channel");
-            // set the custom layout
-            final View customLayout = getLayoutInflater().inflate(R.layout.send_message_data_channel, null);
-            builder.setView(customLayout);
-            // add a button
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    // send data from the AlertDialog to the Activity
-                    EditText editText = customLayout.findViewById(R.id.message_text_input);
-                    sendTextMessage(editText.getText().toString());
-                    // sendDialogDataToActivity(editText.getText().toString());
-                }
-            });
-            builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-
-                }
-            });
-            // create and show the alert dialog
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        }
-        else {
-            Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
-        }
     }
 
     public IdlingResource getIdlingResource() {
