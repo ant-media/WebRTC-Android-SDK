@@ -17,6 +17,10 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
+
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
+
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
@@ -37,8 +41,8 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
 
     private MultitrackConferenceManager conferenceManager;
 
-    final int RECONNECTION_PERIOD_MLS = 1000;
-    private boolean stoppedStream = false;
+    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
+
 
     @SuppressLint("WrongViewCast")
     @Override
@@ -123,7 +127,6 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
         else {
             ((Button)v).setText("Join");
             conferenceManager.leaveFromConference();
-            stoppedStream = true;
         }
     }
 
@@ -174,7 +177,6 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
     @Override
     protected void onStop() {
         super.onStop();
-        stoppedStream = true;
     }
 
     @Override
@@ -235,25 +237,10 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
 
     @Override
     public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
-        ByteBuffer data = buffer.data;
-        String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
-
-        try {
-            JSONObject json = new JSONObject(strDataJson);
-            String eventType = json.getString("eventType");
-            String streamId = json.getString("streamId");
-            Toast.makeText(this, eventType + " : " + streamId, Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Log.e(getClass().getSimpleName(), e.getMessage());
-        }
     }
 
     @Override
     public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-        ByteBuffer data = buffer.data;
-        String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
-
-        Log.e(getClass().getSimpleName(), "SentEvent: " + strDataJson);
     }
 
     public void controlAudio(boolean enable) {
@@ -264,6 +251,10 @@ public class PushToTalkActivity extends Activity implements IWebRTCListener, IDa
             conferenceManager.disableAudio();
             conferenceManager.updateAudioLevel(0);
         }
+    }
+
+    public IdlingResource getIdlingResource() {
+        return idlingResource;
     }
 }
 

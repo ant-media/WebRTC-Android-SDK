@@ -67,11 +67,7 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
     public static final String WEBRTC_MODE = "WebRTC_MODE";
-
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
-
-
-    private boolean stoppedStream = false;
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private boolean audioPushingEnabled = false;
@@ -156,14 +152,12 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
 
             mp3Publisher.startStreaming();
             webRTCClient.startStream();
-            stoppedStream = false;
 
         }
         else {
             ((Button)v).setText("Start " + operationName);
             Log.i(getClass().getSimpleName(), "Calling stopStream");
             webRTCClient.stopStream();
-            stoppedStream = true;
             mp3Publisher.stopStreaming();
         }
 
@@ -225,7 +219,6 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
             Log.i(getClass().getSimpleName(), "onStop and calling stopStream");
             webRTCClient.stopStream();
         }
-        stoppedStream = true;
     }
 
     @Override

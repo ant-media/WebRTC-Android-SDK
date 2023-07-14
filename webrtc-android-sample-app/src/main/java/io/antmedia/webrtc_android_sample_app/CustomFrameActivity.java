@@ -73,13 +73,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     private Spinner streamInfoListSpinner;
 
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
-
-    // variables for handling reconnection attempts after disconnected
-    final int RECONNECTION_PERIOD_MLS = 1000;
-
-    final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
-
-    private boolean stoppedStream = false;
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private Bitmap bitmapImage;
@@ -155,8 +148,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
 
             webRTCClient.startStream();
 
-            stoppedStream = false;
-
             bitmapImage = BitmapFactory.decodeResource(getResources(), R.drawable.test);
             bitmapImage = Bitmap.createScaledBitmap(bitmapImage, 360, 640, false);
 
@@ -176,7 +167,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
             ((Button)startStreamingButton).setText("Start " + operationName);
             Log.i(getClass().getSimpleName(), "Calling stopStream");
             webRTCClient.stopStream();
-            stoppedStream = true;
             frameFeedTimer.cancel();
         }
 
@@ -247,7 +237,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
             Log.i(getClass().getSimpleName(), "onStop and calling stopStream");
             webRTCClient.stopStream();
         }
-        stoppedStream = true;
     }
 
     @Override
