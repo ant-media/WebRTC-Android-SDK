@@ -34,6 +34,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 
 /**
@@ -56,50 +61,31 @@ public class MP3PublishActivityTest {
     }
 
     public void downloadTestFile() {
-        // Specify the URL of the file you want to download
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        String fileUrl = "https://file-examples.com/storage/fe56bbd83564ad7489ca047/2017/11/file_example_MP3_1MG.mp3";
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(fileUrl));
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "sample_44100_stereo.mp3");
-        DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-        long downloadId = downloadManager.enqueue(request);
-        assertTrue(downloadId != -1);
+        try {
+            Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        waitForDownloadCompletion(downloadManager, downloadId);
+            InputStream inputStream = appContext.getResources().openRawResource(R.raw.sample_44100_stereo);
 
-        // Assert that the download is completed
-        assertEquals(DownloadManager.STATUS_SUCCESSFUL, getDownloadStatus(downloadManager, downloadId));
-    }
+            File destinationFile = new File(Environment.DIRECTORY_DOWNLOADS, "sample_44100_stereo.mp3");
+            FileOutputStream outputStream = new FileOutputStream(destinationFile);
 
-    private void waitForDownloadCompletion(DownloadManager downloadManager, long downloadId) {
-        boolean downloadInProgress = true;
-        while (downloadInProgress) {
-            DownloadManager.Query query = new DownloadManager.Query();
-            query.setFilterById(downloadId);
-            Cursor cursor = downloadManager.query(query);
-            if (cursor != null && cursor.moveToFirst()) {
-                int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-                int status = cursor.getInt(statusIndex);
-                cursor.close();
-                if (status == DownloadManager.STATUS_SUCCESSFUL || status == DownloadManager.STATUS_FAILED) {
-                    downloadInProgress = false;
-                }
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                outputStream.write(buffer, 0, length);
             }
+
+            outputStream.close();
+            inputStream.close();
+
+            // File copied successfully
+        } catch (IOException e) {
+            e.printStackTrace();
+            // Handle the exception
         }
+
     }
 
-    private int getDownloadStatus(DownloadManager downloadManager, long downloadId) {
-        DownloadManager.Query query = new DownloadManager.Query();
-        query.setFilterById(downloadId);
-        Cursor cursor = downloadManager.query(query);
-        if (cursor != null && cursor.moveToFirst()) {
-            int statusIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
-            int status = cursor.getInt(statusIndex);
-            cursor.close();
-            return status;
-        }
-        return -1;
-    }
 
     @Test
     public void testCustomAudioFeed() {
