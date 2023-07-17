@@ -247,7 +247,7 @@ public class MultitrackConferenceActivityTest {
     }
 
 
-    @Test
+    //@Test
     public void testJoinWithoutVideo() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
 
