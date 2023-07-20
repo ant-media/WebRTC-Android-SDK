@@ -2,13 +2,16 @@ package io.antmedia.webrtcandroidframework;
 
 import android.content.Context;
 import android.os.SystemClock;
+import android.util.Log;
 
 import org.webrtc.CapturerObserver;
 import org.webrtc.JavaI420Buffer;
 import org.webrtc.Logging;
+import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFrame;
+import org.webrtc.VideoSink;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -24,6 +27,8 @@ public class CustomVideoCapturer implements VideoCapturer {
   private final static String TAG = "CustomVideoCapturer";
   private CapturerObserver capturerObserver;
 
+  public SurfaceTextureHelper surfaceTextureHelper;
+
   public CustomVideoCapturer() {
 
   }
@@ -36,11 +41,23 @@ public class CustomVideoCapturer implements VideoCapturer {
   @Override
   public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
                          CapturerObserver capturerObserver) {
+    this.surfaceTextureHelper = surfaceTextureHelper;
     this.capturerObserver = capturerObserver;
   }
 
   @Override
   public void startCapture(int width, int height, int framerate) {
+    surfaceTextureHelper.setTextureSize(height, width);
+
+    surfaceTextureHelper.startListening(new VideoSink() {
+      @Override
+      public void onFrame(VideoFrame frame) {
+
+        capturerObserver.onFrameCaptured(frame);
+        Log.i("CustomVideoCapturer****", "width:"+width+" height:"+height);
+
+      }
+    });
   }
 
   @Override
@@ -61,5 +78,9 @@ public class CustomVideoCapturer implements VideoCapturer {
   @Override
   public boolean isScreencast() {
     return false;
+  }
+
+  public SurfaceTextureHelper getSurfaceTextureHelper() {
+    return surfaceTextureHelper;
   }
 }
