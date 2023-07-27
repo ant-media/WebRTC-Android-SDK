@@ -1,32 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".DataChannelOnlyActivity">
 
-    <FrameLayout
+    <LinearLayout
+        android:layout_alignParentTop="true"
         android:id="@+id/button_frame"
         android:layout_width="match_parent"
         android:layout_height="45dp"
+        android:orientation="horizontal"
+        android:layout_marginTop="3dp"
         android:background="#F3EEE4">
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/stream_id_edittext"
+            android:layout_weight="1"
+            />
+
         <Button
             android:id="@+id/start_streaming_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center"
-            android:layout_marginTop="3dp"
             android:background="@drawable/button_background"
             android:onClick="startStreaming"
             android:text="@string/start" />
-    </FrameLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/broadcasting_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="Connected"
+        android:textColor="@android:color/holo_red_dark"
+        android:textSize="11sp"
+        android:visibility="gone"
+        android:layout_below="@id/button_frame"
+        android:layout_alignParentEnd="true"
+        android:textStyle="bold"/>
 
     <LinearLayout
         android:id="@+id/call_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:layout_below="@id/button_frame"
+        android:layout_alignParentBottom="true"
         android:paddingVertical="4dp">
 
         <TextView
@@ -37,10 +60,13 @@
             android:background="#F3EEE4"
             android:divider="#fff" />
 
+
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#fff"
+            android:layout_alignParentBottom="true"
+
             android:orientation="horizontal">
 
             <EditText
@@ -67,9 +93,10 @@
                 android:layout_gravity="center"
                 android:scaleType="fitCenter"
                 android:padding="20dp"
+                android:id="@+id/send_message_button"
                 android:layout_marginHorizontal="10dp"
                 android:background="@drawable/ic_send_black_24dp"
                 android:onClick="sendMessage" />
         </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</RelativeLayout>

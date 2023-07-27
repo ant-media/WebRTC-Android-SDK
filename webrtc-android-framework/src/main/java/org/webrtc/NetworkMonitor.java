@@ -12,13 +12,10 @@ package org.webrtc;
 
 import android.content.Context;
 import android.os.Build;
-
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.webrtc.NetworkMonitorAutoDetect.INVALID_NET_ID;
+import org.webrtc.NetworkChangeDetector;
 
 /**
  * Borrowed from Chromium's
@@ -33,7 +30,7 @@ public class NetworkMonitor {
    * Alerted when the connection type of the network changes. The alert is fired on the UI thread.
    */
   public interface NetworkObserver {
-    void onConnectionTypeChanged(NetworkMonitorAutoDetect.ConnectionType connectionType);
+    public void onConnectionTypeChanged(NetworkChangeDetector.ConnectionType connectionType);
   }
 
   private static final String TAG = "NetworkMonitor";
@@ -44,24 +41,43 @@ public class NetworkMonitor {
     static final NetworkMonitor instance = new NetworkMonitor();
   }
 
+  // Factory for creating NetworkChangeDetector.
+  private NetworkChangeDetectorFactory networkChangeDetectorFactory =
+      new NetworkChangeDetectorFactory() {
+        @Override
+        public NetworkChangeDetector create(
+            NetworkChangeDetector.Observer observer, Context context) {
+          return new NetworkMonitorAutoDetect(observer, context);
+        }
+      };
+
   // Native observers of the connection type changes.
   private final ArrayList<Long> nativeNetworkObservers;
   // Java observers of the connection type changes.
   private final ArrayList<NetworkObserver> networkObservers;
 
-  private final Object autoDetectLock = new Object();
+  private final Object networkChangeDetectorLock = new Object();
   // Object that detects the connection type changes and brings up mobile networks.
-  @Nullable private NetworkMonitorAutoDetect autoDetect;
+  @Nullable private NetworkChangeDetector networkChangeDetector;
   // Also guarded by autoDetectLock.
   private int numObservers;
 
-  private volatile NetworkMonitorAutoDetect.ConnectionType currentConnectionType;
+  private volatile NetworkChangeDetector.ConnectionType currentConnectionType;
 
   private NetworkMonitor() {
     nativeNetworkObservers = new ArrayList<Long>();
     networkObservers = new ArrayList<NetworkObserver>();
     numObservers = 0;
-    currentConnectionType = NetworkMonitorAutoDetect.ConnectionType.CONNECTION_UNKNOWN;
+    currentConnectionType = NetworkChangeDetector.ConnectionType.CONNECTION_UNKNOWN;
+  }
+
+  /**
+   * Set the factory that will be used to create the network change detector.
+   * Needs to be called before the monitoring is starts.
+   */
+  public void setNetworkChangeDetectorFactory(NetworkChangeDetectorFactory factory) {
+    assertIsTrue(numObservers == 0);
+    this.networkChangeDetectorFactory = factory;
   }
 
   // TODO(sakal): Remove once downstream dependencies have been updated.
@@ -85,21 +101,26 @@ public class NetworkMonitor {
    * multi-networking. This requires the embedding app have the platform ACCESS_NETWORK_STATE and
    * CHANGE_NETWORK_STATE permission.
    */
-  public void startMonitoring(Context applicationContext) {
-    synchronized (autoDetectLock) {
+  public void startMonitoring(Context applicationContext, String fieldTrialsString) {
+    synchronized (networkChangeDetectorLock) {
       ++numObservers;
-      if (autoDetect == null) {
-        autoDetect = createAutoDetect(applicationContext);
+      if (networkChangeDetector == null) {
+        networkChangeDetector = createNetworkChangeDetector(applicationContext, fieldTrialsString);
       }
-      currentConnectionType =
-          NetworkMonitorAutoDetect.getConnectionType(autoDetect.getCurrentNetworkState());
+      currentConnectionType = networkChangeDetector.getCurrentConnectionType();
     }
+  }
+
+  /** Deprecated, use startMonitoring with fieldTrialsStringString argument. */
+  @Deprecated
+  public void startMonitoring(Context applicationContext) {
+    startMonitoring(applicationContext, "");
   }
 
   /** Deprecated, pass in application context in startMonitoring instead. */
   @Deprecated
   public void startMonitoring() {
-    startMonitoring(ContextUtils.getApplicationContext());
+    startMonitoring(ContextUtils.getApplicationContext(), "");
   }
 
   /**
@@ -108,27 +129,35 @@ public class NetworkMonitor {
    * CHANGE_NETWORK_STATE permission.
    */
   @CalledByNative
-  private void startMonitoring(@Nullable Context applicationContext, long nativeObserver) {
-    Logging.d(TAG, "Start monitoring with native observer " + nativeObserver);
+  private void startMonitoring(
+      @Nullable Context applicationContext, long nativeObserver, String fieldTrialsString) {
+    Logging.d(TAG,
+        "Start monitoring with native observer " + nativeObserver
+            + " fieldTrialsString: " + fieldTrialsString);
 
     startMonitoring(
-        applicationContext != null ? applicationContext : ContextUtils.getApplicationContext());
-    // The native observers expect a network list update after they call startMonitoring.
+        applicationContext != null ? applicationContext : ContextUtils.getApplicationContext(),
+        fieldTrialsString);
+
     synchronized (nativeNetworkObservers) {
       nativeNetworkObservers.add(nativeObserver);
     }
+    // The native observer expects a network list update after startMonitoring.
     updateObserverActiveNetworkList(nativeObserver);
     // currentConnectionType was updated in startMonitoring().
     // Need to notify the native observers here.
     notifyObserversOfConnectionTypeChange(currentConnectionType);
   }
 
-  /** Stop network monitoring. If no one is monitoring networks, destroy and reset autoDetect. */
+  /**
+   * Stop network monitoring. If no one is monitoring networks, destroy and reset
+   * networkChangeDetector.
+   */
   public void stopMonitoring() {
-    synchronized (autoDetectLock) {
+    synchronized (networkChangeDetectorLock) {
       if (--numObservers == 0) {
-        autoDetect.destroy();
-        autoDetect = null;
+        networkChangeDetector.destroy();
+        networkChangeDetector = null;
       }
     }
   }
@@ -145,8 +174,8 @@ public class NetworkMonitor {
   // Returns true if network binding is supported on this platform.
   @CalledByNative
   private boolean networkBindingSupported() {
-    synchronized (autoDetectLock) {
-      return autoDetect != null && autoDetect.supportNetworkCallback();
+    synchronized (networkChangeDetectorLock) {
+      return networkChangeDetector != null && networkChangeDetector.supportNetworkCallback();
     }
   }
 
@@ -155,27 +184,20 @@ public class NetworkMonitor {
     return Build.VERSION.SDK_INT;
   }
 
-  private NetworkMonitorAutoDetect.ConnectionType getCurrentConnectionType() {
+  private NetworkChangeDetector.ConnectionType getCurrentConnectionType() {
     return currentConnectionType;
   }
 
-  private long getCurrentDefaultNetId() {
-    synchronized (autoDetectLock) {
-      return autoDetect == null ? INVALID_NET_ID : autoDetect.getDefaultNetId();
-    }
-  }
-
-  private NetworkMonitorAutoDetect createAutoDetect(Context appContext) {
-    return new NetworkMonitorAutoDetect(new NetworkMonitorAutoDetect.Observer() {
-
+  private NetworkChangeDetector createNetworkChangeDetector(
+      Context appContext, String fieldTrialsString) {
+    return networkChangeDetectorFactory.create(new NetworkChangeDetector.Observer() {
       @Override
-      public void onConnectionTypeChanged(
-          NetworkMonitorAutoDetect.ConnectionType newConnectionType) {
+      public void onConnectionTypeChanged(NetworkChangeDetector.ConnectionType newConnectionType) {
         updateCurrentConnectionType(newConnectionType);
       }
 
       @Override
-      public void onNetworkConnect(NetworkMonitorAutoDetect.NetworkInformation networkInfo) {
+      public void onNetworkConnect(NetworkChangeDetector.NetworkInformation networkInfo) {
         notifyObserversOfNetworkConnect(networkInfo);
       }
 
@@ -183,18 +205,28 @@ public class NetworkMonitor {
       public void onNetworkDisconnect(long networkHandle) {
         notifyObserversOfNetworkDisconnect(networkHandle);
       }
+
+      @Override
+      public void onNetworkPreference(
+          List<NetworkChangeDetector.ConnectionType> types, int preference) {
+        notifyObserversOfNetworkPreference(types, preference);
+      }
+
+      @Override
+      public String getFieldTrialsString() {
+        return fieldTrialsString;
+      }
     }, appContext);
   }
 
-  private void updateCurrentConnectionType(
-      NetworkMonitorAutoDetect.ConnectionType newConnectionType) {
+  private void updateCurrentConnectionType(NetworkChangeDetector.ConnectionType newConnectionType) {
     currentConnectionType = newConnectionType;
     notifyObserversOfConnectionTypeChange(newConnectionType);
   }
 
   /** Alerts all observers of a connection change. */
   private void notifyObserversOfConnectionTypeChange(
-      NetworkMonitorAutoDetect.ConnectionType newConnectionType) {
+      NetworkChangeDetector.ConnectionType newConnectionType) {
     List<Long> nativeObservers = getNativeNetworkObserversSync();
     for (Long nativeObserver : nativeObservers) {
       nativeNotifyConnectionTypeChanged(nativeObserver);
@@ -210,7 +242,7 @@ public class NetworkMonitor {
   }
 
   private void notifyObserversOfNetworkConnect(
-      NetworkMonitorAutoDetect.NetworkInformation networkInfo) {
+      NetworkChangeDetector.NetworkInformation networkInfo) {
     List<Long> nativeObservers = getNativeNetworkObserversSync();
     for (Long nativeObserver : nativeObservers) {
       nativeNotifyOfNetworkConnect(nativeObserver, networkInfo);
@@ -224,17 +256,28 @@ public class NetworkMonitor {
     }
   }
 
-  private void updateObserverActiveNetworkList(long nativeObserver) {
-    List<NetworkMonitorAutoDetect.NetworkInformation> networkInfoList;
-    synchronized (autoDetectLock) {
-      networkInfoList = (autoDetect == null) ? null : autoDetect.getActiveNetworkList();
+  private void notifyObserversOfNetworkPreference(
+      List<NetworkChangeDetector.ConnectionType> types, int preference) {
+    List<Long> nativeObservers = getNativeNetworkObserversSync();
+    for (NetworkChangeDetector.ConnectionType type : types) {
+      for (Long nativeObserver : nativeObservers) {
+        nativeNotifyOfNetworkPreference(nativeObserver, type, preference);
+      }
     }
-    if (networkInfoList == null || networkInfoList.size() == 0) {
+  }
+
+  private void updateObserverActiveNetworkList(long nativeObserver) {
+    List<NetworkChangeDetector.NetworkInformation> networkInfoList;
+    synchronized (networkChangeDetectorLock) {
+      networkInfoList =
+          (networkChangeDetector == null) ? null : networkChangeDetector.getActiveNetworkList();
+    }
+    if (networkInfoList == null) {
       return;
     }
 
-    NetworkMonitorAutoDetect.NetworkInformation[] networkInfos =
-        new NetworkMonitorAutoDetect.NetworkInformation[networkInfoList.size()];
+    NetworkChangeDetector.NetworkInformation[] networkInfos =
+        new NetworkChangeDetector.NetworkInformation[networkInfoList.size()];
     networkInfos = networkInfoList.toArray(networkInfos);
     nativeNotifyOfActiveNetworkList(nativeObserver, networkInfos);
   }
@@ -279,38 +322,46 @@ public class NetworkMonitor {
 
   /** Checks if there currently is connectivity. */
   public static boolean isOnline() {
-    NetworkMonitorAutoDetect.ConnectionType connectionType =
-        getInstance().getCurrentConnectionType();
-    return connectionType != NetworkMonitorAutoDetect.ConnectionType.CONNECTION_NONE;
+    NetworkChangeDetector.ConnectionType connectionType = getInstance().getCurrentConnectionType();
+    return connectionType != NetworkChangeDetector.ConnectionType.CONNECTION_NONE;
   }
 
   private native void nativeNotifyConnectionTypeChanged(long nativeAndroidNetworkMonitor);
+
   private native void nativeNotifyOfNetworkConnect(
-      long nativeAndroidNetworkMonitor, NetworkMonitorAutoDetect.NetworkInformation networkInfo);
+      long nativeAndroidNetworkMonitor, NetworkChangeDetector.NetworkInformation networkInfo);
+
   private native void nativeNotifyOfNetworkDisconnect(
       long nativeAndroidNetworkMonitor, long networkHandle);
+
   private native void nativeNotifyOfActiveNetworkList(
-      long nativeAndroidNetworkMonitor, NetworkMonitorAutoDetect.NetworkInformation[] networkInfos);
+      long nativeAndroidNetworkMonitor, NetworkChangeDetector.NetworkInformation[] networkInfos);
+
+  private native void nativeNotifyOfNetworkPreference(
+      long nativeAndroidNetworkMonitor, NetworkChangeDetector.ConnectionType type, int preference);
 
   // For testing only.
   @Nullable
-  NetworkMonitorAutoDetect getNetworkMonitorAutoDetect() {
-    synchronized (autoDetectLock) {
-      return autoDetect;
+  NetworkChangeDetector getNetworkChangeDetector() {
+    synchronized (networkChangeDetectorLock) {
+      return networkChangeDetector;
     }
   }
 
   // For testing only.
   int getNumObservers() {
-    synchronized (autoDetectLock) {
+    synchronized (networkChangeDetectorLock) {
       return numObservers;
     }
   }
 
   // For testing only.
-  static NetworkMonitorAutoDetect createAndSetAutoDetectForTest(Context context) {
+  static NetworkMonitorAutoDetect createAndSetAutoDetectForTest(
+      Context context, String fieldTrialsString) {
     NetworkMonitor networkMonitor = getInstance();
-    NetworkMonitorAutoDetect autoDetect = networkMonitor.createAutoDetect(context);
-    return networkMonitor.autoDetect = autoDetect;
+    NetworkChangeDetector networkChangeDetector =
+        networkMonitor.createNetworkChangeDetector(context, fieldTrialsString);
+    networkMonitor.networkChangeDetector = networkChangeDetector;
+    return (NetworkMonitorAutoDetect) networkChangeDetector;
   }
 }

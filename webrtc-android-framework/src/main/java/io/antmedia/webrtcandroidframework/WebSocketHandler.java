@@ -271,7 +271,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     }
 
-    public void startPublish(String streamId, String token, boolean videoEnabled, boolean audioEnabled, String subscriberId, String subscriberCode, String streamName){
+    public void startPublish(String streamId, String token, boolean videoEnabled, boolean audioEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId){
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
@@ -283,6 +283,8 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             json.put(WebSocketConstants.STREAM_NAME, streamName);
             json.put(WebSocketConstants.VIDEO, videoEnabled);
             json.put(WebSocketConstants.AUDIO, audioEnabled);
+            json.put(WebSocketConstants.MAIN_TRACK, mainTrackId);
+
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();
@@ -322,6 +324,18 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.JOIN_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TOKEN, token);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void stop(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();

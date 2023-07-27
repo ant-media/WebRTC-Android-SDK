@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONObject;
@@ -24,7 +25,6 @@ import java.util.ArrayList;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.ConferenceManager;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
@@ -32,14 +32,18 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
-public class ConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
 
-    SharedPreferences sharedPref;
+public class ConferenceActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
 
     private ConferenceManager conferenceManager;
     private Button audioButton;
     private Button videoButton;
     private String serverUrl;
+
+    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
+    private TextView broadcastingView;
 
     final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
@@ -72,6 +76,9 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
         setContentView(R.layout.activity_conference);
 
+        broadcastingView = findViewById(R.id.broadcasting_text_view);
+
+
         SurfaceViewRenderer publishViewRenderer = findViewById(R.id.publish_view_renderer);
         ArrayList<SurfaceViewRenderer> playViewRenderers = new ArrayList<>();
 
@@ -96,13 +103,9 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
-
         String streamId = null; //"stream1";
         conferenceManager = new ConferenceManager(
                 this,
@@ -120,7 +123,7 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
         conferenceManager.setOpenFrontCamera(true);
     }
     public void joinConference(View v) {
-
+        idlingResource.increment();
         if (!conferenceManager.isJoined()) {
             Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");
@@ -141,12 +144,16 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_SHORT).show();
+        decrementIdle();
     }
 
     @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
+        broadcastingView.setText("Publishing");
+        broadcastingView.setVisibility(View.VISIBLE);
+        decrementIdle();
 
     }
 
@@ -154,6 +161,8 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
     public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
+        broadcastingView.setVisibility(View.GONE);
+        decrementIdle();
     }
 
     @Override
@@ -281,6 +290,15 @@ public class ConferenceActivity extends Activity implements IWebRTCListener, IDa
 
     public void switchCamera(View view) {
         conferenceManager.switchCamera();
+    }
+
+    public IdlingResource getIdlingResource() {
+        return idlingResource;
+    }
+    private void decrementIdle() {
+        if (!idlingResource.isIdleNow()) {
+            idlingResource.decrement();
+        }
     }
 }
 

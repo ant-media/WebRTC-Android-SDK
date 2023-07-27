@@ -10,6 +10,11 @@
 
 package org.webrtc.audio;
 
+import static android.media.AudioManager.MODE_IN_CALL;
+import static android.media.AudioManager.MODE_IN_COMMUNICATION;
+import static android.media.AudioManager.MODE_NORMAL;
+import static android.media.AudioManager.MODE_RINGTONE;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -18,15 +23,9 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
-
-import org.webrtc.Logging;
-
+import java.lang.Thread;
 import java.util.Arrays;
-
-import static android.media.AudioManager.MODE_IN_CALL;
-import static android.media.AudioManager.MODE_IN_COMMUNICATION;
-import static android.media.AudioManager.MODE_NORMAL;
-import static android.media.AudioManager.MODE_RINGTONE;
+import org.webrtc.Logging;
 
 final class WebRtcAudioUtils {
   private static final String TAG = "WebRtcAudioUtilsExternal";
@@ -34,7 +33,7 @@ final class WebRtcAudioUtils {
   // Helper method for building a string of thread information.
   public static String getThreadInfo() {
     return "@[name=" + Thread.currentThread().getName() + ", id=" + Thread.currentThread().getId()
-            + "]";
+        + "]";
   }
 
   // Returns true if we're running on emulator.
@@ -45,7 +44,7 @@ final class WebRtcAudioUtils {
   // Information about the current build, taken from system properties.
   static void logDeviceInfo(String tag) {
     Logging.d(tag,
-            "Android SDK: " + Build.VERSION.SDK_INT + ", "
+        "Android SDK: " + Build.VERSION.SDK_INT + ", "
             + "Release: " + Build.VERSION.RELEASE + ", "
             + "Brand: " + Build.BRAND + ", "
             + "Device: " + Build.DEVICE + ", "
@@ -202,13 +201,6 @@ final class WebRtcAudioUtils {
             + "BT SCO: " + audioManager.isBluetoothScoOn());
   }
 
-  private static boolean isVolumeFixed(AudioManager audioManager) {
-    if (Build.VERSION.SDK_INT < 21) {
-      return false;
-    }
-    return audioManager.isVolumeFixed();
-  }
-
   // Adds volume information for all possible stream types.
   private static void logAudioStateVolume(String tag, AudioManager audioManager) {
     final int[] streams = {AudioManager.STREAM_VOICE_CALL, AudioManager.STREAM_MUSIC,
@@ -216,7 +208,7 @@ final class WebRtcAudioUtils {
         AudioManager.STREAM_SYSTEM};
     Logging.d(tag, "Audio State: ");
     // Some devices may not have volume controls and might use a fixed volume.
-    boolean fixedVolume = isVolumeFixed(audioManager);
+    boolean fixedVolume = audioManager.isVolumeFixed();
     Logging.d(tag, "  fixed volume=" + fixedVolume);
     if (!fixedVolume) {
       for (int stream : streams) {

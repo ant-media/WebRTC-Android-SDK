@@ -14,6 +14,7 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
@@ -25,24 +26,17 @@ public class MediaProjectionService extends Service {
         void mediaProjectionOnSuccess(MediaProjection mediaProjection);
     }
 
-    public void setListener(MediaProjectionServiceListener listener) {
+    public static void setListener(MediaProjectionServiceListener listener) {
         MediaProjectionService.listener = listener;
     }
 
     private static final String CHANNEL_ID = "WebRTC";
     private static final int NOTIFICATION_ID = 1;
     public static final String ACTION_STOP = "STOP";
-    private static final String EXTRA_MEDIA_PROJECTION_DATA = "mediaProjectionData";
+    public static final String EXTRA_MEDIA_PROJECTION_DATA = "mediaProjectionData";
 
     private MediaProjectionManager mediaProjectionManager;
     public MediaProjection mediaProjection;
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public void start(Context context, Intent data) {
-        Intent serviceIntent = new Intent(context, MediaProjectionService.class);
-        serviceIntent.putExtra(EXTRA_MEDIA_PROJECTION_DATA, data);
-        context.startForegroundService(serviceIntent);
-    }
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -55,25 +49,25 @@ public class MediaProjectionService extends Service {
         getNotificationManager().createNotificationChannel(channel);
 
         startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
-        mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(MEDIA_PROJECTION_SERVICE);
+
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String action = intent.getAction();
-        if (ACTION_STOP.equals(action)) {
-            stopSelf();
-            return START_NOT_STICKY;
-        }
+        
+        if (intent != null) {
+            String action = intent.getAction();
+            if (ACTION_STOP.equals(action)) {
+                stopSelf();
+                return START_NOT_STICKY;
+            }
 
-        Intent data = intent.getParcelableExtra(EXTRA_MEDIA_PROJECTION_DATA);
-        mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(MEDIA_PROJECTION_SERVICE);
-        mediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, data);
+            Intent data = intent.getParcelableExtra(EXTRA_MEDIA_PROJECTION_DATA);
+            mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(MEDIA_PROJECTION_SERVICE);
+            mediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, data);
 
-        if(listener != null) {
             listener.mediaProjectionOnSuccess(mediaProjection);
         }
-
         return START_STICKY;
     }
 
@@ -101,7 +95,12 @@ public class MediaProjectionService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.M)
     private Notification.Action createStopAction() {
         Intent stopIntent = createStopIntent();
-        PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT);
+        PendingIntent stopPendingIntent;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            stopPendingIntent = PendingIntent.getForegroundService(this, 0, stopIntent, PendingIntent.FLAG_MUTABLE);
+        } else {
+            stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT);
+        }
         Icon stopIcon = Icon.createWithResource(this, io.antmedia.webrtcandroidframework.R.drawable.abc_vector_test);
         String stopString = "stop";
         Notification.Action.Builder actionBuilder = new Notification.Action.Builder(stopIcon, stopString, stopPendingIntent);
@@ -111,7 +110,7 @@ public class MediaProjectionService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopForeground(false);
+        stopForeground(true);
     }
 
     private NotificationManager getNotificationManager() {

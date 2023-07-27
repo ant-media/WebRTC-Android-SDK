@@ -25,6 +25,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import androidx.annotation.RequiresApi;
+import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.idling.CountingIdlingResource;
+
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
@@ -50,7 +53,6 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
 
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId;
     String tokenId = "tokenId";
     String serverUrl;
 
@@ -63,6 +65,10 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     Handler reconnectionHandler = new Handler();
     private EditText messageInput;
     private TextView messages;
+    private EditText streamIdEditText;
+
+    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
+    private View broadcastView;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -89,17 +95,14 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
                 return;
             }
         }
+        broadcastView = findViewById(R.id.broadcasting_text_view);
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_SERVER_PORT);
-        streamId = sharedPreferences.getString(getString(R.string.streamId), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_STREAM_ID);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/WebRTCAppEE/websocket";
-
-        startStreamingButton.setText("Connect Data Channel");
         operationName = "DataChannel";
 
         this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, enableDataChannel);
@@ -108,16 +111,19 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
         webRTCClient.setDataChannelOnly(true);
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
-        webRTCClient.init(serverUrl, streamId, IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PLAY, tokenId, this.getIntent());
     }
 
     public void startStreaming(View v) {
+        idlingResource.increment();
+        //update stream id if it is changed
+        webRTCClient.setStreamId(streamIdEditText.getText().toString());
         if (!webRTCClient.isStreaming()) {
-            ((Button) v).setText("Stop " + operationName);
+            ((Button) v).setText("Stop");
             webRTCClient.startStream();
         }
         else {
-            ((Button)v).setText("Start " + operationName);
+            ((Button)v).setText("Start");
             webRTCClient.stopStream();
             stoppedStream = true;
         }
@@ -125,6 +131,7 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
 
     public void sendMessage(View v) {
         String messageToSend = messageInput.getText().toString();
+        messageInput.setText("");
 
         final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
         DataChannel.Buffer buf= new DataChannel.Buffer(buffer,false);
@@ -135,32 +142,39 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     public void onPlayStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayStarted");
         Toast.makeText(this, "Play started", Toast.LENGTH_LONG).show();
-        webRTCClient.switchVideoScaling(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
-        webRTCClient.getStreamInfoList();
+        broadcastView.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
+        broadcastView.setVisibility(View.VISIBLE);
+        decrementIdle();
     }
 
     @Override
     public void onPublishFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
+        broadcastView.setVisibility(View.GONE);
+        decrementIdle();
     }
 
     @Override
     public void onPlayFinished(String streamId) {
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
+        broadcastView.setVisibility(View.GONE);
+        decrementIdle();
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
-        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
-        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
+        //Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
+        //Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
+        decrementIdle();
+        webRTCClient.stopStream();
 
         webRTCClient = new WebRTCClient( this,this);
         webRTCClient.setDataChannelOnly(true);
@@ -179,7 +193,8 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
 
     @Override
     public void onError(String description, String streamId) {
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
+        //toast a message does not give a good experience here because first attempt generally returns with no_stream_exist message
+       // Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -196,13 +211,13 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     @Override
     public void onDisconnected(String streamId) {
         Log.w(getClass().getSimpleName(), "disconnected");
-        Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onIceConnected(String streamId) {
         //it is called when connected to ice
-        startStreamingButton.setText("Stop " + operationName);
+        startStreamingButton.setText("Stop");
     }
 
     @Override
@@ -269,6 +284,16 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
             Toast.makeText(this, "Message is sent", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public IdlingResource getIdlingResource() {
+        return idlingResource;
+    }
+
+    private void decrementIdle() {
+        if (!idlingResource.isIdleNow()) {
+            idlingResource.decrement();
         }
     }
 }

@@ -45,6 +45,14 @@
         android:onClick="showSendDataChannelMessageDialog"
         android:layout_centerVertical="true"/>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/stream_id_edittext"
+        android:padding="5dp"
+        android:background="?android:attr/colorBackground"
+        android:layout_above="@id/start_streaming_button"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -55,4 +63,17 @@
         android:layout_centerHorizontal="true"
         android:layout_margin="3dp"
         />
+
+        <TextView
+            android:id="@+id/broadcasting_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Broadcasting"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="11sp"
+            android:visibility="gone"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:textStyle="bold"/>
 </RelativeLayout>

@@ -11,25 +11,21 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
+import org.webrtc.MediaStreamTrack;
 
-/**
- * Java wrapper for a C++ RtpReceiverInterface.
- */
+/** Java wrapper for a C++ RtpReceiverInterface. */
 public class RtpReceiver {
-  /**
-   * Java wrapper for a C++ RtpReceiverObserverInterface
-   */
-  public interface Observer {
+  /** Java wrapper for a C++ RtpReceiverObserverInterface*/
+  public static interface Observer {
     // Called when the first audio or video packet is received.
     @CalledByNative("Observer")
-    void onFirstPacketReceived(MediaStreamTrack.MediaType media_type);
+    public void onFirstPacketReceived(MediaStreamTrack.MediaType media_type);
   }
 
   private long nativeRtpReceiver;
   private long nativeObserver;
 
-  @Nullable
-  private MediaStreamTrack cachedTrack;
+  @Nullable private MediaStreamTrack cachedTrack;
 
   @CalledByNative
   public RtpReceiver(long nativeRtpReceiver) {
@@ -93,4 +89,4 @@ public class RtpReceiver {
   private static native long nativeSetObserver(long rtpReceiver, Observer observer);
   private static native void nativeUnsetObserver(long rtpReceiver, long nativeObserver);
   private static native void nativeSetFrameDecryptor(long rtpReceiver, long nativeFrameDecryptor);
-}
+};

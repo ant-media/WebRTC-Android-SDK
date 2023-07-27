@@ -12,8 +12,8 @@ package org.webrtc;
 
 import android.content.Context;
 import android.graphics.Matrix;
-import android.view.Surface;
 import android.view.WindowManager;
+import android.view.Surface;
 
 interface CameraSession {
   enum FailureType { ERROR, DISCONNECTED }
@@ -55,7 +55,7 @@ interface CameraSession {
   }
 
   static VideoFrame.TextureBuffer createTextureBufferWithModifiedTransformMatrix(
-          TextureBufferImpl buffer, boolean mirror, int rotation) {
+      TextureBufferImpl buffer, boolean mirror, int rotation) {
     final Matrix transformMatrix = new Matrix();
     // Perform mirror and rotation around (0.5, 0.5) since that is the center of the texture.
     transformMatrix.preTranslate(/* dx= */ 0.5f, /* dy= */ 0.5f);

@@ -10,14 +10,12 @@
 
 package io.antmedia.webrtcandroidframework.apprtc.util;
 
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 /**
@@ -55,12 +53,13 @@ public class AsyncHttpURLConnection {
     new Thread(this ::sendHttpMessage).start();
   }
 
+  @SuppressWarnings("UseNetworkAnnotations")
   private void sendHttpMessage() {
     try {
       HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
       byte[] postData = new byte[0];
       if (message != null) {
-        postData = message.getBytes(StandardCharsets.UTF_8);
+        postData = message.getBytes("UTF-8");
       }
       connection.setRequestMethod(method);
       connection.setUseCaches(false);

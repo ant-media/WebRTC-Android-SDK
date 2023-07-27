@@ -1,0 +1,81 @@
+name: Android SDK CI
+on: [push, pull_request]
+
+#   Important Information:
+#   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
+#    Check this out -> https://developer.android.com/studio/run/emulator-acceleration#vm-linux
+#
+#   - If runner is not working, start the service.
+#     Go to /home/ubuntu/actions-runner and execute the following command
+#       sudo ./svc.sh start
+#     stop and status commands are also available
+#       sudo ./svc.sh status
+#       sudo ./svc.sh stop
+#     for more information -> https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service#customizing-the-self-hosted-runner-service
+#
+#   - For reactivecircus/android-emulator-runner@v2.27.0 , ANDROID_SDK_ROOT env should be set
+#     in later versions, ANDROID_HOME should be set
+
+jobs:
+  unit-tests:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: 'adopt'
+      - name: Gradle Cache
+        uses: gradle/gradle-build-action@v2
+
+      - uses: FedericoCarboni/setup-ffmpeg@v2
+        id: setup-ffmpeg
+        #send test stream to the server to play test
+      - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
+
+      - name: Run Tests and Generate Report
+        uses: reactivecircus/android-emulator-runner@v2.27.0
+        with:
+          api-level: 33
+          arch: x86_64
+          target: playstore
+          emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
+          force-avd-creation: false
+          disable-animations: true
+          cores: 3
+          emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
+          script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
+
+      - name: Archive Test Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test report
+          path: |
+            webrtc-android-sample-app/build/reports/tests/testDebugUnitTest/
+            webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/
+            webrtc-android-sample-app/build/reports/androidTests/
+            webrtc-android-framework/build/reports/tests/testDebugUnitTest/
+            webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
+            webrtc-android-framework/build/reports/androidTests/
+            webrtc-android-sample-app/build/logcat.txt
+            webrtc-android-sample-app/build/screen.png
+
+      - name: Upload Test Report to Codecov
+        uses: codecov/codecov-action@v3.1.1
+        with:
+          files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+          fail_ci_if_error: true
+
+      - name: Deploy to Sonatype
+        #deploy only in master branches
+        if: github.ref == 'refs/heads/master'
+        run: ./gradlew publish
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+

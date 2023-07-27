@@ -11,7 +11,6 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 

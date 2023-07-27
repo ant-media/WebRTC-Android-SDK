@@ -23,8 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.antmedia.webrtcandroidframework.apprtc.IDataChannelMessageSender;
-
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 
 public class ConferenceManager implements AntMediaSignallingEvents, IDataChannelMessageSender {

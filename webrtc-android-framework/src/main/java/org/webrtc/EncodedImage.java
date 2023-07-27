@@ -11,7 +11,6 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
-
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +27,7 @@ public class EncodedImage implements RefCounted {
 
     private final int nativeIndex;
 
-    FrameType(int nativeIndex) {
+    private FrameType(int nativeIndex) {
       this.nativeIndex = nativeIndex;
     }
 
@@ -55,7 +54,6 @@ public class EncodedImage implements RefCounted {
   public final long captureTimeNs;
   public final FrameType frameType;
   public final int rotation;
-  public final boolean completeFrame;
   public final @Nullable Integer qp;
 
   // TODO(bugs.webrtc.org/9378): Use retain and release from jni code.
@@ -71,8 +69,8 @@ public class EncodedImage implements RefCounted {
 
   @CalledByNative
   private EncodedImage(ByteBuffer buffer, @Nullable Runnable releaseCallback, int encodedWidth,
-                       int encodedHeight, long captureTimeNs, FrameType frameType, int rotation,
-                       boolean completeFrame, @Nullable Integer qp) {
+      int encodedHeight, long captureTimeNs, FrameType frameType, int rotation,
+      @Nullable Integer qp) {
     this.buffer = buffer;
     this.encodedWidth = encodedWidth;
     this.encodedHeight = encodedHeight;
@@ -80,7 +78,6 @@ public class EncodedImage implements RefCounted {
     this.captureTimeNs = captureTimeNs;
     this.frameType = frameType;
     this.rotation = rotation;
-    this.completeFrame = completeFrame;
     this.qp = qp;
     this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
@@ -116,11 +113,6 @@ public class EncodedImage implements RefCounted {
   }
 
   @CalledByNative
-  private boolean getCompleteFrame() {
-    return completeFrame;
-  }
-
-  @CalledByNative
   private @Nullable Integer getQp() {
     return qp;
   }
@@ -131,19 +123,15 @@ public class EncodedImage implements RefCounted {
 
   public static class Builder {
     private ByteBuffer buffer;
-    private @Nullable
-    Runnable releaseCallback;
+    private @Nullable Runnable releaseCallback;
     private int encodedWidth;
     private int encodedHeight;
     private long captureTimeNs;
     private EncodedImage.FrameType frameType;
     private int rotation;
-    private boolean completeFrame;
-    private @Nullable
-    Integer qp;
+    private @Nullable Integer qp;
 
-    private Builder() {
-    }
+    private Builder() {}
 
     public Builder setBuffer(ByteBuffer buffer, @Nullable Runnable releaseCallback) {
       this.buffer = buffer;
@@ -182,11 +170,6 @@ public class EncodedImage implements RefCounted {
       return this;
     }
 
-    public Builder setCompleteFrame(boolean completeFrame) {
-      this.completeFrame = completeFrame;
-      return this;
-    }
-
     public Builder setQp(@Nullable Integer qp) {
       this.qp = qp;
       return this;
@@ -194,7 +177,7 @@ public class EncodedImage implements RefCounted {
 
     public EncodedImage createEncodedImage() {
       return new EncodedImage(buffer, releaseCallback, encodedWidth, encodedHeight, captureTimeNs,
-              frameType, rotation, completeFrame, qp);
+          frameType, rotation, qp);
     }
   }
 }

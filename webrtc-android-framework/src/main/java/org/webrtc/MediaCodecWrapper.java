@@ -15,7 +15,6 @@ import android.media.MediaCrypto;
 import android.media.MediaFormat;
 import android.os.Bundle;
 import android.view.Surface;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -42,11 +41,13 @@ interface MediaCodecWrapper {
 
   void releaseOutputBuffer(int index, boolean render);
 
+  MediaFormat getInputFormat();
+
   MediaFormat getOutputFormat();
 
-  ByteBuffer[] getInputBuffers();
+  ByteBuffer getInputBuffer(int index);
 
-  ByteBuffer[] getOutputBuffers();
+  ByteBuffer getOutputBuffer(int index);
 
   Surface createInputSurface();
 

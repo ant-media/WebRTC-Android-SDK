@@ -27,6 +27,12 @@
             android:paddingVertical="4dp" />
     </FrameLayout>
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/stream_id_edittext"
+       />
+
     <FrameLayout
         android:id="@+id/button_frame"
         android:layout_width="match_parent"

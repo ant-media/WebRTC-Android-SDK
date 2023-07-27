@@ -1,0 +1,93 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+group = PUBLISH_GROUP_ID
+version = PUBLISH_VERSION
+
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
+    if (project.plugins.findPlugin("com.android.library")) {
+        // For android libraries
+        from android.sourceSets.main.java.srcDirs
+        from android.sourceSets.main.kotlin.srcDirs
+    } else {
+        // For pure kotlin libraries, in case you have them
+        from sourceSets.main.java.srcDirs
+        from sourceSets.main.kotlin.srcDirs
+    }
+}
+artifacts {
+    archives androidSourcesJar
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                // The coordinates of the library, being set from variables that
+                // we'll setup later
+                groupId PUBLISH_GROUP_ID
+                artifactId PUBLISH_ARTIFACT_ID
+                version PUBLISH_VERSION
+
+                // Two artifacts, the `aar` (or `jar`) and the sources
+                if (project.plugins.findPlugin("com.android.library")) {
+                    from components.release
+                } else {
+                    from components.java
+                }
+
+                artifact androidSourcesJar
+//                artifacts javaDocJar
+
+                // Mostly self-explanatory metadata
+                pom {
+                    name = PUBLISH_ARTIFACT_ID
+                    description = "The WebRTC Android Framework"
+                    url = 'https://github.com/ant-media/WebRTC-Android-SDK'
+                    licenses {
+                        license {
+                            name = 'MIT license'
+                            url = 'https://opensource.org/licenses/MIT'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'mekya'
+                            name = 'mekya'
+                            email = 'mekya@antmedia.io'
+                        }
+                    }
+
+                    // Version control info
+                    scm {
+                        connection = 'scm:git:ssh://git@github.com:ant-media/WebRTC-Android-SDK.git'
+                        developerConnection = 'scm:git:ssh://git@github.com:ant-media/WebRTC-Android-SDK.git'
+                        url = 'https://github.com/ant-media/WebRTC-Android-SDK'
+                    }
+                }
+            }
+        }
+        repositories {
+            maven {
+                credentials {
+                    username ossrhUsername
+                    password ossrhPassword
+                }
+
+                def releasesRepoUrl = 'https://oss.sonatype.org/service/local/repositories/releases/content'
+                def snapshotsRepoUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            }
+        }
+    }
+}
+
+signing {
+    useInMemoryPgpKeys(
+            rootProject.ext["signing.keyId"],
+            rootProject.ext["signing.key"],
+            rootProject.ext["signing.password"]
+    )
+    sign publishing.publications
+}

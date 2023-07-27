@@ -12,6 +12,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -41,12 +42,12 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     private String webRTCMode;
     private Button startStreamingButton;
     private String operationName = "";
-    private String streamId;
     private String tokenId;
     private ToggleButton track1Button;
     private ToggleButton track2Button;
     private String[] allTracks;
     private String serverUrl;
+    private EditText streamIdEditText;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -67,7 +68,8 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         webRTCClient = new WebRTCClient( this,this);
 
         //webRTCClient.setOpenFrontCamera(false);
-
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText.setText("streamId" + (int)(Math.random()*9999));
 
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
@@ -75,12 +77,7 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         //streamId = "stream_multi_track";
         tokenId = "tokenId";
 
-        String serverAddress = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_SERVER_ADDRESS);
-        String serverPort = sharedPreferences.getString(getString(R.string.serverPort), SettingsActivity.DEFAULT_SERVER_PORT);
-        streamId = sharedPreferences.getString(getString(R.string.streamId), SettingsActivity.DEFAULT_STREAM_ID);
-
-        String websocketUrlScheme = serverPort.equals("5443") ? "wss://" : "ws://";
-        serverUrl = websocketUrlScheme + serverAddress + ":" + serverPort + "/" + SettingsActivity.DEFAULT_APP_NAME + "/websocket";
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         SurfaceViewRenderer cameraViewRenderer = findViewById(R.id.player1);
 
@@ -98,14 +95,14 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         track1Button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                webRTCClient.enableTrack(streamId, allTracks[0], isChecked);
+                webRTCClient.enableTrack(webRTCClient.getStreamId(), allTracks[0], isChecked);
             }
         });
 
         track2Button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                webRTCClient.enableTrack(streamId, allTracks[1], isChecked);
+                webRTCClient.enableTrack(webRTCClient.getStreamId(), allTracks[1], isChecked);
             }
         });
 
@@ -126,7 +123,7 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         webRTCMode = IWebRTCClient.MODE_MULTI_TRACK_PLAY;
 
        // this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_FPS, 24);
-        webRTCClient.init(serverUrl, streamId, webRTCMode, tokenId, this.getIntent());
+        webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), webRTCMode, tokenId, this.getIntent());
 
     }
 
@@ -240,13 +237,13 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     public void onTrackList(String[] tracks) {
         allTracks = new String[tracks.length+1];
 
-        allTracks[0] = streamId;
+        allTracks[0] = webRTCClient.getStreamId();
         for (int i = 0; i < tracks.length; i++) {
             allTracks[i+1] = tracks[i];
             Log.i(getClass().getSimpleName(), "track id: " + tracks[i]);
         }
 
-        webRTCClient.play(streamId, tokenId, allTracks);
+        webRTCClient.play(webRTCClient.getStreamId(), tokenId, allTracks);
     }
 
     @Override

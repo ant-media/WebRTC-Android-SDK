@@ -11,8 +11,8 @@
 package org.webrtc;
 
 import androidx.annotation.Nullable;
-
 import java.util.Arrays;
+import org.webrtc.PeerConnection;
 
 /**
  * Representation of a single ICE Candidate, mirroring
@@ -59,9 +59,7 @@ public class IceCandidate {
     return sdp;
   }
 
-  /**
-   * equals() checks sdpMid, sdpMLineIndex, and sdp for equality.
-   */
+  /** equals() checks sdpMid, sdpMLineIndex, and sdp for equality. */
   @Override
   public boolean equals(@Nullable Object object) {
     if (!(object instanceof IceCandidate)) {
@@ -70,7 +68,7 @@ public class IceCandidate {
 
     IceCandidate that = (IceCandidate) object;
     return objectEquals(this.sdpMid, that.sdpMid) && this.sdpMLineIndex == that.sdpMLineIndex
-            && objectEquals(this.sdp, that.sdp);
+        && objectEquals(this.sdp, that.sdp);
   }
 
   @Override
