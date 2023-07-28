@@ -14,7 +14,6 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioDeviceInfo;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -108,6 +107,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public static final String SOURCE_REAR = "REAR";
 
     public static final String ERROR_USER_REVOKED_CAPTURE_SCREEN_PERMISSION = "USER_REVOKED_CAPTURE_SCREEN_PERMISSION";
+    public static final String VIDEO_ROTATION_EXT_LINE = "a=extmap:3 urn:3gpp:video-orientation\r\n";
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
     private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
@@ -220,6 +220,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @androidx.annotation.Nullable
     private List<IceCandidate> queuedRemoteCandidates;
     private boolean isInitiator;
+
     @androidx.annotation.Nullable
     private SessionDescription localDescription; // either offer or answer description
     // enableVideo is set to true if video should be rendered and sent.
@@ -282,6 +283,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean dataChannelNegotiated;
     private int dataChannelId;
     private boolean dataChannelCreator;
+
+    private boolean removeVideoRotationExtention = false;
 
     // Implementation detail: observe ICE & stream changes and react accordingly.
     class PCObserver implements PeerConnection.Observer {
@@ -436,6 +439,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             if (isVideoCallEnabled()) {
                 sdp = preferCodec(sdp, getSdpVideoCodecName(videoCodec), false);
             }
+
+            if(removeVideoRotationExtention) {
+                sdp = sdp.replace(VIDEO_ROTATION_EXT_LINE, "");
+            }
+
             final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
             localDescription = newDesc;
             executor.execute(() -> {
@@ -2483,4 +2491,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.signalingParameters = signalingParameters;
     }
 
+    public void setRemoveVideoRotationExtention(boolean removeVideoRotationExtention) {
+        this.removeVideoRotationExtention = removeVideoRotationExtention;
+    }
+
+    public SessionDescription getLocalDescription() {
+        return localDescription;
+    }
 }
