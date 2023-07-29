@@ -35,7 +35,7 @@ import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
+public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
 
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
@@ -45,7 +45,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private int videoWidth ,videoHeight = 0;
 
     private static final String TAG = ScreenCaptureActivity.class.getSimpleName();
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private View broadcastingView;
 
 
@@ -176,14 +175,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
             webRTCClient.stopStream();
         }
     }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
-    }
-
-
     public void switchCamera(View v) {
         webRTCClient.switchCamera();
     }
@@ -211,17 +202,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         decrementIdle();
     }
 
-    @Override
-    public void onPlayFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void noStreamExistsToPlay(String streamId) {
-        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
-        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-    }
 
     @Override
     public void streamIdInUse(String streamId) {
@@ -238,19 +218,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         webRTCClient.stopStream();
-    }
-
-    @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -260,46 +230,5 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         broadcastingView.setVisibility(View.GONE);
         decrementIdle();
     }
-
-    @Override
-    public void onIceConnected(String streamId) {
-        //it is called when connected to ice
-    }
-
-    @Override
-    public void onIceDisconnected(String streamId) {
-
-    }
-
-    @Override
-    public void onTrackList(String[] tracks) {
-
-    }
-
-    @Override
-    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-
-    }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-
-    }
-
-    @Override
-    public void onNewVideoTrack(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onVideoTrackEnded(VideoTrack track) {
-
-    }
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
-    }
-
-
 }
 

@@ -96,4 +96,10 @@ public interface IWebRTCListener {
   * @param track
   */
  void onVideoTrackEnded(VideoTrack track);
+
+    /**
+     * @param streamId
+     * It's called when reconnection attempt is started
+     */
+    void onReconnectionAttempt(String streamId);
 }

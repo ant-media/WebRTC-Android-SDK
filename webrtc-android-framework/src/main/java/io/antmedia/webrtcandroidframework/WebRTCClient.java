@@ -331,6 +331,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         public void run() {
             if (!streamStoppedByUser && !isStreaming()) {
                 Log.i(TAG,"Try to reconnect in reconnectionRunnable "+streamMode);
+                webRTCListener.onReconnectionAttempt(streamId);
                 stopStream(false);
                 startStream();
                 if (streamMode == IWebRTCClient.MODE_JOIN)
@@ -526,9 +527,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 if(streamMode.equals(MODE_MULTI_TRACK_PLAY)) {
                     trackCheckerTask.getVideoTracks().add(videoTrack);
                 }
-            }
-            if(renderersProvidedAtStart || !remoteSinks.isEmpty()) {
-                updateVideoTracks();
+
+                if(renderersProvidedAtStart || !remoteSinks.isEmpty()) {
+                    updateVideoTracks();
+                }
             }
         }
 

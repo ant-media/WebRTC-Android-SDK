@@ -56,7 +56,7 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.github.crow_misia.libyuv.AbgrBuffer;
 import io.github.crow_misia.libyuv.I420Buffer;
 
-public class CustomFrameActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class CustomFrameActivity extends AbstractSampleSDKActivity {
 
     private boolean enableDataChannel = true;
 
@@ -71,8 +71,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     private SurfaceViewRenderer cameraViewRenderer;
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
-
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private Bitmap bitmapImage;
@@ -177,12 +175,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
-        decrementIdle();
-    }
-
-    @Override
-    public void onPlayStarted(String streamId) {
-
     }
 
     @Override
@@ -190,8 +182,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        decrementIdle();
-
     }
 
     @Override
@@ -199,35 +189,13 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        decrementIdle();
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay for stream:" + streamId);
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        decrementIdle();
         finish();
-    }
-
-    @Override
-    public void streamIdInUse(String streamId) {
-        Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-        decrementIdle();
-    }
-
-    @Override
-    public void onError(String description, String streamId) {
-        Log.w(getClass().getSimpleName(), "onError:" + description);
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
-        decrementIdle();
-    }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
     }
 
     @Override
@@ -237,11 +205,6 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
             Log.i(getClass().getSimpleName(), "onStop and calling stopStream");
             webRTCClient.stopStream();
         }
-    }
-
-    @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -261,62 +224,12 @@ public class CustomFrameActivity extends Activity implements IWebRTCListener, ID
     }
 
     @Override
-    public void onIceDisconnected(String streamId) {
-        //it's called when ice is disconnected
-    }
-
-
-
-    @Override
-    public void onTrackList(String[] tracks) {
-
-    }
-
-    @Override
     public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
         Log.e(getClass().getSimpleName(), "st:"+streamId+" tb:"+targetBitrate+" vb:"+videoBitrate+" ab:"+audioBitrate);
         if(targetBitrate < (videoBitrate+audioBitrate)) {
             Toast.makeText(this, "low bandwidth", Toast.LENGTH_SHORT).show();
         }
     }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-
-    }
-
-    @Override
-    public void onNewVideoTrack(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onVideoTrackEnded(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(CustomFrameActivity.class.getName(), "Data channel buffered amount changed: ");
-    }
-
-    @Override
-    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(CustomFrameActivity.class.getName(), "Data channel state changed: ");
-    }
-
-    @Override
-    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
-    }
-
-    @Override
-    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-    }
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
-    }
-
 
     public VideoFrame getNextFrame() {
         final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());

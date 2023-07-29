@@ -47,7 +47,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
-public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class MainActivity extends AbstractSampleSDKActivity {
 
     /**
      * Mode can Publish, Play or P2P
@@ -67,8 +67,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
     public static final String WEBRTC_MODE = "WebRTC_MODE";
-
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
 
     // variables for handling reconnection attempts after disconnected
     final int RECONNECTION_PERIOD_MLS = 1000;
@@ -283,12 +281,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         decrementIdle();
     }
 
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
-    }
-
     @Override
     protected void onStop() {
         super.onStop();
@@ -392,6 +384,11 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     }
 
     @Override
+    public void onReconnectionAttempt(String streamId) {
+
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         Log.d(MainActivity.class.getName(), "Data channel buffered amount changed: ");
     }
@@ -459,9 +456,5 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         else {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
-    }
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
     }
 }

@@ -5,21 +5,14 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
-import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES20;
-import android.opengl.GLUtils;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Surface;
@@ -33,36 +26,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
-import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.webrtc.DataChannel;
-import org.webrtc.JavaI420Buffer;
-import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.TextureBufferImpl;
-import org.webrtc.VideoFrame;
-import org.webrtc.VideoTrack;
-import org.webrtc.YuvConverter;
 
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
-import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.CustomVideoCapturer;
-import io.antmedia.webrtcandroidframework.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
-import io.antmedia.webrtcandroidframework.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.github.crow_misia.libyuv.AbgrBuffer;
-import io.github.crow_misia.libyuv.I420Buffer;
 
-public class CustomHWFrameActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class CustomHWFrameActivity extends AbstractSampleSDKActivity {
 
     private boolean enableDataChannel = true;
 
@@ -197,12 +174,6 @@ public class CustomHWFrameActivity extends Activity implements IWebRTCListener, 
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
-        decrementIdle();
-    }
-
-    @Override
-    public void onPlayStarted(String streamId) {
-
     }
 
     @Override
@@ -210,8 +181,6 @@ public class CustomHWFrameActivity extends Activity implements IWebRTCListener, 
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        decrementIdle();
-
     }
 
     @Override
@@ -219,35 +188,13 @@ public class CustomHWFrameActivity extends Activity implements IWebRTCListener, 
         Log.w(getClass().getSimpleName(), "onPlayFinished");
         Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        decrementIdle();
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay for stream:" + streamId);
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        decrementIdle();
         finish();
-    }
-
-    @Override
-    public void streamIdInUse(String streamId) {
-        Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-        decrementIdle();
-    }
-
-    @Override
-    public void onError(String description, String streamId) {
-        Log.w(getClass().getSimpleName(), "onError:" + description);
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
-        decrementIdle();
-    }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
     }
 
     @Override
@@ -260,17 +207,11 @@ public class CustomHWFrameActivity extends Activity implements IWebRTCListener, 
     }
 
     @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
     public void onDisconnected(String streamId) {
 
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        decrementIdle();
         startStreamingButton.setText("Start " + operationName);
     }
 
@@ -281,60 +222,10 @@ public class CustomHWFrameActivity extends Activity implements IWebRTCListener, 
     }
 
     @Override
-    public void onIceDisconnected(String streamId) {
-        //it's called when ice is disconnected
-    }
-
-
-
-    @Override
-    public void onTrackList(String[] tracks) {
-
-    }
-
-    @Override
     public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
         Log.e(getClass().getSimpleName(), "st:"+streamId+" tb:"+targetBitrate+" vb:"+videoBitrate+" ab:"+audioBitrate);
         if(targetBitrate < (videoBitrate+audioBitrate)) {
             Toast.makeText(this, "low bandwidth", Toast.LENGTH_SHORT).show();
         }
     }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-
-    }
-
-    @Override
-    public void onNewVideoTrack(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onVideoTrackEnded(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(CustomHWFrameActivity.class.getName(), "Data channel buffered amount changed: ");
-    }
-
-    @Override
-    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(CustomHWFrameActivity.class.getName(), "Data channel state changed: ");
-    }
-
-    @Override
-    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
-    }
-
-    @Override
-    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-    }
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
-    }
-
 }

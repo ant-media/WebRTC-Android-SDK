@@ -46,7 +46,7 @@ import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-public class MP3PublishActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class MP3PublishActivity extends AbstractSampleSDKActivity {
 
     private static final int DESIRED_SAMPLE_RATE = 48000;
     /**
@@ -67,7 +67,6 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
     public static final String WEBRTC_MODE = "WebRTC_MODE";
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private TextView broadcastingView;
     private EditText streamIdEditText;
     private boolean audioPushingEnabled = false;
@@ -163,16 +162,12 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
 
     }
 
-    @Override
-    public void onPlayStarted(String streamId) {
-    }
 
     @Override
     public void onPublishStarted(String streamId) {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
-        decrementIdle();
     }
 
     @Override
@@ -180,37 +175,9 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-        decrementIdle();
 
     }
 
-    @Override
-    public void onPlayFinished(String streamId) {
-    }
-
-    @Override
-    public void noStreamExistsToPlay(String streamId) {
-    }
-
-    @Override
-    public void streamIdInUse(String streamId) {
-        Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-        decrementIdle();
-    }
-
-    @Override
-    public void onError(String description, String streamId) {
-        Log.w(getClass().getSimpleName(), "onError:" + description);
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
-        decrementIdle();
-    }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
-    }
 
     @Override
     protected void onStop() {
@@ -222,69 +189,8 @@ public class MP3PublishActivity extends Activity implements IWebRTCListener, IDa
     }
 
     @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onDisconnected(String streamId) {
-    }
-
-    @Override
     public void onIceConnected(String streamId) {
         //it is called when connected to ice
         startStreamingButton.setText("Stop " + operationName);
-    }
-
-    @Override
-    public void onIceDisconnected(String streamId) {
-        //it's called when ice is disconnected
-    }
-
-    @Override
-    public void onTrackList(String[] tracks) {
-
-    }
-
-    @Override
-    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-    }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-    }
-
-    @Override
-    public void onNewVideoTrack(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onVideoTrackEnded(VideoTrack track) {
-
-    }
-
-    @Override
-    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(MP3PublishActivity.class.getName(), "Data channel buffered amount changed: ");
-    }
-
-    @Override
-    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(MP3PublishActivity.class.getName(), "Data channel state changed: ");
-    }
-
-    @Override
-    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
-    }
-
-    @Override
-    public void onMessageSent(DataChannel.Buffer buffer, boolean successful) {
-    }
-
-
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
     }
 }
