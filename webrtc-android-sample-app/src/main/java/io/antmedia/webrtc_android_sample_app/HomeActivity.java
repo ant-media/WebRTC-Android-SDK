@@ -25,13 +25,11 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
     private List<ActivityLink> activities;
     private GridView list;
 
-    public static final String[] PERMISSIONS_UNDER_ANDROID_S = {
-            Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT
-    };
 
-    public static final String[] PERMISSIONS_BELOW_ANDROID_S = {
-            Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA
-    };
+    public static final String[] REQUIRED_PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ?
+        new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN}
+            :
+        new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +41,12 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         setListAdapter(activities);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!hasPermissions(this, PERMISSIONS_UNDER_ANDROID_S)) {
-                requestPermissions(PERMISSIONS_UNDER_ANDROID_S, 1);
+            if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
+                requestPermissions(REQUIRED_PERMISSIONS, 1);
             }
         } else {
-            if (!hasPermissions(this, PERMISSIONS_BELOW_ANDROID_S)) {
-                ActivityCompat.requestPermissions(this, PERMISSIONS_BELOW_ANDROID_S, 1);
+            if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
+                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
             }
         }
 
@@ -60,6 +58,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Default Camera"));
         activities.add(new ActivityLink(new Intent(this, MainActivity.class).putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_PLAY),
                 "Simple Play"));
+        activities.add(new ActivityLink(new Intent(this, MainActivity.class).putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_JOIN),
+                "P2P"));
         activities.add(new ActivityLink(new Intent(this, MultiTrackPlayActivity.class),
                 "Multi Track Play"));
         activities.add(new ActivityLink(new Intent(this, DataChannelOnlyActivity.class),
@@ -94,14 +94,14 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (hasPermissions(this, PERMISSIONS_UNDER_ANDROID_S)) {
+            if (true || hasPermissions(this, REQUIRED_PERMISSIONS)) {
                 ActivityLink link = activities.get(i);
                 startActivity(link.getIntent());
             } else {
                 showPermissionsErrorAndRequest();
             }
         } else {
-            if (hasPermissions(this, PERMISSIONS_BELOW_ANDROID_S)) {
+            if (hasPermissions(this, REQUIRED_PERMISSIONS)) {
                 ActivityLink link = activities.get(i);
                 startActivity(link.getIntent());
             } else {
@@ -113,9 +113,9 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
     private void showPermissionsErrorAndRequest() {
         Toast.makeText(this, "You need permissions before", Toast.LENGTH_SHORT).show();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.requestPermissions(this, PERMISSIONS_UNDER_ANDROID_S, 1);
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
         } else {
-            ActivityCompat.requestPermissions(this, PERMISSIONS_BELOW_ANDROID_S, 1);
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
         }
     }
 

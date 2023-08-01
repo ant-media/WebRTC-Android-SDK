@@ -71,20 +71,12 @@ public class MP3PublishActivity extends AbstractSampleSDKActivity {
     private EditText streamIdEditText;
     private boolean audioPushingEnabled = false;
     private String TAG = MP3PublishActivity.class.getSimpleName();
-    private MP3Publisher mp3Publisher;
+    public MP3Publisher mp3Publisher;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Set window styles for fullscreen-window size. Needs to be done before
-        // adding content.
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        //getWindow().getDecorView().setSystemUiVisibility(getSystemUiVisibility());
 
         setContentView(R.layout.activity_main);
 
@@ -144,7 +136,7 @@ public class MP3PublishActivity extends AbstractSampleSDKActivity {
     public void startStreaming(View v) {
         //update stream id if it is changed
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
-        idlingResource.increment();
+        incrementIdle();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             Log.i(getClass().getSimpleName(), "Calling startStream");
@@ -168,6 +160,7 @@ public class MP3PublishActivity extends AbstractSampleSDKActivity {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
+        decrementIdle();
     }
 
     @Override
@@ -175,7 +168,7 @@ public class MP3PublishActivity extends AbstractSampleSDKActivity {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-
+        decrementIdle();
     }
 
 

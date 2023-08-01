@@ -162,7 +162,7 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
     public void startStreaming(View v) {
 
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
-        idlingResource.increment();
+        incrementIdle();
         //focus edit text to make the system update the frames
         streamIdEditText.requestFocus();
         if (!webRTCClient.isStreaming()) {

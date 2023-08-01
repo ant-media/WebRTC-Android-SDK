@@ -124,7 +124,7 @@ public class CustomHWFrameActivity extends AbstractSampleSDKActivity {
     public void startStreaming(View v) {
         //update stream id if it is changed
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
-        idlingResource.increment();
+        incrementIdle();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             Log.i(getClass().getSimpleName(), "Calling startStream");

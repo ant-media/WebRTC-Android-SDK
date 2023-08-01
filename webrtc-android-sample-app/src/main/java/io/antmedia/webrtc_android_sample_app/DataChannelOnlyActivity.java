@@ -113,7 +113,7 @@ public class DataChannelOnlyActivity extends AbstractSampleSDKActivity {
     }
 
     public void startStreaming(View v) {
-        idlingResource.increment();
+        incrementIdle();
         //update stream id if it is changed
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
         if (!webRTCClient.isStreaming()) {

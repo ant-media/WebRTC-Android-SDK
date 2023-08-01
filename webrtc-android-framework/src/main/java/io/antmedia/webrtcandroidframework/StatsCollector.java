@@ -22,6 +22,7 @@ public class StatsCollector {
     private long videoBitrate;
 
     public void onStatsReport(RTCStatsReport report, String mode) {
+        Log.i("Stats", "onStatsReport:\n"+report.toString());
         if (mode.equals(IWebRTCClient.MODE_PUBLISH)) {
             onSenderReport(report);
         } else if (mode.equals(IWebRTCClient.MODE_PLAY)) {

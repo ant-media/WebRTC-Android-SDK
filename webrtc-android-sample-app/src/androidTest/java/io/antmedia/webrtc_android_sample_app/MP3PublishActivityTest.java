@@ -9,14 +9,13 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Environment;
+import android.util.Log;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
@@ -29,7 +28,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,20 +51,22 @@ public class MP3PublishActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_BELOW_ANDROID_S);
+            = GrantPermissionRule.grant(HomeActivity.REQUIRED_PERMISSIONS);
 
     @Before
     public void before() {
 
     }
 
-    public void downloadTestFile() {
+    public String downloadTestFile() {
         try {
             Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
             InputStream inputStream = appContext.getResources().openRawResource(R.raw.sample_44100_stereo);
 
-            File destinationFile = new File(Environment.DIRECTORY_DOWNLOADS, "sample_44100_stereo.mp3");
+            File destinationFile = new File(appContext.getCacheDir(), "sample_44100_stereo.mp3");
+
+            //File destinationFile = new File(Environment.DIRECTORY_DOWNLOADS, "sample_44100_stereo.mp3");
             FileOutputStream outputStream = new FileOutputStream(destinationFile);
 
             byte[] buffer = new byte[1024];
@@ -78,17 +78,22 @@ public class MP3PublishActivityTest {
             outputStream.close();
             inputStream.close();
 
+            return destinationFile.getAbsolutePath();
+
             // File copied successfully
         } catch (IOException e) {
+            fail("test file cannot be copied");
             e.printStackTrace();
             // Handle the exception
         }
 
+        return null;
     }
 
 
     @Test
     public void testCustomAudioFeed() {
+
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MP3PublishActivity.class);
         intent.putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_PUBLISH);
 
@@ -100,24 +105,29 @@ public class MP3PublishActivityTest {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+                String path = downloadTestFile();
+                assertNotNull(path);
+                Log.d("MP3PublishActivityTest", "path: " + path);
+                activity.mp3Publisher.setFilePath(path);
             }
         });
 
-        downloadTestFile();
+
 
         onView(withId(R.id.broadcasting_text_view)).check(matches(not(isDisplayed())));
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Publishing")));
         onView(withId(R.id.start_streaming_button)).perform(click());
+
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Publishing")));
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Publishing")));
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
         //2. stop stream and check that it's stopped
         onView(withId(R.id.start_streaming_button)).perform(click());

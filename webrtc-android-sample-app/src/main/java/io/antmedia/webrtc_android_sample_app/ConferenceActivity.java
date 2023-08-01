@@ -122,7 +122,7 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
         conferenceManager.setOpenFrontCamera(true);
     }
     public void joinConference(View v) {
-        idlingResource.increment();
+        incrementIdle();
         if (!conferenceManager.isJoined()) {
             Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");

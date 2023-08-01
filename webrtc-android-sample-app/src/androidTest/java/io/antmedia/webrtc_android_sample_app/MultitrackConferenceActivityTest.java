@@ -1,49 +1,27 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
-import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.wifi.WifiManager;
 import android.util.Log;
 
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
-import androidx.test.uiautomator.By;
-import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.UiObject2;
-import androidx.test.uiautomator.Until;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -73,7 +50,7 @@ public class MultitrackConferenceActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_BELOW_ANDROID_S);
+            = GrantPermissionRule.grant(HomeActivity.REQUIRED_PERMISSIONS);
 
     @Before
     public void before() {

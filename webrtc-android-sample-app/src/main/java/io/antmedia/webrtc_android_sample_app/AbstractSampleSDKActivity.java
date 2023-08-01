@@ -28,6 +28,9 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 public abstract class AbstractSampleSDKActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
 
+    public void  incrementIdle() {
+        idlingResource.increment();
+    }
     public void decrementIdle() {
         if (!idlingResource.isIdleNow()) {
             idlingResource.decrement();

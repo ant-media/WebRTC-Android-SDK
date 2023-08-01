@@ -52,7 +52,7 @@ public class MainActivity extends AbstractSampleSDKActivity {
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
+    private String webRTCMode = IWebRTCClient.MODE_JOIN;
 
     private boolean enableDataChannel = true;
 
@@ -126,7 +126,6 @@ public class MainActivity extends AbstractSampleSDKActivity {
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
         }
@@ -200,7 +199,7 @@ public class MainActivity extends AbstractSampleSDKActivity {
     public void startStreaming(View v) {
         //update stream id if it is changed
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
-        idlingResource.increment();
+        incrementIdle();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             Log.i(getClass().getSimpleName(), "Calling startStream");
