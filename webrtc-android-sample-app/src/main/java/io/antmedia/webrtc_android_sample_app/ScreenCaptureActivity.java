@@ -128,7 +128,9 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
                     newSource = WebRTCClient.SOURCE_REAR;
                     getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
                 }
+                idlingResource.increment();
                 webRTCClient.changeVideoSource(newSource);
+                decrementIdle();
             }
         });
 
@@ -157,6 +159,8 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
         else{
             webRTCClient.onActivityResult(requestCode, resultCode, data);
         }
+
+        decrementIdle();
     }
 
     public void startStreaming(View v) {

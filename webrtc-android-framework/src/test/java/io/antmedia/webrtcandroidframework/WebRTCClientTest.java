@@ -1,15 +1,15 @@
 package io.antmedia.webrtcandroidframework;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.endsWith;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -25,12 +25,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
-import android.os.Message;
 import android.util.DisplayMetrics;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.awaitility.Awaitility;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,12 +38,10 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.IceCandidateErrorEvent;
 import org.webrtc.MediaStream;
-import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpTransceiver;
@@ -55,7 +51,6 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
@@ -473,6 +468,29 @@ public class WebRTCClientTest {
         assertEquals(false, webRTCClient.getVideoCallEnabled());
         assertEquals(false, webRTCClient.getAudioCallEnabled());
 
+
+    }
+
+    @Test
+    public void testAVideoRotationExtention() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        Context context = Mockito.mock(Context.class);
+        WebRTCClient webRTCClient = new WebRTCClient(listener, context);
+        PeerConnection pc = mock(PeerConnection.class);
+        webRTCClient.setPeerConnection(pc);
+
+        String fakeSdp = "something\r\n" +
+                WebRTCClient.VIDEO_ROTATION_EXT_LINE +
+                "something else\r\n";
+
+        webRTCClient.getSdpObserver().onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+        assertTrue(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+
+
+        webRTCClient.setRemoveVideoRotationExtention(true);
+        webRTCClient.getSdpObserver().onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+
+        assertFalse(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
     }
 
