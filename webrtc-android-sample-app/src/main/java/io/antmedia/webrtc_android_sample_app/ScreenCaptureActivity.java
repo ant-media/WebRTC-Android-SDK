@@ -132,7 +132,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
                     newSource = WebRTCClient.SOURCE_REAR;
                     getIntent().putExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
                 }
+                idlingResource.increment();
                 webRTCClient.changeVideoSource(newSource);
+                decrementIdle();
             }
         });
 
@@ -161,6 +163,8 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         else{
             webRTCClient.onActivityResult(requestCode, resultCode, data);
         }
+
+        decrementIdle();
     }
 
     public void startStreaming(View v) {

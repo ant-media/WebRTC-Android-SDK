@@ -107,7 +107,7 @@ public class ScreenCaptureActivityTest {
 
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
-        Espresso.closeSoftKeyboard();
+        //Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Streaming")));
@@ -120,6 +120,13 @@ public class ScreenCaptureActivityTest {
 
         //Publish again without because it was failing
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
+
+        //FIXME: without this sleep, it's failing because onFinish event received but resources are not closed yet
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         //Check it's publishing again
