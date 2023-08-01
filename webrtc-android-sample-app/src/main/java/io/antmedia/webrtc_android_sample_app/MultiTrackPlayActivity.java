@@ -20,6 +20,7 @@ import androidx.annotation.RequiresApi;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,7 @@ import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
-public class MultiTrackPlayActivity extends Activity implements IWebRTCListener {
-
+public class MultiTrackPlayActivity extends AbstractSampleSDKActivity {
     private CallFragment callFragment;
 
     private WebRTCClient webRTCClient;
@@ -148,40 +148,10 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     }
 
     @Override
-    public void onPublishStarted(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPublishStarted");
-        Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
-
-    }
-
-    @Override
-    public void onPublishFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPublishFinished");
-        Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onPlayFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
     public void noStreamExistsToPlay(String streamId) {
         Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
         Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
         finish();
-    }
-
-    @Override
-    public void streamIdInUse(String streamId) {
-        Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onError(String description, String streamId) {
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -192,27 +162,12 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
     }
 
     @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
     public void onDisconnected(String streamId) {
 
         Log.w(getClass().getSimpleName(), "disconnected");
         Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
 
         finish();
-    }
-
-    @Override
-    public void onIceConnected(String streamId) {
-        //it is called when connected to ice
-    }
-
-    @Override
-    public void onIceDisconnected(String streamId) {
-
     }
 
     public void onOffVideo(View view) {
@@ -244,15 +199,5 @@ public class MultiTrackPlayActivity extends Activity implements IWebRTCListener 
         }
 
         webRTCClient.play(webRTCClient.getStreamId(), tokenId, allTracks);
-    }
-
-    @Override
-    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-
-    }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-
     }
 }

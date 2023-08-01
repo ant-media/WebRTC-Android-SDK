@@ -411,6 +411,11 @@ public class WebSocketConstants {
     public static final String LEGACY = "legacy";
 
     /**
+     * It's sent for the restored webrtc publish sessions
+     */
+    public static final String SESSION_RESTORED_DESCRIPTION = "session_restored";
+
+    /**
      * It's sent to determine mainTrackId if exists
      */
     public static final String MAIN_TRACK = "mainTrack";

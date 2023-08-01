@@ -142,5 +142,8 @@ public class CallActivity  {
     synchronized public void setTarget(VideoSink target) {
       this.target = target;
     }
+    synchronized public VideoSink getTarget() {
+      return target;
+    }
   }
 }

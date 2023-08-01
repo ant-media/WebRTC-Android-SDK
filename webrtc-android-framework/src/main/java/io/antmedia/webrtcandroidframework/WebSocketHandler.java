@@ -193,6 +193,9 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 else if (definition.equals(WebSocketConstants.PLAY_FINISHED)) {
                     signallingListener.onPlayFinished(streamId);
                 }
+                else if (definition.equals(WebSocketConstants.SESSION_RESTORED_DESCRIPTION)) {
+                    signallingListener.onPublishStarted(streamId);
+                }
                 else if (definition.equals(WebSocketConstants.JOINED_THE_ROOM)) {
                     String[] streams = null;
                     if(json.has(WebSocketConstants.STREAMS_IN_ROOM) && !json.isNull(WebSocketConstants.STREAMS_IN_ROOM)) {
@@ -226,19 +229,19 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
                 String definition= json.getString(DEFINITION);
                 Log.d(TAG, "error command received: "+ definition);
-                stopPingPongTimer();
+                //stopPingPongTimer();
 
                 signallingListener.onError(streamId, definition);
 
                 if (definition.equals(WebSocketConstants.NO_STREAM_EXIST))
                 {
                     signallingListener.noStreamExistsToPlay(streamId);
-                    disconnect(true);
+                    //disconnect(true);
                 }
                 if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
-                signallingListener.streamIdInUse(streamId);
-                disconnect(true);
-            }
+                    signallingListener.streamIdInUse(streamId);
+                    disconnect(true);
+                }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
                 disconnect(true);

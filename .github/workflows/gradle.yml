@@ -33,6 +33,17 @@ jobs:
         id: setup-ffmpeg
         #send test stream to the server to play test
       - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
+      
+      - name: Setting up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install python packages
+        run: pip3 install requests selenium flask
+       
+      - name: Run Multitrack Conference Test Server
+        run: python3 multitrack-conference-server.py &
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
@@ -45,7 +56,11 @@ jobs:
           disable-animations: true
           cores: 3
           emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
-          script: ./gradlew jacocoTestReport; EXIT_CODE=$?; /Users/runner/Library/Android/sdk/platform-tools/adb logcat -d > webrtc-android-sample-app/build/logcat.txt; exit $EXIT_CODE
+          script: |
+            touch emulator.log               
+            chmod 777 emulator.log
+            adb logcat >> emulator.log &
+            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
 
       - name: Archive Test Report
         if: always()
@@ -61,6 +76,7 @@ jobs:
             webrtc-android-framework/build/reports/androidTests/
             webrtc-android-sample-app/build/logcat.txt
             webrtc-android-sample-app/build/screen.png
+            emulator.log
 
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
