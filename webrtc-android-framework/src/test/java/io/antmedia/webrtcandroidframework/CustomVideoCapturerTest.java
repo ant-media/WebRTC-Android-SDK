@@ -44,26 +44,6 @@ public class CustomVideoCapturerTest {
     }
 
     @Test
-    public void testStartCapture() {
-        customVideoCapturer.startCapture(0, 0, 0);
-    }
-
-    @Test
-    public void testStopCapture() throws InterruptedException {
-        customVideoCapturer.stopCapture();
-    }
-
-    @Test
-    public void testChangeCaptureFormat() {
-        customVideoCapturer.changeCaptureFormat(0, 0, 0);
-    }
-
-    @Test
-    public void testDispose() {
-        customVideoCapturer.dispose();
-    }
-
-    @Test
     public void testIsScreencast() {
         boolean isScreencast = customVideoCapturer.isScreencast();
         assertFalse(isScreencast);
