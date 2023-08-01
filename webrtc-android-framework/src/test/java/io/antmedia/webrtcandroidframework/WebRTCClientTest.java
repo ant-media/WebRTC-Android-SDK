@@ -54,6 +54,8 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
@@ -145,7 +147,7 @@ public class WebRTCClientTest {
         AudioManager systemAudioManager = Mockito.mock(AudioManager.class);
 
         // Create the test instance
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(null, null));
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(null, mock(Context.class)));
 
         // Set up the test data
         AppRTCAudioManager.AudioDevice device = AppRTCAudioManager.AudioDevice.BLUETOOTH;
