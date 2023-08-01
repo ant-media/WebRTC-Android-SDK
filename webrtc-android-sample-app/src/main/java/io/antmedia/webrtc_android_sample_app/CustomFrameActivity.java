@@ -175,6 +175,7 @@ public class CustomFrameActivity extends AbstractSampleSDKActivity {
         Log.w(getClass().getSimpleName(), "onPublishStarted");
         Toast.makeText(this, "Publish started", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.VISIBLE);
+        decrementIdle();
     }
 
     @Override
@@ -182,20 +183,7 @@ public class CustomFrameActivity extends AbstractSampleSDKActivity {
         Log.w(getClass().getSimpleName(), "onPublishFinished");
         Toast.makeText(this, "Publish finished", Toast.LENGTH_SHORT).show();
         broadcastingView.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void onPlayFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_SHORT).show();
-        broadcastingView.setVisibility(View.GONE);
-    }
-
-    @Override
-    public void noStreamExistsToPlay(String streamId) {
-        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay for stream:" + streamId);
-        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-        finish();
+        decrementIdle();
     }
 
     @Override
