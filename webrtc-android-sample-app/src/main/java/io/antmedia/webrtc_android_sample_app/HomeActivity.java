@@ -6,11 +6,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
@@ -27,10 +29,11 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
 
 
     public static final String[] REQUIRED_PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ?
-        new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN}
+        new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT}
             :
         new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,16 +43,9 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         createList();
         setListAdapter(activities);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
-                requestPermissions(REQUIRED_PERMISSIONS, 1);
-            }
-        } else {
-            if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
-                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
-            }
+        if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
+            requestPermissions(REQUIRED_PERMISSIONS, 1);
         }
-
     }
 
     private void createList() {
@@ -79,11 +75,12 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         list.setOnItemClickListener(this);
     }
 
-    public static boolean hasPermissions(Context context, String... permissions) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && context != null && permissions != null) {
+    public boolean hasPermissions(Context context, String... permissions) {
+        if (context != null && permissions != null) {
             for (String permission : permissions) {
                 if (ActivityCompat.checkSelfPermission(context, permission)
                         != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(HomeActivity.class.getSimpleName(), "Permission required:"+permission);
                     return false;
                 }
             }
@@ -93,30 +90,17 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
 
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (true || hasPermissions(this, REQUIRED_PERMISSIONS)) {
-                ActivityLink link = activities.get(i);
-                startActivity(link.getIntent());
-            } else {
-                showPermissionsErrorAndRequest();
-            }
+        if (hasPermissions(this, REQUIRED_PERMISSIONS)) {
+            ActivityLink link = activities.get(i);
+            startActivity(link.getIntent());
         } else {
-            if (hasPermissions(this, REQUIRED_PERMISSIONS)) {
-                ActivityLink link = activities.get(i);
-                startActivity(link.getIntent());
-            } else {
-                showPermissionsErrorAndRequest();
-            }
+            showPermissionsErrorAndRequest();
         }
     }
 
     private void showPermissionsErrorAndRequest() {
         Toast.makeText(this, "You need permissions before", Toast.LENGTH_SHORT).show();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
-        } else {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
-        }
+        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
     }
 
 }

@@ -321,6 +321,85 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     private boolean removeVideoRotationExtention = false;
 
+    //reconnection parameters
+    private Handler reconnectionHandler = new Handler();
+
+    private boolean reconnectionEnabled = false;
+
+    final int RECONNECTION_PERIOD_MLS = 1000;
+
+    final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
+
+    Runnable reconnectionRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (!streamStoppedByUser && !isStreaming()) {
+                Log.i(TAG,"Try to reconnect in reconnectionRunnable "+streamMode);
+                webRTCListener.onReconnectionAttempt(streamId);
+                stopStream(false);
+                startStream();
+                if (streamMode == IWebRTCClient.MODE_JOIN)
+                {
+                    pipRenderer.setZOrderOnTop(true);
+                }
+            }
+            if(!streamStoppedByUser && reconnectionInProgress) {
+                reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
+            }
+        }
+    };
+
+    class TrackCheckTask extends TimerTask {
+        private MediaStream mediaStream;
+        private ConcurrentLinkedQueue<VideoTrack> videoTracks = new ConcurrentLinkedQueue<>();
+
+        @Override
+        public void run() {
+            if(mediaStream == null) {
+                return;
+            }
+
+            List<VideoTrack> currentTracks = mediaStream.videoTracks;
+
+            if (currentTracks.size() > 0) {
+                for (VideoTrack track : videoTracks) {
+                    boolean trackLive = false;
+                    for (VideoTrack currentTrack : currentTracks) {
+                        if (currentTrack.id().equals(track.id())) {
+                            trackLive = true;
+                            break;
+                        }
+                    }
+                    if(!trackLive) {
+                        videoTracks.remove(track);
+                        handler.post(() -> {
+                            webRTCListener.onVideoTrackEnded(track);
+                        });
+                    }
+                }
+            }
+        }
+
+        public void setStream(MediaStream stream) {
+            this.mediaStream = stream;
+        }
+
+        public ConcurrentLinkedQueue<VideoTrack> getVideoTracks() {
+            return videoTracks;
+        }
+
+    };
+
+    /**
+     * This task is used to check if video track is still alive
+     * Different than others SDKs, WebRTC doesn't have any callback in Android for track ended
+     */
+    TrackCheckTask trackCheckerTask;
+
+    //Timer to check if video track check task
+    private Timer trackCheckerTimer;
+
+
     // Implementation detail: observe ICE & stream changes and react accordingly.
     class PCObserver implements PeerConnection.Observer {
 
@@ -2646,6 +2725,62 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setSignalingParameters(@Nullable AppRTCClient.SignalingParameters signalingParameters) {
         this.signalingParameters = signalingParameters;
+    }
+
+    public void setCustomCapturerEnabled(boolean customCapturerEnabled) {
+        this.customCapturerEnabled = customCapturerEnabled;
+    }
+
+    public boolean isReconnectionEnabled() {
+        return reconnectionEnabled;
+    }
+
+    public void setReconnectionEnabled(boolean reconnectionEnabled) {
+        this.reconnectionEnabled = reconnectionEnabled;
+    }
+
+    public void setAutoPlayTracks(boolean autoPlayTracks) {
+        this.autoPlayTracks = autoPlayTracks;
+    }
+
+    public boolean isReconnectionInProgress() {
+        return reconnectionInProgress;
+    }
+
+    public void setCheckStreamIdValidity(boolean checkStreamIdValidity) {
+        this.checkStreamIdValidity = checkStreamIdValidity;
+    }
+    public boolean isStreamStarted() {
+        return streamStarted;
+    }
+
+    public void setRenderersProvidedAtStart(boolean renderersProvidedAtStart) {
+        this.renderersProvidedAtStart = renderersProvidedAtStart;
+    }
+
+    public void setInputSampleRate(int sampleRate) {
+        this.inputSampleRate = sampleRate;
+    }
+
+
+    public void setStereoInput(boolean stereoInput) {
+        this.stereoInput = stereoInput;
+    }
+
+    public void setAudioInputFormat(int audioFormat) {
+        this.audioInputFormat = audioFormat;
+    }
+
+    public void setCustomAudioFeed(boolean customAudioFeed) {
+        this.customAudioFeed = customAudioFeed;
+    }
+
+    public CustomWebRtcAudioRecord getAudioInput() {
+        return adm.getAudioInput();
+    }
+
+    public VideoCapturer getVideoCapturer() {
+        return videoCapturer;
     }
 
     public void setRemoveVideoRotationExtention(boolean removeVideoRotationExtention) {
