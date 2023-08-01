@@ -52,7 +52,7 @@ public class MainActivity extends AbstractSampleSDKActivity {
     /**
      * Mode can Publish, Play or P2P
      */
-    private String webRTCMode = IWebRTCClient.MODE_JOIN;
+    private String webRTCMode = IWebRTCClient.MODE_PUBLISH;
 
     private boolean enableDataChannel = true;
 
