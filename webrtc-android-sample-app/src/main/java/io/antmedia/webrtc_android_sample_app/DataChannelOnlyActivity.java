@@ -17,8 +17,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.webrtc.DataChannel;
-import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +45,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
  * start WebRTC Cilent with play mode
  * if no stream exist is called start it in publish mode
  */
-public class DataChannelOnlyActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class DataChannelOnlyActivity extends AbstractSampleSDKActivity {
 
     private boolean enableDataChannel = true;
 
@@ -66,8 +66,6 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     private EditText messageInput;
     private TextView messages;
     private EditText streamIdEditText;
-
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private View broadcastView;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -115,7 +113,7 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     }
 
     public void startStreaming(View v) {
-        idlingResource.increment();
+        incrementIdle();
         //update stream id if it is changed
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
         if (!webRTCClient.isStreaming()) {
@@ -186,32 +184,9 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     }
 
     @Override
-    public void streamIdInUse(String streamId) {
-        Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onError(String description, String streamId) {
-        //toast a message does not give a good experience here because first attempt generally returns with no_stream_exist message
-       // Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
-    }
-
-    @Override
     protected void onStop() {
         super.onStop();
         webRTCClient.stopStream();
-    }
-
-    @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onDisconnected(String streamId) {
-        Log.w(getClass().getSimpleName(), "disconnected");
-        //Toast.makeText(this, "Disconnected", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -244,28 +219,6 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
     }
 
     @Override
-    public void onTrackList(String[] tracks) {
-    }
-
-    @Override
-    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-    }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-    }
-
-    @Override
-    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(DataChannelOnlyActivity.class.getName(), "Data channel buffered amount changed: ");
-    }
-
-    @Override
-    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(DataChannelOnlyActivity.class.getName(), "Data channel state changed: ");
-    }
-
-    @Override
     public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
         ByteBuffer data = buffer.data;
         String messageText = new String(data.array(), StandardCharsets.UTF_8);
@@ -287,13 +240,4 @@ public class DataChannelOnlyActivity extends Activity implements IWebRTCListener
         }
     }
 
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
-    }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
-    }
 }

@@ -371,7 +371,9 @@ public class WebRTCClientTest {
         when(receiver.track()).thenReturn(videoTrack);
         when(pc.getTransceivers()).thenReturn(Arrays.asList(transceiver));
         webRTCClient.setPeerConnection(pc);
-        pcObserver.onAddTrack(mock(RtpReceiver.class), tracks);
+        webRTCClient.setRenderersProvidedAtStart(true);
+        webRTCClient.setStreamMode(IWebRTCClient.MODE_PLAY);
+        pcObserver.onAddTrack(receiver, tracks);
         verify(videoTrack, times(1)).addSink(any(VideoSink.class));
 
         pcObserver.onRemoveTrack(mock(RtpReceiver.class));

@@ -1,5 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
+import org.webrtc.VideoTrack;
+
 import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket; /**
@@ -81,4 +83,23 @@ public interface IWebRTCListener {
   * @param streamInfoList
   */
  void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList);
+
+ /**
+  * It's called when a new video track is added.
+  * @param track
+  */
+ void onNewVideoTrack(VideoTrack track);
+
+ /**
+  * It's called when a video track is removed.
+  *
+  * @param track
+  */
+ void onVideoTrackEnded(VideoTrack track);
+
+    /**
+     * @param streamId
+     * It's called when reconnection attempt is started
+     */
+    void onReconnectionAttempt(String streamId);
 }

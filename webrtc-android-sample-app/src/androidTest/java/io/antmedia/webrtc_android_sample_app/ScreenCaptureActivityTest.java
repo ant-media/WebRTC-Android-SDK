@@ -59,7 +59,7 @@ public class ScreenCaptureActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.PERMISSIONS_UNDER_ANDROID_S);
+            = GrantPermissionRule.grant(HomeActivity.REQUIRED_PERMISSIONS);
 
     @Before
     public void before() {

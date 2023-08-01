@@ -3,12 +3,9 @@ package io.antmedia.webrtc_android_sample_app;
 import static io.antmedia.webrtc_android_sample_app.MediaProjectionService.EXTRA_MEDIA_PROJECTION_DATA;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -24,10 +21,10 @@ import android.widget.Toast;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 
-import androidx.annotation.RequiresApi;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
@@ -38,7 +35,7 @@ import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
+public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
 
     private WebRTCClient webRTCClient;
     private RadioGroup bg;
@@ -48,7 +45,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     private int videoWidth ,videoHeight = 0;
 
     private static final String TAG = ScreenCaptureActivity.class.getSimpleName();
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     private View broadcastingView;
 
 
@@ -170,7 +166,7 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     public void startStreaming(View v) {
 
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
-        idlingResource.increment();
+        incrementIdle();
         //focus edit text to make the system update the frames
         streamIdEditText.requestFocus();
         if (!webRTCClient.isStreaming()) {
@@ -183,14 +179,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
             webRTCClient.stopStream();
         }
     }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
-    }
-
-
     public void switchCamera(View v) {
         webRTCClient.switchCamera();
     }
@@ -218,17 +206,6 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         decrementIdle();
     }
 
-    @Override
-    public void onPlayFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void noStreamExistsToPlay(String streamId) {
-        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
-        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-    }
 
     @Override
     public void streamIdInUse(String streamId) {
@@ -245,19 +222,9 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         webRTCClient.stopStream();
-    }
-
-    @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -267,36 +234,5 @@ public class ScreenCaptureActivity extends Activity implements IWebRTCListener {
         broadcastingView.setVisibility(View.GONE);
         decrementIdle();
     }
-
-    @Override
-    public void onIceConnected(String streamId) {
-        //it is called when connected to ice
-    }
-
-    @Override
-    public void onIceDisconnected(String streamId) {
-
-    }
-
-    @Override
-    public void onTrackList(String[] tracks) {
-
-    }
-
-    @Override
-    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-
-    }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-
-    }
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
-    }
-
-
 }
 

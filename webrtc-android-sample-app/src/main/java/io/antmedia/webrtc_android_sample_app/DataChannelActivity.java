@@ -29,6 +29,7 @@ import androidx.annotation.RequiresApi;
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,7 +65,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
  * https://antmedia.io/webrtc-chat-and-file-transfer-2/
  * https://antmedia.io/webrtc-chat-and-file-transfer/
  ********************/
-public class DataChannelActivity extends Activity implements IWebRTCListener, IDataChannelObserver, TextView.OnEditorActionListener {
+public class DataChannelActivity extends AbstractSampleSDKActivity implements TextView.OnEditorActionListener {
 
 
     private WebRTCClient webRTCClient;
@@ -269,43 +270,6 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
     }
 
     @Override
-    public void onPublishStarted(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPublishStarted");
-        Toast.makeText(this, "Publish started", Toast.LENGTH_LONG).show();
-
-
-    }
-
-    @Override
-    public void onPublishFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPublishFinished");
-        Toast.makeText(this, "Publish finished", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onPlayFinished(String streamId) {
-        Log.w(getClass().getSimpleName(), "onPlayFinished");
-        Toast.makeText(this, "Play finished", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void noStreamExistsToPlay(String streamId) {
-        Log.w(getClass().getSimpleName(), "noStreamExistsToPlay");
-        Toast.makeText(this, "No stream exist to play", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void streamIdInUse(String streamId) {
-        Log.w(getClass().getSimpleName(), "streamIdInUse");
-        Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onError(String description, String streamId) {
-        Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
-    }
-
-    @Override
     protected void onStop() {
         super.onStop();
         //webRTCClient.stopStream();
@@ -313,15 +277,6 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         //settingsButton.setEnabled(true);
         imageReceiver.clear();
         imageSender.clear();
-    }
-
-    @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code,String streamId) {
-        Toast.makeText(this, "Signal channel closed with code " + code, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onIceDisconnected(String streamId) {
     }
 
     @Override
@@ -364,31 +319,6 @@ public class DataChannelActivity extends Activity implements IWebRTCListener, ID
         else {
             webRTCClient.enableAudio();
         }
-    }
-
-    @Override
-    public void onTrackList(String[] tracks) {
-
-    }
-
-    @Override
-    public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
-
-    }
-
-    @Override
-    public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
-
-    }
-
-    @Override
-    public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
-        Log.d(DataChannelActivity.class.getName(), "Data channel buffered amount changed: " );
-    }
-
-    @Override
-    public void onStateChange(DataChannel.State state, String dataChannelLabel) {
-        Log.d(DataChannelActivity.class.getName(), "Data channel state changed: " );
     }
 
     @Override
