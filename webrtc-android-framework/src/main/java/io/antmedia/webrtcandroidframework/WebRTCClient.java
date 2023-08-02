@@ -126,7 +126,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Nullable
     private AppRTCClient.SignalingParameters signalingParameters;
     @Nullable
-    private AppRTCAudioManager audioManager = null;
+    public AppRTCAudioManager audioManager = null;
     @Nullable
     private SurfaceViewRenderer pipRenderer;
     @Nullable
@@ -1178,11 +1178,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     // This method is called when the audio manager reports audio device change,
     // e.g. from wired headset to speakerphone.
-    private void onAudioManagerDevicesChanged(
+    void onAudioManagerDevicesChanged(
             final AppRTCAudioManager.AudioDevice device, final Set<AppRTCAudioManager.AudioDevice> availableDevices) {
         Log.d(TAG, "onAudioManagerDevicesChanged: " + availableDevices + ", "
                 + "selected: " + device);
         // TODO(henrika): add callback handler.
+        if(audioManager != null) {
+            audioManager.selectAudioDevice(device);
+        }
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.

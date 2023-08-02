@@ -14,6 +14,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -23,9 +24,11 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -51,7 +54,11 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
@@ -131,6 +138,38 @@ public class WebRTCClientTest {
 
         assertEquals(json.toString(), jsonCaptor.getValue());
 
+    }
+
+    @Test
+    public void testOnAudioManagerDevicesChanged() {
+        // Create a mock of the AppRTCAudioManager and AudioManager
+        AppRTCAudioManager audioManager = Mockito.mock(AppRTCAudioManager.class);
+        AudioManager systemAudioManager = Mockito.mock(AudioManager.class);
+
+        // Create the test instance
+        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(null, mock(Context.class)));
+
+        // Set up the test data
+        AppRTCAudioManager.AudioDevice device = AppRTCAudioManager.AudioDevice.BLUETOOTH;
+        Set<AppRTCAudioManager.AudioDevice> availableDevices = new HashSet<>();
+        availableDevices.add(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+        availableDevices.add(AppRTCAudioManager.AudioDevice.BLUETOOTH);
+
+        webRTCClient.audioManager = null;
+
+        // Invoke the method under test
+        webRTCClient.onAudioManagerDevicesChanged(device, availableDevices);
+
+        // Verify that the audio device is not selected using the AudioManager
+        Mockito.verify(audioManager, never()).selectAudioDevice(device);
+
+        webRTCClient.audioManager = audioManager;
+
+        // Invoke the method under test
+        webRTCClient.onAudioManagerDevicesChanged(device, availableDevices);
+
+        // Verify that the audio device is selected using the AudioManager
+        Mockito.verify(audioManager).selectAudioDevice(device);
     }
 
 
