@@ -108,7 +108,7 @@ public class MultitrackConferenceActivity extends AbstractSampleSDKActivity {
         conferenceManager.init();
         conferenceManager.setPlayOnlyMode(false);
         conferenceManager.setOpenFrontCamera(true);
-        conferenceManager.setReconnectionEnabled(false);
+        conferenceManager.setReconnectionEnabled(true);
     }
 
     public void joinConference(View v) {

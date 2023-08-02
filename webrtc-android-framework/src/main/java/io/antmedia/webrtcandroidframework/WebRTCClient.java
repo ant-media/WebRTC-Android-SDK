@@ -282,6 +282,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @androidx.annotation.Nullable
     public JavaAudioDeviceModule adm;
 
+    private String selfStreamId;
+
     private static final Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
     private boolean initialized = false;
 
@@ -348,6 +350,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         }
     };
+
+
+    public void setSelfStreamId(String selfStreamId) {
+        this.selfStreamId = selfStreamId;
+    }
 
     class TrackCheckTask extends TimerTask {
         private MediaStream mediaStream;
@@ -765,7 +772,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         if(streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY)){
             videoCallEnabled = false;
-            audioCallEnabled = true;
+            audioCallEnabled = false;
         }
 
 
@@ -1636,9 +1643,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         });
 
+        sendPlayOtherTracks(tracks);
+    }
+
+    public void sendPlayOtherTracks(String[] tracks) {
         if(autoPlayTracks && !isStreaming() && !waitingForPlay) {
             waitingForPlay = true;
             init(this.url, this.streamId, this.streamMode, this.token, this.intent);
+
+            //don't send play for its own stream id
+            for (int i = 0; i < tracks.length; i++) {
+                if(tracks[i].equals(selfStreamId)) {
+                    tracks[i] = "!"+ tracks[i];
+                    break;
+                }
+            }
             play(mainTrackId, token, tracks);
         }
     }
