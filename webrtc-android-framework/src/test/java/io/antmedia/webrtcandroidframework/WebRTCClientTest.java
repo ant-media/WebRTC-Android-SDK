@@ -490,7 +490,7 @@ public class WebRTCClientTest {
         webRTCClient.setStreamMode(WebRTCClient.MODE_PLAY);
         webRTCClient.initializeParameters();
         assertEquals(false, webRTCClient.getVideoCallEnabled());
-        assertEquals(true, webRTCClient.getAudioCallEnabled());
+        assertEquals(false, webRTCClient.getAudioCallEnabled());
 
         webRTCClient.setVideoEnabled(false);
         webRTCClient.setAudioEnabled(false);
@@ -498,7 +498,7 @@ public class WebRTCClientTest {
         webRTCClient.setStreamMode(WebRTCClient.MODE_MULTI_TRACK_PLAY);
         webRTCClient.initializeParameters();
         assertEquals(false, webRTCClient.getVideoCallEnabled());
-        assertEquals(true, webRTCClient.getAudioCallEnabled());
+        assertEquals(false, webRTCClient.getAudioCallEnabled());
 
         webRTCClient.setVideoEnabled(false);
         webRTCClient.setAudioEnabled(false);
@@ -532,6 +532,27 @@ public class WebRTCClientTest {
 
         assertFalse(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
+    }
+
+    @Test
+    public void testSendPlayOtherTracks() {
+        WebRTCClient webRTCClient = spy(new WebRTCClient(null, mock(Context.class)));
+        webRTCClient.setAutoPlayTracks(true);
+        webRTCClient.setSelfStreamId("self");
+        String tracks[] = {"other1", "self", "other2"};
+
+        doNothing().when(webRTCClient).init(anyString(), anyString(), anyString(), anyString(), any());
+        doNothing().when(webRTCClient).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+
+        webRTCClient.sendPlayOtherTracks(tracks);
+
+        ArgumentCaptor<String[]> tracksCaptor = ArgumentCaptor.forClass(String[].class);
+        verify(webRTCClient, times(1)).play(anyString(), anyString(), tracksCaptor.capture());
+
+        String[] capturedTracks = tracksCaptor.getValue();
+        assertEquals("other1", capturedTracks[0]);
+        assertEquals("!self", capturedTracks[1]);
+        assertEquals("other2", capturedTracks[2]);
     }
 
 }

@@ -131,6 +131,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         playWebRTCClient.setRemoteRendererList(playViewRenderers);
         playWebRTCClient.setAutoPlayTracks(true);
         playWebRTCClient.setMainTrackId(roomName);
+        playWebRTCClient.setSelfStreamId(streamId);
         String tokenId = "";
 
         if (dataChannelObserver != null) {
