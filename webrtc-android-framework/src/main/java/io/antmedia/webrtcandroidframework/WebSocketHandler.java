@@ -349,7 +349,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
-            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.TAKE_CONFIGURATION_COMMAND);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.TAKE_CONFIGURATION_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TYPE, type);
             json.put(WebSocketConstants.SDP, sdp.description);
@@ -363,7 +363,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
-            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.TAKE_CANDIDATE_COMMAND);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.TAKE_CANDIDATE_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.CANDIDATE_LABEL, candidate.sdpMLineIndex);
             json.put(WebSocketConstants.CANDIDATE_ID, candidate.sdpMid);
@@ -380,7 +380,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
-            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.GET_TRACK_LIST);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_TRACK_LIST);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TOKEN, token);
             sendTextMessage(json.toString());
@@ -393,7 +393,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
-            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.ENABLE_TRACK);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.ENABLE_TRACK);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TRACK_ID, trackId);
             json.put(WebSocketConstants.ENABLED, enabled);
@@ -495,7 +495,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
-            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.GET_STREAM_INFO_COMMAND);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_STREAM_INFO_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
@@ -515,7 +515,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
-            json.put(WebSocketRTCAntMediaClient.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.STREAM_HEIGHT, height);
             sendTextMessage(json.toString());

@@ -14,7 +14,6 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioDeviceInfo;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -96,9 +95,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
-import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.RecordedAudioToFileController;
 import io.antmedia.webrtcandroidframework.apprtc.RtcEventLog;
 
 
@@ -118,13 +115,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public static final String ERROR_USER_REVOKED_CAPTURE_SCREEN_PERMISSION = "USER_REVOKED_CAPTURE_SCREEN_PERMISSION";
     public static final String VIDEO_ROTATION_EXT_LINE = "a=extmap:3 urn:3gpp:video-orientation\r\n";
 
-    private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
-    private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
+    private final ProxyVideoSink remoteProxyRenderer = new ProxyVideoSink();
+    private final ProxyVideoSink localProxyVideoSink = new ProxyVideoSink();
     //private final List<CallActivity.ProxyVideoSink> remoteProxyRendererList = new ArrayList<>();
     private final IWebRTCListener webRTCListener;
     private final Handler mainHandler;
-    @Nullable
-    private AppRTCClient.SignalingParameters signalingParameters;
     @Nullable
     public AppRTCAudioManager audioManager = null;
     @Nullable
@@ -274,10 +269,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     // Enable RtcEventLog.
     @androidx.annotation.Nullable
     private RtcEventLog rtcEventLog;
-    // Implements the WebRtcAudioRecordSamplesReadyCallback interface and writes
-    // recorded audio samples to an output file.
-    @androidx.annotation.Nullable
-    private RecordedAudioToFileController saveRecordedAudioToFile;
 
     @androidx.annotation.Nullable
     public JavaAudioDeviceModule adm;
@@ -302,7 +293,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private String audioCodec;
     private boolean noAudioProcessing;
     private boolean aecDump;
-    private boolean saveInputAudioToFile;
     private boolean useOpenSLES;
     private boolean disableBuiltInAEC;
     private boolean disableBuiltInAGC;
@@ -322,6 +312,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean dataChannelCreator;
 
     private boolean removeVideoRotationExtention = false;
+
+    //signaling parameters
+    private ArrayList<IceCandidate> iceCandidates = new ArrayList<>();
 
     //reconnection parameters
     private Handler reconnectionHandler = new Handler();
@@ -682,7 +675,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
 
         iceConnected = false;
-        signalingParameters = null;
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
 
         if(streamMode.equals(MODE_MULTI_TRACK_PLAY) && trackCheckerTask == null) {
@@ -707,7 +699,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void addTrackToRenderer(VideoTrack track, SurfaceViewRenderer renderer) {
         mainHandler.post(() -> {
-            CallActivity.ProxyVideoSink remoteVideoSink = new CallActivity.ProxyVideoSink();
+            ProxyVideoSink remoteVideoSink = new ProxyVideoSink();
             remoteVideoSink.setTarget(renderer);
             renderer.init(eglBase.getEglBaseContext(), null);
             renderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
@@ -782,7 +774,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         audioCodec = intent.getStringExtra(CallActivity.EXTRA_AUDIOCODEC);
         noAudioProcessing = intent.getBooleanExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, false);
         aecDump = intent.getBooleanExtra(CallActivity.EXTRA_AECDUMP_ENABLED, false);
-        saveInputAudioToFile = intent.getBooleanExtra(CallActivity.EXTRA_SAVE_INPUT_AUDIO_TO_FILE_ENABLED, false);
         useOpenSLES = intent.getBooleanExtra(CallActivity.EXTRA_OPENSLES_ENABLED, false);
         disableBuiltInAEC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, false);
         disableBuiltInAGC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AGC, false);
@@ -800,7 +791,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             for (SurfaceViewRenderer renderer : remoteRendererList) {
                 //if we are performing reconnection, we shouldn't add remote sinks again
                 if (!renderersInited) {
-                    CallActivity.ProxyVideoSink remoteVideoSink = new CallActivity.ProxyVideoSink();
+                    ProxyVideoSink remoteVideoSink = new ProxyVideoSink();
                     remoteSinks.add(remoteVideoSink);
                 }
 
@@ -1343,7 +1334,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         {
             for (int i = 0; i < remoteSinks.size(); i++)
             {
-                ((CallActivity.ProxyVideoSink)remoteSinks.get(i)).setTarget(remoteRendererList.get(i));
+                ((ProxyVideoSink)remoteSinks.get(i)).setTarget(remoteRendererList.get(i));
             }
         }
         else if(fullscreenRenderer != null && pipRenderer != null) {
@@ -1427,7 +1418,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.handler.post(() -> {
             if (wsHandler != null) {
                 Log.d(TAG,"Sending " + sdp.type + ", delay=" + delta + "ms");
-                if (signalingParameters.initiator) {
+                if (isInitiator) {
                     wsHandler.sendConfiguration(streamId, sdp, "offer");
                 } else {
                     wsHandler.sendConfiguration(streamId, sdp, "answer");
@@ -1500,7 +1491,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.handler.post(() -> {
             if (sdp.type == SessionDescription.Type.OFFER) {
                 if(peerConnection == null) {
-                    signalingParameters = new AppRTCClient.SignalingParameters(iceServers, false, null, null, null, sdp, null);
                     createPeerConnection();
                 }
 
@@ -1509,9 +1499,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 setRemoteDescription(sdp);
                 createAnswer();
 
-                if (signalingParameters.iceCandidates != null) {
+                if (iceCandidates != null) {
                     // Add remote ICE candidates from room.
-                    for (IceCandidate iceCandidate : signalingParameters.iceCandidates) {
+                    for (IceCandidate iceCandidate : iceCandidates) {
                         addRemoteIceCandidate(iceCandidate);
                     }
                 }
@@ -1581,8 +1571,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void onStartStreaming(String streamId) {
         this.handler.post(() -> {
-            signalingParameters = new AppRTCClient.SignalingParameters(iceServers, true, null, null, null, null, null);
-
             createPeerConnection();
             Log.d(TAG, "Creating OFFER...");
             createOffer();
@@ -1875,22 +1863,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         // Check if ISAC is used by default.
         preferIsac = audioCodec != null && audioCodec.equals(AUDIO_CODEC_ISAC);
 
-        // It is possible to save a copy in raw PCM format on a file by checking
-        // the "Save input audio to file" checkbox in the Settings UI. A callback
-        // interface is set when this flag is enabled. As a result, a copy of recorded
-        // audio samples are provided to this client directly from the native audio
-        // layer in Java.
-        if (saveInputAudioToFile) {
-            if (!useOpenSLES) {
-                Log.d(TAG, "Enable recording of microphone input audio to file");
-                saveRecordedAudioToFile = new RecordedAudioToFileController(executor);
-            } else {
-                // TODO(henrika): ensure that the UI reflects that if OpenSL ES is selected,
-                // then the "Save inut audio to file" option shall be grayed out.
-                Log.e(TAG, "Recording of input audio is not supported for OpenSL ES");
-            }
-        }
-
         adm = (JavaAudioDeviceModule) createJavaAudioDevice();
 
         // Create peer connection factory.
@@ -2002,7 +1974,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         return JavaAudioDeviceModule.builder(context)
                 .setCustomAudioFeed(customAudioFeed)
-                .setSamplesReadyCallback(saveRecordedAudioToFile)
                 .setUseHardwareAcousticEchoCanceler(!disableBuiltInAEC)
                 .setUseHardwareNoiseSuppressor(!disableBuiltInNS)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
@@ -2060,7 +2031,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         queuedRemoteCandidates = new ArrayList<>();
 
         PeerConnection.RTCConfiguration rtcConfig =
-                new PeerConnection.RTCConfiguration(signalingParameters.iceServers);
+                new PeerConnection.RTCConfiguration(iceServers);
         // TCP candidates are only useful when connecting to a server that supports
         // ICE-TCP.
         rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
@@ -2112,11 +2083,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         }
 
-        if (saveRecordedAudioToFile != null) {
-            if (saveRecordedAudioToFile.start()) {
-                Log.d(TAG, "Recording input audio to file is activated");
-            }
-        }
         Log.d(TAG, "Peer connection created.");
     }
 
@@ -2205,11 +2171,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             surfaceTextureHelper.dispose();
             surfaceTextureHelper = null;
         }
-        if (saveRecordedAudioToFile != null) {
-            Log.d(TAG, "Closing audio file for recorded input audio.");
-            saveRecordedAudioToFile.stop();
-            saveRecordedAudioToFile = null;
-        }
+
         Log.d(TAG, "Closing peer connection factory.");
         if (factory != null) {
             factory.dispose();
@@ -2743,10 +2705,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setHandler(Handler handler) {
         this.handler = handler;
-    }
-
-    public void setSignalingParameters(@Nullable AppRTCClient.SignalingParameters signalingParameters) {
-        this.signalingParameters = signalingParameters;
     }
 
     public void setCustomCapturerEnabled(boolean customCapturerEnabled) {

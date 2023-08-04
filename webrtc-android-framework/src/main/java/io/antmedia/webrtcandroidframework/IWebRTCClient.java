@@ -5,15 +5,11 @@ import android.content.Intent;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
 
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
-
 /**
  * Created by karinca on 20.10.2017.
  */
 
-public interface IWebRTCClient extends CallFragment.OnCallEvents {
-
-
+public interface IWebRTCClient {
     /**
      * Publish mode
      */
@@ -155,5 +151,11 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      */
     void setStreamName(String streamName);
 
+
+    //FIXME: add comment
+    void onCameraSwitch();
+    void onVideoScalingSwitch(RendererCommon.ScalingType scalingType);
+    void onCaptureFormatChange(int width, int height, int framerate);
+    boolean onToggleMic();
 
 }

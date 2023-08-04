@@ -60,9 +60,13 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.R;
 
 /**
- * Activity for peer connection call setup, call waiting
- * and call view.
+ * Class which contains configuration names
+ * @deprecated
+ * Instead of passing configurations with Intent,
+ * set them directly accessors in @WebRTCClient
  */
+
+@Deprecated
 public class CallActivity  {
   private static final String TAG = "CallRTCClient";
 
@@ -126,24 +130,5 @@ public class CallActivity  {
   // Peer connection statistics callback period in ms.
   public static final int STAT_CALLBACK_PERIOD = 1000;
 
-  public static class ProxyVideoSink implements VideoSink {
-    private VideoSink target;
 
-    @Override
-    synchronized public void onFrame(VideoFrame frame) {
-      if (target == null) {
-        Logging.d(TAG, "Dropping frame in proxy because target is null.");
-        return;
-      }
-
-      target.onFrame(frame);
-    }
-
-    synchronized public void setTarget(VideoSink target) {
-      this.target = target;
-    }
-    synchronized public VideoSink getTarget() {
-      return target;
-    }
-  }
 }

@@ -28,7 +28,6 @@ import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -56,10 +55,8 @@ import org.webrtc.VideoTrack;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
-import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 /**
@@ -456,17 +453,11 @@ public class WebRTCClientTest {
 
         {
             webRTCClient.setInitiator(true);
-            AppRTCClient.SignalingParameters signallingParameters = new AppRTCClient.SignalingParameters(
-                    null, true, null, null, null, null, null);
-            webRTCClient.setSignalingParameters(signallingParameters);
             sdpObserver.onSetSuccess();
             verify(wsHandler, timeout(1000)).sendConfiguration(eq(streamId), any(), eq("offer"));
         }
         {
             webRTCClient.setInitiator(true);
-            AppRTCClient.SignalingParameters signallingParameters = new AppRTCClient.SignalingParameters(
-                    null, false, null, null, null, null, null);
-            webRTCClient.setSignalingParameters(signallingParameters);
             sdpObserver.onSetSuccess();
             verify(wsHandler, timeout(1000)).sendConfiguration(eq(streamId), any(), eq("answer"));
         }
