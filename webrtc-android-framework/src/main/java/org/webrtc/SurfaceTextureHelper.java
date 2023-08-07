@@ -17,6 +17,8 @@ import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 import java.util.concurrent.Callable;
 import org.webrtc.EglBase.Context;
@@ -31,6 +33,8 @@ import org.webrtc.VideoFrame.TextureBuffer;
  * resources once the texture frame is released.
  */
 public class SurfaceTextureHelper {
+  private long lasttimestampNs;
+
   /**
    * Interface for monitoring texture buffers created from this SurfaceTexture. Since only one
    * texture buffer can exist at a time, this can be used to monitor for stuck frames.
@@ -199,6 +203,7 @@ public class SurfaceTextureHelper {
     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     surfaceTexture = new SurfaceTexture(oesTextureId);
     surfaceTexture.setOnFrameAvailableListener(st -> {
+
       if (hasPendingTexture) {
         Logging.d(TAG, "A frame is already pending, dropping frame.");
       }
@@ -356,9 +361,16 @@ public class SurfaceTextureHelper {
     final float[] transformMatrix = new float[16];
     surfaceTexture.getTransformMatrix(transformMatrix);
     long timestampNs = surfaceTexture.getTimestamp();
+
+    if (lasttimestampNs == timestampNs) {
+      timestampNs = TimestampAligner.getRtcTimeNanos();
+    }
+    lasttimestampNs = timestampNs;
+
     if (timestampAligner != null) {
       timestampNs = timestampAligner.translateTimestamp(timestampNs);
     }
+
     final VideoFrame.TextureBuffer buffer =
         new TextureBufferImpl(textureWidth, textureHeight, TextureBuffer.Type.OES, oesTextureId,
             RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix), handler,
@@ -367,6 +379,7 @@ public class SurfaceTextureHelper {
       frameRefMonitor.onNewBuffer(buffer);
     }
     final VideoFrame frame = new VideoFrame(buffer, frameRotation, timestampNs);
+
     listener.onFrame(frame);
     frame.release();
   }

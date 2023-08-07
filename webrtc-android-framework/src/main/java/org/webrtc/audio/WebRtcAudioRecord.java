@@ -26,6 +26,9 @@ import android.os.Build;
 import android.os.Process;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+
+import com.genymobile.scrcpy.FakeContext;
+
 import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -325,9 +328,9 @@ class WebRtcAudioRecord {
         audioRecord = createAudioRecordOnMOrHigher(
             audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
         audioSourceMatchesRecordingSessionRef.set(null);
-        if (preferredDevice != null) {
-          setPreferredDevice(preferredDevice);
-        }
+        //if (preferredDevice != null) {
+        //  setPreferredDevice(preferredDevice);
+       // }
       } else {
         // Use the old AudioRecord constructor for API levels below 23.
         // Throws UnsupportedOperationException.
@@ -448,9 +451,10 @@ class WebRtcAudioRecord {
   }
 
   @TargetApi(Build.VERSION_CODES.M)
-  private static AudioRecord createAudioRecordOnMOrHigher(
+  private AudioRecord createAudioRecordOnMOrHigher(
       int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
     Logging.d(TAG, "createAudioRecordOnMOrHigher");
+
     return new AudioRecord.Builder()
         .setAudioSource(audioSource)
         .setAudioFormat(new AudioFormat.Builder()
@@ -459,6 +463,7 @@ class WebRtcAudioRecord {
                             .setChannelMask(channelConfig)
                             .build())
         .setBufferSizeInBytes(bufferSizeInBytes)
+            .setContext(this.context)
         .build();
   }
 

@@ -29,6 +29,8 @@ import androidx.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
+import io.antmedia.webrtcandroidframework.scrcpy.IAudioService;
+
 import org.webrtc.ThreadUtils;
 
 /**
@@ -66,7 +68,7 @@ public class AppRTCBluetoothManager {
   private final Context apprtcContext;
   private final AppRTCAudioManager apprtcAudioManager;
   @Nullable
-  private final AudioManager audioManager;
+  private final IAudioService audioManager;
   private final Handler handler;
 
   int scoConnectionAttempts;
@@ -195,17 +197,17 @@ public class AppRTCBluetoothManager {
   }
 
   /** Construction. */
-  static AppRTCBluetoothManager create(Context context, AppRTCAudioManager audioManager) {
+  static AppRTCBluetoothManager create(Context context, AppRTCAudioManager audioManager, IAudioService manager) {
     Log.d(TAG, "create" + AppRTCUtils.getThreadInfo());
-    return new AppRTCBluetoothManager(context, audioManager);
+    return new AppRTCBluetoothManager(context, audioManager, manager);
   }
 
-  protected AppRTCBluetoothManager(Context context, AppRTCAudioManager audioManager) {
+  protected AppRTCBluetoothManager(Context context, AppRTCAudioManager audioManager, IAudioService audioService) {
     Log.d(TAG, "ctor");
     ThreadUtils.checkIsOnMainThread();
     apprtcContext = context;
     apprtcAudioManager = audioManager;
-    this.audioManager = getAudioManager(context);
+    this.audioManager = audioService;
     bluetoothState = State.UNINITIALIZED;
     bluetoothServiceListener = new BluetoothServiceListener();
     bluetoothHeadsetReceiver = new BluetoothHeadsetBroadcastReceiver();

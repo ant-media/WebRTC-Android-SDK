@@ -28,6 +28,8 @@ import java.util.Set;
 
 import io.antmedia.webrtcandroidframework.R;
 import io.antmedia.webrtcandroidframework.apprtc.util.AppRTCUtils;
+import io.antmedia.webrtcandroidframework.scrcpy.IAudioService;
+
 import org.webrtc.ThreadUtils;
 
 /**
@@ -61,7 +63,7 @@ public class AppRTCAudioManager {
 
   private final Context apprtcContext;
   @Nullable
-  private AudioManager audioManager;
+  private IAudioService audioManager;
 
   @Nullable
   private AudioManagerEvents audioManagerEvents;
@@ -159,22 +161,22 @@ public class AppRTCAudioManager {
   }
 
   /** Construction. */
-  public static AppRTCAudioManager create(Context context) {
-    return new AppRTCAudioManager(context);
+  public static AppRTCAudioManager create(Context context, IAudioService audioManager) {
+    return new AppRTCAudioManager(context, audioManager);
   }
 
-  private AppRTCAudioManager(Context context) {
+  private AppRTCAudioManager(Context context, IAudioService audioManager) {
     Log.d(TAG, "ctor");
     ThreadUtils.checkIsOnMainThread();
     apprtcContext = context;
-    audioManager = ((AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
-    bluetoothManager = AppRTCBluetoothManager.create(context, this);
+    this.audioManager = audioManager;
+    bluetoothManager = AppRTCBluetoothManager.create(context, this, audioManager);
     wiredHeadsetReceiver = new WiredHeadsetReceiver();
     amState = AudioManagerState.UNINITIALIZED;
 
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-    useSpeakerphone = sharedPreferences.getString(context.getString(R.string.pref_speakerphone_key),
-        context.getString(R.string.pref_speakerphone_default));
+
+    useSpeakerphone = SPEAKERPHONE_TRUE;
+
     Log.d(TAG, "useSpeakerphone: " + useSpeakerphone);
     if (useSpeakerphone.equals(SPEAKERPHONE_FALSE)) {
       defaultAudioDevice = AudioDevice.EARPIECE;

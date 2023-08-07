@@ -15,6 +15,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
+import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
@@ -94,6 +96,9 @@ import io.antmedia.webrtcandroidframework.apprtc.AppRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 import io.antmedia.webrtcandroidframework.apprtc.RecordedAudioToFileController;
 import io.antmedia.webrtcandroidframework.apprtc.RtcEventLog;
+import io.antmedia.webrtcandroidframework.scrcpy.AudioManagerWrapper;
+import io.antmedia.webrtcandroidframework.scrcpy.DisplayCapturerAndroid;
+import io.antmedia.webrtcandroidframework.scrcpy.IAudioService;
 
 
 /**
@@ -108,6 +113,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public static final String SOURCE_REAR = "REAR";
 
     public static final String ERROR_USER_REVOKED_CAPTURE_SCREEN_PERMISSION = "USER_REVOKED_CAPTURE_SCREEN_PERMISSION";
+    private static final String SOURCE_DISPLAY = "DISPLAY";
+    public static final String EXTRA_DISPLAY_CAPTURE = "CAPTURE_DISPLAY";
 
     private final CallActivity.ProxyVideoSink remoteProxyRenderer = new CallActivity.ProxyVideoSink();
     private final CallActivity.ProxyVideoSink localProxyVideoSink = new CallActivity.ProxyVideoSink();
@@ -129,6 +136,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private final long callStartedTimeMs = 0;
     private boolean micEnabled = true;
     private boolean screencaptureEnabled = false;
+    private boolean displayCaptureEnabled = false;
     private static Intent mediaProjectionPermissionResultData;
     private int mediaProjectionPermissionResultCode;
     private final Context context;
@@ -282,6 +290,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean dataChannelNegotiated;
     private int dataChannelId;
     private boolean dataChannelCreator;
+    private IAudioService audioService;
 
     // Implementation detail: observe ICE & stream changes and react accordingly.
     class PCObserver implements PeerConnection.Observer {
@@ -573,6 +582,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             videoHeight = displayMetrics.heightPixels;
         }
 
+        displayCaptureEnabled = intent.getBooleanExtra(EXTRA_DISPLAY_CAPTURE, false);
+
         dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, false);
         if (dataChannelEnabled) {
             dataChannelOrdered = intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true);
@@ -588,17 +599,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
         if (videoCodec == null) {
-            videoCodec = this.context.getString(R.string.pref_videocodec_default);
+            videoCodec = VIDEO_CODEC_H264_BASELINE;
         }
         videoStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
 
         if (videoStartBitrate == 0) {
-            videoStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_maxvideobitratevalue_default));
+            videoStartBitrate = 1700;
         }
 
         audioStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
         if (audioStartBitrate == 0) {
-            audioStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_startaudiobitratevalue_default));
+            audioStartBitrate = 32;
         }
 
         videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
@@ -612,8 +623,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             videoCallEnabled = false;
             audioCallEnabled = true;
         }
-
-
 
         hwCodecAcceleration = intent.getBooleanExtra(CallActivity.EXTRA_HWCODEC_ENABLED, true);
         videoFlexfecEnabled = intent.getBooleanExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, false);
@@ -705,15 +714,30 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if (loopback) {
             options.networkIgnoreMask = 0;
         }
+        options.disableNetworkMonitor = true;
         //options.disableEncryption = true;
         createPeerConnectionFactory(options);
     }
+
+    public IAudioService getAudioService()
+    {
+        //audio service can be injected through setter
+        if (audioService == null) {
+            audioService = new AudioManagerWrapper((AudioManager)context.getSystemService(Context.AUDIO_SERVICE));
+        }
+        return audioService;
+    }
+
+    public void setAudioService(IAudioService audioService) {
+        this.audioService = audioService;
+    }
+
 
     public void initializeAudioManager() {
         if (audioCallEnabled) {
             // Create and audio manager that will take care of audio routing,
             // audio modes, audio device enumeration etc.
-            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
+            audioManager = AppRTCAudioManager.create(this.context, getAudioService());
             // Store existing audio settings and change audio mode to
             // MODE_IN_COMMUNICATION for best possible VoIP performance.
             Log.d(TAG, "Starting the audio manager...");
@@ -743,6 +767,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
             else if(screencaptureEnabled) {
                 source = SOURCE_SCREEN;
+            }
+            else if (displayCaptureEnabled){
+                source = SOURCE_DISPLAY;
             }
             else if(useCamera2()) {
                 source = SOURCE_FRONT;
@@ -813,6 +840,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             ((Activity) this.context).startActivityForResult(
                     mediaProjectionManager.createScreenCaptureIntent(), CallActivity.CAPTURE_PERMISSION_REQUEST_CODE);
         }
+    }
+
+
+
+
+    public @Nullable VideoCapturer createDisplayCapturer() {
+
+        return new DisplayCapturerAndroid();
     }
 
     @TargetApi(21)
@@ -963,7 +998,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     private void startCall() {
-        Log.d(TAG, this.context.getString(R.string.connecting_to, url));
         if (streamMode.equals(IWebRTCClient.MODE_PUBLISH)) {
             publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
         }
@@ -1121,7 +1155,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         } else if (SOURCE_SCREEN.equals(source)) {
             return createScreenCapturer();
-        } else {
+        }
+        else if (SOURCE_DISPLAY.equals(source)) {
+            return createDisplayCapturer();
+        }
+        else {
             if (!captureToTexture) {
                 reportError(this.context.getString(R.string.camera2_texture_only_error));
                 return null;
@@ -1356,6 +1394,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     @Override
     public void onStartStreaming(String streamId) {
+        Log.i(TAG, "onStartStreaming for streamId: " + streamId);
         this.handler.post(() -> {
             signalingParameters = new AppRTCClient.SignalingParameters(iceServers, true, null, null, null, null, null);
 
@@ -1748,6 +1787,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 .setSamplesReadyCallback(saveRecordedAudioToFile)
                 .setUseHardwareAcousticEchoCanceler(!disableBuiltInAEC)
                 .setUseHardwareNoiseSuppressor(!disableBuiltInNS)
+                .setAudioSource(MediaRecorder.AudioSource.REMOTE_SUBMIX)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
                 .setAudioRecordStateCallback(audioRecordStateCallback)
