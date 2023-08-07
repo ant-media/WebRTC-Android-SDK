@@ -17,6 +17,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
@@ -188,6 +189,11 @@ public class MultitrackConferenceActivity extends AbstractSampleSDKActivity {
     public void changeWifiState(boolean state) {
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(state);
+    }
+
+    @Override
+    public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
+        conferenceManager.onMessage(buffer, dataChannelLabel);
     }
 }
 

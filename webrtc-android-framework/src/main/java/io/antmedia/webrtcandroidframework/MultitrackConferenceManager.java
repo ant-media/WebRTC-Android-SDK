@@ -4,6 +4,8 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
@@ -37,6 +39,15 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     public static final String TAG = "Multitrack Conf";
     public static final int MAX_BITRATE = 2000;
     public static final int MIN_BITRATE = 500;
+    public static final String MIC_UNMUTED = "MIC_UNMUTED";
+    public static final String MIC_MUTED = "MIC_MUTED";
+    public static final String CAM_TURNED_ON = "CAM_TURNED_ON";
+    public static final String CAM_TURNED_OFF = "CAM_TURNED_OFF";
+    public static final String EVENT_TYPE = "eventType";
+    public static final String STREAM_ID = "streamId";
+    public static final String UPDATE_STATUS = "UPDATE_STATUS";
+    public static final String MIC_STATUS = "mic";
+    public static final String CAMERA_STATUS = "camera";
     private final Context context;
     private final Intent intent;
     private final String serverUrl;
@@ -58,6 +69,8 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     private int ROOM_INFO_POLLING_MILLIS = 5000;
 
+    private int STATUS_SEND_PERIOD_MILLIS = 3000;
+
     private boolean reconnectionEnabled = false;
 
     private LinkedHashMap<SurfaceViewRenderer, String> playRendererAllocationMap = new LinkedHashMap<>();
@@ -69,6 +82,15 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
             handler.postDelayed(this, ROOM_INFO_POLLING_MILLIS);
         }
     };
+
+    private Runnable sendStatusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            sendStatusMessage();
+            handler.postDelayed(this, STATUS_SEND_PERIOD_MILLIS);
+        }
+    };
+
     private boolean playOnlyMode = false;
 
     private boolean playMessageSent = false;
@@ -104,6 +126,32 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         }
 
         initPlayWebRTCClient();
+        scheduleSendStatusTimer();
+    }
+
+    private void scheduleSendStatusTimer() {
+        handler.postDelayed(sendStatusRunnable, STATUS_SEND_PERIOD_MILLIS);
+    }
+
+    private void clearSendStatusSchedule() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (handler.hasCallbacks(sendStatusRunnable)) {
+                handler.removeCallbacks(sendStatusRunnable);
+            }
+        } else {
+            handler.removeCallbacks(sendStatusRunnable);
+        }
+    }
+
+    public void sendStatusMessage() {
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put(MIC_STATUS, publishWebRTCClient.isAudioOn());
+            jsonObject.put(CAMERA_STATUS, publishWebRTCClient.isVideoOn());
+            sendNotificationEvent(UPDATE_STATUS, jsonObject);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void initPublishWebRTCClient() {
@@ -175,6 +223,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
         // remove periodic room information polling
         clearGetRoomInfoSchedule();
+        clearSendStatusSchedule();
 
     }
 
@@ -390,11 +439,14 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         }
     }
 
-    private void sendNotificationEvent(String eventType) {
+    public void sendNotificationEvent(String eventType, JSONObject data) {
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put("streamId", streamId);
-            jsonObject.put("eventType", eventType);
+            jsonObject.put(STREAM_ID, streamId);
+            jsonObject.put(EVENT_TYPE, eventType);
+            if(data != null) {
+                jsonObject.put("info", data);
+            }
 
             String notificationEventText = jsonObject.toString();
 
@@ -406,13 +458,45 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         }
     }
 
+    public void onMessage(final DataChannel.Buffer buffer, String dataChannelLabel) {
+        if (!buffer.binary) {
+            ByteBuffer data = buffer.data;
+            try {
+                String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
+                JSONObject jsonObject = new JSONObject(strDataJson);
+                String eventType = jsonObject.getString(EVENT_TYPE);
+                String streamId = jsonObject.getString(STREAM_ID);
+                if(eventType.equals(MIC_MUTED)) {
+                    webRTCListener.onMutedFor(streamId);
+                }
+                else if(eventType.equals(MIC_UNMUTED)) {
+                    webRTCListener.onUnmutedFor(streamId);
+                }
+                else if(eventType.equals(CAM_TURNED_ON)) {
+                    webRTCListener.onCameraTurnOnFor(streamId);
+                }
+                else if(eventType.equals(CAM_TURNED_OFF)) {
+                    webRTCListener.onCameraTurnOffFor(streamId);
+                }
+                else if(eventType.equals(UPDATE_STATUS)) {
+                    boolean micStatus = jsonObject.getBoolean(MIC_STATUS);
+                    boolean cameraStatus = jsonObject.getBoolean(CAMERA_STATUS);
+                    webRTCListener.onSatatusUpdateFor(streamId, micStatus, cameraStatus);
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+    }
+
     public void disableVideo() {
         if (publishWebRTCClient != null) {
             //if (publishWebRTCClient.isStreaming()) {
                 publishWebRTCClient.disableVideo();
            // }
 
-            sendNotificationEvent("CAM_TURNED_OFF");
+            sendNotificationEvent(CAM_TURNED_OFF, null);
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
         }
@@ -423,7 +507,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
             //if (publishWebRTCClient.isStreaming()) {
                 publishWebRTCClient.enableVideo();
             //}
-            sendNotificationEvent("CAM_TURNED_ON");
+            sendNotificationEvent(CAM_TURNED_ON, null);
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
         }
@@ -433,7 +517,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         if (publishWebRTCClient != null) {
             publishWebRTCClient.disableAudio();
 
-            sendNotificationEvent("MIC_MUTED");
+            sendNotificationEvent(MIC_MUTED, null);
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
         }
@@ -444,7 +528,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
             //if (publishWebRTCClient.isStreaming()) {
                 publishWebRTCClient.enableAudio();
             //}
-            sendNotificationEvent("MIC_UNMUTED");
+            sendNotificationEvent(MIC_UNMUTED, null);
         } else {
             Log.w(this.getClass().getSimpleName(), "It did not joined to the conference room yet ");
         }
@@ -480,7 +564,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         } else {
             handler.removeCallbacks(getRoomInfoRunnable);
         }
-
     }
 
     private void getRoomInfo() {
@@ -494,7 +577,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.STREAM_ID, streamId);
-            json.put("eventType", "UPDATE_AUDIO_LEVEL");
+            json.put(EVENT_TYPE, "UPDATE_AUDIO_LEVEL");
             json.put("audioLevel", level);
 
             final ByteBuffer buffer = ByteBuffer.wrap(json.toString().getBytes(StandardCharsets.UTF_8));

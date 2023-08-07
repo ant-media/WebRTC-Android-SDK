@@ -82,6 +82,7 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
         ByteBuffer data = buffer.data;
         String messageText = new String(data.array(), StandardCharsets.UTF_8);
         Toast.makeText(this, "New Message: " + messageText, Toast.LENGTH_LONG).show();
+
     }
 
     @Override
@@ -213,6 +214,40 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
     @Override
     public void onReconnectionAttempt(String streamId) {
         String messageText = "Reconnection attempt for " + streamId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onMutedFor(String streamId) {
+        String messageText = "Microphone is muted for " + streamId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+    @Override
+    public void onUnmutedFor(String streamId) {
+        String messageText = "Microphone is unmuted for " + streamId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onCameraTurnOnFor(String streamId) {
+        String messageText = "Camera is turned on for " + streamId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onCameraTurnOffFor(String streamId) {
+        String messageText = "Camera is turned off for " + streamId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus) {
+        String messageText = "Status update for " + streamId + " mic: " + micStatus + " camera: " + cameraStatus;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
         Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
     }
