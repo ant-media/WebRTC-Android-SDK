@@ -362,14 +362,18 @@ public class SurfaceTextureHelper {
     surfaceTexture.getTransformMatrix(transformMatrix);
     long timestampNs = surfaceTexture.getTimestamp();
 
-    if (lasttimestampNs == timestampNs) {
+    if (timestampAligner != null) {
+      timestampNs = timestampAligner.translateTimestamp(timestampNs);
+    }
+
+    //we added this because in screen capturing,
+    //it sends the latest frame with old timestamp
+    //we need to send the latest frame to fix pixelating
+    if (lasttimestampNs >= timestampNs) {
       timestampNs = TimestampAligner.getRtcTimeNanos();
     }
     lasttimestampNs = timestampNs;
 
-    if (timestampAligner != null) {
-      timestampNs = timestampAligner.translateTimestamp(timestampNs);
-    }
 
     final VideoFrame.TextureBuffer buffer =
         new TextureBufferImpl(textureWidth, textureHeight, TextureBuffer.Type.OES, oesTextureId,

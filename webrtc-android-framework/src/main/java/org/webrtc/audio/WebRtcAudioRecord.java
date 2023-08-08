@@ -328,9 +328,9 @@ class WebRtcAudioRecord {
         audioRecord = createAudioRecordOnMOrHigher(
             audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
         audioSourceMatchesRecordingSessionRef.set(null);
-        //if (preferredDevice != null) {
-        //  setPreferredDevice(preferredDevice);
-       // }
+        if (preferredDevice != null) {
+          setPreferredDevice(preferredDevice);
+        }
       } else {
         // Use the old AudioRecord constructor for API levels below 23.
         // Throws UnsupportedOperationException.

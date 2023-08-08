@@ -43,10 +43,12 @@ public class ThreadUtils {
    * Throws exception if called from other than main thread.
    */
   public static void checkIsOnMainThread() {
-    /*if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+    /* We have just replaced this code with the below because there is a main looper issue in the SystemCapture
+    if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
       throw new IllegalStateException("Not on main thread!");
     }
-    */
+     */
+
 
     if (Thread.currentThread() != Looper.myLooper().getThread()) {
       throw new IllegalStateException("WebSocket method is not called on valid thread");

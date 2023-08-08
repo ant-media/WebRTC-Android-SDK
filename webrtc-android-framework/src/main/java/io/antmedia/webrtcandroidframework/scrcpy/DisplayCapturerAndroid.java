@@ -15,6 +15,7 @@ import com.genymobile.scrcpy.ScreenInfo;
 import com.genymobile.scrcpy.wrappers.SurfaceControl;
 
 import org.webrtc.CapturerObserver;
+import org.webrtc.EglBase;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
@@ -34,9 +35,11 @@ public class DisplayCapturerAndroid implements VideoCapturer, Device.RotationLis
     private int width;
     private int height;
     private IBinder display = null;
-    private AtomicBoolean resetCapture = new AtomicBoolean(false);
     private long lastReceivedFrameTimestamp = 0;
     private AtomicBoolean running = new AtomicBoolean(false);
+    private Surface surface;
+    private EglBase eglBase;
+    private int currentRotation = 0;
 
     @Override
     public synchronized void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext, CapturerObserver capturerObserver) {
@@ -51,24 +54,25 @@ public class DisplayCapturerAndroid implements VideoCapturer, Device.RotationLis
             throw new RuntimeException(e.getMessage());
         }
 
+    }
 
+    public void setEglBase(EglBase eglBase) {
+        this.eglBase = eglBase;
     }
 
     @Override
     public synchronized void startCapture(int width, int height, int framerate) {
 
-        running.set(true);
-        if (display != null) {
-            SurfaceControl.destroyDisplay(display);
-        }
-        display = createDisplay();
-        device.setRotationListener(this);
-        device.setFoldListener(this);
+        capture();
 
+    }
+
+    public void capture() {
+
+        display = createDisplay();
 
         ScreenInfo screenInfo = device.getScreenInfo();
         Rect contentRect = screenInfo.getContentRect();
-
 
         Rect videoRect = screenInfo.getVideoSize().toRect();
 
@@ -78,15 +82,23 @@ public class DisplayCapturerAndroid implements VideoCapturer, Device.RotationLis
 
         this.width = screenInfo.getVideoSize().getWidth();
         this.height = screenInfo.getVideoSize().getHeight();
-        Log.i(TAG, "Start capture width: " + width + " height: " + height + " framerate: " + framerate + " video rotation: " + videoRotation);
+        Log.i(TAG, "Start capture width: " + width + " height: " + height + " video rotation: " + videoRotation);
 
+        surfaceTextureHelper = SurfaceTextureHelper.create("encoder-texture-thread", eglBase.getEglBaseContext());
         surfaceTextureHelper.setTextureSize(this.width, this.height);
-        Surface surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
+        surfaceTextureHelper.setFrameRotation(this.currentRotation * 90);
+        surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
+
         setDisplaySurface(display, surface, videoRotation, contentRect, unlockedVideoRect, layerStack);
 
+        running.set(true);
         forceFrameIfRequires();
-        capturerObserver.onCapturerStarted(true);
+
         surfaceTextureHelper.startListening(this);
+        capturerObserver.onCapturerStarted(true);
+        device.setRotationListener(this);
+        device.setFoldListener(this);
+
     }
 
     public static IBinder createDisplay() {
@@ -99,14 +111,7 @@ public class DisplayCapturerAndroid implements VideoCapturer, Device.RotationLis
 
     @Override
     public synchronized void stopCapture() throws InterruptedException {
-        running.set(false);
-        Log.i(TAG, "StopCapture");
-        device.setRotationListener(null);
-        device.setFoldListener(null);
-        surfaceTextureHelper.stopListening();
-        capturerObserver.onCapturerStopped();
-
-        SurfaceControl.destroyDisplay(display);
+       release();
     }
 
     @Override
@@ -126,54 +131,70 @@ public class DisplayCapturerAndroid implements VideoCapturer, Device.RotationLis
 
     @Override
     public void onRotationChanged(int rotation) {
-        resetCapture.set(true);
+        Log.i(TAG, "Rotation has changed to " + rotation);
+        this.currentRotation = rotation;
+        release();
+        capture();
     }
+
+    public void release() {
+        running.set(false);
+        device.setRotationListener(null);
+        device.setFoldListener(null);
+        surfaceTextureHelper.getHandler().removeCallbacks(setForceFrameRunnable);
+        if (display != null) {
+            SurfaceControl.destroyDisplay(display);
+            display = null;
+        }
+        surfaceTextureHelper.stopListening();
+        if (surface != null) {
+            surface.release();
+            surface = null;
+        }
+
+        surfaceTextureHelper.dispose();
+
+        capturerObserver.onCapturerStopped();
+    }
+
+
 
     @Override
     public void onFoldChanged(int displayId, boolean folded) {
-        resetCapture.set(true);
     }
 
     public void forceFrameIfRequires() {
         long now = System.currentTimeMillis();
         long diff = now - lastReceivedFrameTimestamp;
         if (diff >= 50) {
+            Log.i(TAG, "force frame to produce");
             surfaceTextureHelper.forceFrame();
         }
         if (running.get())
         {
-            surfaceTextureHelper.getHandler().postDelayed(() -> {
-                forceFrameIfRequires();
-            }, 100);
+            surfaceTextureHelper.getHandler().postDelayed(setForceFrameRunnable
+            , 33);
         }
     }
 
+    public Runnable setForceFrameRunnable = new Runnable() {
+        @Override
+        public void run() {
+            forceFrameIfRequires();
+        }
+    };
+
     @Override
     public synchronized void onFrame(VideoFrame frame) {
-        Log.i(TAG, "onFrame received ----> " + frame.getTimestampNs());
+       // Log.i(TAG, "onFrame received ----> " + frame.getTimestampNs() + " frame width: " + frame.getRotatedWidth()
+       // + " frame height: " + frame.getRotatedHeight() + " rotation: " + frame.getRotation());
 
         lastReceivedFrameTimestamp = System.currentTimeMillis();
         capturerObserver.onFrameCaptured(frame);
 
-
-
-        /*
-        if (resetCapture.getAndSet(false)) {
-
-            Log.i(TAG, "Rotation has changed");
-            device.setRotationListener(null);
-            device.setFoldListener(null);
-            surfaceTextureHelper.stopListening();
-            SurfaceControl.destroyDisplay(display);
-
-            startCapture(this.width, this.height, 30);
-
-
-        }
-        */
     }
 
-    private static void setDisplaySurface(IBinder display, Surface surface, int orientation, Rect deviceRect, Rect displayRect, int layerStack) {
+    public static void setDisplaySurface(IBinder display, Surface surface, int orientation, Rect deviceRect, Rect displayRect, int layerStack) {
         SurfaceControl.openTransaction();
         try {
             SurfaceControl.setDisplaySurface(display, surface);

@@ -291,6 +291,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private int dataChannelId;
     private boolean dataChannelCreator;
     private IAudioService audioService;
+    /*
+     * One of the value from @code android.media.MediaRecorder.AudioSource
+     */
+    private int mediaRecorderAudioSource = MediaRecorder.AudioSource.VOICE_COMMUNICATION;
+
+    public int getMediaRecorderAudioSource() {
+        return mediaRecorderAudioSource;
+    }
+
+    public void setMediaRecorderAudioSource(int mediaRecorderAudioSource) {
+        this.mediaRecorderAudioSource = mediaRecorderAudioSource;
+    }
 
     // Implementation detail: observe ICE & stream changes and react accordingly.
     class PCObserver implements PeerConnection.Observer {
@@ -1787,7 +1799,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 .setSamplesReadyCallback(saveRecordedAudioToFile)
                 .setUseHardwareAcousticEchoCanceler(!disableBuiltInAEC)
                 .setUseHardwareNoiseSuppressor(!disableBuiltInNS)
-                .setAudioSource(MediaRecorder.AudioSource.REMOTE_SUBMIX)
+                .setAudioSource(mediaRecorderAudioSource)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
                 .setAudioTrackErrorCallback(audioTrackErrorCallback)
                 .setAudioRecordStateCallback(audioRecordStateCallback)
@@ -2198,6 +2210,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                     SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
             videoSource = factory.createVideoSource(capturer.isScreencast());
             capturer.initialize(surfaceTextureHelper, context, videoSource.getCapturerObserver());
+            if (capturer instanceof DisplayCapturerAndroid) {
+                ((DisplayCapturerAndroid)capturer).setEglBase(eglBase);
+            }
             capturer.startCapture(videoWidth, videoHeight, videoFps);
 
             localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
