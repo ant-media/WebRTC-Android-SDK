@@ -24,7 +24,7 @@ import static io.antmedia.webrtcandroidframework.WebSocketConstants.DEFINITION;
 import static io.antmedia.webrtcandroidframework.WebSocketConstants.NOTIFICATION_COMMAND;
 
 public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
-    private static final String TAG = "WSChannelRTCClient";
+    private static final String TAG = "WebSocketHandler";
     private static final int CLOSE_TIMEOUT = 1000;
     private WebSocketConnection ws;
     private final Handler handler;
@@ -206,6 +206,13 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                         }
                     }
                     signallingListener.onJoinedTheRoom(streamId, streams);
+                }
+                else if (definition.equals(WebSocketConstants.LEAVED_THE_ROOM)) {
+                    String roomId = null;
+                    if (json.has(WebSocketConstants.ATTR_ROOM_NAME)) {
+                        roomId = json.getString(WebSocketConstants.ATTR_ROOM_NAME);
+                    }
+                    signallingListener.onLeftTheRoom(roomId);
                 }
                 else if (definition.equals(WebSocketConstants.BITRATE_MEASUREMENT)) {
                     int targetBitrate = json.getInt(WebSocketConstants.TARGET_BITRATE);

@@ -216,5 +216,28 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
         Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
     }
+
+    @Override
+    public void onJoinedTheRoom(String streamId, String[] streams) {
+        String messageText = "Joined the room for " + streamId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
+
+    @Override
+    public void onRoomInformation(String[] streams) {
+        String messageText = "Room information received";
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        //Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onLeftTheRoom(String roomId) {
+        String messageText = "Left the room for " + roomId;
+        Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+        //Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+    }
+
 }
 

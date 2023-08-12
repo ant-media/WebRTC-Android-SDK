@@ -6,7 +6,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -21,29 +23,43 @@ import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
+import java.util.Random;
 
-import io.antmedia.webrtcandroidframework.MultitrackConferenceManager;
+import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
-/*
- * This activity is a sample activity shows how to implement Track Based Conference Solution
- * https://antmedia.io/reveal-the-secrets-of-3-types-of-video-conference-solutions/
- *
- * @deprecated use {@link TrackBasedConferenceActivity} instead
- */
-@Deprecated
-public class MultitrackConferenceActivity extends AbstractSampleSDKActivity {
+public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
 
-    private MultitrackConferenceManager conferenceManager;
+    private WebRTCClient webRTCClient;
     private Button audioButton;
     private Button videoButton;
-
-    final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
     private TextView broadcastingView;
     private ArrayList<SurfaceViewRenderer> playViewRenderers;
     private int rendererIndex = 0;
-    private Switch playOnlySwitch;
+    private boolean playOnlyMode = false;
+    private boolean joined = false;
+    private String roomId;
+    private String streamId;
+
+    private Handler handler = new Handler();
+
+    private int ROOM_INFO_POLLING_MILLIS = 5000;
+    private Runnable getRoomInfoRunnable = new Runnable() {
+        @Override
+        public void run() {
+            getRoomInfo();
+            handler.postDelayed(this, ROOM_INFO_POLLING_MILLIS);
+        }
+    };
+    private String token;
+    private String subscriberId;
+    private String subscriberCode;
+    private boolean videoCallEnabled = true;
+    private boolean audioCallEnabled = true;
+    private String streamName;
+    private boolean playMessageSent;
+    private String viewerInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,9 +86,10 @@ public class MultitrackConferenceActivity extends AbstractSampleSDKActivity {
         playViewRenderers.add(findViewById(R.id.play_view_renderer3));
         playViewRenderers.add(findViewById(R.id.play_view_renderer4));
 
-        playOnlySwitch = findViewById(R.id.play_only_switch);
+        Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            conferenceManager.setPlayOnlyMode(b);
+            //conferenceManager.setPlayOnlyMode(b);
+            playOnlyMode = b;
             publishViewRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
@@ -97,36 +114,51 @@ public class MultitrackConferenceActivity extends AbstractSampleSDKActivity {
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
-        String roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
-        String streamId = null;
+        roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
+        streamId = streamId == null ? "stream"+new Random().nextInt(99999) : streamId;
 
-        conferenceManager = new MultitrackConferenceManager(
-                this,
-                this,
-                getIntent(),
-                serverUrl,
-                roomId,
-                publishViewRenderer,
-                playViewRenderers, //new ArrayList<>(),//
-                streamId,
-                this
-        );
 
-        conferenceManager.init();
-        conferenceManager.setPlayOnlyMode(false);
-        conferenceManager.setOpenFrontCamera(true);
-        conferenceManager.setReconnectionEnabled(true);
+        webRTCClient = new WebRTCClient(this, this);
+        webRTCClient.setMainTrackId(roomId);
+        webRTCClient.setSelfStreamId(streamId);
+        webRTCClient.setVideoRenderers(null, publishViewRenderer);
+        webRTCClient.setRemoteRendererList(playViewRenderers);
+
+
+        webRTCClient.init(serverUrl, streamId, WebRTCClient.MODE_MULTI_TRACK_PLAY, "", this.getIntent());
+        webRTCClient.connectWebSocket();
+        webRTCClient.setDataChannelObserver(this);
+        webRTCClient.setOpenFrontCamera(true);
+        webRTCClient.setReconnectionEnabled(true);
+    }
+
+    private void scheduleGetRoomInfo() {
+        handler.postDelayed(getRoomInfoRunnable, ROOM_INFO_POLLING_MILLIS);
+    }
+
+    private void clearGetRoomInfoSchedule() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (handler.hasCallbacks(getRoomInfoRunnable)) {
+                handler.removeCallbacks(getRoomInfoRunnable);
+            }
+        } else {
+            handler.removeCallbacks(getRoomInfoRunnable);
+        }
+    }
+
+    private void getRoomInfo() {
+        webRTCClient.getRoomInfo(roomId, streamId);
     }
 
     public void joinConference(View v) {
 
-        if (!conferenceManager.isJoined()) {
+        if (!joined) {
             Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button) v).setText("Leave");
-            conferenceManager.joinTheConference();
+            webRTCClient.joinToConferenceRoom(roomId, streamId);
         } else {
             ((Button) v).setText("Join");
-            conferenceManager.leaveFromConference();
+            webRTCClient.leaveFromConference(roomId);
             stoppedStream = true;
         }
     }
@@ -165,29 +197,80 @@ public class MultitrackConferenceActivity extends AbstractSampleSDKActivity {
 
     @Override
     public void onNewVideoTrack(VideoTrack track) {
-        if(false && !track.id().contains(conferenceManager.getStreamId())) {
+        if(false && !track.id().contains(webRTCClient.getStreamId())) {
             SurfaceViewRenderer renderer = playViewRenderers.get(rendererIndex++%4);
-            conferenceManager.addTrackToRenderer(track, renderer);
+            webRTCClient.addTrackToRenderer(track, renderer);
+        }
+    }
+
+    @Override
+    public void onJoinedTheRoom(String streamId, String[] streams) {
+        Log.w(this.getClass().getSimpleName(), "On Joined the Room ");
+
+        if(!webRTCClient.isReconnectionInProgress() && !playOnlyMode) {
+            publishStream(streamId);
+        }
+
+        if(playOnlyMode) {
+            startPlaying(streams);
+        }
+
+        joined = true;
+        // start periodic polling of room info
+        scheduleGetRoomInfo();
+        if(streams.length > 0) {
+            //on track list triggers start playing
+            onTrackList(streams);
+        }
+    }
+
+    @Override
+    public void onLeftTheRoom(String roomId) {
+        clearGetRoomInfoSchedule();
+        joined = false;
+        playMessageSent = false;
+    }
+
+    public void publishStream(String streamId) {
+        if (!this.playOnlyMode) {
+            webRTCClient.publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, roomId);
+        }
+        else {
+            Log.i(getClass().getSimpleName(), "Play only mode. No publishing");
+        }
+    }
+
+    private void startPlaying(String[] streams) {
+        if(!playMessageSent) {
+            webRTCClient.play(roomId, token, streams, subscriberId, subscriberCode, viewerInfo);
+            playMessageSent = true;
+        }
+    }
+
+    @Override
+    public void onRoomInformation(String[] streams) {
+        if (webRTCClient != null) {
+            startPlaying(streams);
         }
     }
 
     public void controlAudio(View view) {
-        if (conferenceManager.isPublisherAudioOn()) {
-            conferenceManager.disableAudio();
+        if (webRTCClient.isAudioOn()) {
+            webRTCClient.disableAudio();
             audioButton.setText("Enable Audio");
         } else {
-            conferenceManager.enableAudio();
+            webRTCClient.isAudioOn();
             audioButton.setText("Disable Audio");
         }
     }
 
     public void controlVideo(View view) {
-        if (conferenceManager.isPublisherVideoOn()) {
-            conferenceManager.disableVideo();
+        if (webRTCClient.isVideoOn()) {
+            webRTCClient.disableVideo();
             videoButton.setText("Enable Video");
 
         } else {
-            conferenceManager.enableVideo();
+            webRTCClient.enableVideo();
             videoButton.setText("Disable Video");
         }
     }

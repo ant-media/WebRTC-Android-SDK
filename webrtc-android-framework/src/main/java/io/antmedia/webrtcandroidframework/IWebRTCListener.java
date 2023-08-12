@@ -102,4 +102,28 @@ public interface IWebRTCListener {
      * It's called when reconnection attempt is started
      */
     void onReconnectionAttempt(String streamId);
+
+
+
+    /**
+     * It's called when joiened the room
+     *
+     * @param streamId
+     * @param streams in the room
+     */
+    void onJoinedTheRoom(String streamId, String[] streams);
+
+    /**
+     * It's called when room information is received
+     *
+     * @param streams
+     */
+    void onRoomInformation(String[] streams);
+
+    /**
+     * It's called when left the room
+     *
+     * @param roomId
+     */
+   void onLeftTheRoom(String roomId);
 }

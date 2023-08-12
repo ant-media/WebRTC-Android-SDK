@@ -29,10 +29,13 @@ import java.util.List;
 import java.util.Random;
 
 /*
- * This class manages the multitrack conference with 2 WebRTCClient;one for publishing the participants video,
+ * This class manages the Stream Based Conference Solution with 2 WebRTCClient;one for publishing the participants video,
  * the other one for playing the main track which includes all participants streams as subtrack.
+ * https://antmedia.io/reveal-the-secrets-of-3-types-of-video-conference-solutions/
  *
+ * @deprecated you can use a single WebRTCClient object to handle all the streams
  */
+@Deprecated
 public class MultitrackConferenceManager implements AntMediaSignallingEvents, IDataChannelMessageSender {
     public static final String TAG = "Multitrack Conf";
     public static final int MAX_BITRATE = 2000;
@@ -379,6 +382,11 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         else if(streamId != null && streamId.equals(this.roomName)) {
             playWebRTCClient.onError(streamId, definition);
         }
+    }
+
+    @Override
+    public void onLeftTheRoom(String roomId) {
+
     }
 
     @Override

@@ -25,6 +25,13 @@ import java.util.Set;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 
+/*
+ * This class manages WebRTCClients for Stream Based Conference Solution
+ * https://antmedia.io/reveal-the-secrets-of-3-types-of-video-conference-solutions/
+ *
+ * @deprecated you can use a single WebRTCClient object to handle all the streams
+ */
+@Deprecated
 public class ConferenceManager implements AntMediaSignallingEvents, IDataChannelMessageSender {
     private final Context context;
     private final Intent intent;
@@ -342,6 +349,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
 
     @Override
     public void onError(String streamId, String definition) {
+
+    }
+
+    @Override
+    public void onLeftTheRoom(String roomId) {
 
     }
 

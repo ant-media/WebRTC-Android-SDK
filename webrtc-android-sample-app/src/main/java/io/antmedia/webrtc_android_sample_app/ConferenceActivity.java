@@ -36,6 +36,13 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
+/*
+ * This activity is a sample activity shows how to implement Stream Based Conference Solution
+ * https://antmedia.io/reveal-the-secrets-of-3-types-of-video-conference-solutions/
+ *
+ * @deprecated use {@link TrackBasedConferenceActivity} instead
+ */
+@Deprecated
 public class ConferenceActivity extends AbstractSampleSDKActivity {
 
     private ConferenceManager conferenceManager;
