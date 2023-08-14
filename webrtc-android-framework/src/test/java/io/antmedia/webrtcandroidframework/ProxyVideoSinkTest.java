@@ -7,12 +7,10 @@ import org.junit.Test;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 
-import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-
 public class ProxyVideoSinkTest {
     @Test
     public void test() {
-        CallActivity.ProxyVideoSink proxyVideoSink = new CallActivity.ProxyVideoSink();
+        ProxyVideoSink proxyVideoSink = new ProxyVideoSink();
         VideoSink videoSink = mock(VideoSink.class);
         proxyVideoSink.setTarget(videoSink);
 
