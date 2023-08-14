@@ -68,6 +68,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Settings"));
         activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
                 "Multitrack Conference"));
+        activities.add(new ActivityLink(new Intent(this, MP4PublishActivity.class),
+                "MP4 Publish"));
     }
 
     private void setListAdapter(List<ActivityLink> activities) {
