@@ -148,7 +148,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean reconnectionInProgress = false;
 
     private boolean autoPlayTracks = false;
-    private boolean renderersInited = false;
+    private boolean renderersInitiated = false;
     private boolean checkStreamIdValidity = true;
 
     private boolean renderersProvidedAtStart = false;
@@ -879,7 +879,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void initializeRenderers() {
-        if(renderersInited){
+        if(renderersInitiated){
             return;
         }
         eglBase = EglBase.create();
@@ -888,7 +888,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             renderersProvidedAtStart = true;
             for (SurfaceViewRenderer renderer : remoteRendererList) {
                 //if we are performing reconnection, we shouldn't add remote sinks again
-                if (!renderersInited) {
+                if (!renderersInitiated) {
                     ProxyVideoSink remoteVideoSink = new ProxyVideoSink();
                     remoteSinks.add(remoteVideoSink);
                 }
@@ -898,7 +898,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 renderer.setEnableHardwareScaler(true);
 
             }
-            renderersInited = true;
         }
         else {
             remoteSinks.add(remoteProxyRenderer);
@@ -938,6 +937,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         // Start with local feed in fullscreen and swap it to the pip when the call is connected.
         setSwappedFeeds(true /* isSwappedFeeds */);
+        renderersInitiated = true;
     }
 
     public void initializePeerConnectionFactory() {
@@ -1628,8 +1628,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
 
     public boolean isStreaming() {
-        PeerConnection pc = peers.get(initialStreamId).peerConnection;
-        return pc.iceConnectionState().equals(PeerConnection.IceConnectionState.CONNECTED);
+        return isStreaming(initialStreamId);
+    }
+
+    public boolean isStreaming(String streamId) {
+        PeerConnection pc = null;
+        PeerInfo peerInfo = peers.get(initialStreamId);
+        if(peerInfo != null) {
+            pc = peerInfo.peerConnection;
+        }
+        return pc != null && pc.iceConnectionState().equals(PeerConnection.IceConnectionState.CONNECTED);
     }
 
     @Override
