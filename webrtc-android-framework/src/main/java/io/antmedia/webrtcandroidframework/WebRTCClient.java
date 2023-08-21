@@ -618,7 +618,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             if(receiver.track() instanceof VideoTrack) {
                 VideoTrack videoTrack = (VideoTrack) receiver.track();
                 webRTCListener.onNewVideoTrack(videoTrack);
-                if(streamMode.equals(MODE_MULTI_TRACK_PLAY)) {
+                if(streamMode.equals(MODE_MULTI_TRACK_PLAY) || streamMode.equals(MODE_TRACK_BASED_CONFERENCE)) {
                     trackCheckerTask.getVideoTracks().add(videoTrack);
                 }
 
@@ -784,7 +784,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     private void initializeTrackChecker() {
-        if(streamMode.equals(MODE_MULTI_TRACK_PLAY) && trackCheckerTask == null) {
+        if((streamMode.equals(MODE_MULTI_TRACK_PLAY) || streamMode.equals(MODE_TRACK_BASED_CONFERENCE))
+                && trackCheckerTask == null) {
             trackCheckerTask = new TrackCheckTask();
             trackCheckerTimer = new Timer();
             trackCheckerTimer.schedule(trackCheckerTask, TRACK_CHECK_PERIDOD_MS, TRACK_CHECK_PERIDOD_MS);
@@ -852,12 +853,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
 
-        if (isDataChannelOnly() || streamMode.equals(MODE_PLAY)) {
+        if (isDataChannelOnly() || streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY)) {
             videoCallEnabled = false;
             audioCallEnabled = false;
         }
 
-        if(streamMode.equals(MODE_MULTI_TRACK_PLAY)){
+        if(streamMode.equals(MODE_TRACK_BASED_CONFERENCE)){
             videoCallEnabled = true;
             audioCallEnabled = true;
         }
@@ -1480,7 +1481,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         else if (this.streamMode.equals(MODE_PLAY)) {
             remoteProxyRenderer.setTarget(fullscreenRenderer);
         }
-        else if (this.streamMode.equals(MODE_MULTI_TRACK_PLAY))
+        else if (this.streamMode.equals(MODE_MULTI_TRACK_PLAY) || streamMode.equals(MODE_TRACK_BASED_CONFERENCE))
         {
             if(renderersProvidedAtStart) {
                 for (int i = 0; i < remoteSinks.size(); i++) {
@@ -1932,8 +1933,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         public void onStateChange() {
             handler.post(() -> {
                 if(dataChannelObserver == null || dataChannel == null) return;
-                Log.d(TAG, "Data channel state changed: " + dataChannel.label() + ": " + dataChannel.state());
-
+                //Log.d(TAG, "Data channel state changed: " + dataChannel.label() + ": " + dataChannel.state());
                 //TODO: dataChannelObserver.onStateChange(dataChannel.state(), dataChannel.label());
             });
         }

@@ -30,6 +30,11 @@ public interface IWebRTCClient {
      */
     String MODE_MULTI_TRACK_PLAY = "multi_track_play";
 
+    /**
+     * Used for track based conference
+     */
+    String MODE_TRACK_BASED_CONFERENCE = "track_based_conference";
+
 
     /**
      * Camera open order
