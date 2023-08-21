@@ -64,7 +64,7 @@ public class MultitrackConferenceActivityTest {
     public TestWatcher watchman= new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
-            Log.i("TestWatcher", "******\n*** "+description + " failed!\n");
+            Log.i("TestWatcher", "*** "+description + " failed!\n");
         }
 
         @Override
@@ -73,7 +73,7 @@ public class MultitrackConferenceActivityTest {
         }
 
         protected void starting(Description description) {
-            Log.i("TestWatcher", "*** "+description + " starting!\n");
+            Log.i("TestWatcher", "******\n*** "+description + " starting!\n");
         }
 
         protected void finished(Description description) {
