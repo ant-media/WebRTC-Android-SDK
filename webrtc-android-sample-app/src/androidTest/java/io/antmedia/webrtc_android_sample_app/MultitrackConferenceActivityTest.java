@@ -25,6 +25,8 @@ import androidx.test.rule.GrantPermissionRule;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -57,6 +59,28 @@ public class MultitrackConferenceActivityTest {
         //try before method to make @Rule run properly
         System.out.println("before test");
     }
+
+    @Rule
+    public TestWatcher watchman= new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            Log.i("TestWatcher", "******\n*** "+description + " failed!\n");
+        }
+
+        @Override
+        protected void succeeded(Description description) {
+            Log.i("TestWatcher", "*** "+description + " succeeded!\n");
+        }
+
+        protected void starting(Description description) {
+            Log.i("TestWatcher", "*** "+description + " starting!\n");
+        }
+
+        protected void finished(Description description) {
+            Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
+        }
+    };
+
 
     @Test
     public void testJoinMultitrackRoom() {
@@ -130,8 +154,8 @@ public class MultitrackConferenceActivityTest {
     }
 
     public class NetworkClient {
-        //private static final String BASE_URL = "http://54.36.113.133:3030/";
-        private static final String BASE_URL = "http://10.0.2.2:3030/";
+        private static final String BASE_URL = "http://192.168.1.26:3030/";
+        //private static final String BASE_URL = "http://10.0.2.2:3030/";
 
         private final OkHttpClient client = new OkHttpClient();
 
