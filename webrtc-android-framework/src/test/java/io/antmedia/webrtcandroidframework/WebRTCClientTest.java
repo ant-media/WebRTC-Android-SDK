@@ -495,6 +495,14 @@ public class WebRTCClientTest {
 
         webRTCClient.setStreamMode(WebRTCClient.MODE_MULTI_TRACK_PLAY);
         webRTCClient.initializeParameters();
+        assertEquals(false, webRTCClient.getVideoCallEnabled());
+        assertEquals(false, webRTCClient.getAudioCallEnabled());
+
+        webRTCClient.setVideoEnabled(false);
+        webRTCClient.setAudioEnabled(false);
+
+        webRTCClient.setStreamMode(WebRTCClient.MODE_TRACK_BASED_CONFERENCE);
+        webRTCClient.initializeParameters();
         assertEquals(true, webRTCClient.getVideoCallEnabled());
         assertEquals(true, webRTCClient.getAudioCallEnabled());
 
