@@ -8,8 +8,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from flask import Flask, request
-from selenium.webdriver.chrome.service import Service
-
 
 
 class Browser:
@@ -29,9 +27,7 @@ class Browser:
 
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
-
-    service = Service(executable_path='./chromedriver')
-    self.driver = webdriver.Chrome(service=service, options=chrome_options)
+    self.driver = webdriver.Chrome(chrome_options=chrome_options)
 
   def open_in_new_tab(self, url, tab_id):
     self.driver.execute_script("window.open('about:blank', '"+tab_id+"');")
