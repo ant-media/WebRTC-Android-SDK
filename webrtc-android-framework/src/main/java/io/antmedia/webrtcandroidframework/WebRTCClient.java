@@ -880,10 +880,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void initializeRenderers() {
+        if(eglBase == null) {
+            eglBase = EglBase.create();
+        }
         if(renderersInitiated){
             return;
         }
-        eglBase = EglBase.create();
 
         if (remoteRendererList != null) {
             renderersProvidedAtStart = true;
