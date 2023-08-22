@@ -63,6 +63,8 @@ public class MultitrackConferenceActivityTest {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        System.out.println("after sleep");
+
     }
 
     @Rule
