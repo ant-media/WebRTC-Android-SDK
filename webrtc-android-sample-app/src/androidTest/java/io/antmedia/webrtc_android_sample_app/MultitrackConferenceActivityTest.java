@@ -154,8 +154,8 @@ public class MultitrackConferenceActivityTest {
     }
 
     public class NetworkClient {
-        private static final String BASE_URL = "http://192.168.1.26:3030/";
-        //private static final String BASE_URL = "http://10.0.2.2:3030/";
+        //private static final String BASE_URL = "http://192.168.1.26:3030/";
+        private static final String BASE_URL = "http://10.0.2.2:3030/";
 
         private final OkHttpClient client = new OkHttpClient();
 
