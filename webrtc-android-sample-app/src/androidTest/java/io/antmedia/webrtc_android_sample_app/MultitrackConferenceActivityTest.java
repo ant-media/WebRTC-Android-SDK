@@ -58,6 +58,11 @@ public class MultitrackConferenceActivityTest {
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Rule
