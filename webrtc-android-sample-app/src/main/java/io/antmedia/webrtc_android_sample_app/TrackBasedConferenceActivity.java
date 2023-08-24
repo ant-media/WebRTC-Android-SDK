@@ -125,7 +125,7 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         webRTCClient.setRemoteRendererList(playViewRenderers);
 
 
-        webRTCClient.init(serverUrl, streamId, WebRTCClient.MODE_MULTI_TRACK_PLAY, "", this.getIntent());
+        webRTCClient.init(serverUrl, streamId, WebRTCClient.MODE_TRACK_BASED_CONFERENCE, "", this.getIntent());
         webRTCClient.connectWebSocket();
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setOpenFrontCamera(true);

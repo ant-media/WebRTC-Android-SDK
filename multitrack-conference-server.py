@@ -93,8 +93,11 @@ def leave():
 
 @app.route('/delete', methods=['GET'])
 def delete():
-    chrome.close()
-    return f'Tab closed', 200
+    #chrome.close()
+    #return f'Tab closed', 200
+    for handle in chrome.window_handles:
+          chrome.switch_to.window(handle)
+          chrome.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3030)

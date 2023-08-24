@@ -6,8 +6,6 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import android.content.Intent;
@@ -44,7 +42,7 @@ import okhttp3.Response;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 @RunWith(AndroidJUnit4.class)
-public class MultitrackConferenceActivityTest {
+public class TrackBasedConferenceActivityTest {
 
     //match
     private static final String START_NOW_TEXT = "Start now";
@@ -88,13 +86,13 @@ public class MultitrackConferenceActivityTest {
 
     @Test
     public void testJoinMultitrackRoom() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), TrackBasedConferenceActivity.class);
 
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<TrackBasedConferenceActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        scenario.onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -175,13 +173,13 @@ public class MultitrackConferenceActivityTest {
 
     @Test
     public void testJoinWithExternalParticipant() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), TrackBasedConferenceActivity.class);
 
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<TrackBasedConferenceActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        scenario.onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -224,13 +222,13 @@ public class MultitrackConferenceActivityTest {
 
     //@Test
     public void testJoinWithoutVideo() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), TrackBasedConferenceActivity.class);
 
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<TrackBasedConferenceActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        scenario.onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -269,13 +267,13 @@ public class MultitrackConferenceActivityTest {
 
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), TrackBasedConferenceActivity.class);
 
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<TrackBasedConferenceActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        scenario.onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -301,14 +299,14 @@ public class MultitrackConferenceActivityTest {
 
     @Test
     public void testReconnect() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), TrackBasedConferenceActivity.class);
 
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<TrackBasedConferenceActivity> scenario = ActivityScenario.launch(intent);
 
-        final MultitrackConferenceActivity[] mactivity = new MultitrackConferenceActivity[1];
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        final TrackBasedConferenceActivity[] mactivity = new TrackBasedConferenceActivity[1];
+        scenario.onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));

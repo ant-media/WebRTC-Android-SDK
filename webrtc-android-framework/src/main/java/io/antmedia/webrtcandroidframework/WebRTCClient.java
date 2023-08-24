@@ -233,7 +233,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private PeerConnectionFactory factory;
 
     public void setStreamId(String streamId) {
-        setSelfStreamId(streamId);
+        this.initialStreamId = streamId;
     }
 
     class PeerInfo {
@@ -736,7 +736,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void setSelfStreamId(String streamId) {
-        this.initialStreamId = streamId;
+        this.selfStreamId = streamId;
     }
 
     @Override
