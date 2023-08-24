@@ -51,22 +51,7 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
     private String serverUrl;
     private TextView broadcastingView;
 
-    final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
-    Handler reconnectionHandler = new Handler();
-    Runnable reconnectionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            WebRTCClient webRTCClient = conferenceManager.getPeers().get(conferenceManager.getStreamId());
-            if (webRTCClient != null && !stoppedStream && !webRTCClient.isStreaming()) {
-                webRTCClient.startStream();
-            }
-            if (!stoppedStream) {
-                reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
-            }
-
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,9 +119,6 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
             Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");
             conferenceManager.joinTheConference();
-            if (!conferenceManager.isPlayOnlyMode()) {
-                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
-            }
         }
         else {
             ((Button)v).setText("Join");
