@@ -20,6 +20,7 @@ import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Before;
@@ -58,11 +59,7 @@ public class MultitrackConferenceActivityTest {
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         System.out.println("after sleep");
 
     }
