@@ -75,8 +75,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     private boolean playOnlyMode = false;
 
     private boolean playMessageSent = false;
-
-    private NetworkMonitorAutoDetect networkDetector;
     private int minABRResolution;
 
     public MultitrackConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId, IDataChannelObserver dataChannelObserver) {
@@ -101,7 +99,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void init() {
         initWebSocketHandler();
-        //createNetworkChangeObserver();
         if (!this.playOnlyMode) {
             initPublishWebRTCClient();
         }
@@ -545,31 +542,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
                 playWebRTCClient.forceStreamQuality(minABRResolution);
             }
         }
-    }
-
-    private void createNetworkChangeObserver() {
-        networkDetector = new NetworkMonitorAutoDetect(new NetworkChangeDetector.Observer() {
-            @Override
-            public void onConnectionTypeChanged(NetworkChangeDetector.ConnectionType newConnectionType) {
-                setPublishBitrate(newConnectionType);
-            }
-
-            @Override
-            public void onNetworkConnect(NetworkChangeDetector.NetworkInformation networkInfo) {
-
-            }
-
-            @Override
-            public void onNetworkDisconnect(long networkHandle) {
-
-            }
-
-            @Override
-            public void onNetworkPreference(List<NetworkChangeDetector.ConnectionType> types, int preference) {
-
-            }
-        }, context);
-
     }
 
     public void addTrackToRenderer(VideoTrack track, SurfaceViewRenderer renderer) {

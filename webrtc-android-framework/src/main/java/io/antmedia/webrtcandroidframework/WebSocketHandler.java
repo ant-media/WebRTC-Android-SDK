@@ -26,6 +26,7 @@ import static io.antmedia.webrtcandroidframework.WebSocketConstants.NOTIFICATION
 public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     private static final String TAG = "WebSocketHandler";
     private static final int CLOSE_TIMEOUT = 1000;
+
     private WebSocketConnection ws;
     private final Handler handler;
     private String wsServerUrl;
@@ -115,7 +116,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     @Override
     public void onTextMessage(String msg) {
         Log.e(TAG, "onTextMessage: "+msg);
-        if (!ws.isConnected()) {
+        if (!isConnected()) {
             Log.e(TAG, "Got WebSocket message in non registered state.");
             return;
         }
@@ -453,7 +454,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.PING_COMMAND);
-            ws.sendTextMessage(json.toString());
+            sendTextMessage(json.toString());
 
         } catch (JSONException e) {
             Log.e(TAG, "Ping/Pong message error " + json.toString());
@@ -530,4 +531,5 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             e.printStackTrace();
         }
     }
+
 }
