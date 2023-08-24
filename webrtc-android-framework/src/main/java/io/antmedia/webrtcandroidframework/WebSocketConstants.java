@@ -66,6 +66,8 @@ public class WebSocketConstants {
 
     public static final String NO_STREAM_EXIST = "no_stream_exist";
 
+    public static final String NO_ACTIVE_STREAMS_IN_ROOM = "no_active_streams_in_room";
+
     public static final String JOIN_ROOM_COMMAND = "joinRoom";
 
     public static final String ROOM = "room";
