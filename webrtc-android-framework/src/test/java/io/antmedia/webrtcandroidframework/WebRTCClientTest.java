@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -428,6 +429,27 @@ public class WebRTCClientTest {
             }
 
         });
+
+        when(handler.postDelayed(any(Runnable.class), anyLong())).thenAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Long delay = invocation.getArgumentAt(1, Long.class);
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(delay);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        invocation.getArgumentAt(0, Runnable.class).run();
+                    }
+                });
+                thread.start();
+                return null;
+            }
+
+        });
         return handler;
     }
 
@@ -561,6 +583,39 @@ public class WebRTCClientTest {
         assertEquals("other1", capturedTracks[0]);
         assertEquals("!self", capturedTracks[1]);
         assertEquals("other2", capturedTracks[2]);
+    }
+
+    @Test
+    public void testReconnection() {
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
+        webRTCClientReal.setWsHandler(mock(WebSocketHandler.class));
+
+        WebRTCClient webRTCClient = spy(webRTCClientReal);
+        webRTCClient.createReconnectionRunnable();
+
+        String streamId = "stream1";
+        webRTCClient.setStreamId(streamId);
+        final Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+        webRTCClient.setReconnectionEnabled(true);
+        webRTCClient.setReconnectionHandler(handler);
+
+
+        doNothing().when(webRTCClient).init(anyString(), anyString(), anyString(), anyString(), any());
+
+        String playStreamId = "playStreamId";
+        webRTCClient.play(playStreamId, "", null, "", "", "");
+
+        String publishStreamId = "publishStreamId";
+        webRTCClient.publish(publishStreamId, "", true, true, "","", "", "");
+
+        webRTCClient.onDisconnected();
+
+        verify(listener, timeout(1000)).onDisconnected(streamId);
+
+        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).publish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
     }
 
 }

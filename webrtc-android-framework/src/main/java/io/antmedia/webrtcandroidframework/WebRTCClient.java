@@ -232,6 +232,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @androidx.annotation.Nullable
     private PeerConnectionFactory factory;
 
+    public void setStreamId(String streamId) {
+        setSelfStreamId(streamId);
+    }
+
     class PeerInfo {
 
         public PeerInfo(String id, String mode) {
@@ -340,67 +344,64 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     final int RECONNECTION_PERIOD_MLS = 1000;
 
-    final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
+    public static final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
 
-    Runnable reconnectionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!streamStoppedByUser) {
-                boolean noNeedToRetry = true;
-                for (PeerInfo peerInfo : peers.values()) {
-                    PeerConnection pc = peerInfo.peerConnection;
+    Runnable reconnectionRunnable;
 
-                    if(pc == null ||
-                            (pc != null
-                            && pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
-                            && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
-                            && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
+    public void createReconnectionRunnable() {
+        reconnectionRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!streamStoppedByUser) {
+                    boolean noNeedToRetry = true;
+                    for (PeerInfo peerInfo : peers.values()) {
+                        PeerConnection pc = peerInfo.peerConnection;
 
-                        noNeedToRetry = false;
+                        if (pc == null ||
+                                (pc != null
+                                        && pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
+                                        && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
+                                        && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
 
-                        if(pc != null) {
-                            pc.dispose();
-                        }
+                            noNeedToRetry = false;
 
-                        if(peerInfo.mode.equals(MODE_PUBLISH)) {
-                            publish(peerInfo.id,
-                                    peerInfo.token,
-                                    peerInfo.videoCallEnabled,
-                                    peerInfo.audioCallEnabled,
-                                    peerInfo.subscriberId,
-                                    peerInfo.subscriberCode,
-                                    peerInfo.streamName,
-                                    peerInfo.mainTrackId);
-                        }
-                        else if(peerInfo.mode.equals(MODE_PLAY)) {
-                            play(peerInfo.id,
-                                    peerInfo.token,
-                                    null,
-                                    peerInfo.subscriberId,
-                                    peerInfo.subscriberCode,
-                                    peerInfo.metaData);
+                            if (pc != null) {
+                                pc.dispose();
+                            }
+
+                            if (peerInfo.mode.equals(MODE_PUBLISH)) {
+                                publish(peerInfo.id,
+                                        peerInfo.token,
+                                        peerInfo.videoCallEnabled,
+                                        peerInfo.audioCallEnabled,
+                                        peerInfo.subscriberId,
+                                        peerInfo.subscriberCode,
+                                        peerInfo.streamName,
+                                        peerInfo.mainTrackId);
+                            } else if (peerInfo.mode.equals(MODE_PLAY)) {
+                                play(peerInfo.id,
+                                        peerInfo.token,
+                                        null,
+                                        peerInfo.subscriberId,
+                                        peerInfo.subscriberCode,
+                                        peerInfo.metaData);
+                            }
                         }
                     }
-                }
-                Log.i(TAG,"Try to reconnect in reconnectionRunnable "+streamMode);
-                webRTCListener.onReconnectionAttempt(initialStreamId);
-                if (streamMode == IWebRTCClient.MODE_JOIN)
-                {
-                    pipRenderer.setZOrderOnTop(true);
-                }
+                    Log.i(TAG, "Try to reconnect in reconnectionRunnable " + streamMode);
+                    webRTCListener.onReconnectionAttempt(initialStreamId);
+                    if (streamMode == IWebRTCClient.MODE_JOIN) {
+                        pipRenderer.setZOrderOnTop(true);
+                    }
 
-                reconnectionInProgress = !noNeedToRetry;
+                    reconnectionInProgress = !noNeedToRetry;
 
-                if(reconnectionInProgress) {
-                    reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
+                    if (reconnectionInProgress) {
+                        reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
+                    }
                 }
             }
-        }
-    };
-
-
-    public void setSelfStreamId(String selfStreamId) {
-        this.selfStreamId = selfStreamId;
+        };
     }
 
     public SDPObserver getSdpObserver(String streamId) {
@@ -734,7 +735,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.remoteRendererList = rendererList;
     }
 
-    public void setStreamId(String streamId) {
+    public void setSelfStreamId(String streamId) {
         this.initialStreamId = streamId;
     }
 
@@ -761,6 +762,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.token = token;
         if (intent != null) {
             this.intent = intent;
+        }
+
+        if(reconnectionEnabled && reconnectionRunnable == null) {
+            createReconnectionRunnable();
         }
 
         /*
@@ -1278,6 +1283,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
+        System.out.println("Publishing to: "+streamId+" t:"+this);
         Log.e(TAG, "Publish: "+streamId);
 
         PeerInfo peerInfo = new PeerInfo(streamId, MODE_PUBLISH);
@@ -1301,7 +1307,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
         Log.e(TAG, "Play: "+streamId);
 
-        PeerInfo peerInfo = new PeerInfo(streamId, MODE_PUBLISH);
+        PeerInfo peerInfo = new PeerInfo(streamId, MODE_PLAY);
         peerInfo.token = token;
         peerInfo.subscriberId = subscriberId;
         peerInfo.subscriberCode = subscriberCode;
@@ -1512,7 +1518,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if(!streamStoppedByUser) {
             Log.i(getClass().getSimpleName(),"Disconnected. Trying to reconnect");
             reconnectionInProgress = true;
-            Toast.makeText(context, "Disconnected.Trying to reconnect "+streamStoppedByUser, Toast.LENGTH_LONG).show();
+            //Toast.makeText(context, "Disconnected.Trying to reconnect "+streamStoppedByUser, Toast.LENGTH_LONG).show();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
                     reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
@@ -2981,5 +2987,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public SessionDescription getLocalDescription() {
         return localDescription;
+    }
+
+    public void setReconnectionHandler(Handler reconnectionHandler) {
+        this.reconnectionHandler = reconnectionHandler;
     }
 }
