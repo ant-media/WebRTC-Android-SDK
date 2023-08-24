@@ -66,6 +66,8 @@ import io.antmedia.webrtcandroidframework.R;
 public class CallActivity  {
   private static final String TAG = "CallRTCClient";
 
+  public static final String EXTRA_STUN_SERVER = "org.appspot.apprtc.STUN_SERVER";
+
   public static final String EXTRA_ROOMID = "org.appspot.apprtc.ROOMID";
   public static final String EXTRA_URLPARAMETERS = "org.appspot.apprtc.URLPARAMETERS";
   public static final String EXTRA_LOOPBACK = "org.appspot.apprtc.LOOPBACK";

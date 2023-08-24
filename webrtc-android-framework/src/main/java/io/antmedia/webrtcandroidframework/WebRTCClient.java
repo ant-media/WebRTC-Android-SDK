@@ -683,7 +683,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         iceConnected = false;
         signalingParameters = null;
-        iceServers.add(new PeerConnection.IceServer(stunServerUri));
+        if (intent != null && intent.getStringExtra(CallActivity.EXTRA_STUN_SERVER) != null) {
+            iceServers.add(new PeerConnection.IceServer(intent.getStringExtra(CallActivity.EXTRA_STUN_SERVER)));
+        } else {
+            iceServers.add(new PeerConnection.IceServer(stunServerUri));
+        }
 
         if(streamMode.equals(MODE_MULTI_TRACK_PLAY) && trackCheckerTask == null) {
             trackCheckerTask = new TrackCheckTask();
