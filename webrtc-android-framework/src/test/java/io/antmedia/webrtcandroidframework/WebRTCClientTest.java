@@ -103,7 +103,7 @@ public class WebRTCClientTest {
 
         webRTCClient.startStream();
 
-        verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null);
+        verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null, "");
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());

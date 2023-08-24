@@ -419,5 +419,5 @@ public class WebSocketConstants {
      * It's sent to determine mainTrackId if exists
      */
     public static final String MAIN_TRACK = "mainTrack";
-
+    public static final String META_DATA = "metaData";
 }

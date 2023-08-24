@@ -155,5 +155,11 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      */
     void setStreamName(String streamName);
 
+    /**
+     * This is used to set the additional metaData of WebRTC stream
+     * @param metaData: any string
+     */
+    void setStreamMetaData(String metaData);
+
 
 }

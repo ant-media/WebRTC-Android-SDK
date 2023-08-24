@@ -190,6 +190,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private String subscriberId = "";
     private String subscriberCode = "";
     private String streamName = "";
+    private String streamMetaData = "";
     private String viewerInfo = "";
     private String currentSource;
     private boolean screenPermissionNeeded = true;
@@ -1140,7 +1141,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private void startCall() {
         Log.d(TAG, this.context.getString(R.string.connecting_to, url));
         if (streamMode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+            publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, streamMetaData);
         }
         else if (streamMode.equals(IWebRTCClient.MODE_PLAY)) {
             play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
@@ -1153,8 +1154,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
     }
 
-    private void publish(String roomId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
-        wsHandler.startPublish(roomId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+    private void publish(String roomId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId, String streamMetaData) {
+        wsHandler.startPublish(roomId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, streamMetaData);
     }
 
     public void play(String streamId, String token, String[] tracks) {
@@ -1722,6 +1723,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void setStreamName(String streamName) {
         this.streamName = streamName;
+    }
+
+    @Override
+    public void setStreamMetaData(String streamMetaData) {
+        this.streamMetaData = streamMetaData;
     }
 
     public static void insertFrameId(long captureTimeMs) {
