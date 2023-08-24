@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -309,6 +310,11 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
         if (playWebRTCClient != null && !playWebRTCClient.isStreamStarted()) {
             playWebRTCClient.startStream();
         }
+    }
+
+    @Override
+    public void onReceiveStreamsInfo(JSONArray streamList) {
+
     }
 
     public void switchCamera()

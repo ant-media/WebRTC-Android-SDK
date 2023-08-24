@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
 
+import org.json.JSONArray;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
@@ -108,4 +109,6 @@ public interface AntMediaSignallingEvents {
      * @param definition
      */
     void onError(String streamId, String definition);
+
+    void onReceiveStreamsInfo(JSONArray streamList);
 }

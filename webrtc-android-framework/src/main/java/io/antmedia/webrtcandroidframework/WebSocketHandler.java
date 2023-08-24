@@ -155,6 +155,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                         streams[i] = streamsArray.getString(i);
                     }
                 }
+                if (json.has(WebSocketConstants.STREAM_LIST_IN_ROOM) && !json.isNull(WebSocketConstants.STREAM_LIST_IN_ROOM)) {
+                    JSONArray streamsArray = json.getJSONArray(WebSocketConstants.STREAM_LIST_IN_ROOM);
+                    signallingListener.onReceiveStreamsInfo(streamsArray);
+                }
                 signallingListener.onRoomInformation(streams);
             }
             else if (commandText.equals(WebSocketConstants.STREAM_INFORMATION_NOTIFICATION)) {

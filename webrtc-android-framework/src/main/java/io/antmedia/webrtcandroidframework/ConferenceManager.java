@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -290,6 +291,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
         if (publisherClient != null && !publisherClient.isStreaming()) {
             publishStream(streamId);
         }
+    }
+
+    @Override
+    public void onReceiveStreamsInfo(JSONArray streamList) {
+
     }
 
     public void switchCamera()

@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.webrtc.AddIceObserver;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -1596,6 +1597,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     @Override
     public void onRoomInformation(String[] streams) {
+        //no need to implement here
+    }
+
+    @Override
+    public void onReceiveStreamsInfo(JSONArray streamList) {
         //no need to implement here
     }
 
