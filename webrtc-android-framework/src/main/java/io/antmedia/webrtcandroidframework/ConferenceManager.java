@@ -326,6 +326,11 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
     }
 
     @Override
+    public void onConnected() {
+
+    }
+
+    @Override
     public void onTrackList(String[] tracks) {
 
     }

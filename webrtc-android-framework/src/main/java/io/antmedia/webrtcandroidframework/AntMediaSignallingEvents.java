@@ -81,6 +81,11 @@ public interface AntMediaSignallingEvents {
     void onDisconnected();
 
     /**
+     * It's called when websocket connection is connected
+     */
+    void onConnected();
+
+    /**
      * It's called in responde the getTrackList methods
      * @param tracks
      */

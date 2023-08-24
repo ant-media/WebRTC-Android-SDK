@@ -345,6 +345,11 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     }
 
     @Override
+    public void onConnected() {
+
+    }
+
+    @Override
     public void onTrackList(String[] tracks) {
         //add own stream id  to the list as !+streamId
         ArrayList<String> trackList = new ArrayList<>();
