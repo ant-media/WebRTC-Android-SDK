@@ -70,7 +70,7 @@ public class MultitrackConferenceManagerTest {
         conferenceManager.joinTheConference();
 
         // Verify that the joinToConferenceRoom method of WebSocketHandler is called with the correct arguments
-        verify(wsHandler).joinToConferenceRoom("roomName", "streamId");
+        verify(wsHandler).joinToConferenceRoom("roomName", "streamId", null);
     }
 
     @Test

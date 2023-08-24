@@ -420,4 +420,6 @@ public class WebSocketConstants {
      */
     public static final String MAIN_TRACK = "mainTrack";
 
+    public static final String MULTI_TRACK = "multitrack";
+
 }

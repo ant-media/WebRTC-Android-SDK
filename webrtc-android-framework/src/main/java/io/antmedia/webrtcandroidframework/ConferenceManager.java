@@ -88,7 +88,7 @@ public class ConferenceManager implements AntMediaSignallingEvents, IDataChannel
 
     public void joinTheConference() {
         initWebSocketHandler();
-        wsHandler.joinToConferenceRoom(roomName, streamId);
+        wsHandler.joinToConferenceRoom(roomName, streamId, null);
     }
 
     private void initWebSocketHandler() {

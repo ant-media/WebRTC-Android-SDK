@@ -154,7 +154,7 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     }
 
     public void joinTheConference() {
-        wsHandler.joinToConferenceRoom(roomName, streamId);
+        wsHandler.joinToConferenceRoom(roomName, streamId, WebSocketConstants.MULTI_TRACK);
     }
 
     public void initWebSocketHandler() {
