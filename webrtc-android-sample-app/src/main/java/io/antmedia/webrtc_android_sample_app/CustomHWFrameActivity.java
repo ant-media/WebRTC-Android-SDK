@@ -90,17 +90,8 @@ public class CustomHWFrameActivity extends AbstractSampleSDKActivity {
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
         startStreamingButton.setText("Start Publishing");
         operationName = "Publishing";
-
 
         this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);

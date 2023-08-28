@@ -19,9 +19,14 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -29,6 +34,18 @@ import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
 
 public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
+
+    public static final String MIC_UNMUTED = "MIC_UNMUTED";
+    public static final String MIC_MUTED = "MIC_MUTED";
+    public static final String CAM_TURNED_ON = "CAM_TURNED_ON";
+    public static final String CAM_TURNED_OFF = "CAM_TURNED_OFF";
+    public static final String EVENT_TYPE = "eventType";
+    public static final String STREAM_ID = "streamId";
+    public static final String UPDATE_STATUS = "UPDATE_STATUS";
+    public static final String MIC_STATUS = "mic";
+    public static final String CAMERA_STATUS = "camera";
+
+    private int STATUS_SEND_PERIOD_MILLIS = 3000;
 
     private WebRTCClient webRTCClient;
     private Button audioButton;
@@ -60,6 +77,14 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
     private String streamName;
     private boolean playMessageSent;
     private String viewerInfo;
+
+    private Runnable sendStatusRunnable = new Runnable() {
+        @Override
+        public void run() {
+            sendStatusMessage();
+            handler.postDelayed(this, STATUS_SEND_PERIOD_MILLIS);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,14 +124,6 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         videoButton = findViewById(R.id.control_video_button);
         videoButton.setOnClickListener((view) -> controlVideo(view));
 
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 
@@ -126,7 +143,7 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
 
 
         webRTCClient.init(serverUrl, streamId, WebRTCClient.MODE_TRACK_BASED_CONFERENCE, "", this.getIntent());
-        webRTCClient.connectWebSocket();
+        webRTCClient.setDataChannelEnabled(true);
         webRTCClient.setDataChannelObserver(this);
         webRTCClient.setOpenFrontCamera(true);
         webRTCClient.setReconnectionEnabled(true);
@@ -170,6 +187,8 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
 
         broadcastingView.setText("Publishing");
         broadcastingView.setVisibility(View.VISIBLE);
+
+        scheduleSendStatusTimer();
     }
 
     @Override
@@ -229,6 +248,7 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         clearGetRoomInfoSchedule();
         joined = false;
         playMessageSent = false;
+        clearSendStatusSchedule();
     }
 
     public void publishStream(String streamId) {
@@ -258,9 +278,11 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         if (webRTCClient.isAudioOn()) {
             webRTCClient.disableAudio();
             audioButton.setText("Enable Audio");
+            sendNotificationEvent(MIC_MUTED, null);
         } else {
             webRTCClient.isAudioOn();
             audioButton.setText("Disable Audio");
+            sendNotificationEvent(MIC_UNMUTED, null);
         }
     }
 
@@ -268,10 +290,12 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         if (webRTCClient.isVideoOn()) {
             webRTCClient.disableVideo();
             videoButton.setText("Enable Video");
+            sendNotificationEvent(CAM_TURNED_OFF, null);
 
         } else {
             webRTCClient.enableVideo();
             videoButton.setText("Disable Video");
+            sendNotificationEvent(CAM_TURNED_ON, null);
         }
     }
 
@@ -279,5 +303,99 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(state);
     }
+
+
+    private void scheduleSendStatusTimer() {
+        handler.postDelayed(sendStatusRunnable, STATUS_SEND_PERIOD_MILLIS);
+    }
+
+    private void clearSendStatusSchedule() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (handler.hasCallbacks(sendStatusRunnable)) {
+                handler.removeCallbacks(sendStatusRunnable);
+            }
+        } else {
+            handler.removeCallbacks(sendStatusRunnable);
+        }
+    }
+
+    public void sendStatusMessage() {
+        try {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put(MIC_STATUS, webRTCClient.isAudioOn());
+            jsonObject.put(CAMERA_STATUS, webRTCClient.isVideoOn());
+            sendNotificationEvent(UPDATE_STATUS, jsonObject);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void sendNotificationEvent(String eventType, JSONObject data) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("streamId", streamId);
+            jsonObject.put("eventType", eventType);
+            jsonObject.put(STREAM_ID, streamId);
+            jsonObject.put(EVENT_TYPE, eventType);
+            if(data != null) {
+                jsonObject.put("info", data);
+            }
+
+            String notificationEventText = jsonObject.toString();
+
+            final ByteBuffer buffer = ByteBuffer.wrap(notificationEventText.getBytes(StandardCharsets.UTF_8));
+            DataChannel.Buffer buf = new DataChannel.Buffer(buffer, false);
+            webRTCClient.sendMessageViaDataChannel(streamId, buf);
+        } catch (JSONException e) {
+            Log.e(this.getClass().getSimpleName(), "JSON write error when creating notification event");
+        }
+    }
+
+    public void onMessage(final DataChannel.Buffer buffer, String dataChannelLabel) {
+        if (!buffer.binary) {
+            ByteBuffer data = buffer.data;
+            try {
+                String strDataJson = new String(data.array(), StandardCharsets.UTF_8);
+                JSONObject jsonObject = new JSONObject(strDataJson);
+                String eventType = jsonObject.getString(EVENT_TYPE);
+                String streamId = jsonObject.getString(STREAM_ID);
+                if(eventType.equals(MIC_MUTED)) {
+                    String messageText = "Microphone is muted for " + streamId;
+                    Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+                    Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+                }
+                else if(eventType.equals(MIC_UNMUTED)) {
+                    String messageText = "Microphone is unmuted for " + streamId;
+                    Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+                    Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+                }
+                else if(eventType.equals(CAM_TURNED_ON)) {
+                    String messageText = "Camera is turned on for " + streamId;
+                    Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+                    Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+
+                }
+                else if(eventType.equals(CAM_TURNED_OFF)) {
+                    String messageText = "Camera is turned off for " + streamId;
+                    Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+                    Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+                }
+                else if(eventType.equals(UPDATE_STATUS)) {
+                    JSONObject info = jsonObject.getJSONObject("info");
+                    boolean micStatus = info.getBoolean(MIC_STATUS);
+                    boolean cameraStatus = info.getBoolean(CAMERA_STATUS);
+                    String messageText = "Status update for " + streamId + " mic: " + micStatus + " camera: " + cameraStatus;
+                    Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
+                    Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+
+
 }
 

@@ -123,10 +123,6 @@ public class CallActivity  {
 
   public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1234;
 
-  // List of mandatory application permissions.
-  public static final String[] MANDATORY_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
-      "android.permission.RECORD_AUDIO", "android.permission.INTERNET"};
-
   // Peer connection statistics callback period in ms.
   public static final int STAT_CALLBACK_PERIOD = 1000;
 

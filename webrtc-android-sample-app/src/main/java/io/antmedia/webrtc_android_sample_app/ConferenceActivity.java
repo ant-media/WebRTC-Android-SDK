@@ -81,14 +81,6 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
 
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
 

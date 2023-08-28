@@ -15,8 +15,4 @@ public class HomeActivityTest {
     public ActivityScenarioRule<HomeActivity> activityScenarioRule
             = new ActivityScenarioRule<>(HomeActivity.class);
 
-    @Test
-    public void testPermissions() {
-        //Implement permission asking
-    }
 }

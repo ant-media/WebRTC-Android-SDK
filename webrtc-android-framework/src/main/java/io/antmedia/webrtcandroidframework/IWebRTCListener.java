@@ -126,4 +126,43 @@ public interface IWebRTCListener {
      * @param roomId
      */
    void onLeftTheRoom(String roomId);
+
+    /**
+     * @param streamId
+     * It's called when mic is muted for the stream
+     */
+    void onMutedFor(String streamId);
+
+    /**
+     * @param streamId
+     * It's called when mic is unmuted for the stream
+     */
+    void onUnmutedFor(String streamId);
+
+    /**
+     * @param streamId
+     * It's called when camera is turned on for the stream
+     */
+    void onCameraTurnOnFor(String streamId);
+
+    /**
+     * @param streamId
+     * It's called when camera is turned off for the stream
+     */
+    void onCameraTurnOffFor(String streamId);
+
+    /**
+     * @param streamId
+     * @param micStatus
+     * @param cameraStatus
+     * It's called when status of mic and camera is updated for the stream
+     */
+    void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus);
+
+    /**
+     * Permissions are checked when needed
+     *
+     * @return
+     */
+    boolean checkAndRequestPermisssions(boolean isForPublish, PermissionCallback permissionCallback);
 }

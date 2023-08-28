@@ -86,13 +86,7 @@ public class DataChannelOnlyActivity extends AbstractSampleSDKActivity {
         startStreamingButton = findViewById(R.id.start_streaming_button);
         messageInput = findViewById(R.id.message_text_input);
         messages = findViewById(R.id.messages_view);
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
+
         broadcastView = findViewById(R.id.broadcasting_text_view);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
         streamIdEditText.setText("streamId" + (int)(Math.random()*9999));

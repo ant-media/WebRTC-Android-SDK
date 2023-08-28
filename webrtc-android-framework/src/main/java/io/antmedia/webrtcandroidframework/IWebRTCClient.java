@@ -1,6 +1,8 @@
 package io.antmedia.webrtcandroidframework;
 
+import android.Manifest;
 import android.content.Intent;
+import android.os.Build;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
@@ -10,6 +12,12 @@ import org.webrtc.SurfaceViewRenderer;
  */
 
 public interface IWebRTCClient {
+
+    public static final String[] REQUIRED_PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ?
+            new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT}
+            :
+            new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
+
     /**
      * Publish mode
      */

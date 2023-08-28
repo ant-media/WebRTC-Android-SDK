@@ -41,7 +41,7 @@ public class CustomVideoFeedActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(HomeActivity.REQUIRED_PERMISSIONS);
+            = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
 
     @Before
     public void before() {

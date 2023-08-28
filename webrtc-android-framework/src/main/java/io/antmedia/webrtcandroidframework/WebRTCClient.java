@@ -764,9 +764,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             this.intent = intent;
         }
 
+        //if it is not initialized before return the init, set ,n,t as callback to call after grant result
+        if(!checkPermissions(() -> init(url, streamId, mode, token, intent))) {
+            return;
+        }
+
         if(reconnectionEnabled && reconnectionRunnable == null) {
             createReconnectionRunnable();
         }
+
 
         /*
          *  TODO (burak): we need this track checker to be able to understand if the track is stopped.
@@ -786,6 +792,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         initializeAudioManager();
 
         connectWebSocket();
+    }
+
+    private boolean checkPermissions(PermissionCallback permissionCallback) {
+        boolean isForPublish = streamMode.equals(MODE_PUBLISH) ||
+                streamMode.equals(MODE_TRACK_BASED_CONFERENCE);
+
+        return webRTCListener.checkAndRequestPermisssions(isForPublish, permissionCallback);
     }
 
     private void initializeTrackChecker() {
@@ -828,7 +841,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             videoHeight = displayMetrics.heightPixels;
         }
 
-        dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, false);
+        dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, true);
         if (dataChannelEnabled) {
             dataChannelOrdered = intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true);
             dataChannelMaxRetransmitTimeMs = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1);
@@ -836,7 +849,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             dataChannelProtocol = intent.getStringExtra(CallActivity.EXTRA_PROTOCOL);
             dataChannelNegotiated = intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false);
             dataChannelId = intent.getIntExtra(CallActivity.EXTRA_ID, -1);
-            dataChannelCreator = streamMode.equals(IWebRTCClient.MODE_PUBLISH) || streamMode.equals(IWebRTCClient.MODE_JOIN);
+            dataChannelCreator = streamMode.equals(IWebRTCClient.MODE_PUBLISH)
+                    || streamMode.equals(IWebRTCClient.MODE_JOIN)
+                    || streamMode.equals(IWebRTCClient.MODE_TRACK_BASED_CONFERENCE);
         }
 
         videoFps = intent.getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
@@ -1283,7 +1298,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
-        System.out.println("Publishing to: "+streamId+" t:"+this);
         Log.e(TAG, "Publish: "+streamId);
 
         PeerInfo peerInfo = new PeerInfo(streamId, MODE_PUBLISH);
@@ -1996,7 +2010,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 }
             });
         } else {
-            reportError(streamId, "Data Channel is not ready for usage.");
+            Log.w(TAG, "Data Channel is not ready for usage for ."+streamId);
         }
     }
 
@@ -2991,5 +3005,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setReconnectionHandler(Handler reconnectionHandler) {
         this.reconnectionHandler = reconnectionHandler;
+    }
+
+    public void setDataChannelEnabled(boolean dataChannelEnabled) {
+        this.dataChannelEnabled = dataChannelEnabled;
     }
 }
