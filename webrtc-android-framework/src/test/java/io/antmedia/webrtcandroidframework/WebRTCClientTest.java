@@ -317,6 +317,7 @@ public class WebRTCClientTest {
         Mockito.doNothing().when(webRTCClient).initializeVideoCapturer();
         Mockito.doNothing().when(webRTCClient).initializeAudioManager();
         Mockito.doNothing().when(webRTCClient).connectWebSocket();
+        Mockito.doReturn(true).when(webRTCClient).checkPermissions(any());
 
         when(context.getString(R.string.pref_maxvideobitratevalue_default)).thenReturn("500");
         when(context.getString(R.string.pref_startaudiobitratevalue_default)).thenReturn("500");
@@ -324,7 +325,7 @@ public class WebRTCClientTest {
 
         Intent intent = Mockito.mock(Intent.class);
         when(intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true)).thenReturn(false);
-        when(intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, false)).thenReturn(true);
+        when(intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, true)).thenReturn(true);
 
         webRTCClient.init("http://my.ams:5080/myapp/websocket", "stream", WebRTCClient.MODE_PUBLISH, "token", intent);
 

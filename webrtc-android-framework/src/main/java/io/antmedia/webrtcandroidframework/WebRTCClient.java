@@ -794,7 +794,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         connectWebSocket();
     }
 
-    private boolean checkPermissions(PermissionCallback permissionCallback) {
+    public boolean checkPermissions(PermissionCallback permissionCallback) {
         boolean isForPublish = streamMode.equals(MODE_PUBLISH) ||
                 streamMode.equals(MODE_TRACK_BASED_CONFERENCE);
 
