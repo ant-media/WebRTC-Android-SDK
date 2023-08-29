@@ -213,5 +213,10 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
     public void switchCamera(View view) {
         conferenceManager.switchCamera();
     }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+    }
+
 }
 
