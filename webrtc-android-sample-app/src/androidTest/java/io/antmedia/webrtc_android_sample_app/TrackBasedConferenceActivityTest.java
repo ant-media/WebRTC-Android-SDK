@@ -94,42 +94,6 @@ public class TrackBasedConferenceActivityTest {
         }
     };
 
-
-    @Test
-    public void testJoinMultitrackRoom() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
-            @Override
-            public void perform(TrackBasedConferenceActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
-        });
-
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
-
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-    }
-
     public class NetworkClient {
 
         //private static final String BASE_URL = "http://192.168.1.26:3030/";
@@ -183,8 +147,21 @@ public class TrackBasedConferenceActivityTest {
         }
     }
 
+    private void addParticipant() {
+        RemoteParticipant participant = new RemoteParticipant();
+        participant.join();
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        participant.leave();
+    }
+
+
     @Test
-    public void testJoinWithExternalParticipant() {
+    public void testJoinMultitrackRoom() {
+        System.out.println("--- testJoinMultitrackRoom is started");
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -193,6 +170,49 @@ public class TrackBasedConferenceActivityTest {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                System.out.println("--- testJoinMultitrackRoom on perform");
+
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+
+
+    @Test
+    public void testJoinWithExternalParticipant() {
+        System.out.println("--- testJoinWithExternalParticipant is started");
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
+            @Override
+            public void perform(TrackBasedConferenceActivity activity) {
+                System.out.println("--- testJoinWithExternalParticipant on perform");
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -218,26 +238,15 @@ public class TrackBasedConferenceActivityTest {
 
     }
 
-
-
-
-    private void addParticipant() {
-        RemoteParticipant participant = new RemoteParticipant();
-        participant.join();
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        participant.leave();
-    }
-
-
     //@Test
     public void testJoinWithoutVideo() {
+        System.out.println("--- testJoinWithoutVideo is started");
+
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                System.out.println("--- testJoinWithoutVideo on perform");
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -276,6 +285,8 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
+        System.out.println("--- testJoinPlayOnlyAsFirstPerson is started");
+
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -284,6 +295,8 @@ public class TrackBasedConferenceActivityTest {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                System.out.println("--- testJoinPlayOnlyAsFirstPerson on perform");
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -309,6 +322,8 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testReconnect() {
+        System.out.println("--- testReconnect is started");
+
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -318,6 +333,8 @@ public class TrackBasedConferenceActivityTest {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                System.out.println("--- testReconnect on perform");
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
