@@ -161,8 +161,11 @@ public interface IWebRTCListener {
 
     /**
      * Permissions are checked when needed
+     * @param isForPublish if it's for publish, it checks camera and mic permissions
+     * @param permissionCallback callback to be called when permissions are granted or denied
      *
      * @return
      */
     boolean checkAndRequestPermisssions(boolean isForPublish, PermissionCallback permissionCallback);
+
 }
