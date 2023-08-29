@@ -70,6 +70,12 @@ public class TrackBasedConferenceActivityTest {
 
     @After
     public void after() {
+        System.out.println("after test");
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
@@ -161,16 +167,9 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinMultitrackRoom() {
-        System.out.println("--- testJoinMultitrackRoom is started");
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-                System.out.println("--- testJoinMultitrackRoom on perform");
 
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
@@ -201,18 +200,9 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinWithExternalParticipant() {
-        System.out.println("--- testJoinWithExternalParticipant is started");
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-                System.out.println("--- testJoinWithExternalParticipant on perform");
-
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -240,12 +230,9 @@ public class TrackBasedConferenceActivityTest {
 
     //@Test
     public void testJoinWithoutVideo() {
-        System.out.println("--- testJoinWithoutVideo is started");
-
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-                System.out.println("--- testJoinWithoutVideo on perform");
 
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
@@ -285,18 +272,9 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
-        System.out.println("--- testJoinPlayOnlyAsFirstPerson is started");
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-                System.out.println("--- testJoinPlayOnlyAsFirstPerson on perform");
-
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -322,19 +300,10 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testReconnect() {
-        System.out.println("--- testReconnect is started");
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
         final TrackBasedConferenceActivity[] mactivity = new TrackBasedConferenceActivity[1];
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-                System.out.println("--- testReconnect on perform");
-
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
