@@ -70,11 +70,7 @@ public class TrackBasedConferenceActivityTest {
 
     @After
     public void after() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
     @Rule
@@ -101,6 +97,11 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinMultitrackRoom() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
@@ -130,6 +131,7 @@ public class TrackBasedConferenceActivityTest {
     }
 
     public class NetworkClient {
+
         //private static final String BASE_URL = "http://192.168.1.26:3030/";
         private static final String BASE_URL = "http://10.0.2.2:3030/";
 
@@ -183,6 +185,11 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinWithExternalParticipant() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
@@ -269,6 +276,11 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
@@ -297,6 +309,11 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testReconnect() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         final TrackBasedConferenceActivity[] mactivity = new TrackBasedConferenceActivity[1];
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
