@@ -334,9 +334,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     private boolean removeVideoRotationExtention = false;
 
-    //signaling parameters
-    private ArrayList<IceCandidate> iceCandidates = new ArrayList<>();
-
     //reconnection parameters
     private Handler reconnectionHandler = new Handler();
 
@@ -1676,18 +1673,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 if(peers.get(streamId).peerConnection == null) {
                     createPeerConnection(streamId);
                 }
-
-
-
                 setRemoteDescription(streamId, sdp);
                 createAnswer(streamId);
-
-                if (iceCandidates != null) {
-                    // Add remote ICE candidates from room.
-                    for (IceCandidate iceCandidate : iceCandidates) {
-                        addRemoteIceCandidate(streamId, iceCandidate);
-                    }
-                }
             }
             else {
                 setRemoteDescription(streamId, sdp);
