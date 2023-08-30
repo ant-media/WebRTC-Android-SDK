@@ -24,7 +24,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -229,6 +228,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     // created on the same thread as previously destroyed factory.
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
     private Timer statsTimer;
+
     @androidx.annotation.Nullable
     private PeerConnectionFactory factory;
 
@@ -268,6 +268,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean videoCapturerStopped;
     private MediaConstraints audioConstraints;
     private MediaConstraints sdpMediaConstraints;
+
+
     // Queued remote ICE candidates are consumed only after both local and
     // remote descriptions are set. Similarly local ICE candidates are sent to
     // remote peer after both local and remote description are set.
@@ -330,8 +332,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private String dataChannelProtocol = "";
     private boolean dataChannelNegotiated;
     private int dataChannelId;
-    private boolean dataChannelCreator;
-
     private boolean removeVideoRotationExtention = false;
 
     //reconnection parameters
@@ -846,9 +846,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             dataChannelProtocol = intent.getStringExtra(CallActivity.EXTRA_PROTOCOL);
             dataChannelNegotiated = intent.getBooleanExtra(CallActivity.EXTRA_NEGOTIATED, false);
             dataChannelId = intent.getIntExtra(CallActivity.EXTRA_ID, -1);
-            dataChannelCreator = streamMode.equals(IWebRTCClient.MODE_PUBLISH)
-                    || streamMode.equals(IWebRTCClient.MODE_JOIN)
-                    || streamMode.equals(IWebRTCClient.MODE_TRACK_BASED_CONFERENCE);
         }
 
         videoFps = intent.getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
@@ -2173,7 +2170,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             }
         };
 
-        return JavaAudioDeviceModule.builder(context)
+        JavaAudioDeviceModule.Builder admBuilder = getADMBuilder();
+        return  admBuilder
                 .setCustomAudioFeed(customAudioFeed)
                 .setUseHardwareAcousticEchoCanceler(!disableBuiltInAEC)
                 .setUseHardwareNoiseSuppressor(!disableBuiltInNS)
@@ -2184,7 +2182,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 .createAudioDeviceModule();
     }
 
-    private void createMediaConstraintsInternal() {
+    public JavaAudioDeviceModule.Builder getADMBuilder() {
+        return JavaAudioDeviceModule.builder(context);
+    }
+
+    public void createMediaConstraintsInternal() {
         // Create video constraints if video call is enabled.
         if (isVideoCallEnabled()) {
             // If video resolution is not specified, default to HD.
@@ -2222,7 +2224,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 "OfferToReceiveVideo", Boolean.toString(isVideoCallEnabled())));
     }
 
-    private void createPeerConnectionInternal(String streamId) {
+    public void createPeerConnectionInternal(String streamId) {
         if (factory == null || isError) {
             Log.e(TAG, "Peerconnection factory is not created");
             return;
@@ -2249,9 +2251,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         isInitiator = false;
 
-        // Set INFO libjingle logging.
-        // NOTE: this _must_ happen while `factory` is alive!
-        Logging.enableLogToDebugOutput(Logging.Severity.LS_ERROR);
+        setWebRTCLogLevel();
 
         List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
         if (isVideoCallEnabled()) {
@@ -2288,13 +2288,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         Log.d(TAG, "Peer connection created.");
     }
 
+    public void setWebRTCLogLevel() {
+        // Set INFO libjingle logging.
+        // NOTE: this _must_ happen while `factory` is alive!
+        Logging.enableLogToDebugOutput(Logging.Severity.LS_ERROR);
+    }
+
     @NonNull
     public PCObserver getPCObserver(String streamId) {
         return new PCObserver(streamId);
     }
 
-    private void initDataChannel(String streamId) {
-        if (dataChannelEnabled && dataChannelCreator) {
+    public void initDataChannel(String streamId) {
+        if (dataChannelEnabled && isDataChannelCreator()) {
             DataChannel.Init init = new DataChannel.Init();
             init.ordered = dataChannelOrdered;
             init.negotiated = dataChannelNegotiated;
@@ -2308,6 +2314,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
     }
 
+    private boolean isDataChannelCreator() {
+        return streamMode.equals(IWebRTCClient.MODE_PUBLISH)
+                || streamMode.equals(IWebRTCClient.MODE_JOIN)
+                || streamMode.equals(IWebRTCClient.MODE_TRACK_BASED_CONFERENCE);
+    }
+
     private File createRtcEventLogOutputFile() {
         DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_hhmm_ss", Locale.getDefault());
         Date date = new Date();
@@ -2315,7 +2327,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         return new File(context.getDir(RTCEVENTLOG_OUTPUT_DIR_NAME, Context.MODE_PRIVATE), outputFileName);
     }
 
-    private void maybeCreateAndStartRtcEventLog(String streamId) {
+    public void maybeCreateAndStartRtcEventLog(String streamId) {
         if (context == null || peers.get(streamId).peerConnection == null) {
             return;
         }
@@ -2412,7 +2424,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         return isVideoCallEnabled() && videoWidth * videoHeight >= 1280 * 720;
     }
 
-    private void getStats(String streamId) {
+    public void getStats(String streamId) {
         PeerConnection pc = peers.get(streamId).peerConnection;
         if (pc == null || isError) {
             return;
@@ -2596,7 +2608,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     @androidx.annotation.Nullable
-    private AudioTrack createAudioTrack() {
+    public AudioTrack createAudioTrack() {
         if (localAudioTrack == null) {
             audioSource = factory.createAudioSource(audioConstraints);
             localAudioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, audioSource);
@@ -2996,5 +3008,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setDataChannelEnabled(boolean dataChannelEnabled) {
         this.dataChannelEnabled = dataChannelEnabled;
+    }
+
+    public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {
+        this.factory = factory;
+    }
+
+    public void setQueuedRemoteCandidates(@androidx.annotation.Nullable List<IceCandidate> queuedRemoteCandidates) {
+        this.queuedRemoteCandidates = queuedRemoteCandidates;
     }
 }

@@ -90,7 +90,7 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
     public void onMessage(DataChannel.Buffer buffer, String dataChannelLabel) {
         ByteBuffer data = buffer.data;
         String messageText = new String(data.array(), StandardCharsets.UTF_8);
-        Toast.makeText(this, "New Message: " + messageText, Toast.LENGTH_LONG).show();
+        makeToast("New Message: " + messageText, Toast.LENGTH_LONG);
     }
 
     @Override
@@ -101,9 +101,9 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
             data.get(bytes);
             String messageText = new String(bytes, StandardCharsets.UTF_8);
 
-            Toast.makeText(this, "Message is sent", Toast.LENGTH_SHORT).show();
+            makeToast("Message is sent", Toast.LENGTH_SHORT);
         } else {
-            Toast.makeText(this, "Could not send the text message", Toast.LENGTH_LONG).show();
+            makeToast("Could not send the text message", Toast.LENGTH_LONG);
         }
     }
 
@@ -111,77 +111,81 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
     public void onDisconnected(String streamId) {
         String messageText = "Disconnected for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onPublishFinished(String streamId) {
         String messageText = "Publish finished for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onPlayFinished(String streamId) {
         String messageText = "Play finished for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onPublishStarted(String streamId) {
         String messageText = "Publish started for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onPlayStarted(String streamId) {
         String messageText = "Play started for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         String messageText = "No stream exists to play for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onError(String description, String streamId) {
         String messageText = "Error for " + streamId + " : " + description;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
         String messageText = "Signal channel closed for " + streamId + " : " + code;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void streamIdInUse(String streamId) {
         String messageText = "Stream id is already in use " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onIceConnected(String streamId) {
         String messageText = "Ice connected for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onIceDisconnected(String streamId) {
         String messageText = "Ice disconnected for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
+    }
+
+    public void makeToast(String messageText, int lengthLong) {
+        Toast.makeText(this, messageText, lengthLong).show();
     }
 
     @Override
@@ -209,28 +213,28 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
     public void onNewVideoTrack(VideoTrack track) {
         String messageText = "New video track received";
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onVideoTrackEnded(VideoTrack track) {
         String messageText = "Video track ended";
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onReconnectionAttempt(String streamId) {
         String messageText = "Reconnection attempt for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onJoinedTheRoom(String streamId, String[] streams) {
         String messageText = "Joined the room for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
 
@@ -252,34 +256,34 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
     public void onMutedFor(String streamId) {
         String messageText = "Microphone is muted for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
     @Override
     public void onUnmutedFor(String streamId) {
         String messageText = "Microphone is unmuted for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onCameraTurnOnFor(String streamId) {
         String messageText = "Camera is turned on for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onCameraTurnOffFor(String streamId) {
         String messageText = "Camera is turned off for " + streamId;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
     public void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus) {
         String messageText = "Status update for " + streamId + " mic: " + micStatus + " camera: " + cameraStatus;
         Log.d(AbstractSampleSDKActivity.class.getName(), messageText);
-        Toast.makeText(this, messageText, Toast.LENGTH_LONG).show();
+        makeToast(messageText, Toast.LENGTH_LONG);
     }
 
     @Override
@@ -312,8 +316,8 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
         }
         return true;
     }
-    private void showPermissionsErrorAndRequest(List<String> permissions) {
-        Toast.makeText(this, "You need permissions before", Toast.LENGTH_SHORT).show();
+    public void showPermissionsErrorAndRequest(List<String> permissions) {
+        makeToast("You need permissions before", Toast.LENGTH_SHORT);
         String[] permissionArray = new String[permissions.size()];
         permissions.toArray(permissionArray);
         ActivityCompat.requestPermissions(this, permissionArray, 1);
