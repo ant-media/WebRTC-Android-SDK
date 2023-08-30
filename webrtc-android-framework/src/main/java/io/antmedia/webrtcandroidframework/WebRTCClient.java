@@ -236,7 +236,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.initialStreamId = streamId;
     }
 
-    class PeerInfo {
+    public static class PeerInfo {
 
         public PeerInfo(String id, String mode) {
             this.id = id;
@@ -764,7 +764,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             this.intent = intent;
         }
 
-        //if it is not initialized before return the init, set ,n,t as callback to call after grant result
+        //if permissions are not granted yet return now bu set init as callback to call it again after grant result
         if(!checkPermissions(() -> init(url, streamId, mode, token, intent))) {
             return;
         }
@@ -1656,7 +1656,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public boolean isStreaming(String streamId) {
         PeerConnection pc = null;
-        PeerInfo peerInfo = peers.get(initialStreamId);
+        PeerInfo peerInfo = peers.get(streamId);
         if(peerInfo != null) {
             pc = peerInfo.peerConnection;
         }
