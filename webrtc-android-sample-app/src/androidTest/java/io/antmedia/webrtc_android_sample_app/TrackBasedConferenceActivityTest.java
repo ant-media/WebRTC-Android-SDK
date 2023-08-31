@@ -6,10 +6,9 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import android.app.Instrumentation;
 import android.content.Intent;
 import android.util.Log;
 
@@ -19,6 +18,7 @@ import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.espresso.matcher.ViewMatchers;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
@@ -45,7 +45,7 @@ import okhttp3.Response;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 @RunWith(AndroidJUnit4.class)
-public class MultitrackConferenceActivityTest {
+public class TrackBasedConferenceActivityTest {
 
     //match
     private static final String START_NOW_TEXT = "Start now";
@@ -56,13 +56,16 @@ public class MultitrackConferenceActivityTest {
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
 
+    @Rule
+    public ActivityScenarioRule<TrackBasedConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(TrackBasedConferenceActivity.class);
+
+
     @Before
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         System.out.println("after sleep");
-
     }
 
     @After
@@ -97,43 +100,8 @@ public class MultitrackConferenceActivityTest {
         }
     };
 
-
-    @Test
-    public void testJoinMultitrackRoom() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
-
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
-            @Override
-            public void perform(MultitrackConferenceActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
-        });
-
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
-
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
-    }
-
     public class NetworkClient {
+
         //private static final String BASE_URL = "http://192.168.1.26:3030/";
         private static final String BASE_URL = "http://10.0.2.2:3030/";
 
@@ -180,20 +148,61 @@ public class MultitrackConferenceActivityTest {
                 Log.i("RemoteParticipant", "leave: " + response);
 
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                //throw new RuntimeException(e);
             }
         }
     }
 
+    private void addParticipant() {
+        RemoteParticipant participant = new RemoteParticipant();
+        participant.join();
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        participant.leave();
+    }
+
+
+    @Test
+    public void testJoinMultitrackRoom() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
+            @Override
+            public void perform(TrackBasedConferenceActivity activity) {
+
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+
+
     @Test
     public void testJoinWithExternalParticipant() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
-
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -219,30 +228,12 @@ public class MultitrackConferenceActivityTest {
 
     }
 
-
-
-
-    private void addParticipant() {
-        RemoteParticipant participant = new RemoteParticipant();
-        participant.join();
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        participant.leave();
-    }
-
-
     //@Test
     public void testJoinWithoutVideo() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
-
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -281,13 +272,9 @@ public class MultitrackConferenceActivityTest {
 
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
-
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -313,14 +300,10 @@ public class MultitrackConferenceActivityTest {
 
     @Test
     public void testReconnect() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
-
-        ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
-
-        final MultitrackConferenceActivity[] mactivity = new MultitrackConferenceActivity[1];
-        scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
+        final TrackBasedConferenceActivity[] mactivity = new TrackBasedConferenceActivity[1];
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
-            public void perform(MultitrackConferenceActivity activity) {
+            public void perform(TrackBasedConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));

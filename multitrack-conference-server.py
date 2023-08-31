@@ -8,6 +8,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from flask import Flask, request
+from webdriver_manager.chrome import ChromeDriverManager
+
 
 
 class Browser:
@@ -27,7 +29,9 @@ class Browser:
 
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
-    self.driver = webdriver.Chrome(chrome_options=chrome_options)
+
+
+    self.driver = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=chrome_options)
 
   def open_in_new_tab(self, url, tab_id):
     self.driver.execute_script("window.open('about:blank', '"+tab_id+"');")
@@ -89,8 +93,11 @@ def leave():
 
 @app.route('/delete', methods=['GET'])
 def delete():
-    chrome.close()
-    return f'Tab closed', 200
+    #chrome.close()
+    #return f'Tab closed', 200
+    for handle in chrome.window_handles:
+          chrome.switch_to.window(handle)
+          chrome.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3030)

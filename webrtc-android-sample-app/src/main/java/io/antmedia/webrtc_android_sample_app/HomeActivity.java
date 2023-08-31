@@ -27,12 +27,6 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
     private List<ActivityLink> activities;
     private GridView list;
 
-
-    public static final String[] REQUIRED_PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ?
-        new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT}
-            :
-        new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
-
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,10 +36,6 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         list = findViewById(R.id.list);
         createList();
         setListAdapter(activities);
-
-        if (!hasPermissions(this, REQUIRED_PERMISSIONS)) {
-            requestPermissions(REQUIRED_PERMISSIONS, 1);
-        }
     }
 
     private void createList() {
@@ -66,7 +56,7 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Screen Capture"));
         activities.add(new ActivityLink(new Intent(this, SettingsActivity.class),
                 "Settings"));
-        activities.add(new ActivityLink(new Intent(this, MultitrackConferenceActivity.class),
+        activities.add(new ActivityLink(new Intent(this, TrackBasedConferenceActivity.class),
                 "Multitrack Conference"));
     }
 
@@ -75,32 +65,9 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
         list.setOnItemClickListener(this);
     }
 
-    public boolean hasPermissions(Context context, String... permissions) {
-        if (context != null && permissions != null) {
-            for (String permission : permissions) {
-                if (ActivityCompat.checkSelfPermission(context, permission)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    Log.w(HomeActivity.class.getSimpleName(), "Permission required:"+permission);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     @Override
     public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-        if (hasPermissions(this, REQUIRED_PERMISSIONS)) {
-            ActivityLink link = activities.get(i);
-            startActivity(link.getIntent());
-        } else {
-            showPermissionsErrorAndRequest();
-        }
+        ActivityLink link = activities.get(i);
+        startActivity(link.getIntent());
     }
-
-    private void showPermissionsErrorAndRequest() {
-        Toast.makeText(this, "You need permissions before", Toast.LENGTH_SHORT).show();
-        ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, 1);
-    }
-
 }

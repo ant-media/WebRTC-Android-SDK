@@ -3,15 +3,13 @@ package io.antmedia.webrtc_android_sample_app;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
@@ -22,12 +20,21 @@ import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -35,7 +42,10 @@ import io.antmedia.webrtcandroidframework.IWebRTCClient;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 @RunWith(AndroidJUnit4.class)
-public class CustomVideoFeedActivityTest {
+public class ConferenceActivityTest {
+
+    //match
+    private static final String START_NOW_TEXT = "Start now";
 
     private IdlingResource mIdlingResource;
 
@@ -46,39 +56,74 @@ public class CustomVideoFeedActivityTest {
     @Before
     public void before() {
         //try before method to make @Rule run properly
+        System.out.println("before test");
     }
 
+    @After
+    public void after() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Rule
+    public TestWatcher watchman= new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            Log.i("TestWatcher", "*** "+description + " failed!\n");
+        }
+
+        @Override
+        protected void succeeded(Description description) {
+            Log.i("TestWatcher", "*** "+description + " succeeded!\n");
+        }
+
+        protected void starting(Description description) {
+            Log.i("TestWatcher", "******\n*** "+description + " starting!\n");
+        }
+
+        protected void finished(Description description) {
+            Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
+        }
+    };
+
+
     @Test
-    public void testCustomVideoFeed() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), CustomFrameActivity.class);
-        intent.putExtra(MainActivity.WEBRTC_MODE, IWebRTCClient.MODE_PUBLISH);
+    public void testJoinConfereceActivity() {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ConferenceActivity.class);
 
-        ActivityScenario<CustomFrameActivity> scenario = ActivityScenario.launch(intent);
+        ActivityScenario<ConferenceActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<CustomFrameActivity>() {
+        scenario.onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
-            public void perform(CustomFrameActivity activity) {
+            public void perform(ConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
             }
         });
 
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
 
-        onView(withId(R.id.broadcasting_text_view)).check(matches(not(isDisplayed())));
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Publishing")));
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Publishing")));
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
-        //2. stop stream and check that it's stopped
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        onView(withId(R.id.join_conference_button)).perform(click());
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
+
 }

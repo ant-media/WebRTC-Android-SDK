@@ -29,10 +29,13 @@ import java.util.List;
 import java.util.Random;
 
 /*
- * This class manages the multitrack conference with 2 WebRTCClient;one for publishing the participants video,
+ * This class manages the Stream Based Conference Solution with 2 WebRTCClient;one for publishing the participants video,
  * the other one for playing the main track which includes all participants streams as subtrack.
+ * https://antmedia.io/reveal-the-secrets-of-3-types-of-video-conference-solutions/
  *
+ * @deprecated you can use a single WebRTCClient object to handle all the streams
  */
+@Deprecated
 public class MultitrackConferenceManager implements AntMediaSignallingEvents, IDataChannelMessageSender {
     public static final String TAG = "Multitrack Conf";
     public static final int MAX_BITRATE = 2000;
@@ -72,8 +75,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     private boolean playOnlyMode = false;
 
     private boolean playMessageSent = false;
-
-    private NetworkMonitorAutoDetect networkDetector;
     private int minABRResolution;
 
     public MultitrackConferenceManager(Context context, IWebRTCListener webRTCListener, Intent intent, String serverUrl, String roomName, SurfaceViewRenderer publishViewRenderer, ArrayList<SurfaceViewRenderer> playViewRenderers, String streamId, IDataChannelObserver dataChannelObserver) {
@@ -98,7 +99,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
 
     public void init() {
         initWebSocketHandler();
-        //createNetworkChangeObserver();
         if (!this.playOnlyMode) {
             initPublishWebRTCClient();
         }
@@ -382,6 +382,11 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
     }
 
     @Override
+    public void onLeftTheRoom(String roomId) {
+
+    }
+
+    @Override
     public void sendMessageViaDataChannel(DataChannel.Buffer buffer) {
         if (publishWebRTCClient != null) {
             publishWebRTCClient.sendMessageViaDataChannel(buffer);
@@ -537,31 +542,6 @@ public class MultitrackConferenceManager implements AntMediaSignallingEvents, ID
                 playWebRTCClient.forceStreamQuality(minABRResolution);
             }
         }
-    }
-
-    private void createNetworkChangeObserver() {
-        networkDetector = new NetworkMonitorAutoDetect(new NetworkChangeDetector.Observer() {
-            @Override
-            public void onConnectionTypeChanged(NetworkChangeDetector.ConnectionType newConnectionType) {
-                setPublishBitrate(newConnectionType);
-            }
-
-            @Override
-            public void onNetworkConnect(NetworkChangeDetector.NetworkInformation networkInfo) {
-
-            }
-
-            @Override
-            public void onNetworkDisconnect(long networkHandle) {
-
-            }
-
-            @Override
-            public void onNetworkPreference(List<NetworkChangeDetector.ConnectionType> types, int preference) {
-
-            }
-        }, context);
-
     }
 
     public void addTrackToRenderer(VideoTrack track, SurfaceViewRenderer renderer) {

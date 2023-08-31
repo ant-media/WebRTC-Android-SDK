@@ -1,6 +1,5 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -20,24 +19,17 @@ import androidx.annotation.RequiresApi;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
-import io.antmedia.webrtcandroidframework.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED;
 
 public class MultiTrackPlayActivity extends AbstractSampleSDKActivity {
-    private CallFragment callFragment;
-
     private WebRTCClient webRTCClient;
     private String webRTCMode;
     private Button startStreamingButton;
@@ -109,14 +101,6 @@ public class MultiTrackPlayActivity extends AbstractSampleSDKActivity {
         //webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
         webRTCClient.setRemoteRendererList(rendererList);
-
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
 

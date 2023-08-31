@@ -96,13 +96,6 @@ public class MP3PublishActivity extends AbstractSampleSDKActivity {
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
         String mode = this.getIntent().getStringExtra(WEBRTC_MODE);
         if (mode != null) {
             webRTCMode = mode;

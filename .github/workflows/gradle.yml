@@ -40,8 +40,9 @@ jobs:
           python-version: '3.9'
 
       - name: Install python packages
-        run: pip3 install requests selenium flask
-       
+        run: pip3 install requests selenium==3.141.0 flask webdriver-manager
+
+
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
 
