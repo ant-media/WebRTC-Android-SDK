@@ -67,11 +67,13 @@ public class MultitrackConferenceActivityTest {
 
     @After
     public void after() {
+        System.out.println("after test");
         try {
-            Thread.sleep(5000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     @Rule
