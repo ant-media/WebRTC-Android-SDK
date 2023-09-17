@@ -143,8 +143,8 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
 
             @Override
             public void onOrientationChanged(int rotationDegree) {
-                if (webRTCClient.videoCapturer instanceof ScreenCapturerAndroid) {
-                    ((ScreenCapturerAndroid) webRTCClient.videoCapturer).rotateScreen(rotationDegree);
+                if (webRTCClient.getVideoCapturer() instanceof ScreenCapturerAndroid) {
+                    ((ScreenCapturerAndroid) webRTCClient.getVideoCapturer()).rotateScreen(rotationDegree);
                 }
             }};
 
