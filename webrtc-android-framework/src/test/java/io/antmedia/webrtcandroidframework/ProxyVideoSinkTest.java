@@ -3,18 +3,14 @@ package io.antmedia.webrtcandroidframework;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import junit.framework.TestCase;
-
 import org.junit.Test;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 
-import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-
-public class CallActivityUnitTest {
+public class ProxyVideoSinkTest {
     @Test
     public void test() {
-        CallActivity.ProxyVideoSink proxyVideoSink = new CallActivity.ProxyVideoSink();
+        ProxyVideoSink proxyVideoSink = new ProxyVideoSink();
         VideoSink videoSink = mock(VideoSink.class);
         proxyVideoSink.setTarget(videoSink);
 

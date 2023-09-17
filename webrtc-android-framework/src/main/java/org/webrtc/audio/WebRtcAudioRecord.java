@@ -10,6 +10,7 @@
 
 package org.webrtc.audio;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioAttributes;
@@ -47,23 +48,23 @@ import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStartErrorCode;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStateCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
 
-class WebRtcAudioRecord {
+public class WebRtcAudioRecord {
   private static final String TAG = "WebRtcAudioRecordExternal";
 
   // Requested size of each recorded buffer provided to the client.
-  private static final int CALLBACK_BUFFER_SIZE_MS = 10;
+  static final int CALLBACK_BUFFER_SIZE_MS = 10;
 
   // Average number of callbacks per second.
-  private static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
+  public static final int BUFFERS_PER_SECOND = 1000 / CALLBACK_BUFFER_SIZE_MS;
 
   // We ask for a native buffer size of BUFFER_SIZE_FACTOR * (minimum required
   // buffer size). The extra space is allocated to guard against glitches under
   // high load.
-  private static final int BUFFER_SIZE_FACTOR = 2;
+  static final int BUFFER_SIZE_FACTOR = 2;
 
   // The AudioRecordJavaThread is allowed to wait for successful call to join()
   // but the wait times out afther this amount of time.
-  private static final long AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS = 2000;
+  static final long AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS = 2000;
 
   public static final int DEFAULT_AUDIO_SOURCE = AudioSource.VOICE_COMMUNICATION;
 
@@ -72,45 +73,46 @@ class WebRtcAudioRecord {
   public static final int DEFAULT_AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
   // Indicates AudioRecord has started recording audio.
-  private static final int AUDIO_RECORD_START = 0;
+  static final int AUDIO_RECORD_START = 0;
 
   // Indicates AudioRecord has stopped recording audio.
-  private static final int AUDIO_RECORD_STOP = 1;
+  static final int AUDIO_RECORD_STOP = 1;
 
   // Time to wait before checking recording status after start has been called. Tests have
   // shown that the result can sometimes be invalid (our own status might be missing) if we check
   // directly after start.
-  private static final int CHECK_REC_STATUS_DELAY_MS = 100;
+  static final int CHECK_REC_STATUS_DELAY_MS = 100;
 
-  private final Context context;
-  private final AudioManager audioManager;
-  private final int audioSource;
-  private final int audioFormat;
+  final Context context;
+  final AudioManager audioManager;
+  final int audioSource;
+  final int audioFormat;
 
-  private long nativeAudioRecord;
+  public long nativeAudioRecord;
 
-  private final WebRtcAudioEffects effects = new WebRtcAudioEffects();
+  final WebRtcAudioEffects effects = new WebRtcAudioEffects();
 
-  private @Nullable ByteBuffer byteBuffer;
+  @Nullable
+  public ByteBuffer byteBuffer;
 
-  private @Nullable AudioRecord audioRecord;
+  @Nullable AudioRecord audioRecord;
   public MediaProjection mediaProjection;
-  private @Nullable AudioRecordThread audioThread;
-  private @Nullable AudioDeviceInfo preferredDevice;
+  @Nullable AudioRecordThread audioThread;
+  @Nullable AudioDeviceInfo preferredDevice;
 
-  private final ScheduledExecutorService executor;
-  private @Nullable ScheduledFuture<String> future;
+  final ScheduledExecutorService executor;
+  @Nullable ScheduledFuture<String> future;
 
-  private volatile boolean microphoneMute;
-  private final AtomicReference<Boolean> audioSourceMatchesRecordingSessionRef =
+  volatile boolean microphoneMute;
+  final AtomicReference<Boolean> audioSourceMatchesRecordingSessionRef =
       new AtomicReference<>();
-  private byte[] emptyBytes;
+  byte[] emptyBytes;
 
-  private final @Nullable AudioRecordErrorCallback errorCallback;
-  private final @Nullable AudioRecordStateCallback stateCallback;
-  private final @Nullable SamplesReadyCallback audioSamplesReadyCallback;
-  private final boolean isAcousticEchoCancelerSupported;
-  private final boolean isNoiseSuppressorSupported;
+  final @Nullable AudioRecordErrorCallback errorCallback;
+  final @Nullable AudioRecordStateCallback stateCallback;
+  final @Nullable SamplesReadyCallback audioSamplesReadyCallback;
+  final boolean isAcousticEchoCancelerSupported;
+  final boolean isNoiseSuppressorSupported;
 
   /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
@@ -266,19 +268,19 @@ class WebRtcAudioRecord {
   }
 
   @CalledByNative
-  private boolean enableBuiltInAEC(boolean enable) {
+  boolean enableBuiltInAEC(boolean enable) {
     Logging.d(TAG, "enableBuiltInAEC(" + enable + ")");
     return effects.setAEC(enable);
   }
 
   @CalledByNative
-  private boolean enableBuiltInNS(boolean enable) {
+  boolean enableBuiltInNS(boolean enable) {
     Logging.d(TAG, "enableBuiltInNS(" + enable + ")");
     return effects.setNS(enable);
   }
 
   @CalledByNative
-  private int initRecording(int sampleRate, int channels) {
+  int initRecording(int sampleRate, int channels) {
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     if (audioRecord != null) {
       reportWebRtcAudioRecordInitError("InitRecording called twice without StopRecording.");
@@ -380,7 +382,7 @@ class WebRtcAudioRecord {
   }
 
   @CalledByNative
-  private boolean startRecording() {
+  protected boolean startRecording() {
     Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
@@ -404,7 +406,7 @@ class WebRtcAudioRecord {
   }
 
   @CalledByNative
-  private boolean stopRecording() {
+  protected boolean stopRecording() {
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
     if (future != null) {
@@ -425,6 +427,7 @@ class WebRtcAudioRecord {
     return true;
   }
 
+  @SuppressLint("MissingPermission")
   @RequiresApi(api = Build.VERSION_CODES.Q)
   private AudioRecord createAudioRecordOnQOrHigher(
           int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes, MediaProjection mediaProjection) {
@@ -447,6 +450,7 @@ class WebRtcAudioRecord {
             .build();
   }
 
+  @SuppressLint("MissingPermission")
   @TargetApi(Build.VERSION_CODES.M)
   private static AudioRecord createAudioRecordOnMOrHigher(
       int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
@@ -462,6 +466,7 @@ class WebRtcAudioRecord {
         .build();
   }
 
+  @SuppressLint("MissingPermission")
   private static AudioRecord createAudioRecordOnLowerThanM(
       int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
     Logging.d(TAG, "createAudioRecordOnLowerThanM");
@@ -525,14 +530,14 @@ class WebRtcAudioRecord {
     }
   }
 
-  private int channelCountToConfiguration(int channels) {
+  int channelCountToConfiguration(int channels) {
     return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
   }
 
-  private native void nativeCacheDirectBufferAddress(
-      long nativeAudioRecordJni, ByteBuffer byteBuffer);
-  private native void nativeDataIsRecorded(
-      long nativeAudioRecordJni, int bytes, long captureTimestampNs);
+  public native void nativeCacheDirectBufferAddress(
+          long nativeAudioRecordJni, ByteBuffer byteBuffer);
+  public native void nativeDataIsRecorded(
+          long nativeAudioRecordJni, int bytes, long captureTimestampNs);
 
   // Sets all recorded samples to zero if `mute` is true, i.e., ensures that
   // the microphone is muted.
@@ -555,7 +560,7 @@ class WebRtcAudioRecord {
     this.mediaProjection = mediaProjection;
   }
 
-  private void reportWebRtcAudioRecordInitError(String errorMessage) {
+  public void reportWebRtcAudioRecordInitError(String errorMessage) {
     Logging.e(TAG, "Init recording error: " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     logRecordingConfigurations(audioRecord, false /* verifyAudioConfig */);
@@ -598,7 +603,7 @@ class WebRtcAudioRecord {
   // Reference from Android code, AudioFormat.getBytesPerSample. BitPerSample / 8
   // Default audio data format is PCM 16 bits per sample.
   // Guaranteed to be supported by all devices
-  private static int getBytesPerSample(int audioFormat) {
+  static int getBytesPerSample(int audioFormat) {
     switch (audioFormat) {
       case AudioFormat.ENCODING_PCM_8BIT:
         return 1;

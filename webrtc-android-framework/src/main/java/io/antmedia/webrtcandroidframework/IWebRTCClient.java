@@ -1,18 +1,22 @@
 package io.antmedia.webrtcandroidframework;
 
+import android.Manifest;
 import android.content.Intent;
+import android.os.Build;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
-
-import io.antmedia.webrtcandroidframework.apprtc.CallFragment;
 
 /**
  * Created by karinca on 20.10.2017.
  */
 
-public interface IWebRTCClient extends CallFragment.OnCallEvents {
+public interface IWebRTCClient {
 
+    public static final String[] REQUIRED_PERMISSIONS = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ?
+            new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.BLUETOOTH_CONNECT}
+            :
+            new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
 
     /**
      * Publish mode
@@ -33,6 +37,11 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      * Multi track play
      */
     String MODE_MULTI_TRACK_PLAY = "multi_track_play";
+
+    /**
+     * Used for track based conference
+     */
+    String MODE_TRACK_BASED_CONFERENCE = "track_based_conference";
 
 
     /**
@@ -155,5 +164,11 @@ public interface IWebRTCClient extends CallFragment.OnCallEvents {
      */
     void setStreamName(String streamName);
 
+
+    //FIXME: add comment
+    void onCameraSwitch();
+    void onVideoScalingSwitch(RendererCommon.ScalingType scalingType);
+    void onCaptureFormatChange(int width, int height, int framerate);
+    boolean onToggleMic();
 
 }

@@ -25,23 +25,14 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoTrack;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Map;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.IDataChannelObserver;
@@ -56,7 +47,7 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
 
-public class MainActivity extends Activity implements IWebRTCListener, IDataChannelObserver {
+public class MainActivity extends AbstractSampleSDKActivity {
 
     /**
      * Mode can Publish, Play or P2P
@@ -76,8 +67,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     private SurfaceViewRenderer pipViewRenderer;
     private Spinner streamInfoListSpinner;
     public static final String WEBRTC_MODE = "WebRTC_MODE";
-
-    public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
 
     // variables for handling reconnection attempts after disconnected
     final int RECONNECTION_PERIOD_MLS = 1000;
@@ -137,7 +126,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-
         if(!webRTCMode.equals(IWebRTCClient.MODE_PLAY)) {
             streamInfoListSpinner.setVisibility(View.INVISIBLE);
         }
@@ -165,13 +153,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
             });
         }
 
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
         String mode = this.getIntent().getStringExtra(WEBRTC_MODE);
         if (mode != null) {
             webRTCMode = mode;
@@ -211,7 +192,7 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     public void startStreaming(View v) {
         //update stream id if it is changed
         webRTCClient.setStreamId(streamIdEditText.getText().toString());
-        idlingResource.increment();
+        incrementIdle();
         if (!webRTCClient.isStreaming()) {
             ((Button) v).setText("Stop " + operationName);
             Log.i(getClass().getSimpleName(), "Calling startStream");
@@ -290,12 +271,6 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         Log.w(getClass().getSimpleName(), "onError:" + description);
         Toast.makeText(this, "Error: "  +description , Toast.LENGTH_LONG).show();
         decrementIdle();
-    }
-
-    private void decrementIdle() {
-        if (!idlingResource.isIdleNow()) {
-            idlingResource.decrement();
-        }
     }
 
     @Override
@@ -391,6 +366,21 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
     }
 
     @Override
+    public void onNewVideoTrack(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onVideoTrackEnded(VideoTrack track) {
+
+    }
+
+    @Override
+    public void onReconnectionAttempt(String streamId) {
+
+    }
+
+    @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {
         Log.d(MainActivity.class.getName(), "Data channel buffered amount changed: ");
     }
@@ -458,9 +448,5 @@ public class MainActivity extends Activity implements IWebRTCListener, IDataChan
         else {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
-    }
-
-    public IdlingResource getIdlingResource() {
-        return idlingResource;
     }
 }
