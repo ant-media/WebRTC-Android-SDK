@@ -50,7 +50,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2.27.0
         with:
           api-level: 33
-          arch: x86_64
+          arch: x86
           target: playstore
           emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
