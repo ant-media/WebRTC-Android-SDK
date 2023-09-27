@@ -27,6 +27,12 @@ android {
         }
     }
 
+    packagingOptions {
+        pickFirst 'lib/arm64-v8a/libyuv.so'
+        pickFirst 'lib/armeabi-v7a/libyuv.so'
+
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -91,10 +97,12 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel:2.5.1"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
     debugImplementation "androidx.test:core:1.5.0"
-    implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
+    //implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
     implementation 'org.apache.commons:commons-lang3:3.0'
     androidTestImplementation 'com.squareup.okhttp3:okhttp:4.9.3'
     androidTestImplementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     androidTestImplementation 'com.google.code.gson:gson:2.8.9'
+    implementation(name: 'sdk_uvc_camera_v23092707_debug', ext: 'aar')
+
 
 }
