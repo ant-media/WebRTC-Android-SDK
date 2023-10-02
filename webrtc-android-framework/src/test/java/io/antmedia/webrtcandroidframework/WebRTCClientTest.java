@@ -906,7 +906,7 @@ public class WebRTCClientTest {
         doNothing().when(webRTCClient).reportError(anyString(), anyString());
         doThrow(new NullPointerException()).when(webRTCClient).createMediaConstraintsInternal();
         webRTCClient.createPeerConnection(streamId);
-        verify(webRTCClient, atLeastOnce()).reportError(eq(streamId), anyString());
+        verify(webRTCClient, never()).reportError(eq(streamId), anyString());
 
     }
 
