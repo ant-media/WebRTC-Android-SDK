@@ -12,6 +12,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -905,7 +906,7 @@ public class WebRTCClientTest {
         doNothing().when(webRTCClient).reportError(anyString(), anyString());
         doThrow(new NullPointerException()).when(webRTCClient).createMediaConstraintsInternal();
         webRTCClient.createPeerConnection(streamId);
-        verify(webRTCClient, timeout(1000)).reportError(eq(streamId), anyString());
+        verify(webRTCClient, atLeastOnce()).reportError(eq(streamId), anyString());
 
     }
 
