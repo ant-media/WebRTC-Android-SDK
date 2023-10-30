@@ -793,6 +793,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public boolean checkPermissions(PermissionCallback permissionCallback) {
         boolean isForPublish = streamMode.equals(MODE_PUBLISH) ||
+                streamMode.equals(MODE_JOIN) ||
                 streamMode.equals(MODE_TRACK_BASED_CONFERENCE);
 
         return webRTCListener.checkAndRequestPermisssions(isForPublish, permissionCallback);
@@ -1283,12 +1284,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
         else if (streamMode.equals(IWebRTCClient.MODE_JOIN)) {
             init(this.url, streamId, this.streamMode, token, this.intent);
-            wsHandler.joinToPeer(streamId, token);
+            join(streamId);
         }
         else if (streamMode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
             init(this.url, streamId, this.streamMode, token, this.intent);
             wsHandler.getTrackList(streamId, token);
         }
+    }
+
+    private void join(String streamId) {
+        Log.e(TAG, "Join: "+streamId);
+        PeerInfo peerInfo = new PeerInfo(streamId, MODE_JOIN);
+        peers.put(streamId, peerInfo);
+
+        init(this.url, streamId, this.streamMode, this.token, this.intent);
+        wsHandler.joinToPeer(streamId, token);
     }
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
