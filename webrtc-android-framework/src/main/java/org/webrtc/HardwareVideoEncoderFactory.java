@@ -40,8 +40,9 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   // List of devices with poor H.264 encoder quality.
   // HW H.264 encoder on below devices has poor bitrate control - actual
   // bitrates deviates a lot from the target value.
-  private static final List<String> H264_HW_EXCEPTION_MODELS =
-      Arrays.asList("SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4");
+  public static final List<String> H264_HW_EXCEPTION_MODELS = Arrays.asList();
+  //Just support in all models
+  //    Arrays.asList("SAMSUNG-SGH-I337", "Nexus 7", "Nexus 4");
 
   @Nullable private final EglBase14.Context sharedContext;
   private final boolean enableIntelVp8Encoder;
@@ -132,10 +133,9 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   public VideoCodecInfo[] getSupportedCodecs() {
     List<VideoCodecInfo> supportedCodecInfos = new ArrayList<VideoCodecInfo>();
     // Generate a list of supported codecs in order of preference:
-    // VP8, VP9, H264 (high profile), H264 (baseline profile), AV1 and H265.
-    for (VideoCodecMimeType type :
-        new VideoCodecMimeType[] {VideoCodecMimeType.VP8, VideoCodecMimeType.VP9,
-            VideoCodecMimeType.H264, VideoCodecMimeType.AV1, VideoCodecMimeType.H265}) {
+    // VP8, VP9, H264 (high profile), H264 (baseline profile) and AV1.
+    for (VideoCodecMimeType type : new VideoCodecMimeType[] {VideoCodecMimeType.VP8,
+             VideoCodecMimeType.VP9, VideoCodecMimeType.H264, VideoCodecMimeType.AV1}) {
       MediaCodecInfo codec = findCodecForType(type);
       if (codec != null) {
         String name = type.name();
@@ -190,10 +190,10 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
 
   // Returns true if the given MediaCodecInfo indicates a hardware module that is supported on the
   // current SDK.
-  private boolean isHardwareSupportedInCurrentSdk(MediaCodecInfo info, VideoCodecMimeType type) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      return info.isHardwareAccelerated();
-    }
+  public boolean isHardwareSupportedInCurrentSdk(MediaCodecInfo info, VideoCodecMimeType type) {
+    //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    //  return info.isHardwareAccelerated();
+    //}
 
     switch (type) {
       case VP8:
@@ -202,7 +202,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         return isHardwareSupportedInCurrentSdkVp9(info);
       case H264:
         return isHardwareSupportedInCurrentSdkH264(info);
-      case H265:
       case AV1:
         return false;
     }
@@ -226,14 +225,16 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
   }
 
-  private boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
+  public boolean isHardwareSupportedInCurrentSdkH264(MediaCodecInfo info) {
     // First, H264 hardware might perform poorly on this model.
     if (H264_HW_EXCEPTION_MODELS.contains(Build.MODEL)) {
       return false;
     }
     String name = info.getName();
     // QCOM and Exynos H264 encoders are always supported.
-    return name.startsWith(QCOM_PREFIX) || name.startsWith(EXYNOS_PREFIX);
+    //return name.startsWith(QCOM_PREFIX) || name.startsWith(EXYNOS_PREFIX);
+    //ignore chipsets and return true for all of them
+    return true;
   }
 
   private boolean isMediaCodecAllowed(MediaCodecInfo info) {
