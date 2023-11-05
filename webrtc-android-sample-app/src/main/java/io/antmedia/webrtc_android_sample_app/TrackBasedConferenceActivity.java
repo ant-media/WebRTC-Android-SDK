@@ -280,7 +280,7 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
             audioButton.setText("Enable Audio");
             sendNotificationEvent(MIC_MUTED, null);
         } else {
-            webRTCClient.isAudioOn();
+            webRTCClient.enableAudio();
             audioButton.setText("Disable Audio");
             sendNotificationEvent(MIC_UNMUTED, null);
         }
