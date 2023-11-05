@@ -394,8 +394,15 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         }
     }
 
+    // This method is added for unit testing purposes
+    public void setWebRTCClient(WebRTCClient webRTCClient) {
+        this.webRTCClient = webRTCClient;
+    }
 
-
+    // This method is added for unit testing purposes
+    public void setAudioButton(Button audioButton) {
+        this.audioButton = audioButton;
+    }
 
 }
 
