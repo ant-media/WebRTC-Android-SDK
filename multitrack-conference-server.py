@@ -8,7 +8,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from flask import Flask, request
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 
 
@@ -32,7 +31,7 @@ class Browser:
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
 
-    service = Service(executable_path='./chromedriver')  
+    service = Service(executable_path='~/chromedriver-linux64/chromedriver')  
     #service = Service(executable_path='C:/WebDriver/chromedriver.exe') 
 
     self.driver = webdriver.Chrome(service=service, options=browser_options)
