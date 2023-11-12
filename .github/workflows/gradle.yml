@@ -40,7 +40,11 @@ jobs:
           python-version: '3.9'
 
       - name: Install python packages
-        run: pip3 install requests selenium==4.14 flask
+        run: |
+          wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chrome-linux64.zip
+          apt get update & apt install unzip
+          unzip chrome-linux64.zip
+          pip3 install requests selenium==4.14 flask 
        
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
