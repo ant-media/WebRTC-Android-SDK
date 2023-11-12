@@ -42,7 +42,7 @@ jobs:
       - name: Install python packages
         run: |
           wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chrome-linux64.zip
-          apt get update & apt install unzip
+          sudo apt update & sudo apt install unzip
           unzip chrome-linux64.zip
           pip3 install requests selenium==4.14 flask 
        
