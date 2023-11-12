@@ -42,7 +42,7 @@ jobs:
       - name: Install python packages
         run: |
           wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
-          unzip chrome-linux64.zip
+          unzip chromedriver-linux64.zip
           export PATH=$PATH:`pwd`/chromedriver-linux64
           pip3 install requests selenium==4.14 flask 
        
