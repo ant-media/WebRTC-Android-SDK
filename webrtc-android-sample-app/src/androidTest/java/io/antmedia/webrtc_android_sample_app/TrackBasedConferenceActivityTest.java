@@ -84,19 +84,26 @@ public class TrackBasedConferenceActivityTest {
         @Override
         protected void failed(Throwable e, Description description) {
             Log.i("TestWatcher", "*** "+description + " failed!\n");
+            InstrumentationRegistry.getInstrumentation().sendStringSync("*** "+description + " failed!\n");
         }
 
         @Override
         protected void succeeded(Description description) {
             Log.i("TestWatcher", "*** "+description + " succeeded!\n");
+            InstrumentationRegistry.getInstrumentation().sendStringSync("*** "+description + " succeeded!\n");
+
         }
 
         protected void starting(Description description) {
             Log.i("TestWatcher", "******\n*** "+description + " starting!\n");
+            InstrumentationRegistry.getInstrumentation().sendStringSync("******\n*** "+description + " starting!\n");
+
         }
 
         protected void finished(Description description) {
             Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
+            InstrumentationRegistry.getInstrumentation().sendStringSync("*** "+description + " finished!\n******\n");
+
         }
     };
 
