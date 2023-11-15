@@ -21,7 +21,9 @@ import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.platform.io.PlatformTestStorageRegistry;
 import androidx.test.rule.GrantPermissionRule;
+import androidx.test.services.storage.TestStorage;
 
 import org.junit.After;
 import org.junit.Before;
@@ -66,6 +68,9 @@ public class TrackBasedConferenceActivityTest {
         System.out.println("before test");
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         System.out.println("after sleep");
+
+        TestStorage testStorage = new TestStorage();
+        PlatformTestStorageRegistry.registerInstance(testStorage);
     }
 
     @After
@@ -186,6 +191,9 @@ public class TrackBasedConferenceActivityTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        onView(withId(R.id.action_menu_divider)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
