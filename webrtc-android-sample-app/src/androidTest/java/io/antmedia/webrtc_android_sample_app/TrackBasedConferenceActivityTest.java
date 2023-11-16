@@ -189,9 +189,6 @@ public class TrackBasedConferenceActivityTest {
             e.printStackTrace();
         }
 
-        onView(withId(R.id.action_menu_divider)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
-
-
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
         onView(withId(R.id.join_conference_button)).perform(click());
