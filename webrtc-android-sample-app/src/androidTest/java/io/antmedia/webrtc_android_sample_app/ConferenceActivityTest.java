@@ -20,6 +20,7 @@ import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,11 +53,14 @@ public class ConferenceActivityTest {
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
+    private String roomName;
 
     @Before
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
+        roomName = "room_"+RandomStringUtils.randomNumeric(3);
+        SettingsActivity.changeRoomName(ApplicationProvider.getApplicationContext(), roomName);
     }
 
     @After

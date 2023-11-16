@@ -23,6 +23,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -34,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import okhttp3.Call;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -55,11 +57,16 @@ public class MultitrackConferenceActivityTest {
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
+    private String roomName;
+    private String runningTest;
 
     @Before
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
+        roomName = "room_"+ RandomStringUtils.randomNumeric(3);
+        SettingsActivity.changeRoomName(ApplicationProvider.getApplicationContext(), roomName);
+
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         System.out.println("after sleep");
 
@@ -90,6 +97,7 @@ public class MultitrackConferenceActivityTest {
 
         protected void starting(Description description) {
             Log.i("TestWatcher", "******\n*** "+description + " starting!\n");
+            runningTest = description.toString();
         }
 
         protected void finished(Description description) {
@@ -133,58 +141,6 @@ public class MultitrackConferenceActivityTest {
 
     }
 
-    public class NetworkClient {
-        //private static final String BASE_URL = "http://192.168.1.26:3030/";
-        private static final String BASE_URL = "http://10.0.2.2:3030/";
-
-        private final OkHttpClient client = new OkHttpClient();
-
-        public String get(String path) throws IOException {
-            Request request = new Request.Builder()
-                    .url(BASE_URL + path)
-                    .header("Connection", "close") // <== solution, not declare in Interceptor
-                    .build();
-
-            Call call = client.newCall(request);
-            Response response = call.execute();
-            return response.body().string();
-        }
-    }
-
-    class RemoteParticipant {
-        NetworkClient client = new NetworkClient();
-        String response = null;
-
-        public void join() {
-            try {
-                response = client.get("create");
-                assertNotNull(response);
-
-                response = client.get("join");
-                assertNotNull(response);
-
-                Log.i("RemoteParticipant", "join: " + response);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public void leave() {
-            try {
-                response = client.get("leave");
-                assertNotNull(response);
-
-                response = client.get("delete");
-                assertNotNull(response);
-
-                Log.i("RemoteParticipant", "leave: " + response);
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     @Test
     public void testJoinWithExternalParticipant() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
@@ -203,9 +159,7 @@ public class MultitrackConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-
-        addParticipant();
-
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
@@ -215,24 +169,10 @@ public class MultitrackConferenceActivityTest {
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
+        participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
-
-
-
-
-    private void addParticipant() {
-        RemoteParticipant participant = new RemoteParticipant();
-        participant.join();
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        participant.leave();
-    }
-
 
     //@Test
     public void testJoinWithoutVideo() {
@@ -258,7 +198,7 @@ public class MultitrackConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        addParticipant();
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
         onView(withId(R.id.control_audio_button)).check(matches(withText("Enable Audio")));
         onView(withId(R.id.control_audio_button)).perform(click());
@@ -274,6 +214,7 @@ public class MultitrackConferenceActivityTest {
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
+        participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
@@ -300,13 +241,13 @@ public class MultitrackConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        addParticipant();
-
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
+        participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
@@ -331,8 +272,7 @@ public class MultitrackConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-
-        addParticipant();
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
         mactivity[0].changeWifiState(false);
 
@@ -353,6 +293,7 @@ public class MultitrackConferenceActivityTest {
 
         //onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
+        participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
