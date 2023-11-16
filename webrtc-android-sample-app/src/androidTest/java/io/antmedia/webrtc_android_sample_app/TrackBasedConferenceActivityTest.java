@@ -68,9 +68,6 @@ public class TrackBasedConferenceActivityTest {
         System.out.println("before test");
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         System.out.println("after sleep");
-
-        TestStorage testStorage = new TestStorage();
-        PlatformTestStorageRegistry.registerInstance(testStorage);
     }
 
     @After
