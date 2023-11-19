@@ -63,7 +63,7 @@ jobs:
           script: |
             touch emulator.log               
             chmod 777 emulator.log
-            adb logcat >> emulator.log &
+            adb logcat io.antmedia:I >> emulator.log &
             ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
 
       - name: Archive Test Report
