@@ -236,6 +236,10 @@ public class MainActivity extends AbstractSampleSDKActivity {
     public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
         Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+        if (webRTCClient.isReconnectionInProgress()) {
+            webRTCClient.stopStream(streamId);
+            webRTCClient.startStream(streamId);
+        }
         decrementIdle();
     }
 
