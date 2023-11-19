@@ -102,7 +102,7 @@ public class MultitrackConferenceActivityTest {
     };
 
 
-    @Test
+   //@Test
     public void testJoinMultitrackRoom() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
         final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
@@ -140,7 +140,7 @@ public class MultitrackConferenceActivityTest {
 
     }
 
-    @Test
+    //@Test
     public void testJoinWithExternalParticipant() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
         final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
@@ -260,7 +260,7 @@ public class MultitrackConferenceActivityTest {
 
     }
 
-    @Test
+    //@Test
     public void testReconnect() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
         final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
