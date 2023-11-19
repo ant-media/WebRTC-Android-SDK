@@ -189,6 +189,7 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
         broadcastingView.setVisibility(View.VISIBLE);
 
         scheduleSendStatusTimer();
+        decrementIdle();
     }
 
     @Override
@@ -252,6 +253,7 @@ public class TrackBasedConferenceActivity extends AbstractSampleSDKActivity {
     }
 
     public void publishStream(String streamId) {
+        incrementIdle();
         if (!this.playOnlyMode) {
             webRTCClient.publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, roomId);
         }
