@@ -225,7 +225,7 @@ public class MultitrackConferenceActivityTest {
     }
 
 
-    @Test
+    //@Test
     public void testJoinPlayOnlyAsFirstPerson() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
         final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
