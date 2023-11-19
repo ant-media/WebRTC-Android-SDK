@@ -61,12 +61,12 @@ class RemoteParticipant {
     public void join() {
         try {
             response = client.get("create", participantName);
+            Log.i("RemoteParticipant", "create: " + response);
             assertNotNull(response);
 
             response = client.get("join", participantName);
-            assertNotNull(response);
-
             Log.i("RemoteParticipant", "join: " + response);
+            assertNotNull(response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -75,15 +75,14 @@ class RemoteParticipant {
     public void leave() {
         try {
             response = client.get("leave", participantName);
+            Log.i("RemoteParticipant", "leave: " + response);
             assertNotNull(response);
 
             response = client.get("delete", participantName);
+            Log.i("RemoteParticipant", "delete: " + response);
             assertNotNull(response);
-
-            Log.i("RemoteParticipant", "leave: " + response);
-
         } catch (IOException e) {
-            //throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }
     }
 

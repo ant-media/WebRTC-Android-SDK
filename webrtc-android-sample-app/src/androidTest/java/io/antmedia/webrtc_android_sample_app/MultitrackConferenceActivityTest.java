@@ -57,16 +57,12 @@ public class MultitrackConferenceActivityTest {
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
-    private String roomName;
     private String runningTest;
 
     @Before
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
-        roomName = "room_"+ RandomStringUtils.randomNumeric(3);
-        SettingsActivity.changeRoomName(ApplicationProvider.getApplicationContext(), roomName);
-
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
         System.out.println("after sleep");
 
@@ -109,12 +105,15 @@ public class MultitrackConferenceActivityTest {
     @Test
     public void testJoinMultitrackRoom() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
 
         ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
             @Override
             public void perform(MultitrackConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -144,12 +143,15 @@ public class MultitrackConferenceActivityTest {
     @Test
     public void testJoinWithExternalParticipant() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
 
         ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
             @Override
             public void perform(MultitrackConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -177,12 +179,15 @@ public class MultitrackConferenceActivityTest {
     //@Test
     public void testJoinWithoutVideo() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
 
         ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
             @Override
             public void perform(MultitrackConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -223,12 +228,15 @@ public class MultitrackConferenceActivityTest {
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
 
         ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
             @Override
             public void perform(MultitrackConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -255,6 +263,7 @@ public class MultitrackConferenceActivityTest {
     @Test
     public void testReconnect() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), MultitrackConferenceActivity.class);
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
 
         ActivityScenario<MultitrackConferenceActivity> scenario = ActivityScenario.launch(intent);
 
@@ -262,6 +271,8 @@ public class MultitrackConferenceActivityTest {
         scenario.onActivity(new ActivityScenario.ActivityAction<MultitrackConferenceActivity>() {
             @Override
             public void perform(MultitrackConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
+
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));

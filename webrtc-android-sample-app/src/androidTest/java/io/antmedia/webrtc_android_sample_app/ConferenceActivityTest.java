@@ -59,8 +59,6 @@ public class ConferenceActivityTest {
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
-        roomName = "room_"+RandomStringUtils.randomNumeric(3);
-        SettingsActivity.changeRoomName(ApplicationProvider.getApplicationContext(), roomName);
     }
 
     @After
@@ -97,12 +95,13 @@ public class ConferenceActivityTest {
     @Test
     public void testJoinConfereceActivity() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ConferenceActivity.class);
-
+        roomName = "room_"+RandomStringUtils.randomNumeric(3);
         ActivityScenario<ConferenceActivity> scenario = ActivityScenario.launch(intent);
 
         scenario.onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));

@@ -67,4 +67,8 @@ public class SettingsActivity extends Activity {
         editor.putString(context.getString(R.string.roomId), roomName);
         editor.apply();
     }
+
+    public static String getRoomName(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(context.getString(R.string.roomId), DEFAULT_ROOM_NAME);
+    }
 }

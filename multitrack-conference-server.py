@@ -31,8 +31,8 @@ class Browser:
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
 
-    service = Service(executable_path='/home/ubuntu/chromedriver')  
-    #service = Service(executable_path='C:/WebDriver/chromedriver.exe') 
+    #service = Service(executable_path='/home/ubuntu/chromedriver')  
+    service = Service(executable_path='C:/WebDriver/chromedriver.exe') 
 
     self.driver = webdriver.Chrome(service=service, options=browser_options)
 
@@ -77,7 +77,7 @@ url="https://test.antmedia.io:5443/LiveApp/multitrack-conference.html"
 #url="www.google.com"
 app = Flask(__name__)
 chrome = Browser()
-chrome.init(True)
+chrome.init(False)
 
 
 @app.route('/create', methods=['GET'])

@@ -59,18 +59,14 @@ public class TrackBasedConferenceActivityTest {
 
     @Rule
     public ActivityScenarioRule<TrackBasedConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(TrackBasedConferenceActivity.class);
-    private String roomName;
     private String runningTest;
 
     @Before
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
-        roomName = "room_"+ RandomStringUtils.randomNumeric(3);
-        SettingsActivity.changeRoomName(ApplicationProvider.getApplicationContext(), roomName);
 
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-        System.out.println("after sleep");
     }
 
     @After
@@ -109,10 +105,12 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinMultitrackRoom() {
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
+
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-
+                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -142,9 +140,11 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinWithExternalParticipant() {
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -172,10 +172,12 @@ public class TrackBasedConferenceActivityTest {
 
     //@Test
     public void testJoinWithoutVideo() {
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
+
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
-
+                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -215,9 +217,12 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testJoinPlayOnlyAsFirstPerson() {
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
+
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -243,10 +248,13 @@ public class TrackBasedConferenceActivityTest {
 
     @Test
     public void testReconnect() {
+        final String roomName = "room_" + RandomStringUtils.randomNumeric(3);
+
         final TrackBasedConferenceActivity[] mactivity = new TrackBasedConferenceActivity[1];
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<TrackBasedConferenceActivity>() {
             @Override
             public void perform(TrackBasedConferenceActivity activity) {
+                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
