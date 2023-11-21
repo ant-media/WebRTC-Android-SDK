@@ -4,10 +4,13 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_DATA_CHANNEL_ENABLED;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
 import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
+import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
@@ -17,7 +20,6 @@ import android.media.MediaFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Surface;
@@ -33,21 +35,20 @@ import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.webrtc.JavaI420Buffer;
-import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoFrame;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtcandroidframework.CustomVideoCapturer;
 import io.antmedia.webrtcandroidframework.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
-import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
+import io.github.crow_misia.libyuv.AbgrBuffer;
+import io.github.crow_misia.libyuv.I420Buffer;
+import io.github.crow_misia.libyuv.Plane;
+import io.github.crow_misia.libyuv.PlanePrimitive;
 
-public class MP4PublishActivity extends AbstractSampleSDKActivity {
+public class MP4PublishWithSurfaceActivity extends AbstractSampleSDKActivity {
 
     private boolean enableDataChannel = true;
 
@@ -66,6 +67,7 @@ public class MP4PublishActivity extends AbstractSampleSDKActivity {
     private EditText streamIdEditText;
 
     Handler handler = new Handler();
+    private Surface surface;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -101,10 +103,12 @@ public class MP4PublishActivity extends AbstractSampleSDKActivity {
         operationName = "Publishing";
 
 
-        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 30);
+        this.getIntent().putExtra(EXTRA_VIDEO_FPS, 20);
         this.getIntent().putExtra(EXTRA_VIDEO_BITRATE, 1500);
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         this.getIntent().putExtra(EXTRA_DATA_CHANNEL_ENABLED, enableDataChannel);
+        this.getIntent().putExtra(EXTRA_VIDEO_WIDTH, 360);
+        this.getIntent().putExtra(EXTRA_VIDEO_HEIGHT, 640);
 
         webRTCClient = new WebRTCClient( this,this);
 
@@ -131,6 +135,11 @@ public class MP4PublishActivity extends AbstractSampleSDKActivity {
             Log.i(getClass().getSimpleName(), "Calling startStream");
 
             webRTCClient.startStream();
+
+            if(surface == null) {
+                SurfaceTexture surfaceTexture = ((CustomVideoCapturer) webRTCClient.getVideoCapturer()).getSurfaceTextureHelper().getSurfaceTexture();
+                surface = new Surface(surfaceTexture);
+            }
 
             Thread t = new Thread() {
                 @RequiresApi(api = Build.VERSION_CODES.N)
@@ -199,25 +208,31 @@ public class MP4PublishActivity extends AbstractSampleSDKActivity {
         }
     }
 
-    private void sendFrame(Image yuvImage) {
-        int frameHeight = yuvImage.getHeight();
-        int frameWidth = yuvImage.getWidth();
+    private void sendFrame(Image image) {
+        byte[] data = new byte[image.getHeight() * image.getWidth() * 3 / 2];
+        ByteBuffer bufferY = image.getPlanes()[0].getBuffer();
+        ByteBuffer bufferU = image.getPlanes()[1].getBuffer();
+        ByteBuffer bufferV = image.getPlanes()[2].getBuffer();
 
-        ByteBuffer yData = (ByteBuffer) yuvImage.getPlanes()[0].getBuffer().rewind();
-        ByteBuffer uData = (ByteBuffer) yuvImage.getPlanes()[1].getBuffer().rewind();
-        ByteBuffer vData = (ByteBuffer) yuvImage.getPlanes()[2].getBuffer().rewind();
+        int strideY = image.getPlanes()[0].getRowStride();
+        int strideU = image.getPlanes()[1].getRowStride();
+        int strideV = image.getPlanes()[2].getRowStride();
 
-        final JavaI420Buffer buffer = JavaI420Buffer.wrap(frameWidth, frameHeight,
-                yData, yuvImage.getPlanes()[0].getRowStride(),
-                uData, yuvImage.getPlanes()[1].getRowStride(),
-                vData, yuvImage.getPlanes()[2].getRowStride(),
-                null);
+        //drawYUVonSurface(data);
 
-        final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
 
-        VideoFrame videoFrame = new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
-        ((CustomVideoCapturer)webRTCClient.getVideoCapturer()).writeFrame(videoFrame);
+        PlanePrimitive planeY = new PlanePrimitive(strideY, bufferY);
+        PlanePrimitive planeU = new PlanePrimitive(strideU, bufferU);
+        PlanePrimitive planeV = new PlanePrimitive(strideV, bufferV);
 
+        I420Buffer yuvBuffer = I420Buffer.Factory.wrap(planeY, planeU, planeV, 640, 360);
+        AbgrBuffer rgbBuffer = AbgrBuffer.Factory.allocate(640, 360);
+
+        yuvBuffer.convertTo(rgbBuffer);
+
+        Canvas canvas = surface.lockCanvas(null);
+        canvas.drawBitmap(rgbBuffer.asBitmap(), 0, 0, null);
+        surface.unlockCanvasAndPost(canvas);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)

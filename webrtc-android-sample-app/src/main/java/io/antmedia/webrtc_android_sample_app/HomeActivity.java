@@ -60,6 +60,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Multitrack Conference"));
         activities.add(new ActivityLink(new Intent(this, MP4PublishActivity.class),
                 "MP4 Publish"));
+        activities.add(new ActivityLink(new Intent(this, MP4PublishWithSurfaceActivity.class),
+                "MP4 Publish S"));
     }
 
     private void setListAdapter(List<ActivityLink> activities) {
