@@ -102,4 +102,70 @@ public interface IWebRTCListener {
      * It's called when reconnection attempt is started
      */
     void onReconnectionAttempt(String streamId);
+
+
+
+    /**
+     * It's called when joiened the room
+     *
+     * @param streamId
+     * @param streams in the room
+     */
+    void onJoinedTheRoom(String streamId, String[] streams);
+
+    /**
+     * It's called when room information is received
+     *
+     * @param streams
+     */
+    void onRoomInformation(String[] streams);
+
+    /**
+     * It's called when left the room
+     *
+     * @param roomId
+     */
+   void onLeftTheRoom(String roomId);
+
+    /**
+     * @param streamId
+     * It's called when mic is muted for the stream
+     */
+    void onMutedFor(String streamId);
+
+    /**
+     * @param streamId
+     * It's called when mic is unmuted for the stream
+     */
+    void onUnmutedFor(String streamId);
+
+    /**
+     * @param streamId
+     * It's called when camera is turned on for the stream
+     */
+    void onCameraTurnOnFor(String streamId);
+
+    /**
+     * @param streamId
+     * It's called when camera is turned off for the stream
+     */
+    void onCameraTurnOffFor(String streamId);
+
+    /**
+     * @param streamId
+     * @param micStatus
+     * @param cameraStatus
+     * It's called when status of mic and camera is updated for the stream
+     */
+    void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus);
+
+    /**
+     * Permissions are checked when needed
+     * @param isForPublish if it's for publish, it checks camera and mic permissions
+     * @param permissionCallback callback to be called when permissions are granted or denied
+     *
+     * @return
+     */
+    boolean checkAndRequestPermisssions(boolean isForPublish, PermissionCallback permissionCallback);
+
 }

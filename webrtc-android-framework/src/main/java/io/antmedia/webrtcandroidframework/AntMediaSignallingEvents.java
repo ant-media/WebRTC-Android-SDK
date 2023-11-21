@@ -108,4 +108,10 @@ public interface AntMediaSignallingEvents {
      * @param definition
      */
     void onError(String streamId, String definition);
+
+    /**
+     * It's called when participant left the room
+     * @param roomId
+     */
+    void onLeftTheRoom(String roomId);
 }

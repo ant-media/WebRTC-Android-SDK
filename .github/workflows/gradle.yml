@@ -40,7 +40,11 @@ jobs:
           python-version: '3.9'
 
       - name: Install python packages
-        run: pip3 install requests selenium flask
+        run: |
+          wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
+          unzip chromedriver-linux64.zip
+          cp chromedriver-linux64/chromedriver /home/ubuntu
+          pip3 install requests selenium==4.14 flask 
        
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
@@ -59,7 +63,7 @@ jobs:
           script: |
             touch emulator.log               
             chmod 777 emulator.log
-            adb logcat >> emulator.log &
+            adb logcat io.antmedia:I >> emulator.log &
             ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
 
       - name: Archive Test Report
@@ -71,6 +75,7 @@ jobs:
             webrtc-android-sample-app/build/reports/tests/testDebugUnitTest/
             webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/
             webrtc-android-sample-app/build/reports/androidTests/
+            webrtc-android-sample-app/build/outputs/connected_android_test_additional_output/
             webrtc-android-framework/build/reports/tests/testDebugUnitTest/
             webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
             webrtc-android-framework/build/reports/androidTests/

@@ -90,14 +90,6 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
 
         webRTCClient.setVideoRenderers(pipViewRenderer, cameraViewRenderer);
 
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS)
-        {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
         // fix:- to remove the black boarder issue
         DisplayMetrics displayMetrics = webRTCClient.getDisplayMetrics();
         videoWidth = displayMetrics.widthPixels;

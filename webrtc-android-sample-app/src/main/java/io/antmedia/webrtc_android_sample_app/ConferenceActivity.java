@@ -36,6 +36,13 @@ import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_CAPTU
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
+/*
+ * This activity is a sample activity shows how to implement Stream Based Conference Solution
+ * https://antmedia.io/reveal-the-secrets-of-3-types-of-video-conference-solutions/
+ *
+ * @deprecated use {@link TrackBasedConferenceActivity} instead
+ */
+@Deprecated
 public class ConferenceActivity extends AbstractSampleSDKActivity {
 
     private ConferenceManager conferenceManager;
@@ -44,22 +51,7 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
     private String serverUrl;
     private TextView broadcastingView;
 
-    final int RECONNECTION_PERIOD_MLS = 1000;
     private boolean stoppedStream = false;
-    Handler reconnectionHandler = new Handler();
-    Runnable reconnectionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            WebRTCClient webRTCClient = conferenceManager.getPeers().get(conferenceManager.getStreamId());
-            if (webRTCClient != null && !stoppedStream && !webRTCClient.isStreaming()) {
-                webRTCClient.startStream();
-            }
-            if (!stoppedStream) {
-                reconnectionHandler.postDelayed(this, RECONNECTION_PERIOD_MLS);
-            }
-
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,14 +80,6 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
 
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
-
-        // Check for mandatory permissions.
-        for (String permission : CallActivity.MANDATORY_PERMISSIONS) {
-            if (this.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission " + permission + " is not granted", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
 
         this.getIntent().putExtra(EXTRA_CAPTURETOTEXTURE_ENABLED, true);
         //  this.getIntent().putExtra(CallActivity.EXTRA_VIDEO_CALL, false);
@@ -127,9 +111,6 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
             Log.w(getClass().getSimpleName(), "Joining Conference");
             ((Button)v).setText("Leave");
             conferenceManager.joinTheConference();
-            if (!conferenceManager.isPlayOnlyMode()) {
-                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
-            }
         }
         else {
             ((Button)v).setText("Join");
@@ -232,5 +213,10 @@ public class ConferenceActivity extends AbstractSampleSDKActivity {
     public void switchCamera(View view) {
         conferenceManager.switchCamera();
     }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+    }
+
 }
 
