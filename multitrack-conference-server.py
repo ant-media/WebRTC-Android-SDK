@@ -8,32 +8,36 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from flask import Flask, request
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
 
 
 
 class Browser:
   def init(self, is_headless):
-    chrome_options = Options()
-    chrome_options.add_experimental_option("detach", True)
-    chrome_options.add_argument("--use-fake-ui-for-media-stream")
-    chrome_options.add_argument("--use-fake-device-for-media-stream")
-    chrome_options.add_argument('--log-level=3')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-setuid-sandbox')
+    browser_options = Options()
+    browser_options.add_experimental_option("detach", True)
+    browser_options.add_argument("--use-fake-ui-for-media-stream") 
+    browser_options.add_argument("--use-fake-device-for-media-stream")
+    browser_options.add_argument('--log-level=3')
+    browser_options.add_argument('--no-sandbox')
+    browser_options.add_argument('--disable-extensions')
+    browser_options.add_argument('--disable-gpu')
+    browser_options.add_argument('--disable-dev-shm-usage')
+    browser_options.add_argument('--disable-setuid-sandbox')
     if is_headless:
-      chrome_options.add_argument("--headless")
-
+      browser_options.add_argument("--headless")
+    
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
 
+    service = Service(executable_path='/home/ubuntu/chromedriver')  
+    #service = Service(executable_path='C:/WebDriver/chromedriver.exe') 
 
-    self.driver = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=chrome_options)
+    self.driver = webdriver.Chrome(service=service, options=browser_options)
 
   def open_in_new_tab(self, url, tab_id):
+    self.driver.switch_to.window(self.driver.window_handles[0])
     self.driver.execute_script("window.open('about:blank', '"+tab_id+"');")
     print (self.driver.window_handles)
     self.driver.switch_to.window(tab_id)
@@ -57,6 +61,9 @@ class Browser:
   def click_element(self, element):
     element.click()
 
+  def switch_to_tab(self, tab_id):
+    self.driver.switch_to.window(tab_id)
+
   def close(self):
     self.driver.close()
 
@@ -75,29 +82,45 @@ chrome.init(True)
 
 @app.route('/create', methods=['GET'])
 def create():
-#    room = request.args.get('room')
-    chrome.open_in_new_tab(url, "p1")
+    room = request.args.get('room')
+    test = request.args.get('test')
+    participant = request.args.get('participant')
+    print("\n create for room:"+room+":"+participant+" in "+test) 
+    chrome.open_in_new_tab(url+"?roomId="+room+"&streamId="+participant, participant)
     return f'Room created', 200
 
 @app.route('/join', methods=['GET'])
 def join():
+    room = request.args.get('room')
+    test = request.args.get('test')
+    participant = request.args.get('participant')
+    print("\n join for room:"+room+":"+participant+" in "+test)
+    chrome.switch_to_tab(participant) 
     join_button = chrome.get_element_by_id("join_publish_button")
     join_button.click()
     return f'Joined the room', 200
 
 @app.route('/leave', methods=['GET'])
 def leave():
+    room = request.args.get('room')
+    test = request.args.get('test')
+    participant = request.args.get('participant')
+    print("\n leave for room:"+room+":"+participant+" in "+test) 
+    chrome.switch_to_tab(participant) 
     leave_button = chrome.get_element_by_id("stop_publish_button")
     leave_button.click()
     return f'Left the room', 200
 
 @app.route('/delete', methods=['GET'])
 def delete():
-    #chrome.close()
-    #return f'Tab closed', 200
-    for handle in chrome.window_handles:
-          chrome.switch_to.window(handle)
-          chrome.close()
+    room = request.args.get('room')
+    test = request.args.get('test')
+    participant = request.args.get('participant')
+    print("\n delete for room:"+room+":"+participant+" in "+test) 
+    chrome.switch_to_tab(participant) 
+    chrome.close()
+    return f'Tab closed', 200
+   
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3030)
