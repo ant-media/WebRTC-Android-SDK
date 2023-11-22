@@ -51,9 +51,12 @@ import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.IceCandidateErrorEvent;
 import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
+import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
@@ -1114,11 +1117,43 @@ public class WebRTCClientTest {
         webRTCClient.removeRemoteIceCandidates(streamId, iceCandidatesTorRemove);
 
         verify(pc, timeout(1000).times(1)).removeIceCandidates(any());
-
-
-
-
     }
 
+    @Test
+    public void testDegradationPreference() {
+        String streamId = "stream1";
 
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
+        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
+        webRTCClientReal.setWsHandler(wsHandler);
+
+        WebRTCClient webRTCClient = spy(webRTCClientReal);
+        final Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        webRTCClient.peers.put(streamId, peerInfo);
+
+        PeerConnection pc = mock(PeerConnection.class);
+        peerInfo.peerConnection = pc;
+
+        List<RtpSender> senders = new ArrayList<>();
+        RtpSender sender = mock(RtpSender.class);
+        senders.add(sender);
+        when(pc.getSenders()).thenReturn(senders);
+
+        MediaStreamTrack track = mock(MediaStreamTrack.class);
+        when(sender.track()).thenReturn(track);
+
+        when(track.kind()).thenReturn(WebRTCClient.VIDEO_TRACK_TYPE);
+
+        RtpParameters parameters = mock(RtpParameters.class);
+        when(sender.getParameters()).thenReturn(parameters);
+
+        RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
+        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+
+        verify(sender, timeout(1000).times(1)).setParameters(parameters);
+    }
 }
