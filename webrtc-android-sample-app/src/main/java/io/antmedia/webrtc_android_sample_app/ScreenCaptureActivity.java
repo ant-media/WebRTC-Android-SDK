@@ -6,11 +6,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.SensorManager;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -20,6 +24,7 @@ import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import org.webrtc.RendererCommon;
+import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
@@ -46,6 +51,8 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
 
     private static final String TAG = ScreenCaptureActivity.class.getSimpleName();
     private View broadcastingView;
+
+    private OrientationEventListener orientationEventListener;
 
 
     /*
@@ -130,6 +137,23 @@ public class ScreenCaptureActivity extends AbstractSampleSDKActivity {
                 PreferenceManager.getDefaultSharedPreferences(this /* Activity context */);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         webRTCClient.init(serverUrl, streamIdEditText.getText().toString(), IWebRTCClient.MODE_PUBLISH, tokenId,  this.getIntent());
+
+        orientationEventListener
+                = new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL){
+
+            @Override
+            public void onOrientationChanged(int rotationDegree) {
+                if (webRTCClient.getVideoCapturer() instanceof ScreenCapturerAndroid) {
+                    ((ScreenCapturerAndroid) webRTCClient.getVideoCapturer()).rotateScreen(rotationDegree);
+                }
+            }};
+
+        if (orientationEventListener.canDetectOrientation()){
+            orientationEventListener.enable();
+        }
+        else{
+            orientationEventListener.disable();
+        }
     }
 
     @Override
