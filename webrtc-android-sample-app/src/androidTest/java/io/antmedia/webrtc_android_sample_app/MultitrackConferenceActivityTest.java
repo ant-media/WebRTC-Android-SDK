@@ -124,6 +124,8 @@ public class MultitrackConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).perform(click());
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
+        //TODO remove sleep
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
