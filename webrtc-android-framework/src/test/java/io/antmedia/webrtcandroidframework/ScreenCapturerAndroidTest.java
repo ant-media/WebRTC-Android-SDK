@@ -43,7 +43,8 @@ public class ScreenCapturerAndroidTest {
         screenCapturerAndroid.setVirtualDisplay(virtualDisplay);
         screenCapturerAndroid.setSurfaceTextureHelper(surfaceTextureHelper);
 
-        screenCapturerAndroid.setCapturerObserver(mock(CapturerObserver.class));
+        CapturerObserver capturerObserver = mock(CapturerObserver.class);
+        screenCapturerAndroid.setCapturerObserver(capturerObserver);
 
         int width = 540;
         int height = 960;
@@ -66,8 +67,10 @@ public class ScreenCapturerAndroidTest {
         Mockito.verify(virtualDisplay).resize(width, height, VIRTUAL_DISPLAY_DPI);
         Mockito.verify(surfaceTextureHelper).setTextureSize(width,height);
 
+        VideoFrame frame = mock(VideoFrame.class);
+        screenCapturerAndroid.onFrame(frame);
 
-
+        Mockito.verify(capturerObserver).onFrameCaptured(frame);
     }
 
     @Test
