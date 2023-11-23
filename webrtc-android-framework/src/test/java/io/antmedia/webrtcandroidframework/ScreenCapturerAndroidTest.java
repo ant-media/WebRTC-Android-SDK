@@ -13,13 +13,17 @@ import android.content.Context;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.mockito.Mockito;
 import org.webrtc.CapturerObserver;
 import org.webrtc.ScreenCapturerAndroid;
@@ -28,6 +32,27 @@ import org.webrtc.VideoFrame;
 
 public class ScreenCapturerAndroidTest {
 
+    @Rule
+    public TestWatcher watchman= new TestWatcher() {
+
+        @Override
+        protected void failed(Throwable e, Description description) {
+            Log.i("TestWatcher", "*** "+description + " failed!\n");
+        }
+
+        @Override
+        protected void succeeded(Description description) {
+            Log.i("TestWatcher", "*** "+description + " succeeded!\n");
+        }
+
+        protected void starting(Description description) {
+            Log.i("TestWatcher", "******\n*** "+description + " starting!\n");
+        }
+
+        protected void finished(Description description) {
+            Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
+        }
+    };
     @Test
     public void testRotateScreen() {
 
