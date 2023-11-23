@@ -2320,6 +2320,28 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 || streamMode.equals(IWebRTCClient.MODE_TRACK_BASED_CONFERENCE);
     }
 
+    public void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference) {
+
+        if (context == null || peers.get(streamId) == null || peers.get(streamId).peerConnection == null) {
+            Log.d(TAG, "Cannot set  Degradation Preference");
+            return;
+        }
+        PeerConnection peerConnection = peers.get(streamId).peerConnection;
+
+        for (RtpSender sender : peerConnection.getSenders()) {
+            if (sender.track() != null) {
+                String trackType = sender.track().kind();
+                if (trackType.equals(VIDEO_TRACK_TYPE)) {
+                    RtpParameters newParameters = sender.getParameters();
+                    if(newParameters != null) {
+                        newParameters.degradationPreference = degradationPreference;
+                        sender.setParameters(newParameters);
+                    }
+                }
+            }
+        }
+    }
+
     private File createRtcEventLogOutputFile() {
         DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_hhmm_ss", Locale.getDefault());
         Date date = new Date();
@@ -2425,11 +2447,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void getStats(String streamId) {
-        PeerConnection pc = peers.get(streamId).peerConnection;
-        if (pc == null || isError) {
+        if (peers.get(streamId) == null || peers.get(streamId).peerConnection == null) {
             return;
         }
-        pc.getStats(this::onPeerConnectionStatsReady);
+        peers.get(streamId).peerConnection.getStats(this::onPeerConnectionStatsReady);
     }
 
     public void enableStatsEvents(String streamId, boolean enable, int periodMs) {
