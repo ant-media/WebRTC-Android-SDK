@@ -2447,11 +2447,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void getStats(String streamId) {
-        PeerConnection pc = peers.get(streamId).peerConnection;
-        if (pc == null || isError) {
+        if (peers.get(streamId) == null || peers.get(streamId).peerConnection == null) {
             return;
         }
-        pc.getStats(this::onPeerConnectionStatsReady);
+        peers.get(streamId).peerConnection.getStats(this::onPeerConnectionStatsReady);
     }
 
     public void enableStatsEvents(String streamId, boolean enable, int periodMs) {
