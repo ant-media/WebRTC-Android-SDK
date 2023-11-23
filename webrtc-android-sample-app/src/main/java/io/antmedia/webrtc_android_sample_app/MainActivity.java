@@ -68,31 +68,7 @@ public class MainActivity extends AbstractSampleSDKActivity {
     private Spinner streamInfoListSpinner;
     public static final String WEBRTC_MODE = "WebRTC_MODE";
 
-    // variables for handling reconnection attempts after disconnected
-    final int RECONNECTION_PERIOD_MLS = 1000;
-
-    final int RECONNECTION_CONTROL_PERIOD_MLS = 10000;
-
     private boolean stoppedStream = false;
-    Handler reconnectionHandler = new Handler();
-    Runnable reconnectionRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (!stoppedStream && !webRTCClient.isStreaming()) {
-                Log.i(MainActivity.class.getSimpleName(),"Try to reconnect in reconnectionRunnable");
-                webRTCClient.stopStream();
-
-                webRTCClient.startStream();
-                if (webRTCMode == IWebRTCClient.MODE_JOIN)
-                {
-                    pipViewRenderer.setZOrderOnTop(true);
-                }
-            }
-            if (!stoppedStream) {
-                reconnectionHandler.postDelayed(this, RECONNECTION_CONTROL_PERIOD_MLS);
-            }
-        }
-    };
     private TextView broadcastingView;
     private EditText streamIdEditText;
 
@@ -206,12 +182,9 @@ public class MainActivity extends AbstractSampleSDKActivity {
         else {
             ((Button)v).setText("Start " + operationName);
             Log.i(getClass().getSimpleName(), "Calling stopStream");
-            reconnectionHandler.removeCallbacks(reconnectionRunnable);
             webRTCClient.stopStream();
             stoppedStream = true;
-
         }
-
     }
 
     @Override
@@ -263,6 +236,10 @@ public class MainActivity extends AbstractSampleSDKActivity {
     public void streamIdInUse(String streamId) {
         Log.w(getClass().getSimpleName(), "streamIdInUse");
         Toast.makeText(this, "Stream id is already in use.", Toast.LENGTH_LONG).show();
+        if (webRTCClient.isReconnectionInProgress()) {
+            webRTCClient.stopStream(streamId);
+            webRTCClient.startStream(streamId);
+        }
         decrementIdle();
     }
 
@@ -300,13 +277,6 @@ public class MainActivity extends AbstractSampleSDKActivity {
         if (!stoppedStream) {
             Log.i(getClass().getSimpleName(),"Disconnected. Trying to reconnect");
             Toast.makeText(this, "Disconnected.Trying to reconnect", Toast.LENGTH_LONG).show();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
-                    reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
-                }
-            } else {
-                reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
-            }
         } else {
             Toast.makeText(this, "Stopped the stream", Toast.LENGTH_LONG).show();
         }

@@ -29,7 +29,7 @@ import org.webrtc.VideoFrame;
 public class ScreenCapturerAndroidTest {
 
     @Test
-    public void testOnFrameRotation() {
+    public void testRotateScreen() {
 
         ScreenCapturerAndroid screenCapturerAndroid = spy(new ScreenCapturerAndroid(null, null));
         WindowManager windowManager = Mockito.spy(WindowManager.class);
@@ -43,30 +43,34 @@ public class ScreenCapturerAndroidTest {
         screenCapturerAndroid.setVirtualDisplay(virtualDisplay);
         screenCapturerAndroid.setSurfaceTextureHelper(surfaceTextureHelper);
 
-        screenCapturerAndroid.setCapturerObserver(mock(CapturerObserver.class));
+        CapturerObserver capturerObserver = mock(CapturerObserver.class);
+        screenCapturerAndroid.setCapturerObserver(capturerObserver);
 
         int width = 540;
         int height = 960;
         screenCapturerAndroid.setWidth(width);
         screenCapturerAndroid.setHeight(height);
 
-        VideoFrame frame = new VideoFrame(mock(VideoFrame.Buffer.class), 0, 0);
-        screenCapturerAndroid.onFrame(frame);
+        screenCapturerAndroid.deviceRotation = 0;
+
+        screenCapturerAndroid.rotateScreen(90);
 
         Mockito.when(display.getRotation()).thenReturn(1);
-        screenCapturerAndroid.onFrame(frame);
+        screenCapturerAndroid.rotateScreen(0);
 
         Mockito.verify(virtualDisplay).resize(height, width, VIRTUAL_DISPLAY_DPI);
         Mockito.verify(surfaceTextureHelper).setTextureSize(height, width);
 
         Mockito.when(display.getRotation()).thenReturn(2);
-        screenCapturerAndroid.onFrame(frame);
+        screenCapturerAndroid.rotateScreen(90);
 
         Mockito.verify(virtualDisplay).resize(width, height, VIRTUAL_DISPLAY_DPI);
         Mockito.verify(surfaceTextureHelper).setTextureSize(width,height);
 
+        VideoFrame frame = mock(VideoFrame.class);
+        screenCapturerAndroid.onFrame(frame);
 
-
+        Mockito.verify(capturerObserver).onFrameCaptured(frame);
     }
 
     @Test
