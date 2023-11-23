@@ -901,12 +901,12 @@ public class WebRTCClientTest {
         doNothing().when(webRTCClient).createMediaConstraintsInternal();
         doNothing().when(webRTCClient).createPeerConnectionInternal(streamId);
         doNothing().when(webRTCClient).maybeCreateAndStartRtcEventLog(streamId);
+        doNothing().when(webRTCClient).reportError(anyString(), anyString());
 
         webRTCClient.createPeerConnection(streamId);
 
         verify(webRTCClient, never()).reportError(eq(streamId), anyString());
 
-        doNothing().when(webRTCClient).reportError(anyString(), anyString());
         doThrow(new NullPointerException()).when(webRTCClient).createMediaConstraintsInternal();
         webRTCClient.createPeerConnection(streamId);
         verify(webRTCClient, timeout(10000)).reportError(eq(streamId), anyString());
