@@ -1132,6 +1132,10 @@ public class WebRTCClientTest {
         final Handler handler = getMockHandler();
         webRTCClient.setHandler(handler);
 
+        RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
+        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+        //will return imediately
+
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
 
@@ -1151,7 +1155,6 @@ public class WebRTCClientTest {
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
 
-        RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
         webRTCClient.setDegradationPreference(streamId, degradationPreference);
 
         verify(sender, timeout(1000).times(1)).setParameters(parameters);

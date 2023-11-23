@@ -2327,8 +2327,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             return;
         }
         PeerConnection peerConnection = peers.get(streamId).peerConnection;
-        if(peerConnection == null)
-            return;
 
         for (RtpSender sender : peerConnection.getSenders()) {
             if (sender.track() != null) {
