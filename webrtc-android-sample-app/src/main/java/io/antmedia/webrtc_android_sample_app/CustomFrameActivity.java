@@ -53,8 +53,8 @@ import io.antmedia.webrtcandroidframework.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.StreamInfo;
 import io.antmedia.webrtcandroidframework.WebRTCClient;
 import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
-//import io.github.crow_misia.libyuv.AbgrBuffer;
-//import io.github.crow_misia.libyuv.I420Buffer;
+import io.github.crow_misia.libyuv.AbgrBuffer;
+import io.github.crow_misia.libyuv.I420Buffer;
 
 public class CustomFrameActivity extends AbstractSampleSDKActivity {
 
@@ -212,8 +212,6 @@ public class CustomFrameActivity extends AbstractSampleSDKActivity {
     }
 
     public VideoFrame getNextFrame() {
-        /*
-
         final long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
 
         int frameWidth = bitmapImage.getWidth();
@@ -234,9 +232,6 @@ public class CustomFrameActivity extends AbstractSampleSDKActivity {
                     null);
 
         originalBuffer.close();
-                return new VideoFrame(buffer, 0, captureTimeNs);
-
-        */
-        return null;
+        return new VideoFrame(buffer, 0 /* rotation */, captureTimeNs);
     }
 }
