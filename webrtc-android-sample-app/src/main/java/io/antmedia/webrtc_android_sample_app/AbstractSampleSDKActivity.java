@@ -185,7 +185,7 @@ public abstract class AbstractSampleSDKActivity extends Activity implements IWeb
     }
 
     public void makeToast(String messageText, int lengthLong) {
-        Toast.makeText(this, messageText, lengthLong).show();
+        runOnUiThread(() -> Toast.makeText(AbstractSampleSDKActivity.this, messageText, lengthLong).show());
     }
 
     @Override

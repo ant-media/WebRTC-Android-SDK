@@ -1,20 +1,14 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +48,8 @@ public class HomeActivity extends AppCompatActivity implements AdapterView.OnIte
                 "Conference"));
         activities.add(new ActivityLink(new Intent(this, ScreenCaptureActivity.class),
                 "Screen Capture"));
+        activities.add(new ActivityLink(new Intent(this, USBCameraActivity.class),
+                "USB Camera"));
         activities.add(new ActivityLink(new Intent(this, SettingsActivity.class),
                 "Settings"));
         activities.add(new ActivityLink(new Intent(this, TrackBasedConferenceActivity.class),

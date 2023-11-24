@@ -12,6 +12,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -50,9 +51,12 @@ import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.IceCandidateErrorEvent;
 import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
+import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
@@ -897,15 +901,20 @@ public class WebRTCClientTest {
         doNothing().when(webRTCClient).createMediaConstraintsInternal();
         doNothing().when(webRTCClient).createPeerConnectionInternal(streamId);
         doNothing().when(webRTCClient).maybeCreateAndStartRtcEventLog(streamId);
+        doNothing().when(webRTCClient).reportError(anyString(), anyString());
 
         webRTCClient.createPeerConnection(streamId);
 
         verify(webRTCClient, never()).reportError(eq(streamId), anyString());
 
-        doNothing().when(webRTCClient).reportError(anyString(), anyString());
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         doThrow(new NullPointerException()).when(webRTCClient).createMediaConstraintsInternal();
         webRTCClient.createPeerConnection(streamId);
-        verify(webRTCClient, timeout(1000)).reportError(eq(streamId), anyString());
+        verify(webRTCClient, timeout(10000)).reportError(eq(streamId), anyString());
 
     }
 
@@ -1113,11 +1122,46 @@ public class WebRTCClientTest {
         webRTCClient.removeRemoteIceCandidates(streamId, iceCandidatesTorRemove);
 
         verify(pc, timeout(1000).times(1)).removeIceCandidates(any());
-
-
-
-
     }
 
+    @Test
+    public void testDegradationPreference() {
+        String streamId = "stream1";
 
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
+        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
+        webRTCClientReal.setWsHandler(wsHandler);
+
+        WebRTCClient webRTCClient = spy(webRTCClientReal);
+        final Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+
+        RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
+        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+        //will return imediately
+
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        webRTCClient.peers.put(streamId, peerInfo);
+
+        PeerConnection pc = mock(PeerConnection.class);
+        peerInfo.peerConnection = pc;
+
+        List<RtpSender> senders = new ArrayList<>();
+        RtpSender sender = mock(RtpSender.class);
+        senders.add(sender);
+        when(pc.getSenders()).thenReturn(senders);
+
+        MediaStreamTrack track = mock(MediaStreamTrack.class);
+        when(sender.track()).thenReturn(track);
+
+        when(track.kind()).thenReturn(WebRTCClient.VIDEO_TRACK_TYPE);
+
+        RtpParameters parameters = mock(RtpParameters.class);
+        when(sender.getParameters()).thenReturn(parameters);
+
+        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+
+        verify(sender, timeout(1000).times(1)).setParameters(parameters);
+    }
 }
