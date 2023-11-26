@@ -867,9 +867,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
 
-        if (isDataChannelOnly() || streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY)) {
+        if (isDataChannelOnly()) {
             videoCallEnabled = false;
             audioCallEnabled = false;
+        }
+
+        if(streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY)){
+            videoCallEnabled = false;
+            audioCallEnabled = true; //TODO (burak) we need to enable audio call for SPEAKER_PHONE
         }
 
         if(streamMode.equals(MODE_TRACK_BASED_CONFERENCE)){
