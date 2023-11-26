@@ -119,7 +119,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private final ProxyVideoSink remoteProxyRenderer = new ProxyVideoSink();
     private final ProxyVideoSink localProxyVideoSink = new ProxyVideoSink();
     //private final List<CallActivity.ProxyVideoSink> remoteProxyRendererList = new ArrayList<>();
-    private final IWebRTCListener webRTCListener;
     private final Handler mainHandler;
     @Nullable
     public AppRTCAudioManager audioManager = null;
@@ -136,7 +135,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private boolean screencaptureEnabled = false;
     private static Intent mediaProjectionPermissionResultData;
     private int mediaProjectionPermissionResultCode;
-    private final Context context;
     private EglBase eglBase;
     private final String saveRemoteVideoToFile = null;
     private String errorString = null;
@@ -179,8 +177,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private IDataChannelObserver dataChannelObserver;
 
     private String initialStreamId;
-    private String url;
-    private String token;
     private boolean dataChannelOnly = false;
     private String subscriberId = "";
     private String subscriberCode = "";
@@ -290,7 +286,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @androidx.annotation.Nullable
     private AudioTrack localAudioTrack;
 
-    private boolean dataChannelEnabled;
     // Enable RtcEventLog.
     @androidx.annotation.Nullable
     private RtcEventLog rtcEventLog;
@@ -302,19 +297,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     private static final Map<Long, Long> captureTimeMsMap = new ConcurrentHashMap<>();
     //PeerConnection Parameters
-    private boolean videoCallEnabled;
-    public boolean loopback;
+
+    private WebRTCClientConfig config;
+
     public boolean tracing;
-    private int videoWidth;
-    private int videoHeight;
-    private int videoFps;
-    private int videoStartBitrate;
-    private String videoCodec;
-    private boolean hwCodecAcceleration;
-    private boolean videoFlexfecEnabled;
-    private int audioStartBitrate;
-    private String audioCodec;
-    private boolean noAudioProcessing;
+
+    public boolean loopback;
     private boolean aecDump;
     private boolean useOpenSLES;
     private boolean disableBuiltInAEC;
@@ -386,7 +374,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                         }
                     }
                     Log.i(TAG, "Try to reconnect in reconnectionRunnable " + streamMode);
-                    webRTCListener.onReconnectionAttempt(initialStreamId);
+                    config.webRTCListener.onReconnectionAttempt(initialStreamId);
                     if (streamMode == IWebRTCClient.MODE_JOIN) {
                         pipRenderer.setZOrderOnTop(true);
                     }
@@ -453,7 +441,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                     if(!trackLive) {
                         videoTracks.remove(track);
                         handler.post(() -> {
-                            webRTCListener.onVideoTrackEnded(track);
+                            config.webRTCListener.onVideoTrackEnded(track);
                         });
                     }
                 }
@@ -596,7 +584,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         public void onDataChannel(final DataChannel dc) {
             Log.d(TAG, "New Data channel " + dc.label());
 
-            if (!dataChannelEnabled)
+            if (!config.dataChannelEnabled)
                 return;
 
             if (peers.get(streamId).dataChannel == null) {
@@ -615,7 +603,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
             if(receiver.track() instanceof VideoTrack) {
                 VideoTrack videoTrack = (VideoTrack) receiver.track();
-                webRTCListener.onNewVideoTrack(videoTrack);
+                config.webRTCListener.onNewVideoTrack(videoTrack);
                 if(streamMode.equals(MODE_MULTI_TRACK_PLAY) || streamMode.equals(MODE_TRACK_BASED_CONFERENCE)) {
                     trackCheckerTask.getVideoTracks().add(videoTrack);
                 }
@@ -650,7 +638,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
             }
             if (isVideoCallEnabled()) {
-                sdp = preferCodec(sdp, getSdpVideoCodecName(videoCodec), false);
+                sdp = preferCodec(sdp, getSdpVideoCodecName(config.videoCodec), false);
             }
 
             if(removeVideoRotationExtention) {
@@ -720,13 +708,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
     }
 
-
-    public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
-        this.webRTCListener = webRTCListener;
-        this.context = context;
-        mainHandler = new Handler(context.getMainLooper());
+    WebRTCClient(WebRTCClientConfig config) {
+        this.config = config;
+        mainHandler = new Handler(config.context.getMainLooper());
         iceServers.add(new PeerConnection.IceServer(stunServerUri));
     }
+
+    public WebRTCClient(IWebRTCListener webRTCListener, Context context) {
+        config = new WebRTCClientConfig();
+        config.webRTCListener = webRTCListener;
+        config.context = context;
+        mainHandler = new Handler(config.context.getMainLooper());
+        iceServers.add(new PeerConnection.IceServer(stunServerUri));
+    }
+
 
     public void setRemoteRendererList(List<SurfaceViewRenderer> rendererList) {
         this.remoteRendererList = rendererList;
@@ -740,23 +735,23 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public void init(String url, String streamId, String mode, String token, Intent intent) {
 
         if (url == null) {
-            Log.d(TAG, this.context.getString(R.string.missing_url));
+            Log.d(TAG, this.config.context.getString(R.string.missing_url));
             return;
         }
-        this.url = url;
+        config.serverUrl = url;
 
         if (streamId == null || streamId.length() == 0) {
-            Log.d(TAG, this.context.getString(R.string.missing_stream_id));
+            Log.d(TAG, this.config.context.getString(R.string.missing_stream_id));
             return;
         }
         this.initialStreamId = streamId;
 
         if (mode == null || mode.length() == 0) {
-            Log.d(TAG, this.context.getString(R.string.missing_stream_id));
+            Log.d(TAG, this.config.context.getString(R.string.missing_stream_id));
             return;
         }
         this.streamMode = mode;
-        this.token = token;
+        config.token = token;
         if (intent != null) {
             this.intent = intent;
         }
@@ -795,7 +790,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         boolean isForPublish = streamMode.equals(MODE_PUBLISH) ||
                 streamMode.equals(MODE_TRACK_BASED_CONFERENCE);
 
-        return webRTCListener.checkAndRequestPermisssions(isForPublish, permissionCallback);
+        return config.webRTCListener.checkAndRequestPermisssions(isForPublish, permissionCallback);
     }
 
     private void initializeTrackChecker() {
@@ -827,19 +822,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         loopback = intent.getBooleanExtra(CallActivity.EXTRA_LOOPBACK, false);
         tracing = intent.getBooleanExtra(CallActivity.EXTRA_TRACING, false);
 
-        videoWidth = intent.getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
-        videoHeight = intent.getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
+        config.videoWidth = intent.getIntExtra(CallActivity.EXTRA_VIDEO_WIDTH, 0);
+        config.videoHeight = intent.getIntExtra(CallActivity.EXTRA_VIDEO_HEIGHT, 0);
 
         screencaptureEnabled = intent.getBooleanExtra(CallActivity.EXTRA_SCREENCAPTURE, false);
         // If capturing format is not specified for screencapture, use screen resolution.
-        if (screencaptureEnabled && videoWidth == 0 && videoHeight == 0) {
+        if (screencaptureEnabled && config.videoWidth == 0 && config.videoHeight == 0) {
             DisplayMetrics displayMetrics = getDisplayMetrics();
-            videoWidth = displayMetrics.widthPixels;
-            videoHeight = displayMetrics.heightPixels;
+            config.videoWidth = displayMetrics.widthPixels;
+            config.videoHeight = displayMetrics.heightPixels;
         }
 
-        dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, true);
-        if (dataChannelEnabled) {
+        config.dataChannelEnabled = intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, true);
+        if (config.dataChannelEnabled) {
             dataChannelOrdered = intent.getBooleanExtra(CallActivity.EXTRA_ORDERED, true);
             dataChannelMaxRetransmitTimeMs = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS_MS, -1);
             dataChannelMaxRetransmits = intent.getIntExtra(CallActivity.EXTRA_MAX_RETRANSMITS, -1);
@@ -848,41 +843,41 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             dataChannelId = intent.getIntExtra(CallActivity.EXTRA_ID, -1);
         }
 
-        videoFps = intent.getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
+        config.videoFps = intent.getIntExtra(CallActivity.EXTRA_VIDEO_FPS, 0);
 
-        videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
-        if (videoCodec == null) {
-            videoCodec = this.context.getString(R.string.pref_videocodec_default);
+        config.videoCodec = intent.getStringExtra(CallActivity.EXTRA_VIDEOCODEC);
+        if (config.videoCodec == null) {
+            config.videoCodec = this.config.context.getString(R.string.pref_videocodec_default);
         }
-        videoStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
+        config.videoStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_VIDEO_BITRATE, 0);
 
-        if (videoStartBitrate == 0) {
-            videoStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_maxvideobitratevalue_default));
-        }
-
-        audioStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
-        if (audioStartBitrate == 0) {
-            audioStartBitrate = Integer.parseInt(this.context.getString(R.string.pref_startaudiobitratevalue_default));
+        if (config.videoStartBitrate == 0) {
+            config.videoStartBitrate = Integer.parseInt(this.config.context.getString(R.string.pref_maxvideobitratevalue_default));
         }
 
-        videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
+        config.audioStartBitrate = this.intent.getIntExtra(CallActivity.EXTRA_AUDIO_BITRATE, 0);
+        if (config.audioStartBitrate == 0) {
+            config.audioStartBitrate = Integer.parseInt(this.config.context.getString(R.string.pref_startaudiobitratevalue_default));
+        }
+
+        config.videoCallEnabled = intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true);
 
         if (isDataChannelOnly() || streamMode.equals(MODE_PLAY) || streamMode.equals(MODE_MULTI_TRACK_PLAY)) {
-            videoCallEnabled = false;
+            config.videoCallEnabled = false;
             audioCallEnabled = false;
         }
 
         if(streamMode.equals(MODE_TRACK_BASED_CONFERENCE)){
-            videoCallEnabled = true;
+            config.videoCallEnabled = true;
             audioCallEnabled = true;
         }
 
 
 
-        hwCodecAcceleration = intent.getBooleanExtra(CallActivity.EXTRA_HWCODEC_ENABLED, true);
-        videoFlexfecEnabled = intent.getBooleanExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, false);
-        audioCodec = intent.getStringExtra(CallActivity.EXTRA_AUDIOCODEC);
-        noAudioProcessing = intent.getBooleanExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, false);
+        config.hwCodecAcceleration = intent.getBooleanExtra(CallActivity.EXTRA_HWCODEC_ENABLED, true);
+        config.videoFlexfecEnabled = intent.getBooleanExtra(CallActivity.EXTRA_FLEXFEC_ENABLED, false);
+        config.audioCodec = intent.getStringExtra(CallActivity.EXTRA_AUDIOCODEC);
+        config.noAudioProcessing = intent.getBooleanExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED, false);
         aecDump = intent.getBooleanExtra(CallActivity.EXTRA_AECDUMP_ENABLED, false);
         useOpenSLES = intent.getBooleanExtra(CallActivity.EXTRA_OPENSLES_ENABLED, false);
         disableBuiltInAEC = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_AEC, false);
@@ -890,7 +885,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         disableBuiltInNS = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_BUILT_IN_NS, false);
         disableWebRtcAGCAndHPF = intent.getBooleanExtra(CallActivity.EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false);
         enableRtcEventLog = intent.getBooleanExtra(CallActivity.EXTRA_ENABLE_RTCEVENTLOG, false);
-        captureToTexture = intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, false);
+        captureToTexture = intent.getBooleanExtra(CallActivity.EXTRA_CAPTURETOTEXTURE_ENABLED, true);
     }
 
     public void initializeRenderers() {
@@ -933,7 +928,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if (saveRemoteVideoToFile != null) {
             try {
                 videoFileRenderer = new VideoFileRenderer(
-                        saveRemoteVideoToFile, videoWidth, videoHeight, eglBase.getEglBaseContext());
+                        saveRemoteVideoToFile, config.videoWidth,
+                        config.videoHeight, eglBase.getEglBaseContext());
                 remoteSinks.add(videoFileRenderer);
             } catch (IOException e) {
                 throw new RuntimeException(
@@ -963,12 +959,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
 
         // Create peer connection client.
-        Log.d(TAG, "Preferred video codec: " + getSdpVideoCodecName(videoCodec));
-        final String fieldTrials = getFieldTrials(videoFlexfecEnabled, disableWebRtcAGCAndHPF);
+        Log.d(TAG, "Preferred video codec: " + getSdpVideoCodecName(config.videoCodec));
+        final String fieldTrials = getFieldTrials(config.videoFlexfecEnabled, disableWebRtcAGCAndHPF);
         executor.execute(() -> {
             Log.d(TAG, "Initialize WebRTC. Field trials: " + fieldTrials);
             PeerConnectionFactory.initialize(
-                    PeerConnectionFactory.InitializationOptions.builder(context)
+                    PeerConnectionFactory.InitializationOptions.builder(config.context)
                             .setFieldTrials(fieldTrials)
                             .setEnableInternalTracer(true)
                             .createInitializationOptions());
@@ -987,7 +983,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if (audioCallEnabled && audioManager == null) {
             // Create and audio manager that will take care of audio routing,
             // audio modes, audio device enumeration etc.
-            audioManager = AppRTCAudioManager.create(this.context.getApplicationContext());
+            audioManager = AppRTCAudioManager.create(this.config.context.getApplicationContext());
             // Store existing audio settings and change audio mode to
             // MODE_IN_COMMUNICATION for best possible VoIP performance.
             Log.d(TAG, "Starting the audio manager...");
@@ -1010,7 +1006,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         // if video capture is null or disposed, we should recreate it.
         // we should also check if video capturer is an instance of ScreenCapturerAndroid
         // because other implementations of VideoCapturer doesn't have a dispose() method.
-        if (videoCallEnabled
+        if (config.videoCallEnabled
                 && (videoCapturer == null
                 || (videoCapturer instanceof ScreenCapturerAndroid))
         ) {
@@ -1060,12 +1056,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if (wsHandler == null) {
             Log.i(TAG, "WebsocketHandler is null and creating a new instance");
             wsHandler = new WebSocketHandler(this, handler);
-            wsHandler.connect(url);
+            wsHandler.connect(config.serverUrl);
         } else if (!wsHandler.isConnected()) {
             Log.i(TAG, "WebSocketHandler already exists but not connected. Disconnecting and creating new one");
             wsHandler.disconnect(true);
             wsHandler = new WebSocketHandler(this, handler);
-            wsHandler.connect(url);
+            wsHandler.connect(config.serverUrl);
         }
     }
 
@@ -1084,7 +1080,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public DisplayMetrics getDisplayMetrics() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         WindowManager windowManager =
-                (WindowManager) this.context.getSystemService(Context.WINDOW_SERVICE);
+                (WindowManager) this.config.context.getSystemService(config.context.WINDOW_SERVICE);
         windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
         return displayMetrics;
     }
@@ -1101,11 +1097,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @TargetApi(21)
     public void startScreenCapture() {
         mediaProjectionManager =
-                (MediaProjectionManager) this.context.getSystemService(
-                        Context.MEDIA_PROJECTION_SERVICE);
+                (MediaProjectionManager) this.config.context.getSystemService(
+                        config.context.MEDIA_PROJECTION_SERVICE);
 
-        if (this.context instanceof Activity) {
-            ((Activity) this.context).startActivityForResult(
+        if (this.config.context instanceof Activity) {
+            ((Activity) this.config.context).startActivityForResult(
                     mediaProjectionManager.createScreenCaptureIntent(), CallActivity.CAPTURE_PERMISSION_REQUEST_CODE);
         }
     }
@@ -1135,7 +1131,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public boolean useCamera2() {
-        return Camera2Enumerator.isSupported(this.context) && this.intent.getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
+        return Camera2Enumerator.isSupported(this.config.context) && this.intent.getBooleanExtra(CallActivity.EXTRA_CAMERA2, true);
     }
 
     public void setOpenFrontCamera(boolean openFrontCamera) {
@@ -1274,24 +1270,31 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     private void startCall(String streamId) {
-        Log.d(TAG, this.context.getString(R.string.connecting_to, url));
+        Log.d(TAG, this.config.context.getString(R.string.connecting_to, config.serverUrl));
         if (streamMode.equals(IWebRTCClient.MODE_PUBLISH)) {
-            publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+            publish(streamId, config.token, config.videoCallEnabled, config.audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
         }
         else if (streamMode.equals(IWebRTCClient.MODE_PLAY)) {
-            play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+            play(streamId, config.token, null, subscriberId, subscriberCode, viewerInfo);
         }
         else if (streamMode.equals(IWebRTCClient.MODE_JOIN)) {
-            init(this.url, streamId, this.streamMode, token, this.intent);
-            wsHandler.joinToPeer(streamId, token);
+            init(config.serverUrl, streamId, this.streamMode, config.token, this.intent);
+            wsHandler.joinToPeer(streamId, config.token);
         }
         else if (streamMode.equals(IWebRTCClient.MODE_MULTI_TRACK_PLAY)) {
-            init(this.url, streamId, this.streamMode, token, this.intent);
-            wsHandler.getTrackList(streamId, token);
+            init(config.serverUrl, streamId, this.streamMode, config.token, this.intent);
+            wsHandler.getTrackList(streamId, config.token);
         }
     }
 
-    public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
+    public void publish(String streamId) {
+        publish(streamId, null, true, true,
+                null, null, streamId, null);
+    }
+
+
+    public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
+                        String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
         Log.e(TAG, "Publish: "+streamId);
 
         PeerInfo peerInfo = new PeerInfo(streamId, MODE_PUBLISH);
@@ -1304,7 +1307,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         peerInfo.mainTrackId = mainTrackId;
         peers.put(streamId, peerInfo);
 
-        init(this.url, streamId, this.streamMode, this.token, this.intent);
+        init(config.serverUrl, streamId, MODE_PUBLISH, config.token, this.intent);
+        while (!wsHandler.isConnected()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
     }
 
@@ -1322,7 +1332,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         peerInfo.metaData = viewerInfo;
         peers.put(streamId, peerInfo);
 
-        init(this.url, streamId, this.streamMode, token, this.intent);
+        init(config.serverUrl, streamId, this.streamMode, token, this.intent);
         wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
     }
 
@@ -1415,8 +1425,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 errorString = description;
 
                 disconnectWithErrorMessage(description);
-                if (webRTCListener != null) {
-                    webRTCListener.onError(description, streamId);
+                if (config.webRTCListener != null) {
+                    config.webRTCListener.onError(description, streamId);
                 }
             }
 
@@ -1475,12 +1485,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             return new CustomVideoCapturer();
         } else {
             if (!captureToTexture) {
-                reportError(initialStreamId, this.context.getString(R.string.camera2_texture_only_error));
+                reportError(initialStreamId, this.config.context.getString(R.string.camera2_texture_only_error));
                 return null;
             }
 
             Logging.d(TAG, "Creating capturer using camera2 API.");
-            videoCapturer = createCameraCapturer(new Camera2Enumerator(this.context));
+            videoCapturer = createCameraCapturer(new Camera2Enumerator(this.config.context));
         }
         if (videoCapturer == null) {
             reportError(initialStreamId, "Failed to open camera");
@@ -1526,7 +1536,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if(!streamStoppedByUser) {
             Log.i(getClass().getSimpleName(),"Disconnected. Trying to reconnect");
             reconnectionInProgress = true;
-            //Toast.makeText(context, "Disconnected.Trying to reconnect "+streamStoppedByUser, Toast.LENGTH_LONG).show();
+            //Toast.makeText(config.context, "Disconnected.Trying to reconnect "+streamStoppedByUser, Toast.LENGTH_LONG).show();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 if (!reconnectionHandler.hasCallbacks(reconnectionRunnable)) {
                     reconnectionHandler.postDelayed(reconnectionRunnable, RECONNECTION_PERIOD_MLS);
@@ -1597,9 +1607,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 }
             }
             //check peerConnectionClient null because in very slow devices(emulator), it may cause crash
-            if (videoStartBitrate > 0) {
-                Log.d(TAG, "Set video maximum bitrate: " + videoStartBitrate);
-                setVideoMaxBitrate(videoStartBitrate);
+            if (config.videoStartBitrate > 0) {
+                Log.d(TAG, "Set video maximum bitrate: " + config.videoStartBitrate);
+                setVideoMaxBitrate(config.videoStartBitrate);
             }
         });
     }
@@ -1610,8 +1620,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             Log.d(TAG, "ICE connected, delay=" + delta + "ms");
             callConnected(streamId);
 
-            if (webRTCListener != null) {
-                webRTCListener.onIceConnected(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onIceConnected(streamId);
             }
         });
     }
@@ -1620,8 +1630,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         this.handler.post(() -> {
             Log.d(TAG, "ICE disconnected");
             //release(false);
-            if (webRTCListener != null) {
-                webRTCListener.onIceDisconnected(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onIceDisconnected(streamId);
             }
         });
     }
@@ -1682,8 +1692,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void onPublishFinished(String streamId) {
         this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.onPublishFinished(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPublishFinished(streamId);
             }
             release(false);
         });
@@ -1695,8 +1705,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         waitingForPlay = false;
         this.handler.post(() -> {
             release(false);
-            if (webRTCListener != null) {
-                webRTCListener.onPlayFinished(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPlayFinished(streamId);
             }
         });
     }
@@ -1708,8 +1718,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         streamStarted = true;
 
         this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.onPublishStarted(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPublishStarted(streamId);
             }
         });
 
@@ -1723,8 +1733,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         waitingForPlay = false;
 
         this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.onPlayStarted(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPlayStarted(streamId);
             }
         });
     }
@@ -1740,33 +1750,33 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     @Override
     public void onJoinedTheRoom(String streamId, String[] streams) {
-        webRTCListener.onJoinedTheRoom(streamId, streams);
+        config.webRTCListener.onJoinedTheRoom(streamId, streams);
     }
 
     @Override
     public void onRoomInformation(String[] streams) {
-        webRTCListener.onRoomInformation(streams);
+        config.webRTCListener.onRoomInformation(streams);
     }
 
     @Override
     public void noStreamExistsToPlay(String streamId) {
         this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.noStreamExistsToPlay(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.noStreamExistsToPlay(streamId);
             }
         });
     }
 
     @Override
     public void onLeftTheRoom (String roomId) {
-        webRTCListener.onLeftTheRoom(roomId);
+        config.webRTCListener.onLeftTheRoom(roomId);
     }
 
     @Override
     public void streamIdInUse(String streamId){
         this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.streamIdInUse(streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.streamIdInUse(streamId);
             }
         });
     }
@@ -1779,8 +1789,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void onDisconnected() {
         this.handler.post(() -> {
-            if (webRTCListener != null) {
-                webRTCListener.onDisconnected(initialStreamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onDisconnected(initialStreamId);
             }
 
             if(reconnectionEnabled && !reconnectionInProgress) {
@@ -1792,8 +1802,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void onTrackList(String[] tracks) {
         this.handler.post(()-> {
-            if (webRTCListener != null) {
-                webRTCListener.onTrackList(tracks);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onTrackList(tracks);
             }
         });
 
@@ -1803,7 +1813,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     public void sendPlayOtherTracks(String[] tracks) {
         if(autoPlayTracks && !isStreaming() && !waitingForPlay) {
             waitingForPlay = true;
-            init(this.url, this.initialStreamId, this.streamMode, this.token, this.intent);
+            init(config.serverUrl, this.initialStreamId, this.streamMode, config.token, this.intent);
 
             //don't send play for its own stream id
             for (int i = 0; i < tracks.length; i++) {
@@ -1812,15 +1822,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                     break;
                 }
             }
-            play(mainTrackId, token, tracks);
+            play(mainTrackId, config.token, tracks);
         }
     }
 
     @Override
     public void onBitrateMeasurement(String streamId, int targetBitrate, int videoBitrate, int audioBitrate) {
         this.handler.post(()-> {
-            if (webRTCListener != null) {
-                webRTCListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
             }
         });
     }
@@ -1828,8 +1838,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void onStreamInfoList(String streamId, ArrayList<StreamInfo> streamInfoList) {
         this.handler.post(()-> {
-            if (webRTCListener != null) {
-                webRTCListener.onStreamInfoList(streamId, streamInfoList);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onStreamInfoList(streamId, streamInfoList);
             }
         });
     }
@@ -1837,8 +1847,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Override
     public void onError(String streamId, String definition) {
         this.handler.post(()-> {
-            if (webRTCListener != null) {
-                webRTCListener.onError(definition, streamId);
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onError(definition, streamId);
             }
         });
 
@@ -1849,7 +1859,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     @Override
     public boolean isDataChannelEnabled() {
-        return dataChannelEnabled;
+        return config.dataChannelEnabled;
     }
 
     /**
@@ -2042,7 +2052,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     private boolean isVideoCallEnabled() {
-        return videoCallEnabled && videoCapturer != null;
+        return config.videoCallEnabled && videoCapturer != null;
     }
 
     private boolean isAudioEnabled() {
@@ -2059,7 +2069,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
 
         // Check if ISAC is used by default.
-        preferIsac = audioCodec != null && audioCodec.equals(AUDIO_CODEC_ISAC);
+        preferIsac = config.audioCodec != null && config.audioCodec.equals(AUDIO_CODEC_ISAC);
 
         adm = (JavaAudioDeviceModule) createJavaAudioDevice();
 
@@ -2068,11 +2078,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
         }
         final boolean enableH264HighProfile =
-                VIDEO_CODEC_H264_HIGH.equals(videoCodec);
+                VIDEO_CODEC_H264_HIGH.equals(config.videoCodec);
         final VideoEncoderFactory encoderFactory;
         final VideoDecoderFactory decoderFactory;
 
-        if (hwCodecAcceleration) {
+        if (config.hwCodecAcceleration) {
             encoderFactory = new DefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, enableH264HighProfile);
             decoderFactory = new DefaultVideoDecoderFactory(eglBase.getEglBaseContext());
         } else {
@@ -2183,29 +2193,29 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public JavaAudioDeviceModule.Builder getADMBuilder() {
-        return JavaAudioDeviceModule.builder(context);
+        return JavaAudioDeviceModule.builder(config.context);
     }
 
     public void createMediaConstraintsInternal() {
         // Create video constraints if video call is enabled.
         if (isVideoCallEnabled()) {
             // If video resolution is not specified, default to HD.
-            if (videoWidth == 0 || videoHeight == 0) {
-                videoWidth = HD_VIDEO_WIDTH;
-                videoHeight = HD_VIDEO_HEIGHT;
+            if (config.videoWidth == 0 || config.videoHeight == 0) {
+                config.videoWidth = HD_VIDEO_WIDTH;
+                config.videoHeight = HD_VIDEO_HEIGHT;
             }
 
             // If fps is not specified, default to 30.
-            if (videoFps == 0) {
-                videoFps = 30;
+            if (config.videoFps == 0) {
+                config.videoFps = 30;
             }
-            Logging.d(TAG, "Capturing format: " + videoWidth + "x" + videoHeight + "@" + videoFps);
+            Logging.d(TAG, "Capturing format: " + config.videoWidth + "x" + config.videoHeight + "@" + config.videoFps);
         }
 
         // Create audio constraints.
         audioConstraints = new MediaConstraints();
         // added for audio performance measurements
-        if (noAudioProcessing) {
+        if (config.noAudioProcessing) {
             Log.d(TAG, "Disabling audio processing");
             audioConstraints.mandatory.add(
                     new MediaConstraints.KeyValuePair(AUDIO_ECHO_CANCELLATION_CONSTRAINT, "false"));
@@ -2300,7 +2310,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void initDataChannel(String streamId) {
-        if (dataChannelEnabled && isDataChannelCreator()) {
+        if (config.dataChannelEnabled && isDataChannelCreator()) {
             DataChannel.Init init = new DataChannel.Init();
             init.ordered = dataChannelOrdered;
             init.negotiated = dataChannelNegotiated;
@@ -2322,7 +2332,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
     public void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference) {
 
-        if (context == null || peers.get(streamId) == null || peers.get(streamId).peerConnection == null) {
+        if (config.context == null || peers.get(streamId) == null || peers.get(streamId).peerConnection == null) {
             Log.d(TAG, "Cannot set  Degradation Preference");
             return;
         }
@@ -2346,11 +2356,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_hhmm_ss", Locale.getDefault());
         Date date = new Date();
         final String outputFileName = "event_log_" + dateFormat.format(date) + ".log";
-        return new File(context.getDir(RTCEVENTLOG_OUTPUT_DIR_NAME, Context.MODE_PRIVATE), outputFileName);
+        return new File(config.context.getDir(RTCEVENTLOG_OUTPUT_DIR_NAME, config.context.MODE_PRIVATE), outputFileName);
     }
 
     public void maybeCreateAndStartRtcEventLog(String streamId) {
-        if (context == null || peers.get(streamId).peerConnection == null) {
+        if (config.context == null || peers.get(streamId).peerConnection == null) {
             return;
         }
         if (!enableRtcEventLog) {
@@ -2443,7 +2453,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public boolean isHDVideo() {
-        return isVideoCallEnabled() && videoWidth * videoHeight >= 1280 * 720;
+        return isVideoCallEnabled() && config.videoWidth * config.videoHeight >= 1280 * 720;
     }
 
     public void getStats(String streamId) {
@@ -2483,7 +2493,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void setVideoEnabled(final boolean enable) {
-        this.videoCallEnabled = enable;
+        config.videoCallEnabled = enable;
         executor.execute(() -> {
             renderVideo = enable;
             if (localVideoTrack != null) {
@@ -2569,10 +2579,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
                 sdp = preferCodec(sdp, AUDIO_CODEC_ISAC, true);
             }
             if (isVideoCallEnabled()) {
-                sdp = preferCodec(sdp, getSdpVideoCodecName(videoCodec), false);
+                sdp = preferCodec(sdp, getSdpVideoCodecName(config.videoCodec), false);
             }
-            if (audioStartBitrate > 0) {
-                sdp = setStartBitrate(AUDIO_CODEC_OPUS, false, sdp, audioStartBitrate);
+            if (config.audioStartBitrate > 0) {
+                sdp = setStartBitrate(AUDIO_CODEC_OPUS, false, sdp, config.audioStartBitrate);
             }
             Log.d(TAG, "Set remote SDP.");
             SessionDescription sdpRemote = new SessionDescription(desc.type, sdp);
@@ -2595,7 +2605,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     private void startVideoSourceInternal() {
         if (videoCapturer != null && videoCapturerStopped) {
             Log.d(TAG, "Restart video source.");
-            videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
+            videoCapturer.startCapture(config.videoWidth, config.videoHeight, config.videoFps);
             videoCapturerStopped = false;
         }
     }
@@ -2644,8 +2654,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             surfaceTextureHelper =
                     SurfaceTextureHelper.create("CaptureThread", eglBase.getEglBaseContext());
             videoSource = factory.createVideoSource(capturer.isScreencast());
-            capturer.initialize(surfaceTextureHelper, context, videoSource.getCapturerObserver());
-            capturer.startCapture(videoWidth, videoHeight, videoFps);
+            capturer.initialize(surfaceTextureHelper, config.context, videoSource.getCapturerObserver());
+            capturer.startCapture(config.videoWidth, config.videoHeight, config.videoFps);
 
             localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
             localVideoTrack.setEnabled(renderVideo);
@@ -2922,15 +2932,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void setToken(String token) {
-        this.token = token;
+        config.token = token;
     }
 
     public void setVideoCallEnabled(boolean videoCallEnabled) {
-        this.videoCallEnabled = videoCallEnabled;
+        config.videoCallEnabled = videoCallEnabled;
     }
 
     public boolean getVideoCallEnabled() {
-        return videoCallEnabled;
+        return config.videoCallEnabled;
     }
 
     public boolean getAudioCallEnabled() {
@@ -3028,7 +3038,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     }
 
     public void setDataChannelEnabled(boolean dataChannelEnabled) {
-        this.dataChannelEnabled = dataChannelEnabled;
+        this.config.dataChannelEnabled = dataChannelEnabled;
     }
 
     public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {

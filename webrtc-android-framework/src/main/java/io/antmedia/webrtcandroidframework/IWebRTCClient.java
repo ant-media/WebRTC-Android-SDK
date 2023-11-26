@@ -171,4 +171,23 @@ public interface IWebRTCClient {
     void onCaptureFormatChange(int width, int height, int framerate);
     boolean onToggleMic();
 
+    public static WebRTCClientBuilder builder() {
+        return new WebRTCClientBuilder();
+    }
+
+    /**
+     * This is used to strart a WebRTC publish stream
+     * @param streamId: any name
+     */
+    public void publish(String streamId);
+
+
+    /**
+     * This is used to strart a WebRTC publish stream
+     * @param streamId: any name
+     * @param token: token for stream
+     * TODO: add comment
+     */
+    public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
+                        String subscriberId, String subscriberCode, String streamName, String mainTrackId);
 }

@@ -99,7 +99,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     @Override
     public void onOpen() {
-
+        Log.d(TAG, "WebSocket connection opened.");
     }
 
     @Override
