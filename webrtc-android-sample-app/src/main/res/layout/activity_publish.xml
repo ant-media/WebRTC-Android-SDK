@@ -17,6 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="top" />
+
     </FrameLayout>
 
     <Spinner
@@ -36,31 +37,6 @@
         android:onClick="showSendDataChannelMessageDialog"
         android:layout_centerVertical="true"/>
 
-
-    <RadioGroup
-        android:id="@+id/rbGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_alignParentTop="true"
-        >
-        <RadioButton android:id="@+id/rbFront"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/colorPrimary"
-            android:text="Front"/>
-        <RadioButton android:id="@+id/rbRear"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/colorPrimary"
-            android:text="Rear"/>
-        <RadioButton android:id="@+id/rbUsb"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/colorPrimary"
-            android:text="USB"/>
-    </RadioGroup>
-
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -72,7 +48,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Streaming"
+        android:text="Start"
         android:id="@+id/start_streaming_button"
         android:onClick="startStreaming"
         android:layout_alignParentBottom="true"
@@ -80,16 +56,16 @@
         android:layout_margin="3dp"
         />
 
-    <TextView
-        android:id="@+id/broadcasting_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:text="Broadcasting"
-        android:textColor="@android:color/holo_red_dark"
-        android:textSize="11sp"
-        android:visibility="gone"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/broadcasting_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Broadcasting"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="11sp"
+            android:visibility="gone"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:textStyle="bold"/>
 </RelativeLayout>

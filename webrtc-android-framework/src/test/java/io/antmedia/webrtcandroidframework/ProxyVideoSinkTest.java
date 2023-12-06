@@ -7,6 +7,8 @@ import org.junit.Test;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 
+import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
+
 public class ProxyVideoSinkTest {
     @Test
     public void test() {

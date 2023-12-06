@@ -14,6 +14,8 @@ import org.webrtc.VideoFrame;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.*;
 
+import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
+
 public class CustomVideoCapturerTest {
     @Mock
     private CapturerObserver capturerObserver;
