@@ -92,7 +92,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
-                                      final Context applicationContext, final CapturerObserver capturerObserver) {
+      final Context applicationContext, final CapturerObserver capturerObserver) {
     checkNotDisposed();
 
     if (capturerObserver == null) {
@@ -119,14 +119,14 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void startCapture(
-          final int width, final int height, final int ignoredFramerate) {
+      final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
 
     this.width = width;
     this.height = height;
 
     mediaProjection = mediaProjectionManager.getMediaProjection(
-            Activity.RESULT_OK, mediaProjectionPermissionResultData);
+        Activity.RESULT_OK, mediaProjectionPermissionResultData);
 
     // Let MediaProjection callback use the SurfaceTextureHelper thread.
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());
@@ -183,14 +183,14 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
-          final int width, final int height, final int ignoredFramerate) {
+      final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
 
     this.width = width;
     this.height = height;
 
     if (virtualDisplay == null) {
-      // Capturer is stopped, the virtual display will be created in startCaptuer().
+      // Capturer is stopped, the virtual display will be created in startCapture().
       return;
     }
 
@@ -205,7 +205,6 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
       }
     });
   }
-
   private void createVirtualDisplay() {
     surfaceTextureHelper.setTextureSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
