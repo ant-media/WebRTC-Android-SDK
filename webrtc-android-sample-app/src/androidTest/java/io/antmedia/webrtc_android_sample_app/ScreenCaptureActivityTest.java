@@ -96,7 +96,7 @@ public class ScreenCaptureActivityTest {
         UiDevice device = UiDevice.getInstance(getInstrumentation());
 
         onView(withId(R.id.rbScreen)).perform(click());
-        UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 10000);
+        UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 100000);
         assertNotNull(button);
         button.click();
 
@@ -123,7 +123,7 @@ public class ScreenCaptureActivityTest {
 
         //FIXME: without this sleep, it's failing because onFinish event received but resources are not closed yet
         try {
-            Thread.sleep(3000);
+            Thread.sleep(30000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

@@ -14,6 +14,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments useTestStorageService: "true"
 
     }
 
@@ -25,6 +26,12 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    packagingOptions {
+        pickFirst 'lib/arm64-v8a/libyuv.so'
+        pickFirst 'lib/armeabi-v7a/libyuv.so'
+
     }
 
     compileOptions {
@@ -96,5 +103,7 @@ dependencies {
     androidTestImplementation 'com.squareup.okhttp3:okhttp:4.9.3'
     androidTestImplementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     androidTestImplementation 'com.google.code.gson:gson:2.8.9'
+    implementation(name: 'sdk_uvc_camera_v23092707_debug', ext: 'aar')
+
 
 }

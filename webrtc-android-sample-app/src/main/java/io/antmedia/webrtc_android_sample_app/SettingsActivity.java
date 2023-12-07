@@ -1,6 +1,7 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -59,5 +60,15 @@ public class SettingsActivity extends Activity {
         editor.apply();
 
         Toast.makeText(this, "Saved", Toast.LENGTH_LONG).show();
+    }
+
+    public static void changeRoomName(Context context, String roomName) {
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        editor.putString(context.getString(R.string.roomId), roomName);
+        editor.apply();
+    }
+
+    public static String getRoomName(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getString(context.getString(R.string.roomId), DEFAULT_ROOM_NAME);
     }
 }

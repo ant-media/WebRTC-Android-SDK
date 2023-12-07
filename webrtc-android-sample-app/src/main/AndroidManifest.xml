@@ -22,6 +22,8 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
 
     <application
         android:allowBackup="true"
@@ -107,6 +109,21 @@
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
 
+        <activity android:name=".USBCameraActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/> <!-- Let the orientation handled by the activity. It resolves websocket disconnection issue-->
+
+        <receiver android:name="io.antmedia.webrtc_android_sample_app.ScreenCaptureActivity" />
+
+        <activity android:name=".MP4PublishActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <activity android:name=".MP4PublishWithSurfaceActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
     </application>
 
 </manifest>
