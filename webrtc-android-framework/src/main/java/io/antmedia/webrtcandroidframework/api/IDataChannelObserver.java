@@ -2,6 +2,10 @@ package io.antmedia.webrtcandroidframework.api;
 
 import org.webrtc.DataChannel;
 
+/**
+ * This interface is used to observe the data channel events
+ * You can use this interface to observe the data channel events or you can extend {@link DefaultDataChannelObserver}
+ */
 public interface IDataChannelObserver {
 
     /** The data channel's bufferedAmount has changed. */

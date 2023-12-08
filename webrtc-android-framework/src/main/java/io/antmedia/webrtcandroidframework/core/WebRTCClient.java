@@ -758,27 +758,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return null;
     }
 
-    @Override
-    public void stopVideoSource() {
-        // Don't stop the video when using screencapture to allow user to show other apps to the remote
-        // end.
-        if (!config.screencaptureEnabled) {
-            executor.execute(this::stopVideoSourceInternal);
-        }
-
-        localVideoSink.setTarget(null);
-
-    }
-
-    @Override
-    public void startVideoSource() {
-        // Video is not paused for screencapture. See onPause.
-        if (!config.screencaptureEnabled) {
-            executor.execute(this::startVideoSourceInternal);
-        }
-    }
-
-    @Override
     public void setSwappedFeeds(boolean isSwappedFeeds) {
         localVideoSink.setTarget(isSwappedFeeds ? config.remoteVideoRenderers.get(0) : config.localVideoRenderer);
         remoteVideoSinks.get(0).setTarget(isSwappedFeeds ? config.localVideoRenderer : config.remoteVideoRenderers.get(0));
@@ -808,28 +787,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             config.videoSource = StreamSource.FRONT_CAMERA;
         }
         executor.execute(this ::switchCameraInternal);
-    }
-
-    @Override
-    public void onCameraSwitch() {
-        switchCamera();
-    }
-
-    @Override
-    public void onCaptureFormatChange(int width, int height, int framerate) {
-        executor.execute(() -> changeCaptureFormatInternal(width, height, framerate));
-    }
-
-    @Override
-    public boolean onToggleMic() {
-        micEnabled = !micEnabled;
-        setAudioEnabled(micEnabled);
-        return micEnabled;
-    }
-
-    @Override
-    public boolean toggleMic() {
-        return onToggleMic();
     }
 
     public void publish(String streamId) {

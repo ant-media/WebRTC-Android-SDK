@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 
+/**
+ * Default implementation of {@link IWebRTCListener}
+ * You may extend this class and override methods that you need
+ */
 public class DefaultWebRTCListener implements IWebRTCListener {
     protected IWebRTCClient webRTCClient;
 

@@ -9,6 +9,10 @@ import org.webrtc.DataChannel;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Default implementation of {@link IDataChannelObserver}
+ * You may extend this class and override methods that you need
+ */
 public class DefaultDataChannelObserver implements IDataChannelObserver {
     @Override
     public void onBufferedAmountChange(long previousAmount, String dataChannelLabel) {

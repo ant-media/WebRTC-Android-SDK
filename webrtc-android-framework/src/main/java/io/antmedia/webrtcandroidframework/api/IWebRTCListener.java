@@ -9,11 +9,14 @@ import io.antmedia.webrtcandroidframework.core.StreamInfo;
 
 /**
  * Created by karinca on 23.10.2017.
+ * This interface is used to listen WebRTCClient (or SDK) events
+ * You may implement this interface or extend {@link DefaultWebRTCListener} class
+ * If you want to create a conference application, you may extend {@link DefaultConferenceWebRTCListener} class
  */
 
 public interface IWebRTCListener {
 
-    /**
+ /**
   * It's called when websocket connection has been disconnected
   */
  void onDisconnected();
@@ -107,8 +110,6 @@ public interface IWebRTCListener {
      * It's called when reconnection attempt is started
      */
     void onReconnectionAttempt(String streamId);
-
-
 
     /**
      * It's called when joiened the room

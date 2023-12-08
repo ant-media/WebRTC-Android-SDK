@@ -123,19 +123,58 @@ public class WebRTCClientConfig {
      */
     public boolean screencaptureEnabled = false;
 
+    /*
+     * Data channel observer for the data channel events
+     */
     public IDataChannelObserver dataChannelObserver = new DefaultDataChannelObserver();
 
-
+    /*
+     * Intent for screen capture got by calling activity
+     */
     public Intent mediaProjectionIntent;
 
+    /*
+     * Media projection for screen capture
+     */
     public MediaProjection mediaProjection;
+
+    /*
+     * Current video source to publish
+     */
     public IWebRTCClient.StreamSource videoSource;
+
+    /*
+     * Flag indicating whether custom video capturer is enabled
+     */
     public boolean customVideoCapturerEnabled;
+
+    /*
+     * Flag indicating whether initate WebRTCClient (renderers, websocket, capturers etc.)  before stream publish starts
+     */
     public boolean initiateBeforeStream;
+
+    /*
+     * Flag indicating whether custom audio feed is enabled
+     */
     public boolean customAudioFeed;
+
+    /*
+     * Scaling type for video rendering
+     */
     public RendererCommon.ScalingType scalingType = RendererCommon.ScalingType.SCALE_ASPECT_FIT;
 
+    /*
+     * Stun server uri
+     */
     public String stunServerUri = "stun:stun1.l.google.com:19302";
+
+    /*
+     * Flag indicating whether reconnection is enabled
+     */
     public boolean reconnectionEnabled = true;
+
+    /*
+     * Flag indicating whether AGC (automatic gain contol) and HPF (high pass filter) is disabled in audio processing
+     */
     public boolean disableWebRtcAGCAndHPF = false;
 }

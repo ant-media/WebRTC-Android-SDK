@@ -4,6 +4,10 @@ import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
+/**
+ * Default implementation of {@link IWebRTCListener} for conference applications
+ * You may extend this class and override methods that you need
+ */
 public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     private final String roomId;
     private final String streamId;
