@@ -49,6 +49,7 @@ import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
+import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
@@ -68,7 +69,6 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
-import io.antmedia.webrtcandroidframework.core.ScreenCapturer;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
@@ -369,7 +369,7 @@ public class WebRTCClientTest {
 
         webRTCClient.getConfig().mediaProjection = mock(MediaProjection.class);
 
-        ScreenCapturer screenCapturer = (ScreenCapturer) webRTCClient.createScreenCapturer();
+        ScreenCapturerAndroid screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
         assertNotNull(screenCapturer);
 
         MediaProjection.Callback callback = Mockito.spy(screenCapturer.getMediaProjectionCallback());

@@ -1,5 +1,7 @@
 package io.antmedia.webrtc_android_sample_app.basic;
 
+import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -102,13 +104,34 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void textMessageReceived(String messageText) {
                 super.textMessageReceived(messageText);
-                Toast.makeText(ConferenceActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(ConferenceActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
             }
         };
     }
 
     private DefaultConferenceWebRTCListener createWebRTCListener(String roomId, String streamId) {
-        return new DefaultConferenceWebRTCListener(roomId, streamId);
+        return new DefaultConferenceWebRTCListener(roomId, streamId) {
+
+            @Override
+            public void onJoinedTheRoom(String streamId, String[] streams) {
+                super.onJoinedTheRoom(streamId, streams);
+                decrementIdle();
+            }
+
+            @Override
+            public void onPublishStarted(String streamId) {
+                super.onPublishStarted(streamId);
+                broadcastingView.setVisibility(View.VISIBLE);
+                decrementIdle();
+            }
+
+            @Override
+            public void onPublishFinished(String streamId) {
+                super.onPublishFinished(streamId);
+                broadcastingView.setVisibility(View.GONE);
+                decrementIdle();
+            }
+        };
     }
 
     public void controlAudio(View view) {
@@ -129,5 +152,15 @@ public class ConferenceActivity extends TestableActivity {
             webRTCClient.setVideoEnabled(true);
             videoButton.setText("Disable Video");
         }
+    }
+
+
+    /**
+     * This method is used to change the state of the wifi for testing purposes
+     * @param state
+     */
+    public void changeWifiState(boolean state) {
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        wifiManager.setWifiEnabled(state);
     }
 }

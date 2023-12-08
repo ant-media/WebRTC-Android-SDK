@@ -1,6 +1,7 @@
-package io.antmedia.webrtcandroidframework.core;
+package io.antmedia.webrtcandroidframework.api;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.media.projection.MediaProjection;
 
 import org.webrtc.RendererCommon;
@@ -124,9 +125,9 @@ public class WebRTCClientConfig {
 
     public IDataChannelObserver dataChannelObserver = new DefaultDataChannelObserver();
 
-    /*
-     * MediaProjectionManager for screencapture
-     */
+
+    public Intent mediaProjectionIntent;
+
     public MediaProjection mediaProjection;
     public IWebRTCClient.StreamSource videoSource;
     public boolean customVideoCapturerEnabled;

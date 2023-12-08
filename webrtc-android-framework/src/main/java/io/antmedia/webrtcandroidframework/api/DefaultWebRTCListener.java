@@ -9,10 +9,8 @@ import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
-import io.antmedia.webrtcandroidframework.core.WebRTCClientConfig;
 
 public class DefaultWebRTCListener implements IWebRTCListener {
-    private WebRTCClientConfig config;
     protected IWebRTCClient webRTCClient;
 
     public void setWebRTCClient(IWebRTCClient webRTCClient) {
@@ -109,7 +107,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         String messageText = "New video track received";
         callbackCalled(messageText);
 
-        for (SurfaceViewRenderer r : config.remoteVideoRenderers) {
+        for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
             if (r.getTag() == null) {
                 r.setTag(track);
                 webRTCClient.setRendererForVideoTrack(r, track);
@@ -122,7 +120,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     public void onVideoTrackEnded(VideoTrack track) {
         String messageText = "Video track ended";
         callbackCalled(messageText);
-        for (SurfaceViewRenderer r : config.remoteVideoRenderers) {
+        for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
             if (r.getTag() == track) {
                 r.setTag(null);
                 return;
@@ -186,12 +184,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
-    @Override
-    public void setConfig(WebRTCClientConfig webRTCClientConfig) {
-        this.config = webRTCClientConfig;
-    }
-
-    private void callbackCalled(String messageText) {
+    protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
     }
 

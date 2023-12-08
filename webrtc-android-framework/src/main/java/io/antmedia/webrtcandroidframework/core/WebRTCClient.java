@@ -43,6 +43,7 @@ import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
+import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SoftwareVideoDecoderFactory;
@@ -76,8 +77,8 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
-import io.antmedia.webrtcandroidframework.R;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
@@ -278,7 +279,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         };
     }
 
-    WebRTCClient(WebRTCClientConfig config) {
+    public WebRTCClient(WebRTCClientConfig config) {
         this.config = config;
         config.webRTCListener.setWebRTCClient(this);
         permissionsHandler = new PermissionsHandler(config.activity);
@@ -696,7 +697,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public @Nullable VideoCapturer createScreenCapturer() {
-        return new ScreenCapturer(config.mediaProjection, new MediaProjection.Callback() {
+        return new ScreenCapturerAndroid(config.mediaProjectionIntent, new MediaProjection.Callback() {
             @Override
             public void onStop() {
                 reportError(getPublishStreamId(), USER_REVOKED_CAPTURE_SCREEN_PERMISSION);

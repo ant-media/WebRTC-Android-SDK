@@ -24,7 +24,7 @@ import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.core.WebRTCClientConfig;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
@@ -79,6 +79,7 @@ public class ScreenCaptureActivity extends TestableActivity {
                 .setActivity(this)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
+                .setInitiateBeforeStream(true)
                 .build();
 
         View startStreamingButton = findViewById(R.id.start_streaming_button);
@@ -151,6 +152,9 @@ public class ScreenCaptureActivity extends TestableActivity {
         if (requestCode != CAPTURE_PERMISSION_REQUEST_CODE)
             return;
 
+        WebRTCClientConfig config = webRTCClient.getConfig();
+        config.mediaProjectionIntent = data;
+
         // If the device version is v29 or higher, screen sharing will work service due to media projection policy.
         // Otherwise media projection will work without service
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
@@ -162,6 +166,7 @@ public class ScreenCaptureActivity extends TestableActivity {
             Intent serviceIntent = new Intent(this, MediaProjectionService.class);
             serviceIntent.putExtra(EXTRA_MEDIA_PROJECTION_DATA, data);
             startForegroundService(serviceIntent);
+
         }
         else{
             MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data);

@@ -1,4 +1,4 @@
-package io.antmedia.webrtcandroidframework.core;
+package io.antmedia.webrtcandroidframework.api;
 
 import android.app.Activity;
 
@@ -7,8 +7,7 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.util.Arrays;
 
-import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 
 public class WebRTCClientBuilder {
 
@@ -19,7 +18,6 @@ public class WebRTCClientBuilder {
     }
 
     public WebRTCClient build() {
-        webRTCClientConfig.webRTCListener.setConfig(webRTCClientConfig);
         return new WebRTCClient(webRTCClientConfig);
     }
 
@@ -141,5 +139,9 @@ public class WebRTCClientBuilder {
     public WebRTCClientBuilder setReconnectionEnabled(boolean b) {
         webRTCClientConfig.reconnectionEnabled = b;
         return this;
+    }
+
+    public WebRTCClientConfig getConfig() {
+        return webRTCClientConfig;
     }
 }

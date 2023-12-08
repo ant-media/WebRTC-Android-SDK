@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
-import io.antmedia.webrtcandroidframework.core.WebRTCClientConfig;
 
 /**
  * Created by karinca on 23.10.2017.
@@ -164,11 +163,6 @@ public interface IWebRTCListener {
      * It's called when status of mic and camera is updated for the stream
      */
     void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus);
-
-    /*
-     * It's called in WebRTCClient constructor when config is set
-     */
-    void setConfig(WebRTCClientConfig webRTCClientConfig);
 
     /*
      * It's called in WebRTCClient constructor to set

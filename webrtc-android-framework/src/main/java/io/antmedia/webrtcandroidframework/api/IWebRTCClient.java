@@ -6,16 +6,11 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.CustomWebRtcAudioRecord;
 
-import io.antmedia.webrtcandroidframework.core.WebRTCClientBuilder;
-import io.antmedia.webrtcandroidframework.core.WebRTCClientConfig;
-
 /**
  * Created by karinca on 20.10.2017.
  */
 
 public interface IWebRTCClient {
-
-
     enum StreamSource
     {
         SCREEN,

@@ -5,21 +5,16 @@ import android.os.Handler;
 import android.util.Log;
 
 public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
-    private String roomId;
-    private String streamId;
+    private final String roomId;
+    private final String streamId;
 
-    private boolean stoppedStream;
     private boolean playOnlyMode = false;
-    private boolean joined = false;
-
-    private boolean videoCallEnabled = true;
-    private boolean audioCallEnabled = true;
     private boolean playMessageSent;
 
-    private int ROOM_INFO_POLLING_MILLIS = 5000;
+    private final int ROOM_INFO_POLLING_MILLIS = 5000;
 
-    private Handler handler = new Handler();
-    private Runnable getRoomInfoRunnable = new Runnable() {
+    private final Handler handler = new Handler();
+    private final Runnable getRoomInfoRunnable = new Runnable() {
         @Override
         public void run() {
             getRoomInfo();
@@ -57,7 +52,6 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     public void onJoinedTheRoom(String streamId, String[] streams) {
         super.onJoinedTheRoom(streamId, streams);
 
-
         if (!webRTCClient.isReconnectionInProgress() && !playOnlyMode) {
             publishStream(streamId);
         }
@@ -66,7 +60,6 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
             startPlaying(streams);
         }
 
-        joined = true;
         // start periodic polling of room info
         scheduleGetRoomInfo();
         if (streams.length > 0) {
@@ -79,12 +72,12 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     public void onLeftTheRoom(String roomId) {
         super.onLeftTheRoom(roomId);
         clearGetRoomInfoSchedule();
-        joined = false;
         playMessageSent = false;
     }
 
     @Override
     public void onRoomInformation(String[] streams) {
+        super.onRoomInformation(streams);
         if (webRTCClient != null) {
             startPlaying(streams);
         }
@@ -105,8 +98,8 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     }
 
     public void publishStream(String streamId) {
-        if (playOnlyMode) {
-            webRTCClient.publish(streamId, "", videoCallEnabled, audioCallEnabled, "", "",
+        if (!playOnlyMode) {
+            webRTCClient.publish(streamId, "", webRTCClient.getConfig().videoCallEnabled, webRTCClient.getConfig().audioCallEnabled, "", "",
                     streamId, roomId);
         } else {
             Log.i(getClass().getSimpleName(), "Play only mode. No publishing");
@@ -115,7 +108,7 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
 
     private void startPlaying(String[] streams) {
         if (!playMessageSent) {
-            webRTCClient.play(roomId, "", streams, "", "", "");
+            webRTCClient.play(roomId, streams);
             playMessageSent = true;
         }
     }
