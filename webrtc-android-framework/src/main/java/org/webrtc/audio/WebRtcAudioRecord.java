@@ -103,7 +103,7 @@ public class WebRtcAudioRecord {
   final ScheduledExecutorService executor;
   @Nullable ScheduledFuture<String> future;
 
-  volatile boolean microphoneMute;
+  static volatile boolean microphoneMute;
   final AtomicReference<Boolean> audioSourceMatchesRecordingSessionRef =
       new AtomicReference<>();
   byte[] emptyBytes;
@@ -541,7 +541,7 @@ public class WebRtcAudioRecord {
 
   // Sets all recorded samples to zero if `mute` is true, i.e., ensures that
   // the microphone is muted.
-  public void setMicrophoneMute(boolean mute) {
+  public static void setMicrophoneMute(boolean mute) {
     Logging.w(TAG, "setMicrophoneMute(" + mute + ")");
     microphoneMute = mute;
   }

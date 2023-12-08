@@ -16,7 +16,6 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.os.Build;
-
 import androidx.annotation.RequiresApi;
 import java.util.concurrent.ScheduledExecutorService;
 import org.webrtc.JniCommon;
@@ -291,16 +290,13 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
 
   public static interface AudioRecordErrorCallback {
     void onWebRtcAudioRecordInitError(String errorMessage);
-
     void onWebRtcAudioRecordStartError(AudioRecordStartErrorCode errorCode, String errorMessage);
-
     void onWebRtcAudioRecordError(String errorMessage);
   }
 
   /** Called when audio recording starts and stops. */
   public static interface AudioRecordStateCallback {
     void onWebRtcAudioRecordStart();
-
     void onWebRtcAudioRecordStop();
   }
 
@@ -355,16 +351,13 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
 
   public static interface AudioTrackErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
-
     void onWebRtcAudioTrackStartError(AudioTrackStartErrorCode errorCode, String errorMessage);
-
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
   /** Called when audio playout starts and stops. */
   public static interface AudioTrackStateCallback {
     void onWebRtcAudioTrackStart();
-
     void onWebRtcAudioTrackStop();
   }
 
