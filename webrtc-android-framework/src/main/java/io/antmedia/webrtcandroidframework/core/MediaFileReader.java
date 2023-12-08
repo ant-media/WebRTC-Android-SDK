@@ -49,7 +49,7 @@ public class MediaFileReader {
     private AudioFrameListener audioFrameListener;
     private FrameType frameType;
 
-    private final MediaExtractor extractor;
+    private MediaExtractor extractor;
     private String TAG = MediaFileReader.class.getSimpleName();
 
     private MediaFileReader(MediaExtractor extractor) {
@@ -125,7 +125,7 @@ public class MediaFileReader {
 
     private void decodeFrames() {
         try {
-            MediaCodec decoder = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
+            MediaCodec decoder = getMediaCodec();
             decoder.configure(format, null, null, 0);
             decoder.start();
 
@@ -176,11 +176,14 @@ public class MediaFileReader {
             decoder.release();
             extractor.release();
             stopRequested.set(false);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public MediaCodec getMediaCodec() throws IOException {
+        MediaCodec decoder = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
+        return decoder;
     }
 
     private void processAudio(ByteBuffer rawAudioBuffer) {
@@ -203,7 +206,7 @@ public class MediaFileReader {
 
             audioFrameListener.onAudioData(resampledData);
 
-            Log.i("Audio", "push audio: " + pcmData[0] + " : " + pcmData[1] + " : " + pcmData[2] + " : " + pcmData[3] + " : ");
+            //Log.i("Audio", "push audio: " + pcmData[0] + " : " + pcmData[1] + " : " + pcmData[2] + " : " + pcmData[3] + " : ");
             //emulate real time streaming by waiting 10ms because we're reading from the file directly
             //When you decode the audio from incoming RTSP stream, you don't need to sleep, just send it immediately when you get
         }
@@ -261,5 +264,9 @@ public class MediaFileReader {
 
     public void stop() {
         stopRequested.set(true);
+    }
+
+    public void setMediaExtractorForTest(MediaExtractor extractor) {
+        this.extractor = extractor;
     }
 }
