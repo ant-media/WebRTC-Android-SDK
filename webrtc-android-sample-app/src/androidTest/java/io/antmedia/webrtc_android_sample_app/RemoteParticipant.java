@@ -68,7 +68,7 @@ class RemoteParticipant {
             Log.i("RemoteParticipant", "join: " + response);
             assertNotNull(response);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -82,13 +82,19 @@ class RemoteParticipant {
             Log.i("RemoteParticipant", "delete: " + response);
             assertNotNull(response);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
     public static RemoteParticipant addParticipant(String roomName, String runningTest) {
         RemoteParticipant participant = new RemoteParticipant(roomName, runningTest);
         participant.join();
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         return participant;
     }

@@ -25,15 +25,12 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 public class ConferenceActivity extends TestableActivity {
     private TextView broadcastingView;
     private View joinButton;
-    private View streamInfoListSpinner;
     private String streamId;
     private IWebRTCClient webRTCClient;
     private String roomId;
-
     private Button audioButton;
     private Button videoButton;
-
-
+    private boolean playOnly;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -62,6 +59,7 @@ public class ConferenceActivity extends TestableActivity {
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
+            playOnly = b;
             defaultConferenceListener.setPlayOnly(b);
             publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
@@ -115,7 +113,10 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void onJoinedTheRoom(String streamId, String[] streams) {
                 super.onJoinedTheRoom(streamId, streams);
-                decrementIdle();
+
+                if(playOnly) {
+                    decrementIdle();
+                }
             }
 
             @Override

@@ -77,7 +77,7 @@ public class ConferenceActivityTest {
     public void after() {
         System.out.println("after test");
         try {
-            Thread.sleep(10000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -156,9 +156,9 @@ public class ConferenceActivityTest {
 
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
-
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -230,6 +230,12 @@ public class ConferenceActivityTest {
 
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
         onView(withId(R.id.join_conference_button)).perform(click());
@@ -257,9 +263,10 @@ public class ConferenceActivityTest {
 
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
 
         mactivity[0].changeWifiState(false);
