@@ -79,13 +79,6 @@ public class WebRTCClientBuilderTest {
     }
 
     @Test
-    public void testSetCustomVideoCapturerEnabled() {
-        boolean customVideoCapturerEnabled = true;
-        webRTCClientBuilder.setCustomVideoCapturerEnabled(customVideoCapturerEnabled);
-        assertEquals(customVideoCapturerEnabled, webRTCClientBuilder.getConfig().customVideoCapturerEnabled);
-    }
-
-    @Test
     public void testSetInitiateBeforeStream() {
         boolean initiateBeforeStream = true;
         webRTCClientBuilder.setInitiateBeforeStream(initiateBeforeStream);
