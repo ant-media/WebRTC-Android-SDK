@@ -99,19 +99,16 @@ public final class USBCameraActivity extends TestableActivity implements Handler
                 IWebRTCClient.StreamSource newSource;
                 if(checkedId == R.id.rbFront) {
                     newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
-                    webRTCClient.getConfig().customVideoCapturerEnabled = false;
                     cameraHandler.obtainMessage(CAMERA_STOP).sendToTarget();
                     webRTCClient.changeVideoSource(newSource);
                 }
                 else if(checkedId == R.id.rbRear) {
                     newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
-                    webRTCClient.getConfig().customVideoCapturerEnabled = false;
                     cameraHandler.obtainMessage(CAMERA_STOP).sendToTarget();
                     webRTCClient.changeVideoSource(newSource);
                 }
                 else if(checkedId == R.id.rbUsb) {
                     newSource = IWebRTCClient.StreamSource.CUSTOM;
-                    webRTCClient.getConfig().customVideoCapturerEnabled = true;
                     webRTCClient.changeVideoSource(newSource);
                     startUSBCamera();
                 }

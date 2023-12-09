@@ -106,8 +106,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public AppRTCAudioManager audioManager = null;
     private boolean isError;
     private final long callStartedTimeMs = 0;
-    private boolean micEnabled = true;
-
 
     private EglBase eglBase;
     private String errorString = null;
@@ -584,7 +582,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void initializeParameters() {
         // If capturing format is not specified for screencapture, use screen resolution.
-        if (config.screencaptureEnabled) {
+        if (config.videoSource.equals(StreamSource.SCREEN)) {
             DisplayMetrics displayMetrics = getDisplayMetrics();
             config.videoWidth = displayMetrics.widthPixels;
             config.videoHeight = displayMetrics.heightPixels;
@@ -648,21 +646,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
 
         if (config.videoCallEnabled) {
-
-            StreamSource source = StreamSource.REAR_CAMERA;
-
-            if(config.screencaptureEnabled) {
-                source = StreamSource.SCREEN;
-            }
-            else if(config.customVideoCapturerEnabled) {
-                source = StreamSource.CUSTOM;
-            }
-            else if(useCamera2()) {
-                source = StreamSource.FRONT_CAMERA;
-            }
-
-            videoCapturer = createVideoCapturer(source);
-            config.videoSource = source;
+            videoCapturer = createVideoCapturer(config.videoSource);
         }
 
         executor.execute(() -> {
@@ -703,11 +687,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 reportError(getPublishStreamId(), USER_REVOKED_CAPTURE_SCREEN_PERMISSION);
             }
         });
-    }
-
-
-    public boolean useCamera2() {
-        return Camera2Enumerator.isSupported(config.activity);
     }
 
     @Nullable
@@ -937,7 +916,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void changeVideoSource(StreamSource newSource) {
-        if(config.videoSource == null || !config.videoSource.equals(newSource)) {
+        if(!config.videoSource.equals(newSource)) {
             if(newSource.equals(StreamSource.SCREEN) && adm != null) {
                 adm.setMediaProjection(config.mediaProjection);
             }
@@ -954,6 +933,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public @Nullable VideoCapturer createVideoCapturer(StreamSource source) {
         final VideoCapturer videoCapturer;
+        config.videoSource = source;
 
         if (StreamSource.SCREEN.equals(source)) {
             videoCapturer = createScreenCapturer();
@@ -1359,7 +1339,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         videoCapturer = newVideoCapturer;
         localVideoTrack = null;
 
-        MediaStreamTrack newTrack = (MediaStreamTrack) createVideoTrack(videoCapturer);
+        MediaStreamTrack newTrack = createVideoTrack(videoCapturer);
         if(localVideoSender != null) {
             localVideoSender.setTrack(newTrack, true);
         }
@@ -1904,7 +1884,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             capturer.startCapture(config.videoWidth, config.videoHeight, config.videoFps);
 
             localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-            //localVideoTrack.setEnabled(renderVideo);
+            localVideoTrack.setEnabled(renderVideo);
             localVideoTrack.addSink(localVideoSink);
             videoCapturerStopped = false;
         }
@@ -2146,10 +2126,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    private void changeCaptureFormatInternal(int width, int height, int framerate) {
+    public void changeCaptureFormat(int width, int height, int framerate) {
         if (!config.videoCallEnabled || videoSource == null || isError) {
-            Log.e(TAG,
-                    "Failed to change capture format. Video: " + config.videoCallEnabled
+            Log.e(TAG, "Failed to change capture format. Video: " + config.videoCallEnabled
                             + ". Error : " + isError);
             return;
         }

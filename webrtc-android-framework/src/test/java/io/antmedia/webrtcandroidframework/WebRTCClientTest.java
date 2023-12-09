@@ -417,21 +417,19 @@ public class WebRTCClientTest {
         Mockito.doNothing().when(webRTCClient).initializeRenderers();
         Mockito.doReturn(null).when(webRTCClient).createVideoCapturer(any());
 
-        Mockito.doReturn(true).when(webRTCClient).useCamera2();
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
         webRTCClient.initializeVideoCapturer();
         assertEquals(IWebRTCClient.StreamSource.FRONT_CAMERA, webRTCClient.getConfig().videoSource);
 
-        Mockito.doReturn(false).when(webRTCClient).useCamera2();
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.REAR_CAMERA;
         webRTCClient.initializeVideoCapturer();
         assertEquals(IWebRTCClient.StreamSource.REAR_CAMERA, webRTCClient.getConfig().videoSource);
 
-        webRTCClient.getConfig().screencaptureEnabled = true;
-        webRTCClient.getConfig().customVideoCapturerEnabled = false;
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.SCREEN;
         webRTCClient.initializeVideoCapturer();
         assertEquals(IWebRTCClient.StreamSource.SCREEN, webRTCClient.getConfig().videoSource);
 
-        webRTCClient.getConfig().screencaptureEnabled = false;
-        webRTCClient.getConfig().customVideoCapturerEnabled = true;
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.CUSTOM;
         webRTCClient.initializeVideoCapturer();
         assertEquals(IWebRTCClient.StreamSource.CUSTOM, webRTCClient.getConfig().videoSource);
 

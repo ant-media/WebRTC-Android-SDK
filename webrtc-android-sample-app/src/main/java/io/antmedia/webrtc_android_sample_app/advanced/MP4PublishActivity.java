@@ -57,7 +57,7 @@ public class MP4PublishActivity extends TestableActivity {
                 .setLocalVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
-                .setCustomVideoCapturerEnabled(true)
+                .setVideoSource(IWebRTCClient.StreamSource.CUSTOM)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .setInitiateBeforeStream(true)

@@ -111,11 +111,6 @@ public class WebRTCClientBuilder {
         return this;
     }
 
-    public WebRTCClientBuilder setCustomVideoCapturerEnabled(boolean b) {
-        webRTCClientConfig.customVideoCapturerEnabled = b;
-        return this;
-    }
-
     public WebRTCClientBuilder setInitiateBeforeStream(boolean b) {
         webRTCClientConfig.initiateBeforeStream = b;
         return this;
@@ -143,5 +138,10 @@ public class WebRTCClientBuilder {
 
     public WebRTCClientConfig getConfig() {
         return webRTCClientConfig;
+    }
+
+    public WebRTCClientBuilder setVideoSource(IWebRTCClient.StreamSource rearCamera) {
+        webRTCClientConfig.videoSource = rearCamera;
+        return this;
     }
 }

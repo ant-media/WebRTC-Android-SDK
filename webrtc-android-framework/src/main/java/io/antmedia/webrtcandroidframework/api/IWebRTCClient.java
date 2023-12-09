@@ -160,6 +160,14 @@ public interface IWebRTCClient {
     void switchCamera();
 
     /**
+     * This is used to change the capture format for the camera
+     * @param width: desired width
+     * @param height: desired height
+     * @param framerate: desired framerate
+     */
+    void changeCaptureFormat(int width, int height, int framerate);
+
+    /**
      * Return if data channel is enabled and open
      * @return true if data channel is available
      * false if it's not opened either by mobile or server side

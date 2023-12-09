@@ -119,11 +119,6 @@ public class WebRTCClientConfig {
     public Activity activity;
 
     /*
-     * Flag indicating whether screencapture is enabled
-     */
-    public boolean screencaptureEnabled = false;
-
-    /*
      * Data channel observer for the data channel events
      */
     public IDataChannelObserver dataChannelObserver = new DefaultDataChannelObserver();
@@ -141,12 +136,8 @@ public class WebRTCClientConfig {
     /*
      * Current video source to publish
      */
-    public IWebRTCClient.StreamSource videoSource;
+    public IWebRTCClient.StreamSource videoSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
 
-    /*
-     * Flag indicating whether custom video capturer is enabled
-     */
-    public boolean customVideoCapturerEnabled;
 
     /*
      * Flag indicating whether initate WebRTCClient (renderers, websocket, capturers etc.)  before stream publish starts
