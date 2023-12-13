@@ -92,6 +92,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -130,6 +131,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
     @Nullable
     private VideoFileRenderer videoFileRenderer;
     private List<VideoSink> remoteSinks = new ArrayList<>();
+    private Map<String,VideoSink> sinkTrackIdMap = new ConcurrentHashMap<>();
+    private  Map<VideoSink, SurfaceViewRenderer> videoSinkRendererMap =  new ConcurrentHashMap<>();
+
     private boolean isError;
     private final long callStartedTimeMs = 0;
     private boolean micEnabled = true;
@@ -578,11 +582,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             for (int i = 0; i < remoteVideoTrackList.size(); i++)
             {
                 VideoTrack videoTrack = remoteVideoTrackList.get(i);
-
                 if (i < remoteSinks.size()) {
                     videoTrack.addSink(remoteSinks.get(i));
-
-
+                    if(videoTrack.id() != null) {
+                        sinkTrackIdMap.put(videoTrack.id(), remoteSinks.get(i));
+                    }
                 } else {
                     Log.e(TAG, "There is no enough remote sinks to show video tracks");
                 }
@@ -628,6 +632,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
 
         @Override
         public void onRemoveTrack(RtpReceiver receiver) {
+            SurfaceViewRenderer renderer;
+            if(receiver.id()==null)
+                return;
+            VideoSink sink = sinkTrackIdMap.get(receiver.track().id());
+            List<VideoTrack> remoteVideoTrackList = getRemoteVideoTrackList(streamId);
+            for (VideoTrack track:remoteVideoTrackList) {
+              if(track.id().equals(receiver.track().id())){
+                 track.removeSink(sink);
+              }
+           }
+          if(sink != null) {
+              renderer = videoSinkRendererMap.get(sink);
+              handler.post(() -> {
+                  if(renderer !=null)
+                    renderer.clearImage();
+                    sinkTrackIdMap.remove(receiver.track().id());
+                    videoSinkRendererMap.remove(sink);
+                });
+          }
+
             Log.d("antmedia","on remove track");
         }
     }
@@ -911,9 +935,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             renderersProvidedAtStart = true;
             for (SurfaceViewRenderer renderer : remoteRendererList) {
                 //if we are performing reconnection, we shouldn't add remote sinks again
-                if (!renderersInitiated) {
+                if (!renderer.isActivated()) {
                     ProxyVideoSink remoteVideoSink = new ProxyVideoSink();
                     remoteSinks.add(remoteVideoSink);
+                    renderer.setActivated(true);
                 }
 
                 renderer.init(eglBase.getEglBaseContext(), null);
@@ -1382,18 +1407,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             wsHandler = null;
         }
         if (pipRenderer != null) {
+            pipRenderer.clearImage();
             pipRenderer.release();
             // pipRenderer = null; Do not make renderer null, we can re-use
         }
 
         if (remoteRendererList != null) {
             for (SurfaceViewRenderer renderer : remoteRendererList) {
+                renderer.clearImage();
                 renderer.release();
             }
         }
 
         if (fullscreenRenderer != null) {
             Log.i(getClass().getSimpleName(), "Releasing full screen renderer");
+            fullscreenRenderer.clearImage();
             fullscreenRenderer.release();
             // fullscreenRenderer = null; Do not make renderer null, we can re-use
         }
@@ -1414,6 +1442,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             audioManager.stop();
             audioManager = null;
         }
+        renderersInitiated=false;
     }
 
 
@@ -1517,6 +1546,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
             if(renderersProvidedAtStart) {
                 for (int i = 0; i < remoteSinks.size(); i++) {
                     ((ProxyVideoSink) remoteSinks.get(i)).setTarget(remoteRendererList.get(i));
+                    videoSinkRendererMap.put(remoteSinks.get(i),remoteRendererList.get(i));
                 }
             }
 
