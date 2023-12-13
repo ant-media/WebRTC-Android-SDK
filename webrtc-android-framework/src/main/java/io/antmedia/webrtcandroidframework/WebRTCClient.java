@@ -2455,6 +2455,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         PeerConnectionFactory.stopInternalTracingCapture();
         PeerConnectionFactory.shutdownInternalTracer();
         streamStarted = false;
+
+        renderersInitiated = false;
     }
 
     public boolean isHDVideo() {
