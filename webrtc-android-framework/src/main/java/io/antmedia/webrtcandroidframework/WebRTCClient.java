@@ -2445,6 +2445,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         if (factory != null) {
             factory.dispose();
             factory = null;
+            PeerConnectionFactory.stopInternalTracingCapture();
+            PeerConnectionFactory.shutdownInternalTracer();
         }
         if(eglBase != null) {
             eglBase.release();
@@ -2452,9 +2454,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents, ID
         }
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
-        PeerConnectionFactory.stopInternalTracingCapture();
-        PeerConnectionFactory.shutdownInternalTracer();
+
         streamStarted = false;
+
+        renderersInitiated = false;
     }
 
     public boolean isHDVideo() {
