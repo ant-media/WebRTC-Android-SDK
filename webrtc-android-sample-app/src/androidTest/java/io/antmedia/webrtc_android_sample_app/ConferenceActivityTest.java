@@ -6,8 +6,11 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.junit.Assert.assertNotNull;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
@@ -17,7 +20,9 @@ import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
 import androidx.test.espresso.matcher.ViewMatchers;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -29,12 +34,9 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
+import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
+import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 
 /**
@@ -52,26 +54,39 @@ public class ConferenceActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+
+    @Rule
+    public ActivityScenarioRule<ConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(ConferenceActivity.class);
+    private String runningTest;
     private String roomName;
 
     @Before
     public void before() {
         //try before method to make @Rule run properly
         System.out.println("before test");
+
+        getInstrumentation().waitForIdleSync();
+
+        roomName = "room_" + RandomStringUtils.randomNumeric(3);
+        Context context = getInstrumentation().getTargetContext();
+        SettingsActivity.changeRoomName(context, roomName);
     }
 
     @After
     public void after() {
+        System.out.println("after test");
         try {
-            Thread.sleep(5000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     @Rule
     public TestWatcher watchman= new TestWatcher() {
+
         @Override
         protected void failed(Throwable e, Description description) {
             Log.i("TestWatcher", "*** "+description + " failed!\n");
@@ -84,6 +99,7 @@ public class ConferenceActivityTest {
 
         protected void starting(Description description) {
             Log.i("TestWatcher", "******\n*** "+description + " starting!\n");
+            runningTest = description.toString();
         }
 
         protected void finished(Description description) {
@@ -91,17 +107,11 @@ public class ConferenceActivityTest {
         }
     };
 
-
     @Test
-    public void testJoinConfereceActivity() {
-        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ConferenceActivity.class);
-        roomName = "room_"+RandomStringUtils.randomNumeric(3);
-        ActivityScenario<ConferenceActivity> scenario = ActivityScenario.launch(intent);
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+    public void testJoinMultitrackRoom() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
-                SettingsActivity.changeRoomName(activity, roomName);
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -112,8 +122,113 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).perform(click());
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+
+
+    @Test
+    public void testJoinWithExternalParticipant() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+            @Override
+            public void perform(ConferenceActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
+    }
+
+    //@Test
+    public void testJoinWithoutVideo() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+            @Override
+            public void perform(ConferenceActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        onView(withId(R.id.control_audio_button)).check(matches(withText("Disable Audio")));
+        onView(withId(R.id.control_audio_button)).perform(click());
+
+        onView(withId(R.id.control_video_button)).check(matches(withText("Disable Video")));
+        onView(withId(R.id.control_video_button)).perform(click());
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+
+        onView(withId(R.id.control_audio_button)).check(matches(withText("Enable Audio")));
+        onView(withId(R.id.control_audio_button)).perform(click());
+
+        onView(withId(R.id.control_video_button)).check(matches(withText("Enable Video")));
+        onView(withId(R.id.control_video_button)).perform(click());
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
+    }
+
+
+    @Test
+    public void testJoinPlayOnlyAsFirstPerson() {
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+            @Override
+            public void perform(ConferenceActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        onView(withId(R.id.play_only_switch)).check(matches(withText("Play Only")));
+        onView(withId(R.id.play_only_switch)).perform(click());
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
         try {
             Thread.sleep(2000);
@@ -121,12 +236,62 @@ public class ConferenceActivityTest {
             throw new RuntimeException(e);
         }
 
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
-
+        participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
+
+    @Test
+    public void testReconnect() {
+        final ConferenceActivity[] mactivity = new ConferenceActivity[1];
+        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+            @Override
+            public void perform(ConferenceActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+                mactivity[0] = activity;
+            }
+        });
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
+
+
+        mactivity[0].changeWifiState(false);
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        mactivity[0].changeWifiState(true);
+
+
+
+        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+
+        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        //onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
+    }
+
 
 }

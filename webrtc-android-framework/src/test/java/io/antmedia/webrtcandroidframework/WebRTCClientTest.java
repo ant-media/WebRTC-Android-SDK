@@ -2,9 +2,7 @@ package io.antmedia.webrtcandroidframework;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -12,7 +10,6 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -25,14 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.media.AudioManager;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
-import android.util.DisplayMetrics;
-
-import androidx.annotation.Nullable;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -40,11 +31,11 @@ import org.awaitility.Awaitility;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
@@ -60,20 +51,28 @@ import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
-import org.webrtc.VideoSink;
+import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
+import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
-import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
+import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
+import io.antmedia.webrtcandroidframework.core.StreamInfo;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
+import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
+import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -82,39 +81,73 @@ import io.antmedia.webrtcandroidframework.apprtc.CallActivity;
  */
 public class WebRTCClientTest {
 
+    private IWebRTCListener listener;
+    private Activity context;
+    private WebRTCClient webRTCClient;
+    private WebSocketHandler wsHandler;
+
+    @Before
+    public void before() {
+        listener = mock(IWebRTCListener.class);
+        context = mock(Activity.class);
+
+        WebRTCClient webRTCClientReal = IWebRTCClient.builder()
+                .setActivity(context)
+                .setWebRTCListener(listener)
+                .build();
+
+        webRTCClient = spy(webRTCClientReal);
+        wsHandler = spy(new WebSocketHandler(null, null));
+        doNothing().when(wsHandler).checkIfCalledOnValidThread();
+        doNothing().when(wsHandler).sendTextMessage(anyString());
+
+        webRTCClient.setWsHandler(wsHandler);
+
+        final Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+    }
+
+    private Handler getMockHandler() {
+        final Handler handler = mock(Handler.class);
+        when(handler.post(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            invocation.getArgumentAt(0, Runnable.class).run();
+            return null;
+        });
+
+        when(handler.postDelayed(any(Runnable.class), anyLong())).thenAnswer((Answer<?>) invocation -> {
+            Long delay = invocation.getArgumentAt(1, Long.class);
+            Thread thread = new Thread(() -> {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                invocation.getArgumentAt(0, Runnable.class).run();
+            });
+            thread.start();
+            return null;
+        });
+        return handler;
+    }
+
     @Test
     public void testStreamPublishParameters() {
         boolean videoCallEnabled = RandomUtils.nextBoolean();
         boolean audioCallEnabled = RandomUtils.nextBoolean();
         String streamId = "stream" + RandomStringUtils.random(5);
-        String mode = IWebRTCClient.MODE_PUBLISH;
         String token = "token" + RandomStringUtils.random(5);
         String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
         String subscriberCode = "code" + RandomStringUtils.random(5);
         String streamName = "stream" + RandomStringUtils.random(5);
 
-        IWebRTCListener listener = mock(IWebRTCListener.class);
-        Context context = mock(Context.class);
-        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
-        WebSocketHandler wsHandler = spy(new WebSocketHandler(null, null));
-        webRTCClient.setWsHandler(wsHandler);
-
-        webRTCClient.setSubscriberParams(subscriberId, subscriberCode);
-        webRTCClient.setStreamName(streamName);
-
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
-        doNothing().when(webRTCClient).init(anyString(), anyString(), anyString(), anyString(), any());
+        doNothing().when(webRTCClient).init();
         doReturn(true).when(wsHandler).isConnected();
-        doNothing().when(wsHandler).checkIfCalledOnValidThread();
-        doNothing().when(wsHandler).sendTextMessage(anyString());
 
-        webRTCClient.setStreamId(streamId);
-        webRTCClient.setStreamMode(mode);
         webRTCClient.setAudioEnabled(audioCallEnabled);
         webRTCClient.setVideoEnabled(videoCallEnabled);
-        webRTCClient.setToken(token);
 
-        webRTCClient.startStream();
+        webRTCClient.publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null);
 
         verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null);
 
@@ -137,7 +170,7 @@ public class WebRTCClientTest {
 
         assertEquals(json.toString(), jsonCaptor.getValue());
 
-        webRTCClient.stopStream();
+        webRTCClient.stop(streamId);
 
         verify(wsHandler, times(1)).stop(streamId);
         verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
@@ -154,13 +187,153 @@ public class WebRTCClientTest {
     }
 
     @Test
+    public void testStreamPlayParameters() {
+        boolean videoCallEnabled = RandomUtils.nextBoolean();
+        boolean audioCallEnabled = RandomUtils.nextBoolean();
+        String streamId = "stream" + RandomStringUtils.random(5);
+        String token = "token" + RandomStringUtils.random(5);
+        String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
+        String subscriberCode = "code" + RandomStringUtils.random(5);
+        String viewerInfo = "info" + RandomStringUtils.random(5);
+
+        when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
+        doNothing().when(webRTCClient).init();
+        doReturn(true).when(wsHandler).isConnected();
+
+        webRTCClient.setAudioEnabled(audioCallEnabled);
+        webRTCClient.setVideoEnabled(videoCallEnabled);
+
+        webRTCClient.play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+
+        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+        verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.PLAY_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.TOKEN, token);
+            json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
+            json.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
+            json.put(WebSocketConstants.TRACK_LIST, new JSONArray());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+        webRTCClient.stop(streamId);
+
+        verify(wsHandler, times(1)).stop(streamId);
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
+        json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+    }
+
+
+    @Test
+    public void testJoinParameters() {
+        String streamId = "stream" + RandomStringUtils.random(5);
+        String token = "token" + RandomStringUtils.random(5);
+
+        when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
+        doNothing().when(webRTCClient).init();
+        doReturn(true).when(wsHandler).isConnected();
+
+
+        webRTCClient.join(streamId, token);
+
+        verify(wsHandler, times(1)).joinToPeer(streamId, token);
+
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+        verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.JOIN_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.TOKEN, token);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+        webRTCClient.stop(streamId);
+
+        verify(wsHandler, times(1)).stop(streamId);
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
+        json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+    }
+
+    @Test
+    public void testJoinRoomParameters() {
+        String streamId = "stream" + RandomStringUtils.random(5);
+        String roomName = "room" + RandomStringUtils.random(5);
+
+        when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
+        doNothing().when(webRTCClient).init();
+        doReturn(true).when(wsHandler).isConnected();
+
+        webRTCClient.joinToConferenceRoom(roomName, streamId);
+
+        verify(wsHandler, times(1)).joinToConferenceRoom(roomName, streamId);
+
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+        verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.JOIN_ROOM_COMMAND);
+            json.put(WebSocketConstants.ROOM, roomName);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+        webRTCClient.leaveFromConference(roomName);
+
+        verify(wsHandler, times(1)).leaveFromTheConferenceRoom(roomName);
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
+        json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_THE_ROOM);
+            json.put(WebSocketConstants.ROOM, roomName);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+    }
+
+
+    @Test
     public void testOnAudioManagerDevicesChanged() {
         // Create a mock of the AppRTCAudioManager and AudioManager
         AppRTCAudioManager audioManager = Mockito.mock(AppRTCAudioManager.class);
-        AudioManager systemAudioManager = Mockito.mock(AudioManager.class);
-
-        // Create the test instance
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(null, mock(Context.class)));
 
         // Set up the test data
         AppRTCAudioManager.AudioDevice device = AppRTCAudioManager.AudioDevice.BLUETOOTH;
@@ -185,128 +358,33 @@ public class WebRTCClientTest {
         Mockito.verify(audioManager).selectAudioDevice(device);
     }
 
-
-    @Test
-    public void testStreamPlayParameters() {
-        boolean videoCallEnabled = RandomUtils.nextBoolean();
-        boolean audioCallEnabled = RandomUtils.nextBoolean();
-        String streamId = "stream" + RandomStringUtils.random(5);
-        String mode = IWebRTCClient.MODE_PLAY;
-        String token = "token" + RandomStringUtils.random(5);
-        String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
-        String subscriberCode = "code" + RandomStringUtils.random(5);
-        String viewerInfo = "info" + RandomStringUtils.random(5);
-        String[] tracks = null;
-
-
-        IWebRTCListener listener = mock(IWebRTCListener.class);
-        Context context = mock(Context.class);
-        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
-        WebSocketHandler wsHandler = spy(new WebSocketHandler(null, null));
-        webRTCClient.setWsHandler(wsHandler);
-
-        webRTCClient.setSubscriberParams(subscriberId, subscriberCode);
-        webRTCClient.setViewerInfo(viewerInfo);
-
-        when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
-        doNothing().when(webRTCClient).init(anyString(), anyString(), anyString(), anyString(), any());
-        doReturn(true).when(wsHandler).isConnected();
-        doNothing().when(wsHandler).checkIfCalledOnValidThread();
-        doNothing().when(wsHandler).sendTextMessage(anyString());
-
-        webRTCClient.setStreamId(streamId);
-        webRTCClient.setStreamMode(mode);
-        webRTCClient.setAudioEnabled(audioCallEnabled);
-        webRTCClient.setVideoEnabled(videoCallEnabled);
-        webRTCClient.setToken(token);
-
-        webRTCClient.startStream();
-
-        verify(wsHandler, times(1)).startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
-
-        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
-        verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
-
-        JSONObject json = new JSONObject();
-        try {
-            json.put(WebSocketConstants.COMMAND, WebSocketConstants.PLAY_COMMAND);
-            json.put(WebSocketConstants.STREAM_ID, streamId);
-            json.put(WebSocketConstants.TOKEN, token);
-            json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
-            json.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
-            json.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
-            json.put(WebSocketConstants.TRACK_LIST, new JSONArray());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        assertEquals(json.toString(), jsonCaptor.getValue());
-
-        webRTCClient.setStreamMode(IWebRTCClient.MODE_JOIN);
-
-        webRTCClient.startStream();
-        verify(wsHandler, times(1)).joinToPeer(streamId, token);
-
-        webRTCClient.setStreamMode(IWebRTCClient.MODE_MULTI_TRACK_PLAY);
-
-        webRTCClient.startStream();
-        verify(wsHandler, times(1)).getTrackList(streamId, token);
-
-    }
-
     @Test
     public void testCreateScreenCapturer() {
 
-        IWebRTCListener listener = mock(IWebRTCListener.class);
-        Context context = mock(Context.class);
-        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
         String streamId = "stream";
-        webRTCClient.setStreamId(streamId);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
+        doNothing().when(wsHandler).disconnect(anyBoolean());
+
+        webRTCClient.peers.put(streamId, peerInfo);
+
+        webRTCClient.getConfig().mediaProjection = mock(MediaProjection.class);
 
         ScreenCapturerAndroid screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
-        assertNull(screenCapturer);
-
-        webRTCClient.setMediaProjectionParams(Activity.RESULT_OK, null);
-        screenCapturer = (ScreenCapturerAndroid) webRTCClient.createScreenCapturer();
         assertNotNull(screenCapturer);
 
         MediaProjection.Callback callback = Mockito.spy(screenCapturer.getMediaProjectionCallback());
         callback.onStop();
 
-        Mockito.verify(webRTCClient).reportError(streamId, "USER_REVOKED_CAPTURE_SCREEN_PERMISSION");
+        Mockito.verify(webRTCClient).reportError(streamId, WebRTCClient.USER_REVOKED_CAPTURE_SCREEN_PERMISSION);
     }
 
-    @Test
-    public void testOnActivityResult() {
-        IWebRTCListener listener = mock(IWebRTCListener.class);
-        Context context = mock(Context.class);
-        WebRTCClient webRTCClient = spy(new WebRTCClient(listener, context));
 
-        webRTCClient.changeVideoSource(WebRTCClient.SOURCE_SCREEN);
-        Mockito.verify(webRTCClient).startScreenCapture();
-
-        webRTCClient.onActivityResult(0, Activity.RESULT_OK, null);
-        assertNotEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
-
-        Mockito.doNothing().when(webRTCClient).changeVideoCapturer(any());
-        Mockito.doReturn(new DisplayMetrics()).when(webRTCClient).getDisplayMetrics();
-        webRTCClient.onActivityResult(CallActivity.CAPTURE_PERMISSION_REQUEST_CODE, Activity.RESULT_OK, null);
-        assertEquals(Activity.RESULT_OK, webRTCClient.getMediaProjectionPermissionResultCode());
-
-        Mockito.verify(webRTCClient).createVideoCapturer(WebRTCClient.SOURCE_SCREEN);
-    }
 
     @Test
     public void testReleaseCallback() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
-        Mockito.doNothing().when(webRTCClient).release(anyBoolean());
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
+        doNothing().when(wsHandler).disconnect(anyBoolean());
 
         webRTCClient.onPublishFinished("streamId");
-
         Mockito.verify(webRTCClient, timeout(1000)).release(false);
 
         webRTCClient.onPlayFinished("streamId");
@@ -320,76 +398,65 @@ public class WebRTCClientTest {
 
     }
 
+
     @Test
     public void testInitilization() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
-        Mockito.doNothing().when(webRTCClient).initializeRenderers();
-        Mockito.doNothing().when(webRTCClient).initializePeerConnectionFactory();
-        Mockito.doNothing().when(webRTCClient).initializeVideoCapturer();
-        Mockito.doNothing().when(webRTCClient).initializeAudioManager();
-        Mockito.doNothing().when(webRTCClient).connectWebSocket();
+        mockMethodsInInit();
         Mockito.doReturn(true).when(webRTCClient).checkPermissions(any());
 
         when(context.getString(R.string.pref_maxvideobitratevalue_default)).thenReturn("500");
         when(context.getString(R.string.pref_startaudiobitratevalue_default)).thenReturn("500");
 
-
-        Intent intent = Mockito.mock(Intent.class);
-        when(intent.getBooleanExtra(CallActivity.EXTRA_VIDEO_CALL, true)).thenReturn(false);
-        when(intent.getBooleanExtra(CallActivity.EXTRA_DATA_CHANNEL_ENABLED, true)).thenReturn(true);
-
-        webRTCClient.init("http://my.ams:5080/myapp/websocket", "stream", WebRTCClient.MODE_PUBLISH, "token", intent);
-
-        assertEquals(false, webRTCClient.getVideoCallEnabled());
-        assertEquals(true, webRTCClient.isDataChannelEnabled());
+        webRTCClient.init();
+        assertTrue(webRTCClient.isDataChannelEnabled());
     }
+
 
     @Test
     public void testInitilizeVideoCapturer() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
         Mockito.doNothing().when(webRTCClient).initializeRenderers();
-        Mockito.doReturn(true).when(webRTCClient).useCamera2();
+        Mockito.doReturn(null).when(webRTCClient).createVideoCapturer(any());
 
-        webRTCClient.setVideoCallEnabled(true);
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
         webRTCClient.initializeVideoCapturer();
+        assertEquals(IWebRTCClient.StreamSource.FRONT_CAMERA, webRTCClient.getConfig().videoSource);
 
-        assertEquals(WebRTCClient.SOURCE_FRONT, webRTCClient.getCurrentSource());
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.REAR_CAMERA;
+        webRTCClient.initializeVideoCapturer();
+        assertEquals(IWebRTCClient.StreamSource.REAR_CAMERA, webRTCClient.getConfig().videoSource);
+
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.SCREEN;
+        webRTCClient.initializeVideoCapturer();
+        assertEquals(IWebRTCClient.StreamSource.SCREEN, webRTCClient.getConfig().videoSource);
+
+        webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.CUSTOM;
+        webRTCClient.initializeVideoCapturer();
+        assertEquals(IWebRTCClient.StreamSource.CUSTOM, webRTCClient.getConfig().videoSource);
+
     }
-
 
     @Test
-    public void testAccessors() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
+    public void testCreateVideoCapturer() {
 
-        webRTCClient.setStreamMode(IWebRTCClient.MODE_PLAY);
-        assertEquals(IWebRTCClient.MODE_PLAY, webRTCClient.getStreamMode());
+        VideoCapturer screenapturer = mock(VideoCapturer.class);
+        VideoCapturer customCapturer = mock(VideoCapturer.class);
+        VideoCapturer cameraCapturer = mock(VideoCapturer.class);
 
+        doReturn(screenapturer).when(webRTCClient).createScreenCapturer();
+        doReturn(customCapturer).when(webRTCClient).createCustomVideoCapturer();
+        doReturn(cameraCapturer).when(webRTCClient).createCameraCapturer(any());
 
+        assertEquals(screenapturer, webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.SCREEN));
+        assertEquals(customCapturer, webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.CUSTOM));
+        assertEquals(cameraCapturer, webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.FRONT_CAMERA));
+        assertEquals(cameraCapturer, webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.REAR_CAMERA));
     }
+
 
     @Test
     public void testPCObserver() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, context);
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-
         doNothing().when(webRTCClient).release(anyBoolean());
-
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClient.setWsHandler(wsHandler);
-
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
-        webRTCClient.setStreamId(streamId);
 
         WebRTCClient.PCObserver pcObserver = webRTCClient.getPCObserver(streamId);
         assertNotNull(pcObserver);
@@ -403,7 +470,7 @@ public class WebRTCClientTest {
 
         pcObserver.onConnectionChange(PeerConnection.PeerConnectionState.CONNECTED);
         pcObserver.onConnectionChange(PeerConnection.PeerConnectionState.DISCONNECTED);
-        verify(listener, timeout(1000)).onDisconnected(streamId);
+        verify(listener, timeout(1000)).onDisconnected();
 
         pcObserver.onConnectionChange(PeerConnection.PeerConnectionState.FAILED);
         verify(listener, timeout(1000)).onError(anyString(), eq(streamId));
@@ -427,7 +494,7 @@ public class WebRTCClientTest {
         pcObserver.onRenegotiationNeeded();
         pcObserver.onDataChannel(mock(DataChannel.class));
         
-        webRTCClient.getRemoteSinks().add(mock(VideoSink.class));
+        webRTCClient.getRemoteVideoSinks().add(mock(ProxyVideoSink.class));
         MediaStream[] tracks = {new MediaStream(0)};
         PeerConnection pc = mock(PeerConnection.class);
         RtpTransceiver transceiver = mock(RtpTransceiver.class);
@@ -435,68 +502,21 @@ public class WebRTCClientTest {
         when(transceiver.getReceiver()).thenReturn(receiver);
         VideoTrack videoTrack= mock(VideoTrack.class);
         when(receiver.track()).thenReturn(videoTrack);
-        when(pc.getTransceivers()).thenReturn(Arrays.asList(transceiver));
+        when(pc.getTransceivers()).thenReturn(Collections.singletonList(transceiver));
         webRTCClient.addPeerConnection(streamId, pc);
-        webRTCClient.setRenderersProvidedAtStart(true);
-        webRTCClient.setStreamMode(IWebRTCClient.MODE_PLAY);
         pcObserver.onAddTrack(receiver, tracks);
-        verify(videoTrack, times(1)).addSink(any(VideoSink.class));
+        verify(listener, times(1)).onNewVideoTrack(videoTrack);
 
         pcObserver.onRemoveTrack(mock(RtpReceiver.class));
         assertNotNull(webRTCClient);
 
     }
 
-    @Nullable
-    private Handler getMockHandler() {
-        final Handler handler = mock(Handler.class);
-        when(handler.post(any(Runnable.class))).thenAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                invocation.getArgumentAt(0, Runnable.class).run();
-                return null;
-            }
-
-        });
-
-        when(handler.postDelayed(any(Runnable.class), anyLong())).thenAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Long delay = invocation.getArgumentAt(1, Long.class);
-                Thread thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Thread.sleep(delay);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        invocation.getArgumentAt(0, Runnable.class).run();
-                    }
-                });
-                thread.start();
-                return null;
-            }
-
-        });
-        return handler;
-    }
 
     @Test
     public void testSDPObserver() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = new WebRTCClient(listener, context);
-
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        when(wsHandler.getSignallingListener()).thenReturn(webRTCClient);
-        webRTCClient.setWsHandler(wsHandler);
-
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
+        doNothing().when(wsHandler).disconnect(anyBoolean());
         String streamId = "stream1";
-        webRTCClient.setStreamId(streamId);
 
         WebRTCClient.SDPObserver sdpObserver = webRTCClient.getSdpObserver(streamId);
         assertNotNull(sdpObserver);
@@ -504,7 +524,7 @@ public class WebRTCClientTest {
         PeerConnection pc = mock(PeerConnection.class);
         webRTCClient.addPeerConnection(streamId, pc);
 
-        SessionDescription sessionDescription = mock(SessionDescription.class);
+        SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, "sdp");
         sdpObserver.onCreateSuccess(sessionDescription);
         verify(pc, timeout(1000)).setLocalDescription(eq(sdpObserver), any());
 
@@ -526,54 +546,9 @@ public class WebRTCClientTest {
     }
 
     @Test
-    public void testAudioVideoEnablement() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = Mockito.spy(new WebRTCClient(listener, context));
-
-        when(context.getString(R.string.pref_maxvideobitratevalue_default)).thenReturn("500");
-        when(context.getString(R.string.pref_startaudiobitratevalue_default)).thenReturn("500");
-
-        Intent intent = Mockito.mock(Intent.class);
-
-        webRTCClient.setStreamMode(WebRTCClient.MODE_PLAY);
-        webRTCClient.initializeParameters();
-        assertEquals(false, webRTCClient.getVideoCallEnabled());
-        assertEquals(true, webRTCClient.getAudioCallEnabled());
-
-        webRTCClient.setVideoEnabled(false);
-        webRTCClient.setAudioEnabled(false);
-
-        webRTCClient.setStreamMode(WebRTCClient.MODE_MULTI_TRACK_PLAY);
-        webRTCClient.initializeParameters();
-        assertEquals(false, webRTCClient.getVideoCallEnabled());
-        assertEquals(true, webRTCClient.getAudioCallEnabled());
-
-        webRTCClient.setVideoEnabled(false);
-        webRTCClient.setAudioEnabled(false);
-
-        webRTCClient.setStreamMode(WebRTCClient.MODE_TRACK_BASED_CONFERENCE);
-        webRTCClient.initializeParameters();
-        assertEquals(true, webRTCClient.getVideoCallEnabled());
-        assertEquals(true, webRTCClient.getAudioCallEnabled());
-
-        webRTCClient.setVideoEnabled(false);
-        webRTCClient.setAudioEnabled(false);
-
-        webRTCClient.setStreamMode("some other mode");
-        webRTCClient.initializeParameters();
-        assertEquals(false, webRTCClient.getVideoCallEnabled());
-        assertEquals(false, webRTCClient.getAudioCallEnabled());
-
-
-    }
-
-    @Test
     public void testAVideoRotationExtention() {
         String streamId = "stream1";
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        Context context = Mockito.mock(Context.class);
-        WebRTCClient webRTCClient = new WebRTCClient(listener, context);
+
         PeerConnection pc = mock(PeerConnection.class);
         webRTCClient.addPeerConnection(streamId, pc);
 
@@ -582,6 +557,7 @@ public class WebRTCClientTest {
                 "something else\r\n";
 
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+        assertNotNull(webRTCClient.getLocalDescription());
         assertTrue(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
 
@@ -594,19 +570,20 @@ public class WebRTCClientTest {
 
     @Test
     public void testSendPlayOtherTracks() {
-        WebRTCClient webRTCClient = spy(new WebRTCClient(null, mock(Context.class)));
         webRTCClient.setAutoPlayTracks(true);
-        webRTCClient.setSelfStreamId("self");
-        String tracks[] = {"other1", "self", "other2"};
+        String[] tracks;
+        tracks = new String[]{"other1", "self", "other2"};
 
-        doNothing().when(webRTCClient).init(anyString(), anyString(), anyString(), anyString(), any());
+        doNothing().when(webRTCClient).init();
         doNothing().when(webRTCClient).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-        doReturn(false).when(webRTCClient).isStreaming();
+        doReturn("self").when(webRTCClient).getPublishStreamId();
+        doReturn("main").when(webRTCClient).getMultiTrackStreamId();
+        doReturn(false).when(webRTCClient).isStreaming("main");
 
         webRTCClient.sendPlayOtherTracks(tracks);
 
         ArgumentCaptor<String[]> tracksCaptor = ArgumentCaptor.forClass(String[].class);
-        verify(webRTCClient, times(1)).play(anyString(), anyString(), tracksCaptor.capture());
+        verify(webRTCClient, times(1)).play(anyString(), tracksCaptor.capture());
 
         String[] capturedTracks = tracksCaptor.getValue();
         assertEquals("other1", capturedTracks[0]);
@@ -614,24 +591,19 @@ public class WebRTCClientTest {
         assertEquals("other2", capturedTracks[2]);
     }
 
+
+
     @Test
     public void testReconnection() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        webRTCClientReal.setWsHandler(mock(WebSocketHandler.class));
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
         webRTCClient.createReconnectionRunnable();
 
-        String streamId = "stream1";
-        webRTCClient.setStreamId(streamId);
         final Handler handler = getMockHandler();
         webRTCClient.setHandler(handler);
-        webRTCClient.setReconnectionEnabled(true);
+        webRTCClient.getConfig().reconnectionEnabled = true;
         webRTCClient.setReconnectionHandler(handler);
 
 
-        doNothing().when(webRTCClient).init(anyString(), anyString(), anyString(), anyString(), any());
+        doNothing().when(webRTCClient).init();
 
         String playStreamId = "playStreamId";
         webRTCClient.play(playStreamId, "", null, "", "", "");
@@ -641,7 +613,7 @@ public class WebRTCClientTest {
 
         webRTCClient.onDisconnected();
 
-        verify(listener, timeout(1000)).onDisconnected(streamId);
+        verify(listener, timeout(1000)).onDisconnected();
 
         verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
         verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).publish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
@@ -649,17 +621,9 @@ public class WebRTCClientTest {
 
     @Test
     public void testWSAndListenerMessages() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
         String room = "room1";
+        mockMethodsInInit();
 
         webRTCClient.joinToConferenceRoom(room, streamId);
         verify(wsHandler, timeout(1000)).joinToConferenceRoom(room, streamId);
@@ -669,6 +633,10 @@ public class WebRTCClientTest {
 
         webRTCClient.getRoomInfo(room, streamId);
         verify(wsHandler, timeout(1000)).getRoomInfo(room, streamId);
+
+        webRTCClient.enableTrack("stream1", "track1", true);
+        verify(wsHandler, timeout(1000)).enableTrack("stream1", "track1", true);
+
 
         String[] streams = new String[1];
 
@@ -710,84 +678,57 @@ public class WebRTCClientTest {
     }
 
     @Test
-    public void testCheckPermissions() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
+    public void testCheckPermissionsForPublish() {
+        mockMethodsInInit();
 
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
+        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
 
-        webRTCClient.setStreamMode(WebRTCClient.MODE_TRACK_BASED_CONFERENCE);
-        webRTCClient.checkPermissions(any());
-        verify(listener).checkAndRequestPermisssions(eq(true), any());
+        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
+        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
 
-        webRTCClient.setStreamMode(WebRTCClient.MODE_PUBLISH);
-        webRTCClient.checkPermissions(any());
-        verify(listener, times(2)).checkAndRequestPermisssions(eq(true), any());
-
-        webRTCClient.setStreamMode(WebRTCClient.MODE_PLAY);
-        webRTCClient.checkPermissions(any());
-        verify(listener).checkAndRequestPermisssions(eq(false), any());
-
+        webRTCClient.publish("stream1");
+        verify(permissionsHandler).checkAndRequestPermisssions(eq(true), any());
     }
 
     @Test
-    public void testMultiplePlayAdaptations() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-        String initialStreamId = "initialStreamId";
-        webRTCClientReal.setStreamId(initialStreamId);
+    public void testCheckPermissionsForPlay() {
+        mockMethodsInInit();
 
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
+        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
 
-        when(wsHandler.isConnected()).thenReturn(true);
+        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
+        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
 
-        String streamId = "stream1";
-        webRTCClient.stopStream(streamId);
-        verify(wsHandler, timeout(1000)).stop(streamId);
-
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.MODE_PUBLISH);
-        PeerConnection pc = mock(PeerConnection.class);
-        when(pc.iceConnectionState()).thenReturn(PeerConnection.IceConnectionState.CONNECTED);
-        peerInfo.peerConnection = pc;
-        webRTCClient.peers.put(initialStreamId, peerInfo);
-        assertTrue(webRTCClient.isStreaming());
-        when(pc.iceConnectionState()).thenReturn(PeerConnection.IceConnectionState.DISCONNECTED);
-        assertFalse(webRTCClient.isStreaming());
-
-        webRTCClient.getStreamInfoList();
-        verify(wsHandler, timeout(1000)).getStreamInfoList(initialStreamId);
-
-        webRTCClient.forceStreamQuality(360);
-        verify(wsHandler, timeout(1000)).forceStreamQuality(initialStreamId, 360);
-
-        assertEquals(initialStreamId, webRTCClient.getStreamId());
-
-        DataChannel.Buffer buffer = mock(DataChannel.Buffer.class);
-        webRTCClient.sendMessageViaDataChannel(buffer);
-        verify(webRTCClient, timeout(1000)).sendMessageViaDataChannel(initialStreamId, buffer);
-
+        webRTCClient.play("stream1");
+        verify(permissionsHandler).checkAndRequestPermisssions(eq(false), any());
     }
 
+    @Test
+    public void testCheckPermissionsForPeer() {
+        mockMethodsInInit();
+
+        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+
+        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
+        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
+
+        webRTCClient.join("stream1");
+        verify(permissionsHandler, times(1)).checkAndRequestPermisssions(eq(true), any());
+    }
+
+    private void mockMethodsInInit() {
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doNothing().when(webRTCClient).initializePeerConnectionFactory();
+        Mockito.doNothing().when(webRTCClient).initializeVideoCapturer();
+        Mockito.doNothing().when(webRTCClient).initializeAudioManager();
+        Mockito.doNothing().when(webRTCClient).connectWebSocket();
+    }
 
     @Test
     public void testOnStartStreaming() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
         doNothing().when(webRTCClient).createPeerConnection(streamId);
         doNothing().when(webRTCClient).createOffer(streamId);
@@ -795,22 +736,10 @@ public class WebRTCClientTest {
 
         verify(webRTCClient, timeout(1000)).createPeerConnection(streamId);
         verify(webRTCClient, timeout(1000)).createOffer(streamId);
-
-
-
     }
 
     @Test
     public void testOnTakeConfiguration() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
 
         SessionDescription sdp = new SessionDescription(SessionDescription.Type.OFFER, "sdp");
@@ -819,7 +748,7 @@ public class WebRTCClientTest {
         doNothing().when(webRTCClient).setRemoteDescription(streamId, sdp);
         doNothing().when(webRTCClient).createAnswer(streamId);
 
-        webRTCClient.peers.put(streamId, new WebRTCClient.PeerInfo(streamId, WebRTCClient.MODE_PUBLISH));
+        webRTCClient.peers.put(streamId, new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH));
 
         webRTCClient.onTakeConfiguration(streamId, sdp);
 
@@ -837,22 +766,9 @@ public class WebRTCClientTest {
 
     @Test
     public void testDatachannel() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        webRTCClient.setStreamMode(WebRTCClient.MODE_PUBLISH);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
-        IDataChannelObserver dcObserver = mock(IDataChannelObserver.class);
-        webRTCClient.setDataChannelObserver(dcObserver);
-
         String streamId = "stream1";
 
-        WebRTCClient.PeerInfo peerInfo =  new WebRTCClient.PeerInfo(streamId, WebRTCClient.MODE_PUBLISH);
+        WebRTCClient.PeerInfo peerInfo =  new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         PeerConnection pc = mock(PeerConnection.class);
         DataChannel dc = mock(DataChannel.class);
         when(pc.createDataChannel(anyString(), any())).thenReturn(dc);
@@ -863,6 +779,8 @@ public class WebRTCClientTest {
 
         assertEquals(dc, peerInfo.dataChannel);
 
+        IDataChannelObserver dcObserver = mock(IDataChannelObserver.class);
+        webRTCClient.getConfig().dataChannelObserver = dcObserver;
 
         doNothing().when(webRTCClient).reportError(anyString(), anyString());
         ByteBuffer bb = ByteBuffer.allocate(10);
@@ -885,22 +803,13 @@ public class WebRTCClientTest {
         verify(dcObserver, timeout(1000).times(2)).onMessageSent(buffer, false);
     }
 
+
     @Test
     public void testCreatePeerConnection() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
 
         doNothing().when(webRTCClient).createMediaConstraintsInternal();
         doNothing().when(webRTCClient).createPeerConnectionInternal(streamId);
-        doNothing().when(webRTCClient).maybeCreateAndStartRtcEventLog(streamId);
         doNothing().when(webRTCClient).reportError(anyString(), anyString());
 
         webRTCClient.createPeerConnection(streamId);
@@ -920,20 +829,11 @@ public class WebRTCClientTest {
 
     @Test
     public void testCreateAudioDevice() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
-        webRTCClient.setStreamId(streamId);
         JavaAudioDeviceModule.Builder builder = mock(JavaAudioDeviceModule.Builder.class);
         doReturn(builder).when(webRTCClient).getADMBuilder();
         doNothing().when(webRTCClient).reportError(anyString(), anyString());
+        doReturn(streamId).when(webRTCClient).getPublishStreamId();
 
         doReturn(builder).when(builder).setCustomAudioFeed(anyBoolean());
         doReturn(builder).when(builder).setUseHardwareAcousticEchoCanceler(anyBoolean());
@@ -967,7 +867,7 @@ public class WebRTCClientTest {
         JavaAudioDeviceModule.AudioRecordStateCallback audioRecordStateCallback = audioRecordStateCallbackCaptor.getValue();
         JavaAudioDeviceModule.AudioTrackStateCallback audioTrackStateCallback = audioTrackStateCallbackCaptor.getValue();
 
-        audioRecordStateCallback.onWebRtcAudioRecordStop();
+        audioRecordStateCallback.onWebRtcAudioRecordStart();
         audioRecordStateCallback.onWebRtcAudioRecordStop();
 
         audioTrackStateCallback.onWebRtcAudioTrackStart();
@@ -995,17 +895,7 @@ public class WebRTCClientTest {
 
     @Test
     public void testCreatePeerConnectionInternal() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
-        webRTCClient.setStreamId(streamId);
 
         doNothing().when(webRTCClient).setWebRTCLogLevel();
         doReturn(mock(AudioTrack.class)).when(webRTCClient).createAudioTrack();
@@ -1020,7 +910,7 @@ public class WebRTCClientTest {
         when(factory.createPeerConnection(any(PeerConnection.RTCConfiguration.class), any(PeerConnection.Observer.class)))
                 .thenReturn(pc);
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
 
         webRTCClient.createPeerConnectionInternal(streamId);
@@ -1029,20 +919,11 @@ public class WebRTCClientTest {
 
     @Test
     public void testStatsTest() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
 
         doNothing().when(webRTCClient).onPeerConnectionStatsReady(any());
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
 
         //no pc so nothing happens, return immediately
@@ -1058,19 +939,10 @@ public class WebRTCClientTest {
 
     @Test
     public void testCreateSDP() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
         doNothing().when(webRTCClient).initDataChannel(streamId);
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
 
         PeerConnection pc = mock(PeerConnection.class);
@@ -1087,19 +959,10 @@ public class WebRTCClientTest {
 
     @Test
     public void testAddRemoveRemoteIceCandidate() {
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         String streamId = "stream1";
         doNothing().when(webRTCClient).initDataChannel(streamId);
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
 
         PeerConnection pc = mock(PeerConnection.class);
@@ -1127,21 +990,11 @@ public class WebRTCClientTest {
     @Test
     public void testDegradationPreference() {
         String streamId = "stream1";
-
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
         webRTCClient.setDegradationPreference(streamId, degradationPreference);
         //will return imediately
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, IWebRTCClient.MODE_PUBLISH);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
 
         PeerConnection pc = mock(PeerConnection.class);
@@ -1167,17 +1020,7 @@ public class WebRTCClientTest {
 
     @Test
     public void testCloseInternal() {
-        String streamId = "stream1";
-
-        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
-        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
-        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
-        webRTCClientReal.setWsHandler(wsHandler);
-
-        WebRTCClient webRTCClient = spy(webRTCClientReal);
-        final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
-
         webRTCClient.closeInternal();
+        verify(webRTCClient, times(1)).onPeerConnectionClosed();
     }
 }

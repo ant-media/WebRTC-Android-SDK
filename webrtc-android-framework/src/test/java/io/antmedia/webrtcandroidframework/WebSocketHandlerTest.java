@@ -13,11 +13,12 @@ import org.mockito.MockitoAnnotations;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.concurrent.Executors;
 
 import de.tavendo.autobahn.WebSocketConnection;
+import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
+import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
+import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;

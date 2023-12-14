@@ -13,19 +13,10 @@
         android:layout_alignParentStart="true">
 
         <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/camera_view_renderer"
+            android:id="@+id/full_screen_renderer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="top" />
-
-        <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/pip_view_renderer"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_gravity="bottom|right"
-            android:layout_margin="5dp"
-            android:paddingHorizontal="5dp"
-            android:paddingVertical="4dp" />
     </FrameLayout>
 
     <Spinner

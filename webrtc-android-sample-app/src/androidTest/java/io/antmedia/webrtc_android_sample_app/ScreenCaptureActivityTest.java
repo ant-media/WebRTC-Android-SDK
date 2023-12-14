@@ -1,31 +1,20 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static io.antmedia.webrtc_android_sample_app.SettingsActivity.DEFAULT_WEBSOCKET_URL;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_BITRATE;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_FPS;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_HEIGHT;
-import static io.antmedia.webrtcandroidframework.apprtc.CallActivity.EXTRA_VIDEO_WIDTH;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
@@ -42,7 +31,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
+import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
+import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -59,7 +49,7 @@ public class ScreenCaptureActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(AbstractSampleSDKActivity.REQUIRED_PUBLISH_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
 
     @Before
     public void before() {
@@ -104,13 +94,15 @@ public class ScreenCaptureActivityTest {
         onView(withId(R.id.rbFront)).perform(click());
         onView(withId(R.id.rbScreen)).perform(click());
 
+        button = device.wait(Until.findObject(By.text("Start now")), 100000);
+        assertNotNull(button);
+        button.click();
 
-
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         //Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Streaming")));
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
         //2. stop stream and check that it's stopped
@@ -119,18 +111,18 @@ public class ScreenCaptureActivityTest {
 
 
         //Publish again without because it was failing
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start Streaming")));
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
 
         //FIXME: without this sleep, it's failing because onFinish event received but resources are not closed yet
         try {
-            Thread.sleep(30000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         //Check it's publishing again
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop Streaming")));
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
 
         //Stop publishing

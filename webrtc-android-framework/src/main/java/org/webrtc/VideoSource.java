@@ -68,6 +68,7 @@ public class VideoSource extends MediaSource {
         }
       }
 
+
       VideoFrame adaptedFrame = VideoProcessor.applyFrameAdaptationParameters(frame, parameters);
       if (adaptedFrame != null) {
         nativeAndroidVideoTrackSource.onFrameCaptured(adaptedFrame);

@@ -11,10 +11,10 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.antmedia.webrtcandroidframework.IWebRTCClient;
-import io.antmedia.webrtcandroidframework.StatsCollector;
-
 import static org.mockito.Mockito.*;
+
+import io.antmedia.webrtcandroidframework.core.StatsCollector;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 
 public class StatsCollectorTest {
 
@@ -41,7 +41,7 @@ public class StatsCollectorTest {
         when(rtcStats.getMembers()).thenReturn(createMembersMap("audio"));
 
         // Call the onStatsReport method with the publish mode
-        statsCollector.onStatsReport(report, IWebRTCClient.MODE_PUBLISH);
+        statsCollector.onStatsReport(report);
 
         // Verify that the audio bitrate is logged correctly
         // You can add additional verification based on your requirements
@@ -63,7 +63,7 @@ public class StatsCollectorTest {
         when(rtcStats.getMembers()).thenReturn(createMembersMap("video"));
 
         // Call the onStatsReport method with the play mode
-        statsCollector.onStatsReport(report, IWebRTCClient.MODE_PLAY);
+        statsCollector.onStatsReport(report);
 
         // Verify that the video bitrate is logged correctly
         // You can add additional verification based on your requirements

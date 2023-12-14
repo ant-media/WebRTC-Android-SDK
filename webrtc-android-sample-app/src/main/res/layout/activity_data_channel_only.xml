@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".DataChannelOnlyActivity">
+    tools:context=".basic.DataChannelOnlyActivity">
 
     <LinearLayout
         android:layout_alignParentTop="true"
