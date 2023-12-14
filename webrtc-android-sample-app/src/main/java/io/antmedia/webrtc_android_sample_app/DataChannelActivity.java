@@ -467,6 +467,7 @@ public class DataChannelActivity extends AbstractSampleSDKActivity implements Te
 
             // put length how much data will be sent in total
             ByteBuffer imageChunkData = ByteBuffer.allocate(totalMessageHeaderLength+endChunk);
+            imageChunkData.order(ByteOrder.LITTLE_ENDIAN);
             imageChunkData.putInt(dataBytes.length);
             imageChunkData.putInt(header.length);
             imageChunkData.put(messageHeaderBytes);
