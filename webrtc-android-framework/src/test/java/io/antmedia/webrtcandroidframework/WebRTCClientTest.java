@@ -1017,4 +1017,20 @@ public class WebRTCClientTest {
 
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
     }
+
+    @Test
+    public void testCloseInternal() {
+        String streamId = "stream1";
+
+        IWebRTCListener listener = Mockito.mock(IWebRTCListener.class);
+        WebRTCClient webRTCClientReal = new WebRTCClient(listener, mock(Context.class));
+        WebSocketHandler wsHandler = mock(WebSocketHandler.class);
+        webRTCClientReal.setWsHandler(wsHandler);
+
+        WebRTCClient webRTCClient = spy(webRTCClientReal);
+        final Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+
+        webRTCClient.closeInternal();
+    }
 }
