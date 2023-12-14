@@ -1681,9 +1681,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             eglBase = null;
         }
 
-        if(localVideoSink != null) {
-            localVideoSink.setTarget(null);
-        }
+        localVideoSink.setTarget(null);
+
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
     }
