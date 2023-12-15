@@ -790,7 +790,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peers.put(streamId, peerInfo);
 
         init();
+        waitForWSHandler();
         wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+    }
+
+
+    //FIXME find a better way to do this
+    public void waitForWSHandler() {
+        while (wsHandler == null || !wsHandler.isConnected()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void play(String streamId) {
@@ -812,6 +825,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peers.put(streamId, peerInfo);
 
         init();
+        waitForWSHandler();
         wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
     }
 
