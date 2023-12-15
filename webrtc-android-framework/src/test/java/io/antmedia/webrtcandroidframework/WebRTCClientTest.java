@@ -62,6 +62,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
@@ -98,6 +100,7 @@ public class WebRTCClientTest {
 
         webRTCClient = spy(webRTCClientReal);
         wsHandler = spy(new WebSocketHandler(null, null));
+        doReturn(true).when(wsHandler).isConnected();
         doNothing().when(wsHandler).checkIfCalledOnValidThread();
         doNothing().when(wsHandler).sendTextMessage(anyString());
 
@@ -1022,5 +1025,22 @@ public class WebRTCClientTest {
     public void testCloseInternal() {
         webRTCClient.closeInternal();
         verify(webRTCClient, times(1)).onPeerConnectionClosed();
+    }
+
+    @Test
+    public void testWaitWSHandler() {
+        webRTCClient.setHandler(null);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                webRTCClient.setWsHandler(wsHandler);
+            }
+        }, 1000);
+
+        webRTCClient.waitForWSHandler();
+        //reaching here is enough for this test
+        assertNotNull(webRTCClient);
+
     }
 }
