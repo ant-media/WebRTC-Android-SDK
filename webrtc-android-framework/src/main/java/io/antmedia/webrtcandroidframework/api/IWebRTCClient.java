@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework.api;
 
 import org.webrtc.DataChannel;
+import org.webrtc.RtpParameters;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
@@ -109,8 +110,17 @@ public interface IWebRTCClient {
     void sendMessageViaDataChannel(String streamId, DataChannel.Buffer buffer);
 
     /**
-     * This is used to change video source on the fly
-     * @param newSource: may be front camera, rear camera, screen or custom source which provides video frames
+     * This Function Can be used to set Degradation Preference for the Stream such as to
+     * Maintaining resolution or FrameRate in bad network conditions
+     * @param streamId: id for the stream
+     */
+
+    void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference);
+
+    /**
+     * This is used to play the specified resolution
+     * @param streamId: id for the stream
+     * @param height: desired height to play
      */
     void changeVideoSource(StreamSource newSource);
 
