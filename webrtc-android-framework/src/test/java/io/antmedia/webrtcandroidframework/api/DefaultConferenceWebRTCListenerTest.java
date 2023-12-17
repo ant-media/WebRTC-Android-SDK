@@ -211,4 +211,9 @@ public class DefaultConferenceWebRTCListenerTest extends DefaultWebRTCListenerTe
         defaultWebRTCListener.onSatatusUpdateFor("streamId", true, false);
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
+    @Test
+    public void testOnPeerConnectionCreated() {
+        defaultWebRTCListener.onPeerConnectionCreated("streamId");
+        verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
+    }
 }
