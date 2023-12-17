@@ -118,9 +118,8 @@ public interface IWebRTCClient {
     void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference);
 
     /**
-     * This is used to play the specified resolution
-     * @param streamId: id for the stream
-     * @param height: desired height to play
+     * This is used to change video source on the fly
+     * @param newSource: may be front camera, rear camera, screen or custom source which provides video frames
      */
     void changeVideoSource(StreamSource newSource);
 
