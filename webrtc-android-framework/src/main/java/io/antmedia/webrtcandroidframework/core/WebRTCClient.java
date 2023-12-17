@@ -1555,7 +1555,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             PeerInfo peer = peers.get(streamId);
             if (peer != null) {
                 peer.peerConnection = peerConnection;
-                config.webRTCListener.onPeerConnectionCreated(streamId);
             } else {
                 Log.e(TAG, "Peer not found for streamId: " + streamId);
             }
@@ -1575,7 +1574,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.videoCallEnabled) {
                 findVideoSender(streamId);
             }
-
+            config.webRTCListener.onPeerConnectionCreated(streamId);
             Log.d(TAG, "Peer connection created.");
         } else {
             Log.e(TAG, "Peer connection is not created");

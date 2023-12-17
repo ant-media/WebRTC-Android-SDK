@@ -918,6 +918,8 @@ public class WebRTCClientTest {
 
         webRTCClient.createPeerConnectionInternal(streamId);
         verify(factory).createPeerConnection(any(PeerConnection.RTCConfiguration.class), any(PeerConnection.Observer.class));
+        verify(webRTCClient.getConfig().webRTCListener).onPeerConnectionCreated(streamId);
+
     }
 
     @Test
