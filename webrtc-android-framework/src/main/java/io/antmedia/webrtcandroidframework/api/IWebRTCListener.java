@@ -63,6 +63,12 @@ public interface IWebRTCListener {
  void onIceConnected(String streamId);
 
  /**
+  * This method will be called when the peer connection object has been created
+  * This would allow user to have a low level control on the peer connection object before connection establishment
+  */
+ void onPeerConnectionCreated(String streamId);
+
+    /**
   * This method is fired when Ice connection has been disconnected
   */
  void onIceDisconnected(String streamId);
