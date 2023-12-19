@@ -1614,11 +1614,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference) {
         executor.execute(() -> {
-            if (config.activity == null) {
-                Log.d(TAG, "Cannot set  Degradation Preference");
-                return;
-            }
-
             if (localVideoSender == null || isError) {
                 Log.w(TAG, "Sender is not ready.");
                 return;
