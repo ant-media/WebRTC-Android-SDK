@@ -201,7 +201,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     // enableVideo is set to true if video should be rendered and sent.
     private boolean renderVideo = true;
     @androidx.annotation.Nullable
-    private RtpSender localVideoSender;
+    public RtpSender localVideoSender;
 
     @androidx.annotation.Nullable
     private AudioTrack localAudioTrack;

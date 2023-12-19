@@ -76,7 +76,6 @@ import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
-import org.mockito.internal.util.reflection.FieldSetter;
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
