@@ -994,11 +994,12 @@ public class WebRTCClientTest {
 
     @Test
     public void testDegradationPreference() {
-        String streamId = "stream1";
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
+        webRTCClient.getConfig().activity=null;
         webRTCClient.setDegradationPreference(degradationPreference);
         //will return imediately
 
+        webRTCClient.getConfig().activity= mock(Activity.class);
         List<RtpSender> senders = new ArrayList<>();
         RtpSender sender = mock(RtpSender.class);
         senders.add(sender);
