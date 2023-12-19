@@ -115,7 +115,7 @@ public interface IWebRTCClient {
      * @param streamId: id for the stream
      */
 
-    void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference);
+    void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference);
 
     /**
      * This is used to change video source on the fly

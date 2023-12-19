@@ -996,7 +996,7 @@ public class WebRTCClientTest {
     public void testDegradationPreference() {
         String streamId = "stream1";
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
-        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+        webRTCClient.setDegradationPreference(degradationPreference);
         //will return imediately
 
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
@@ -1018,7 +1018,7 @@ public class WebRTCClientTest {
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
 
-        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+        webRTCClient.setDegradationPreference(degradationPreference);
 
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
     }

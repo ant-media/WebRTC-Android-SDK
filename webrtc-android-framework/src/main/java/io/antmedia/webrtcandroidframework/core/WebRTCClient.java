@@ -1612,27 +1612,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    public void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference) {
-        PeerConnection pc = getPeerConnectionFor(streamId);
-
-        if (config.activity == null || pc == null) {
-            Log.d(TAG, "Cannot set  Degradation Preference");
-            return;
-        }
-
-        for (RtpSender sender : pc.getSenders()) {
-            MediaStreamTrack track = sender.track();
-            if (track != null) {
-                String trackType = track.kind();
-                if (trackType.equals(VIDEO_TRACK_TYPE)) {
-                    RtpParameters newParameters = sender.getParameters();
-                    if(newParameters != null) {
-                        newParameters.degradationPreference = degradationPreference;
-                        sender.setParameters(newParameters);
-                    }
-                }
+    public void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference) {
+        executor.execute(() -> {
+            if (config.activity == null) {
+                Log.d(TAG, "Cannot set  Degradation Preference");
+                return;
             }
-        }
+
+            if (localVideoSender == null || isError) {
+                Log.w(TAG, "Sender is not ready.");
+                return;
+            }
+
+            RtpParameters newParameters = localVideoSender.getParameters();
+            if (newParameters != null) {
+                newParameters.degradationPreference = degradationPreference;
+                localVideoSender.setParameters(newParameters);
+            }
+        });
     }
 
     public void closeInternal() {
