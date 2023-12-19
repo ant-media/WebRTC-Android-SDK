@@ -995,16 +995,17 @@ public class WebRTCClientTest {
     @Test
     public void testDegradationPreference() {
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
-        webRTCClient.getConfig().activity=null;
-        webRTCClient.setDegradationPreference(degradationPreference);
-        //will return imediately
 
         webRTCClient.getConfig().activity= mock(Activity.class);
         List<RtpSender> senders = new ArrayList<>();
         RtpSender sender = mock(RtpSender.class);
         senders.add(sender);
-        webRTCClient.localVideoSender = sender;
 
+        webRTCClient.localVideoSender = null;
+        webRTCClient.setDegradationPreference(degradationPreference);
+        verify(sender, never()).setParameters(any());
+
+        webRTCClient.localVideoSender = sender;
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
 
