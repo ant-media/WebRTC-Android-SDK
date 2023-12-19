@@ -1613,12 +1613,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference) {
+        if (localVideoSender == null || isError) {
+            Log.w(TAG, "Sender is not ready.");
+            return;
+        }
         executor.execute(() -> {
-            if (localVideoSender == null || isError) {
-                Log.w(TAG, "Sender is not ready.");
-                return;
-            }
-
             RtpParameters newParameters = localVideoSender.getParameters();
             if (newParameters != null) {
                 newParameters.degradationPreference = degradationPreference;
