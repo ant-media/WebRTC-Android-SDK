@@ -997,7 +997,7 @@ public class WebRTCClientTest {
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
 
         webRTCClient.getConfig().activity= mock(Activity.class);
-        List<RtpSender> senders = new ArrayList<>();
+        List<RtpSender> senders = new ArrayList<>(); 
         RtpSender sender = mock(RtpSender.class);
         senders.add(sender);
 
