@@ -56,6 +56,7 @@ import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,7 +76,7 @@ import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
-
+import org.mockito.internal.util.reflection.FieldSetter;
 /**
  * Example local unit test, which will execute on the development machine (host).
  *
@@ -999,21 +1000,10 @@ public class WebRTCClientTest {
         webRTCClient.setDegradationPreference(degradationPreference);
         //will return imediately
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
-        webRTCClient.peers.put(streamId, peerInfo);
-
-        PeerConnection pc = mock(PeerConnection.class);
-        peerInfo.peerConnection = pc;
-
         List<RtpSender> senders = new ArrayList<>();
         RtpSender sender = mock(RtpSender.class);
         senders.add(sender);
-        when(pc.getSenders()).thenReturn(senders);
-
-        MediaStreamTrack track = mock(MediaStreamTrack.class);
-        when(sender.track()).thenReturn(track);
-
-        when(track.kind()).thenReturn(WebRTCClient.VIDEO_TRACK_TYPE);
+        webRTCClient.localVideoSender = sender;
 
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
