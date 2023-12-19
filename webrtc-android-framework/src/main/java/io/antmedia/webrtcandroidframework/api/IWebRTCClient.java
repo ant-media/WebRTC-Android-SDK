@@ -112,7 +112,7 @@ public interface IWebRTCClient {
     /**
      * This Function Can be used to set Degradation Preference for the Stream such as to
      * Maintaining resolution or FrameRate in bad network conditions
-     * @param streamId: id for the stream
+     * @param degradationPreference : RtpParameters.DegradationPreference
      */
 
     void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference);
