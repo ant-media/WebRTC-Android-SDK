@@ -1008,7 +1008,6 @@ public class WebRTCClientTest {
         webRTCClient.localVideoSender = sender;
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
-
         webRTCClient.setDegradationPreference(degradationPreference);
 
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
@@ -1019,7 +1018,44 @@ public class WebRTCClientTest {
         webRTCClient.closeInternal();
         verify(webRTCClient, times(1)).onPeerConnectionClosed();
     }
+    @Test
+    public void testSetVideoMaxBitrate() throws NoSuchFieldException, IllegalAccessException, InterruptedException {
 
+        List<RtpSender> senders = new ArrayList<>();
+        RtpSender sender = mock(RtpSender.class);
+        senders.add(sender);
+
+        webRTCClient.localVideoSender = null;
+        webRTCClient.setVideoMaxBitrate(3000);
+        verify(sender, never()).setParameters(any());
+
+        webRTCClient.localVideoSender = sender;
+
+        RtpParameters.Encoding encodings  = mock(RtpParameters.Encoding.class);
+        List<RtpParameters.Encoding> mockEncoding = Collections.emptyList();
+
+        RtpParameters parameters = mock(RtpParameters.class);
+        when(sender.getParameters()).thenReturn(parameters);
+        when(sender.getParameters()).thenReturn(parameters);
+
+
+        Field field = RtpParameters.class.getDeclaredField("encodings");
+        field.setAccessible(true);
+        field.set(parameters, mockEncoding);
+
+
+        webRTCClient.setVideoMaxBitrate(3000);
+        verify(sender, never()).setParameters(any());
+
+        Thread.sleep(3000);
+
+        mockEncoding = new ArrayList<>();
+        mockEncoding.add(encodings);
+        field.set(parameters, mockEncoding);
+
+        webRTCClient.setVideoMaxBitrate(3000);
+        verify(sender, timeout(1000).times(1)).setParameters(parameters);
+    }
     @Test
     public void testWaitWSHandler() {
         webRTCClient.setHandler(null);
