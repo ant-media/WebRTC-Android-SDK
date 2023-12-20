@@ -73,6 +73,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
+import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
@@ -1043,4 +1044,19 @@ public class WebRTCClientTest {
         assertNotNull(webRTCClient);
 
     }
+
+    @Test
+    public void testGetBroadcastObject() {
+        String streamId = "stream1";
+        webRTCClient.getBroadcastObject(streamId);
+
+        verify(wsHandler, times(1)).getBroadcastObject(streamId);
+
+        Broadcast broadcast = mock(Broadcast.class);
+        webRTCClient.onBroadcastObject(broadcast);
+
+        verify(listener, times(1)).onBroadcastObject(broadcast);
+    }
+
+
 }
