@@ -427,20 +427,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         @Override
         public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
-            mainHandler.post(() -> {
+        MediaStreamTrack addedTrack = receiver.track();
+        if (addedTrack == null) {
+            return;
+        }
+        Log.d("antmedia", "on add track " + addedTrack.kind() + " " + addedTrack.id() + " " + addedTrack.state());
 
-                MediaStreamTrack addedTrack = receiver.track();
-                if (addedTrack == null) {
-                    return;
-                }
-                Log.d("antmedia", "on add track " + addedTrack.kind() + " " + addedTrack.id() + " " + addedTrack.state());
-
-                if (addedTrack instanceof VideoTrack) {
-                    VideoTrack videoTrack = (VideoTrack) addedTrack;
-                    config.webRTCListener.onNewVideoTrack(videoTrack);
-                }
-
-            });
+        if (addedTrack instanceof VideoTrack) {
+            VideoTrack videoTrack = (VideoTrack) addedTrack;
+            config.webRTCListener.onNewVideoTrack(videoTrack);
+        }
         }
 
         @Override
