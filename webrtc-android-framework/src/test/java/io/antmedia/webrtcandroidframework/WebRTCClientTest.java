@@ -550,8 +550,14 @@ public class WebRTCClientTest {
 
 
     @Test
-    public void testSDPObserver() {
+    public void testSDPObserver() throws NoSuchFieldException, IllegalAccessException {
         doNothing().when(wsHandler).disconnect(anyBoolean());
+
+        Handler handler = getMockHandler();
+        Field field = WebRTCClient.class.getDeclaredField("mainHandler");
+        field.setAccessible(true);
+        field.set(webRTCClient, handler);
+
         String streamId = "stream1";
 
         WebRTCClient.SDPObserver sdpObserver = webRTCClient.getSdpObserver(streamId);
