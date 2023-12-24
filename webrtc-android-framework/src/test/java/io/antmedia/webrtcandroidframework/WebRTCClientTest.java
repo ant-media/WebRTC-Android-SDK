@@ -112,7 +112,7 @@ public class WebRTCClientTest {
         webRTCClient.setHandler(handler);
     }
 
-    private Handler getMockHandler() {
+    public static Handler getMockHandler() {
         final Handler handler = mock(Handler.class);
         when(handler.post(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
             invocation.getArgumentAt(0, Runnable.class).run();
@@ -441,11 +441,9 @@ public class WebRTCClientTest {
     }
     @Test
     public void testRelease() throws IllegalAccessException, NoSuchFieldException {
+        String trackId = "trackid";
         Handler handler = getMockHandler();
-        Field field = WebRTCClient.class.getDeclaredField("mainHandler");
-        field.setAccessible(true);
-        field.set(webRTCClient, handler);
-
+        webRTCClient.setMainHandler(handler);
         webRTCClient.getConfig().localVideoRenderer = mock(SurfaceViewRenderer.class);
         webRTCClient.getConfig().remoteVideoRenderers = new ArrayList<SurfaceViewRenderer>() {{
             add(mock(SurfaceViewRenderer.class));
@@ -454,8 +452,8 @@ public class WebRTCClientTest {
         ArrayList<SurfaceViewRenderer> remoteRenderers = webRTCClient.getConfig().remoteVideoRenderers;
         remoteRenderers.get(0).setTag(anyString());
         remoteRenderers.get(1).setTag(anyString());
-        when(remoteRenderers.get(0).getTag()).thenReturn("trackid");
-        when(remoteRenderers.get(1).getTag()).thenReturn("trackid");
+        when(remoteRenderers.get(0).getTag()).thenReturn(trackId);
+        when(remoteRenderers.get(1).getTag()).thenReturn(trackId);
 
         webRTCClient.release(false);
 

@@ -101,7 +101,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private final ProxyVideoSink localVideoSink = new ProxyVideoSink();
     private final List<ProxyVideoSink> remoteVideoSinks = new ArrayList<>();
 
-    private final Handler mainHandler;
+    private Handler mainHandler;
     @Nullable
     public AppRTCAudioManager audioManager = null;
     private boolean isError;
@@ -2180,7 +2180,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void setHandler(Handler handler) {
         this.handler = handler;
     }
-
+    public void setMainHandler(Handler handler) {
+        this.mainHandler = handler;
+    }
     public void setAutoPlayTracks(boolean autoPlayTracks) {
         this.autoPlayTracks = autoPlayTracks;
     }

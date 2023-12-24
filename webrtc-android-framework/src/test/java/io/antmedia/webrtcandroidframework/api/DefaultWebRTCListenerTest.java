@@ -131,11 +131,12 @@ public class DefaultWebRTCListenerTest {
 
     @Test
     public void testOnVideoTrackEnded() {
+        String trackId = "trackid";
         VideoTrack mockVideoTrack = mock(VideoTrack.class);
-        when(mockVideoTrack.id()).thenReturn("trackid");
+        when(mockVideoTrack.id()).thenReturn(trackId);
         SurfaceViewRenderer mockSurfaceViewRenderer = mock(SurfaceViewRenderer.class);
 
-        when(mockSurfaceViewRenderer.getTag()).thenReturn("trackid");
+        when(mockSurfaceViewRenderer.getTag()).thenReturn(trackId);
 
         mockWebRTCClient.getConfig().remoteVideoRenderers.add(mockSurfaceViewRenderer);
 

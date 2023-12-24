@@ -121,10 +121,11 @@ public class DefaultConferenceWebRTCListenerTest extends DefaultWebRTCListenerTe
 
     @Test
     public void testOnNewVideoTrack() {
+        String trackId = "trackid";
         VideoTrack mockVideoTrack = mock(VideoTrack.class);
         SurfaceViewRenderer mockSurfaceViewRenderer = mock(SurfaceViewRenderer.class);
-        when(mockVideoTrack.id()).thenReturn("trackid");
-        when(mockSurfaceViewRenderer.getTag()).thenReturn("trackid");
+        when(mockVideoTrack.id()).thenReturn(trackId);
+        when(mockSurfaceViewRenderer.getTag()).thenReturn(trackId);
 
         when(mockSurfaceViewRenderer.getTag()).thenReturn(null);
 
@@ -140,9 +141,10 @@ public class DefaultConferenceWebRTCListenerTest extends DefaultWebRTCListenerTe
     @Test
     public void testOnVideoTrackEnded() {
         VideoTrack mockVideoTrack = mock(VideoTrack.class);
+        String trackId = "trackid";
         SurfaceViewRenderer mockSurfaceViewRenderer = mock(SurfaceViewRenderer.class);
-        when(mockVideoTrack.id()).thenReturn("trackid");
-        when(mockSurfaceViewRenderer.getTag()).thenReturn("trackid");
+        when(mockVideoTrack.id()).thenReturn(trackId);
+        when(mockSurfaceViewRenderer.getTag()).thenReturn(trackId);
 
         mockWebRTCClient.getConfig().remoteVideoRenderers.add(mockSurfaceViewRenderer);
 
