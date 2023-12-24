@@ -113,7 +113,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
 
         for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
             if (r.getTag() == null) {
-                r.setTag(track);
+                r.setTag(track.id());
                 webRTCClient.setRendererForVideoTrack(r, track);
                 break;
             }
@@ -125,7 +125,9 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         String messageText = "Video track ended";
         callbackCalled(messageText);
         for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
-            if (r.getTag() == track) {
+            if (r.getTag() != null && r.getTag().equals(track.id())) {
+                r.clearImage();
+                r.release();
                 r.setTag(null);
                 return;
             }

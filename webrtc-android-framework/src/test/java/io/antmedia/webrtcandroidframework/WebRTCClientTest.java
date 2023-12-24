@@ -51,11 +51,13 @@ import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
+import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -437,7 +439,38 @@ public class WebRTCClientTest {
         assertEquals(IWebRTCClient.StreamSource.CUSTOM, webRTCClient.getConfig().videoSource);
 
     }
+    @Test
+    public void testRelease() throws IllegalAccessException, NoSuchFieldException {
+        Handler handler = getMockHandler();
+        Field field = WebRTCClient.class.getDeclaredField("mainHandler");
+        field.setAccessible(true);
+        field.set(webRTCClient, handler);
 
+        webRTCClient.getConfig().localVideoRenderer = mock(SurfaceViewRenderer.class);
+        webRTCClient.getConfig().remoteVideoRenderers = new ArrayList<SurfaceViewRenderer>() {{
+            add(mock(SurfaceViewRenderer.class));
+            add(mock(SurfaceViewRenderer.class));
+        }};
+        ArrayList<SurfaceViewRenderer> remoteRenderers = webRTCClient.getConfig().remoteVideoRenderers;
+        remoteRenderers.get(0).setTag(anyString());
+        remoteRenderers.get(1).setTag(anyString());
+        when(remoteRenderers.get(0).getTag()).thenReturn("trackid");
+        when(remoteRenderers.get(1).getTag()).thenReturn("trackid");
+
+        webRTCClient.release(false);
+
+        verify(wsHandler, never()).disconnect(true);
+        verify(webRTCClient.getConfig().localVideoRenderer,timeout(2000)).clearImage();
+        verify(webRTCClient.getConfig().localVideoRenderer,timeout(2000)).release();
+
+        for (SurfaceViewRenderer renderer: remoteRenderers) {
+            verify(renderer,times(1)).release();
+            verify(renderer,times(1)).setTag(null);
+            verify(renderer,times(1)).clearImage();
+        }
+        verify(webRTCClient.getConfig().localVideoRenderer,timeout(2000)).release();
+
+    }
     @Test
     public void testCreateVideoCapturer() {
 

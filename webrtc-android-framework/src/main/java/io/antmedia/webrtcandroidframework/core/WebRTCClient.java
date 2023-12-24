@@ -427,28 +427,35 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         @Override
         public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
-            MediaStreamTrack addedTrack = receiver.track();
-            if(addedTrack == null) {
-                return;
-            }
-            Log.d("antmedia","on add track "+addedTrack.kind()+" "+addedTrack.id()+" "+addedTrack.state());
+            mainHandler.post(() -> {
 
-            if(addedTrack instanceof VideoTrack) {
-                VideoTrack videoTrack = (VideoTrack) addedTrack;
-                config.webRTCListener.onNewVideoTrack(videoTrack);
-            }
+                MediaStreamTrack addedTrack = receiver.track();
+                if (addedTrack == null) {
+                    return;
+                }
+                Log.d("antmedia", "on add track " + addedTrack.kind() + " " + addedTrack.id() + " " + addedTrack.state());
+
+                if (addedTrack instanceof VideoTrack) {
+                    VideoTrack videoTrack = (VideoTrack) addedTrack;
+                    config.webRTCListener.onNewVideoTrack(videoTrack);
+                }
+
+            });
         }
 
         @Override
         public void onRemoveTrack(RtpReceiver receiver) {
-            MediaStreamTrack removedTrack = receiver.track();
-            if(removedTrack == null) {
-                return;
-            }
-            Log.d("antmedia","on remove track "+removedTrack.kind()+" "+removedTrack.id()+" "+removedTrack.state());
-            if(removedTrack instanceof VideoTrack) {
-                config.webRTCListener.onVideoTrackEnded((VideoTrack) removedTrack);
-            }
+            mainHandler.post(() -> {
+
+                MediaStreamTrack removedTrack = receiver.track();
+                if (removedTrack == null) {
+                    return;
+                }
+                Log.d("antmedia", "on remove track " + removedTrack.kind() + " " + removedTrack.id() + " " + removedTrack.state());
+                if (removedTrack instanceof VideoTrack) {
+                    config.webRTCListener.onVideoTrackEnded((VideoTrack) removedTrack);
+                }
+            });
         }
     }
 
@@ -880,32 +887,38 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void release(boolean closeWebsocket) {
         Log.i(getClass().getSimpleName(), "Releasing resources");
+        mainHandler.postDelayed(() -> {
 
-        localVideoTrack = null;
-        localAudioTrack = null;
-        if (closeWebsocket && wsHandler != null) {
-            wsHandler.disconnect(true);
-            wsHandler = null;
-        }
-        if (config.localVideoRenderer != null) {
-            config.localVideoRenderer.release();
-        }
-
-        for (SurfaceViewRenderer remoteVideoRenderer : config.remoteVideoRenderers) {
-            if(remoteVideoRenderer.getTag() != null) {
-                remoteVideoRenderer.release();
-                remoteVideoRenderer.setTag(null);
+            localVideoTrack = null;
+            localAudioTrack = null;
+            if (closeWebsocket && wsHandler != null) {
+                wsHandler.disconnect(true);
+                wsHandler = null;
             }
-        }
+            if (config.localVideoRenderer != null) {
+                config.localVideoRenderer.clearImage();
+                config.localVideoRenderer.release();
+            }else{
+                Log.i(getClass().getSimpleName(), "Releasing resources");
+            }
 
-        remoteVideoSinks.clear();
+            for (SurfaceViewRenderer remoteVideoRenderer : config.remoteVideoRenderers) {
+                if (remoteVideoRenderer.getTag() != null) {
+                    remoteVideoRenderer.clearImage();
+                    remoteVideoRenderer.release();
+                    remoteVideoRenderer.setTag(null);
+                }
+            }
 
-        executor.execute(this ::closeInternal);
+            remoteVideoSinks.clear();
 
-        if (audioManager != null) {
-            audioManager.stop();
-            audioManager = null;
-        }
+            executor.execute(this::closeInternal);
+
+            if (audioManager != null) {
+                audioManager.stop();
+                audioManager = null;
+            }
+        },100);
     }
 
 
