@@ -212,7 +212,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     //PeerConnection Parameters
     private final WebRTCClientConfig config;
 
-    private boolean removeVideoRotationExtention = false;
+    private boolean removeVideoRotationExtension = true;
 
     //reconnection parameters
     private Handler reconnectionHandler = new Handler();
@@ -484,7 +484,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 sdp = preferCodec(sdp, getSdpVideoCodecName(config.videoCodec), false);
             }
 
-            if(removeVideoRotationExtention) {
+            if(removeVideoRotationExtension) {
                 sdp = sdp.replace(VIDEO_ROTATION_EXT_LINE, "");
             }
 
@@ -2191,8 +2191,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return videoCapturer;
     }
 
-    public void setRemoveVideoRotationExtention(boolean removeVideoRotationExtention) {
-        this.removeVideoRotationExtention = removeVideoRotationExtention;
+    public void setRemoveVideoRotationExtension(boolean removeVideoRotationExtension) {
+        this.removeVideoRotationExtension = removeVideoRotationExtension;
     }
 
     @androidx.annotation.Nullable

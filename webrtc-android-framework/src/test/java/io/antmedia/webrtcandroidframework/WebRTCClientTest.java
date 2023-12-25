@@ -559,15 +559,17 @@ public class WebRTCClientTest {
                 WebRTCClient.VIDEO_ROTATION_EXT_LINE +
                 "something else\r\n";
 
+        webRTCClient.setRemoveVideoRotationExtension(true);
+
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
         assertNotNull(webRTCClient.getLocalDescription());
-        assertTrue(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+        assertFalse(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
 
-        webRTCClient.setRemoveVideoRotationExtention(true);
+        webRTCClient.setRemoveVideoRotationExtension(false);
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
 
-        assertFalse(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+        assertTrue(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
     }
 
