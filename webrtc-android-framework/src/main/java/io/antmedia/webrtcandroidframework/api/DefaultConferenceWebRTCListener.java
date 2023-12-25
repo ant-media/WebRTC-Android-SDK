@@ -24,8 +24,6 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     private final String roomId;
     private final String streamId;
     private boolean playOnlyMode = false;
-
-    private boolean isPublishStarted; //TODO
     private boolean publishReconnected;
     private boolean playReconnected;
     private boolean reconnecting;
@@ -82,4 +80,9 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
         playOnlyMode = b;
     }
 
+    @Override
+    public void onReconnectionAttempt(String streamId) {
+        super.onReconnectionAttempt(streamId);
+        reconnecting = true;
+    }
 }
