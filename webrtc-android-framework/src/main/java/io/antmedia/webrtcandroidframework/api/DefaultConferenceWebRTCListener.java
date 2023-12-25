@@ -85,4 +85,8 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
         super.onReconnectionAttempt(streamId);
         reconnecting = true;
     }
+
+    public boolean isReconnectingForTest() {
+        return reconnecting;
+    }
 }

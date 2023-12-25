@@ -203,4 +203,19 @@ public class DefaultConferenceWebRTCListenerTest{
         defaultWebRTCListener.onSatatusUpdateFor("streamId", true, false);
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
+
+    @Test
+    public void testReconnecting() {
+        defaultWebRTCListener.onReconnectionAttempt("streamId");
+        assertTrue(defaultWebRTCListener.isReconnectingForTest());
+
+        defaultWebRTCListener.onPublishStarted("streamId");
+        assertTrue(defaultWebRTCListener.isReconnectingForTest());
+
+        defaultWebRTCListener.onSessionRestored("streamId");
+        assertTrue(defaultWebRTCListener.isReconnectingForTest());
+
+        defaultWebRTCListener.onPlayStarted("streamId");
+        assertFalse(defaultWebRTCListener.isReconnectingForTest());
+    }
 }
