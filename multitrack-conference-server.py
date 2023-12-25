@@ -73,7 +73,7 @@ class Browser:
       self.driver.close()
 
 
-url="https://ovh36.antmedia.io:5443/LiveApp/conference.html"
+url="https://test.antmedia.io:5443/LiveApp/conference.html"
 #url="www.google.com"
 app = Flask(__name__)
 chrome = Browser()
