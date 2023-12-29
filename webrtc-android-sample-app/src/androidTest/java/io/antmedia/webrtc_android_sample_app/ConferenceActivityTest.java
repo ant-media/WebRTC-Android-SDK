@@ -139,7 +139,7 @@ public class ConferenceActivityTest {
 
 
 
-    //@Test
+    @Test
     public void testJoinWithExternalParticipant() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -211,7 +211,7 @@ public class ConferenceActivityTest {
     }
 
 
-    //@Test
+    @Test
     public void testJoinPlayOnlyAsFirstPerson() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -245,7 +245,7 @@ public class ConferenceActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testReconnect() {
         final ConferenceActivity[] mactivity = new ConferenceActivity[1];
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {

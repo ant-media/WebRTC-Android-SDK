@@ -1,12 +1,8 @@
 package io.antmedia.webrtcandroidframework.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -16,26 +12,17 @@ import static org.mockito.Mockito.when;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
-public class DefaultConferenceWebRTCListenerTest{
+public class DefaultConferenceWebRTCListenerTest extends DefaultWebRTCListenerTest{
     private String roomId;
     private String streamId;
-    private DefaultConferenceWebRTCListener defaultWebRTCListener;
-
-    @Mock
-    IWebRTCClient mockWebRTCClient;
 
     @Before
     public void setUp() {
@@ -169,6 +156,27 @@ public class DefaultConferenceWebRTCListenerTest{
     }
 
     @Test
+    public void testOnJoinedTheRoom() {
+        String[] tracks = new String[]{"stream1", "stream2"};
+        defaultWebRTCListener.onJoinedTheRoom(streamId, tracks);
+        verify(defaultWebRTCListener, times(2)).callbackCalled(anyString());
+
+        verify(mockWebRTCClient, times(1)).publish(eq(streamId), anyString(),
+                anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), eq(roomId));
+
+        verify(defaultWebRTCListener, times(1)).onTrackList(tracks);
+
+    }
+
+    @Test
+    public void testOnRoomInformation() {
+        String[] tracks = new String[]{"stream1", "stream2"};
+        defaultWebRTCListener.onRoomInformation(tracks);
+        verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
+        verify(mockWebRTCClient, times(1)).play(eq(roomId), eq(tracks));
+    }
+
+    @Test
     public void testOnLeftTheRoom() {
         defaultWebRTCListener.onLeftTheRoom("roomId");
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
@@ -202,20 +210,5 @@ public class DefaultConferenceWebRTCListenerTest{
     public void testOnSatatusUpdateFor() {
         defaultWebRTCListener.onSatatusUpdateFor("streamId", true, false);
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
-    }
-
-    @Test
-    public void testReconnecting() {
-        defaultWebRTCListener.onReconnectionAttempt("streamId");
-        assertTrue(defaultWebRTCListener.isReconnectingForTest());
-
-        defaultWebRTCListener.onPublishStarted("streamId");
-        assertTrue(defaultWebRTCListener.isReconnectingForTest());
-
-        defaultWebRTCListener.onSessionRestored("streamId");
-        assertTrue(defaultWebRTCListener.isReconnectingForTest());
-
-        defaultWebRTCListener.onPlayStarted("streamId");
-        assertFalse(defaultWebRTCListener.isReconnectingForTest());
     }
 }

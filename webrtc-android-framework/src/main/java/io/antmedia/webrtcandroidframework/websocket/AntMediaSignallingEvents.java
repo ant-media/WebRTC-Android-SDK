@@ -116,16 +116,4 @@ public interface AntMediaSignallingEvents {
      * @param roomId
      */
     void onLeftTheRoom(String roomId);
-
-    /**
-     * It's called when session is restored in the server side
-     * @param streamId
-     */
-    void onSessionRestored(String streamId);
-
-    /**
-     * It's called when broadcast object is received
-     * @param streamId
-     */
-    void onBroadcastObject(Broadcast broadcast);
 }

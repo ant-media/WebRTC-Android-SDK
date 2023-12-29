@@ -420,19 +420,4 @@ public class WebSocketConstants {
      */
     public static final String MAIN_TRACK = "mainTrack";
 
-    /**
-     * Command to get broadcast object
-     */
-    public static final String GET_BROADCAST_OBJECT_COMMAND = "getBroadcastObject";
-
-    /**
-     * broadcast object notification
-     */
-    public static final String BROADCAST_OBJECT_NOTIFICATION = "broadcastObject";
-
-    /**
-     * broadcast object constant
-     */
-    public static final String BROADCAST = "broadcast";
-
 }

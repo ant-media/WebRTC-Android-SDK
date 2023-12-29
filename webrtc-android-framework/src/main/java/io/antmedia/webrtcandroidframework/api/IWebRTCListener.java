@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
-import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 /**
  * Created by karinca on 23.10.2017.
@@ -170,16 +169,4 @@ public interface IWebRTCListener {
      * It's called in WebRTCClient constructor to set
      */
     void setWebRTCClient(IWebRTCClient webRTCClient);
-
-    /**
-     * It's called when a stream is restored (restarted in the restoration timeout)
-     * @param streamId
-     */
-    void onSessionRestored(String streamId);
-
-    /**
-     * It's called when a broadcast object is received from server
-     * @param broadcast
-     */
-    void onBroadcastObject(Broadcast broadcast);
 }

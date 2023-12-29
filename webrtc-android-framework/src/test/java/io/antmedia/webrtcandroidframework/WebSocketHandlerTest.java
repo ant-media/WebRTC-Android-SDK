@@ -17,15 +17,11 @@ import java.util.concurrent.Executors;
 
 import de.tavendo.autobahn.WebSocketConnection;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
-import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 public class WebSocketHandlerTest {
 
@@ -399,54 +395,4 @@ public class WebSocketHandlerTest {
         assertEquals(expectedJson.toString(), jsonCaptor.getValue());
     }
 
-    @Test
-    public void testGetBroadcastObject() throws JSONException {
-        String streamId = "stream123";
-        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
-        webSocketHandler.getBroadcastObject(streamId);
-
-        verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
-
-        JSONObject expectedJson = new JSONObject();
-        expectedJson.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_BROADCAST_OBJECT_COMMAND);
-        expectedJson.put(WebSocketConstants.STREAM_ID, streamId);
-
-        assertEquals(expectedJson.toString(), jsonCaptor.getValue());
-    }
-
-    @Test
-    public void testOnBroadcastObjectNotification() {
-        doReturn(true).when(webSocketHandler).isConnected();
-
-        Broadcast broadcast = new Broadcast();
-        broadcast.setStreamId("streamId");
-        broadcast.setName("name");
-
-        Gson gson = new Gson();
-        JsonElement broadcastJson = gson.toJsonTree(broadcast);
-
-        JSONObject json = new JSONObject();
-        try {
-            json.put(WebSocketConstants.COMMAND, WebSocketConstants.NOTIFICATION_COMMAND);
-            json.put(WebSocketConstants.DEFINITION, WebSocketConstants.BROADCAST_OBJECT_NOTIFICATION);
-            json.put(WebSocketConstants.STREAM_ID, broadcast.getStreamId());
-            json.put(WebSocketConstants.BROADCAST, broadcastJson);
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        String message = json.toString();
-
-        webSocketHandler.onTextMessage(message);
-
-        ArgumentCaptor<Broadcast> captor = ArgumentCaptor.forClass(Broadcast.class);
-        verify(signallingListener).onBroadcastObject(captor.capture());
-
-        Broadcast broadcast2 = captor.getValue();
-
-        assertEquals(broadcast.getStreamId(), broadcast2.getStreamId());
-        assertEquals(broadcast.getName(), broadcast2.getName());
-
-    }
 }

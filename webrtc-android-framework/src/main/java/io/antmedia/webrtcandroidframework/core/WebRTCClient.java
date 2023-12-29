@@ -81,7 +81,6 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
-import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 /**
@@ -303,19 +302,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void joinToConferenceRoom(String roomId, String streamId) {
-        publish(streamId, "",
-                true, true,
-                "",
-                "",
-                "",
-                roomId);
-
-        play(roomId);
+        init();
+        wsHandler.joinToConferenceRoom(roomId, streamId);
     }
 
     public void leaveFromConference(String roomId) {
-        stop(getPublishStreamId());
-        stop(roomId);
+        wsHandler.leaveFromTheConferenceRoom(roomId);
     }
 
     public void getRoomInfo(String roomId, String streamId) {
@@ -776,13 +768,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         executor.execute(this ::switchCameraInternal);
     }
 
-    @Override
-    public void getBroadcastObject(String streamId) {
-        if (wsHandler != null && wsHandler.isConnected()) {
-            wsHandler.getBroadcastObject(streamId);
-        }
-    }
-
     public void publish(String streamId) {
         publish(streamId, null, true, true,
                 null, null, streamId, null);
@@ -796,8 +781,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         PeerInfo peerInfo = new PeerInfo(streamId, Mode.PUBLISH);
         peerInfo.token = token;
-        peerInfo.videoCallEnabled = videoCallEnabled || config.videoCallEnabled;
-        peerInfo.audioCallEnabled = audioCallEnabled || config.audioCallEnabled;
+        peerInfo.videoCallEnabled = videoCallEnabled;
+        peerInfo.audioCallEnabled = audioCallEnabled;
         peerInfo.subscriberId = subscriberId;
         peerInfo.subscriberCode = subscriberCode;
         peerInfo.streamName = streamName;
@@ -1185,27 +1170,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onLeftTheRoom (String roomId) {
         config.webRTCListener.onLeftTheRoom(roomId);
-    }
-
-    @Override
-    public void onSessionRestored(String streamId) {
-        streamStoppedByUser = false;
-        reconnectionInProgress = false;
-
-        this.handler.post(() -> {
-            if (config.webRTCListener != null) {
-                config.webRTCListener.onSessionRestored(streamId);
-            }
-        });
-    }
-
-    @Override
-    public void onBroadcastObject(Broadcast broadcast) {
-        this.handler.post(() -> {
-            if (config.webRTCListener != null) {
-                config.webRTCListener.onBroadcastObject(broadcast);
-            }
-        });
     }
 
     @Override
