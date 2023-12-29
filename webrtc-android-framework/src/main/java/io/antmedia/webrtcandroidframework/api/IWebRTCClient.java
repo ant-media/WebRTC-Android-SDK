@@ -228,4 +228,11 @@ public interface IWebRTCClient {
      * Called to requesr the subtracks for a main track from server
      */
     void getTrackList(String streamId, String token);
+
+    /**
+     * Called to get the broadcast object from server
+     * @param streamId: id for the broadcast
+     */
+    void getBroadcastObject(String streamId);
+
 }

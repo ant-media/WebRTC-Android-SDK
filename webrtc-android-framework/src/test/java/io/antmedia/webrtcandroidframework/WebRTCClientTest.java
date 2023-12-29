@@ -73,6 +73,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
+import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
@@ -300,36 +301,76 @@ public class WebRTCClientTest {
 
         webRTCClient.joinToConferenceRoom(roomName, streamId);
 
-        verify(wsHandler, times(1)).joinToConferenceRoom(roomName, streamId);
+        verify(wsHandler, timeout(1000)).startPublish(streamId, ""
+                , true, true
+                , "", "", "", roomName);
+        verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "");
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
-        verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
 
-        JSONObject json = new JSONObject();
+        JSONObject jsonPublish = new JSONObject();
         try {
-            json.put(WebSocketConstants.COMMAND, WebSocketConstants.JOIN_ROOM_COMMAND);
-            json.put(WebSocketConstants.ROOM, roomName);
-            json.put(WebSocketConstants.STREAM_ID, streamId);
+            jsonPublish.put(WebSocketConstants.COMMAND, WebSocketConstants.PUBLISH_COMMAND);
+            jsonPublish.put(WebSocketConstants.STREAM_ID, streamId);
+            jsonPublish.put(WebSocketConstants.TOKEN, "");
+            jsonPublish.put(WebSocketConstants.SUBSCRIBER_ID, "");
+            jsonPublish.put(WebSocketConstants.SUBSCRIBER_CODE, "");
+            jsonPublish.put(WebSocketConstants.STREAM_NAME, "");
+            jsonPublish.put(WebSocketConstants.VIDEO, true);
+            jsonPublish.put(WebSocketConstants.AUDIO, true);
+            jsonPublish.put(WebSocketConstants.MAIN_TRACK, roomName);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        assertEquals(json.toString(), jsonCaptor.getValue());
+        JSONObject jsonPlay = new JSONObject();
+        try {
+            jsonPlay.put(WebSocketConstants.COMMAND, WebSocketConstants.PLAY_COMMAND);
+            jsonPlay.put(WebSocketConstants.STREAM_ID, roomName);
+            jsonPlay.put(WebSocketConstants.TOKEN, "");
+            jsonPlay.put(WebSocketConstants.SUBSCRIBER_ID, "");
+            jsonPlay.put(WebSocketConstants.SUBSCRIBER_CODE, "");
+            jsonPlay.put(WebSocketConstants.VIEWER_INFO, "");
+            jsonPlay.put(WebSocketConstants.TRACK_LIST, new JSONArray());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
 
+        List<String> messages = jsonCaptor.getAllValues();
+        assertEquals(jsonPublish.toString(), messages.get(0));
+        assertEquals(jsonPlay.toString(), messages.get(1));
+
+
+
+        jsonCaptor = ArgumentCaptor.forClass(String.class);
         webRTCClient.leaveFromConference(roomName);
 
-        verify(wsHandler, times(1)).leaveFromTheConferenceRoom(roomName);
-        verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
-        json = new JSONObject();
+        verify(wsHandler, times(1)).stop(streamId);
+        verify(wsHandler, times(1)).stop(roomName);
+        verify(wsHandler, times(4)).sendTextMessage(jsonCaptor.capture());
+        messages = jsonCaptor.getAllValues();
+
+        JSONObject jsonPublishStop = new JSONObject();
         try {
-            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_THE_ROOM);
-            json.put(WebSocketConstants.ROOM, roomName);
+            jsonPublishStop.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            jsonPublishStop.put(WebSocketConstants.STREAM_ID, streamId);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        assertEquals(json.toString(), jsonCaptor.getValue());
+        JSONObject jsonPlayStop = new JSONObject();
+        try {
+            jsonPlayStop.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            jsonPlayStop.put(WebSocketConstants.STREAM_ID, roomName);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
+        assertEquals(jsonPublishStop.toString(), messages.get(2));
+        assertEquals(jsonPlayStop.toString(), messages.get(3));
     }
 
 
@@ -629,10 +670,15 @@ public class WebRTCClientTest {
         mockMethodsInInit();
 
         webRTCClient.joinToConferenceRoom(room, streamId);
-        verify(wsHandler, timeout(1000)).joinToConferenceRoom(room, streamId);
+        verify(wsHandler, timeout(1000)).startPublish(streamId, ""
+                , true, true
+                , "", "", "", room);
+
+        verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "");
 
         webRTCClient.leaveFromConference(room);
-        verify(wsHandler, timeout(1000)).leaveFromTheConferenceRoom(room);
+        verify(wsHandler, timeout(1000)).stop(streamId);
+        verify(wsHandler, timeout(1000)).stop(room);
 
         webRTCClient.getRoomInfo(room, streamId);
         verify(wsHandler, timeout(1000)).getRoomInfo(room, streamId);
@@ -1043,4 +1089,19 @@ public class WebRTCClientTest {
         assertNotNull(webRTCClient);
 
     }
+
+    @Test
+    public void testGetBroadcastObject() {
+        String streamId = "stream1";
+        webRTCClient.getBroadcastObject(streamId);
+
+        verify(wsHandler, times(1)).getBroadcastObject(streamId);
+
+        Broadcast broadcast = mock(Broadcast.class);
+        webRTCClient.onBroadcastObject(broadcast);
+
+        verify(listener, times(1)).onBroadcastObject(broadcast);
+    }
+
+
 }

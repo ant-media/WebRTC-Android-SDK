@@ -111,15 +111,6 @@ public class ConferenceActivity extends TestableActivity {
         return new DefaultConferenceWebRTCListener(roomId, streamId) {
 
             @Override
-            public void onJoinedTheRoom(String streamId, String[] streams) {
-                super.onJoinedTheRoom(streamId, streams);
-
-                if(playOnly) {
-                    decrementIdle();
-                }
-            }
-
-            @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
                 broadcastingView.setVisibility(View.VISIBLE);
