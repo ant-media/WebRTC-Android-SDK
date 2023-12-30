@@ -304,6 +304,8 @@ public class WebRTCClientTest {
         verify(wsHandler, timeout(1000)).startPublish(streamId, ""
                 , true, true
                 , "", "", "", roomName);
+
+        webRTCClient.joinToConferenceRoom(roomName);
         verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "");
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
@@ -674,6 +676,7 @@ public class WebRTCClientTest {
                 , true, true
                 , "", "", "", room);
 
+        webRTCClient.joinToConferenceRoom(room);
         verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "");
 
         webRTCClient.leaveFromConference(room);
