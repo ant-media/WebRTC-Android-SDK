@@ -897,8 +897,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void release(boolean closeWebsocket) {
         Log.i(getClass().getSimpleName(), "Releasing resources");
-
-
         if (closeWebsocket && wsHandler != null) {
             wsHandler.disconnect(true);
             wsHandler = null;
@@ -931,9 +929,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if(videoTrack != null && videoSink !=null)
                 videoTrack.removeSink(videoSink);
+            renderer.clearAnimation();
+            mainHandler.postAtFrontOfQueue(()->{
+                renderer.clearImage();
+            });
 
-            mainHandler.postAtFrontOfQueue(()->{  renderer.clearImage();});
-            mainHandler.post(()->{ renderer.release(); renderer.setTag(null);});
+            mainHandler.post(()->{
+                renderer.release();
+                renderer.setTag(null);
+            });
         });
     }
     public void releaseRenderer(SurfaceViewRenderer renderer) {

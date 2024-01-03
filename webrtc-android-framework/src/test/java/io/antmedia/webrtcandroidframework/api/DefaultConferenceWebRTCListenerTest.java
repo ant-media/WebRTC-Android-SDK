@@ -151,6 +151,7 @@ public class DefaultConferenceWebRTCListenerTest{
     @Test
     public void testOnVideoTrackEnded() {
         VideoTrack mockVideoTrack = mock(VideoTrack.class);
+        when(mockVideoTrack.id()).thenReturn("stream1");
         SurfaceViewRenderer mockSurfaceViewRenderer = mock(SurfaceViewRenderer.class);
 
         when(mockSurfaceViewRenderer.getTag()).thenReturn(mockVideoTrack);
@@ -159,7 +160,7 @@ public class DefaultConferenceWebRTCListenerTest{
 
         defaultWebRTCListener.onVideoTrackEnded(mockVideoTrack);
 
-        verify(mockSurfaceViewRenderer, times(1)).setTag(null);
+        verify(mockWebRTCClient, times(1)).releaseRenderer(mockSurfaceViewRenderer);
     }
 
     @Test

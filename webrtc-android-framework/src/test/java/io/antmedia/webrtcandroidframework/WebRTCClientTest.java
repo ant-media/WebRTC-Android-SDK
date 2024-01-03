@@ -51,11 +51,14 @@ import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
+import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
+import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -114,6 +117,10 @@ public class WebRTCClientTest {
     private Handler getMockHandler() {
         final Handler handler = mock(Handler.class);
         when(handler.post(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            invocation.getArgumentAt(0, Runnable.class).run();
+            return null;
+        });
+        when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
             invocation.getArgumentAt(0, Runnable.class).run();
             return null;
         });
@@ -1103,5 +1110,31 @@ public class WebRTCClientTest {
         verify(listener, times(1)).onBroadcastObject(broadcast);
     }
 
+    @Test
+    public  void  releaseRendererTest() throws NoSuchFieldException, IllegalAccessException {
+        String streamId = "stream1";
+        SurfaceViewRenderer renderer = mock(SurfaceViewRenderer.class);
+        VideoTrack videoTrack = mock(VideoTrack.class);
+        VideoSink sink = mock(VideoSink.class);
+        when(videoTrack.id()).thenReturn(streamId);
+        when(renderer.getTag()).thenReturn(videoTrack);
+        when(renderer.getId()).thenReturn(1);
+        when(renderer.getTag(1)).thenReturn(sink);
 
+        Field field = WebRTCClient.class.getDeclaredField("mainHandler");
+        field.setAccessible(true);
+        field.set(webRTCClient, getMockHandler());
+
+        webRTCClient.releaseRenderer(renderer);
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        verify(videoTrack).removeSink(sink);
+        verify(renderer).clearAnimation();
+        verify(renderer).clearImage();
+        verify(renderer).release();
+        verify(renderer).setTag(null);
+    }
 }

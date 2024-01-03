@@ -129,7 +129,6 @@ public class DefaultWebRTCListener implements IWebRTCListener {
             VideoTrack videoTrack = (VideoTrack) r.getTag();
             if (videoTrack !=null && videoTrack.id().equals(track.id())) {
                 webRTCClient.releaseRenderer(r);
-                r.setTag(null);
                 return;
             }
         }
