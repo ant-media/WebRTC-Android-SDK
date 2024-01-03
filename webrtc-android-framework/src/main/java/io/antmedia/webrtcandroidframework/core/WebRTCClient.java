@@ -53,6 +53,7 @@ import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
+import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
@@ -470,6 +471,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 renderer.setScalingType(config.scalingType);
                 renderer.setEnableHardwareScaler(true);
             }
+            renderer.setTag(renderer.getId(),remoteVideoSink);
             videoTrack.addSink(remoteVideoSink);
             remoteVideoSinks.add(remoteVideoSink);
         });
@@ -896,22 +898,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void release(boolean closeWebsocket) {
         Log.i(getClass().getSimpleName(), "Releasing resources");
 
-        localVideoTrack = null;
-        localAudioTrack = null;
+
         if (closeWebsocket && wsHandler != null) {
             wsHandler.disconnect(true);
             wsHandler = null;
         }
         if (config.localVideoRenderer != null) {
-            config.localVideoRenderer.release();
+            releaseRenderer(config.localVideoRenderer,localVideoTrack,localVideoSink);
         }
 
         for (SurfaceViewRenderer remoteVideoRenderer : config.remoteVideoRenderers) {
             if(remoteVideoRenderer.getTag() != null) {
-                remoteVideoRenderer.release();
-                remoteVideoRenderer.setTag(null);
+                releaseRenderer(remoteVideoRenderer);
             }
         }
+        localVideoTrack = null;
+        localAudioTrack = null;
 
         remoteVideoSinks.clear();
 
@@ -922,8 +924,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             audioManager = null;
         }
     }
+    public void releaseRenderer(SurfaceViewRenderer renderer , VideoTrack track , VideoSink sink){
+        VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
+        VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
 
+        if(videoTrack != null && videoSink !=null)
+            videoTrack.removeSink(videoSink);
 
+        mainHandler.postAtFrontOfQueue(()->{  renderer.clearImage();});
+        mainHandler.post(()->{ renderer.release(); renderer.setTag(null);});
+
+    }
+    public void releaseRenderer(SurfaceViewRenderer renderer) {
+        releaseRenderer(renderer,null, null);
+    }
     public void disconnectWithErrorMessage(final String errorMessage) {
         Log.e(TAG, "Critical error: " + errorMessage);
         release(true);
