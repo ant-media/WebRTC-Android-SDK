@@ -925,15 +925,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
     public void releaseRenderer(SurfaceViewRenderer renderer , VideoTrack track , VideoSink sink){
-        VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
-        VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
+        mainHandler.post(()->{
+            VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
+            VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
 
-        if(videoTrack != null && videoSink !=null)
-            videoTrack.removeSink(videoSink);
+            if(videoTrack != null && videoSink !=null)
+                videoTrack.removeSink(videoSink);
 
-        mainHandler.postAtFrontOfQueue(()->{  renderer.clearImage();});
-        mainHandler.post(()->{ renderer.release(); renderer.setTag(null);});
-
+            mainHandler.postAtFrontOfQueue(()->{  renderer.clearImage();});
+            mainHandler.post(()->{ renderer.release(); renderer.setTag(null);});
+        });
     }
     public void releaseRenderer(SurfaceViewRenderer renderer) {
         releaseRenderer(renderer,null, null);
