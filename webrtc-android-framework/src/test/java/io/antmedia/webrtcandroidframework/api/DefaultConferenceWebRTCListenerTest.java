@@ -207,16 +207,39 @@ public class DefaultConferenceWebRTCListenerTest{
 
     @Test
     public void testReconnecting() {
-        defaultWebRTCListener.onReconnectionAttempt("streamId");
-        assertTrue(defaultWebRTCListener.isReconnectingForTest());
+        defaultWebRTCListener.onReconnectionAttempt(roomId);
+        assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
 
-        defaultWebRTCListener.onPublishStarted("streamId");
-        assertTrue(defaultWebRTCListener.isReconnectingForTest());
+        defaultWebRTCListener.onReconnectionAttempt(streamId);
+        assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
 
-        defaultWebRTCListener.onSessionRestored("streamId");
-        assertTrue(defaultWebRTCListener.isReconnectingForTest());
+        defaultWebRTCListener.onPublishStarted(streamId);
+        assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
 
-        defaultWebRTCListener.onPlayStarted("streamId");
-        assertFalse(defaultWebRTCListener.isReconnectingForTest());
+        defaultWebRTCListener.onReconnectionAttempt(streamId);
+        assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
+
+        defaultWebRTCListener.onSessionRestored(streamId);
+        assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
+
+    }
+
+    @Test
+    public void testStartAfterPublishStarted() {
+        //after publish started, play should be called
+        defaultWebRTCListener.onPublishStarted(streamId);
+        assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
+        verify(mockWebRTCClient, times(1)).play(roomId);
+
+        //playStarted false, but play should not be called because publish is reconnecting state
+        defaultWebRTCListener.onReconnectionAttempt(streamId);
+        assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
+        defaultWebRTCListener.onPublishStarted(streamId);
+        verify(mockWebRTCClient, times(1)).play(roomId);
+
+        //playStarted will be true, so play should not be called
+        defaultWebRTCListener.onPlayStarted(roomId);
+        defaultWebRTCListener.onPublishStarted(streamId);
+        verify(mockWebRTCClient, times(1)).play(roomId);
     }
 }

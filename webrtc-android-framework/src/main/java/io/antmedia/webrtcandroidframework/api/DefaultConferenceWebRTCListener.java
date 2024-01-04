@@ -1,21 +1,5 @@
 package io.antmedia.webrtcandroidframework.api;
 
-import android.os.Build;
-import android.os.Handler;
-import android.util.Log;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-
-import org.webrtc.DataChannel;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
-import io.antmedia.webrtcandroidframework.websocket.Broadcast;
-
 /**
  * Default implementation of {@link IWebRTCListener} for conference applications
  * You may extend this class and override methods that you need
@@ -23,10 +7,19 @@ import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     private final String roomId;
     private final String streamId;
-    private boolean playOnlyMode = false;
-    private boolean publishReconnected;
-    private boolean playReconnected;
-    private boolean reconnecting;
+
+    /*
+     * This flag is used to check if the play is started or not
+     * if play is not started, it will start when publish is started
+     * for example, we may join the room as play only, then we will start publishing later
+     */
+    private boolean playStarted = false;
+
+    /*
+     * This flag is used to check if the publish is reconnecting or not
+     * if publish is reconnecting, we shouldn't start playing because WebRTCClient handles it
+     */
+    private boolean publishReconnecting;
 
     public DefaultConferenceWebRTCListener(String roomId, String streamId) {
         super();
@@ -38,10 +31,11 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     public void onPublishStarted(String streamId) {
         super.onPublishStarted(streamId);
 
-        if (reconnecting) {
-            webRTCClient.getBroadcastObject(roomId); // FIXME: maybe this is not needed, check it
-            publishReconnected = true;
-            reconnecting = !(publishReconnected && playReconnected);
+        if (publishReconnecting) {
+            publishReconnecting = false;
+        }
+        else if (!playStarted) {
+            webRTCClient.play(roomId);
         }
     }
 
@@ -49,20 +43,15 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     public void onPlayStarted(String streamId) {
         super.onPlayStarted(streamId);
         webRTCClient.getBroadcastObject(roomId);
-
-        if (reconnecting) {
-            playReconnected = true;
-            reconnecting = !(publishReconnected && playReconnected);
-        }
+        playStarted = true;
     }
 
     @Override
     public void onSessionRestored(String streamId) {
         super.onSessionRestored(streamId);
 
-        if (reconnecting) {
-            publishReconnected = true;
-            reconnecting = !(publishReconnected && playReconnected);
+        if (publishReconnecting) {
+            publishReconnecting = false;
         }
     }
 
@@ -72,21 +61,25 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     }
 
     @Override
-    public void onDisconnected() {
-        super.onDisconnected();
+    public void onPlayFinished(String streamId) {
+        super.onPlayFinished(streamId);
+        playStarted = false;
     }
 
-    public void setPlayOnly(boolean b) {
-        playOnlyMode = b;
+    @Override
+    public void onDisconnected() {
+        super.onDisconnected();
     }
 
     @Override
     public void onReconnectionAttempt(String streamId) {
         super.onReconnectionAttempt(streamId);
-        reconnecting = true;
+        if(streamId.equals(this.streamId)) {
+            publishReconnecting = true;
+        }
     }
 
-    public boolean isReconnectingForTest() {
-        return reconnecting;
+    public boolean isPublishReconnectingForTest() {
+        return publishReconnecting;
     }
 }
