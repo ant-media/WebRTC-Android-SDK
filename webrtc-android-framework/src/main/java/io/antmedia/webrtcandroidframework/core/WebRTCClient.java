@@ -310,11 +310,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 "",
                 roomId);
 
+        //we will call play after publish started event
+    }
+
+    public void joinToConferenceRoom(String roomId) {
         play(roomId);
     }
 
     public void leaveFromConference(String roomId) {
-        stop(getPublishStreamId());
+        String publishId = getPublishStreamId();
+        //publishId can be null if we are player only in conference
+        if(publishId != null) {
+            stop(publishId);
+        }
         stop(roomId);
     }
 
@@ -761,6 +769,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void stop(String streamId, boolean byUser) {
         Log.i(getClass().getSimpleName(), "Stopping stream");
         streamStoppedByUser = byUser;
+
+
+
         if (wsHandler != null && wsHandler.isConnected()) {
             wsHandler.stop(streamId);
         }

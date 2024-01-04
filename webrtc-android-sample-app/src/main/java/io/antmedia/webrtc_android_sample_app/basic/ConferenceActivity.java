@@ -60,7 +60,6 @@ public class ConferenceActivity extends TestableActivity {
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
             playOnly = b;
-            defaultConferenceListener.setPlayOnly(b);
             publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
@@ -87,7 +86,12 @@ public class ConferenceActivity extends TestableActivity {
             ((Button) v).setText("Leave");
             Log.i(getClass().getSimpleName(), "Calling join");
 
-            webRTCClient.joinToConferenceRoom(roomId, streamId);
+            if(playOnly) {
+                webRTCClient.joinToConferenceRoom(roomId);
+            }
+            else {
+                webRTCClient.joinToConferenceRoom(roomId, streamId);
+            }
         }
         else {
             ((Button) v).setText("Join");
