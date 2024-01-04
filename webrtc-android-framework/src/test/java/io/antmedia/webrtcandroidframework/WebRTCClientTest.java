@@ -605,19 +605,24 @@ public class WebRTCClientTest {
         PeerConnection pc = mock(PeerConnection.class);
         webRTCClient.addPeerConnection(streamId, pc);
 
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
+        webRTCClient.peers.put(streamId, peerInfo);
+        peerInfo.setQueuedRemoteCandidates(null);
+
         String fakeSdp = "something\r\n" +
                 WebRTCClient.VIDEO_ROTATION_EXT_LINE +
                 "something else\r\n";
 
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
-        assertNotNull(webRTCClient.getLocalDescription());
-        assertTrue(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+        Awaitility.await().until(() -> peerInfo.getLocalDescription() != null);
+
+        assertTrue(peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
 
         webRTCClient.setRemoveVideoRotationExtention(true);
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
 
-        assertFalse(webRTCClient.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+        Awaitility.await().until(() -> !peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
     }
 
@@ -1023,6 +1028,7 @@ public class WebRTCClientTest {
 
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
+        peerInfo.setQueuedRemoteCandidates(null);
 
         PeerConnection pc = mock(PeerConnection.class);
         peerInfo.peerConnection = pc;
@@ -1034,6 +1040,7 @@ public class WebRTCClientTest {
         verify(pc, timeout(1000).times(1)).addIceCandidate(any(), any());
 
         List<IceCandidate> iceCandidatesQ = new ArrayList<>();
+        peerInfo.setQueuedRemoteCandidates(iceCandidatesQ);
         webRTCClient.setQueuedRemoteCandidates(iceCandidatesQ);
         webRTCClient.addRemoteIceCandidate(streamId, iceCandidate);
         Awaitility.await().until(() -> iceCandidatesQ.size() == 1);
