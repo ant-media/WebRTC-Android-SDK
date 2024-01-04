@@ -990,7 +990,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 isError = true;
                 errorString = description;
 
-                //disconnectWithErrorMessage(description);
+                disconnectWithErrorMessage(description);
                 if (config.webRTCListener != null) {
                     config.webRTCListener.onError(description, streamId);
                 }
