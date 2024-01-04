@@ -163,6 +163,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             this.mode = mode;
         }
 
+        public SessionDescription localDescription;
+        private List<IceCandidate> queuedRemoteCandidates = new ArrayList<>();
+
         public String id;
         public PeerConnection peerConnection;
         public DataChannel dataChannel;
@@ -175,6 +178,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         public String streamName;
         public String mainTrackId;
         public String metaData;
+
+        public SessionDescription getLocalDescription() {
+            return localDescription;
+        }
+
+        public void setLocalDescription(SessionDescription localDescription) {
+            this.localDescription = localDescription;
+        }
+
+        public List<IceCandidate> getQueuedRemoteCandidates() {
+            return queuedRemoteCandidates;
+        }
+
+        public void setQueuedRemoteCandidates(List<IceCandidate> queuedRemoteCandidates) {
+            this.queuedRemoteCandidates = queuedRemoteCandidates;
+        }
 
     }
     public Map<String, PeerInfo> peers = new ConcurrentHashMap<>();
@@ -505,9 +524,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
 
             final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
-            localDescription = newDesc;
+            //localDescription = newDesc;
+            PeerInfo peerInfo = getPeerInfoFor(streamId);
+            peerInfo.setLocalDescription(newDesc);
             executor.execute(() -> {
-                PeerConnection pc = getPeerConnectionFor(streamId);
+                PeerConnection pc = peerInfo.peerConnection;
                 if (pc != null && !isError) {
                     Log.d(TAG, "Set local SDP from " + desc.type);
                     pc.setLocalDescription(this, newDesc);
@@ -520,7 +541,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Log.i(TAG, "onSetSuccess: ");
 
             executor.execute(() -> {
-                PeerConnection pc = getPeerConnectionFor(streamId);
+                PeerInfo peerInfo = getPeerInfoFor(streamId);
+                if(peerInfo == null){
+                    return;
+                }
+                PeerConnection pc = peerInfo.peerConnection;
                 if (pc == null) {
                     return;
                 }
@@ -531,7 +556,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     if (pc.getRemoteDescription() == null) {
                         // We've just set our local SDP so time to send it.
                         Log.d(TAG, "Local SDP set succesfully");
-                        onLocalDescription(streamId, localDescription);
+                        onLocalDescription(streamId, peerInfo.getLocalDescription());
                     } else {
                         // We've just set remote description, so drain remote
                         // and send local ICE candidates.
@@ -545,7 +570,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                         // We've just set our local SDP so time to send it, drain
                         // remote and send local ICE candidates.
                         Log.d(TAG, "Local SDP set succesfully");
-                        onLocalDescription(streamId, localDescription);
+                        onLocalDescription(streamId, peerInfo.getLocalDescription());
                         drainCandidates(streamId);
                     } else {
                         // We've just set remote SDP - do nothing for now -
@@ -769,7 +794,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void stop(String streamId, boolean byUser) {
         Log.i(getClass().getSimpleName(), "Stopping stream");
         streamStoppedByUser = byUser;
-
 
 
         if (wsHandler != null && wsHandler.isConnected()) {
@@ -1581,7 +1605,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
         Log.d(TAG, "Create peer connection.");
 
-        queuedRemoteCandidates = new ArrayList<>();
+       // queuedRemoteCandidates = new ArrayList<>();
 
         PeerConnection.RTCConfiguration rtcConfig =
                 new PeerConnection.RTCConfiguration(iceServers);
@@ -1824,8 +1848,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void addRemoteIceCandidate(String streamId, final IceCandidate candidate) {
         executor.execute(() -> {
-            PeerConnection pc = getPeerConnectionFor(streamId);
+            PeerInfo peerInfo = getPeerInfoFor(streamId);
+            if(peerInfo == null){
+                return;
+            }
+            PeerConnection pc = peerInfo.peerConnection;
             if (pc != null && !isError) {
+                List queuedRemoteCandidates = peerInfo.getQueuedRemoteCandidates();
                 if (queuedRemoteCandidates != null) {
                     queuedRemoteCandidates.add(candidate);
                 } else {
@@ -2146,7 +2175,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     private void drainCandidates(String streamId) {
-        if (queuedRemoteCandidates != null) {
+        PeerInfo peerInfo = getPeerInfoFor(streamId);
+        if(peerInfo == null){
+            return;
+        }
+        List<IceCandidate> queuedRemoteCandidates = peerInfo.getQueuedRemoteCandidates();
             Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
             for (IceCandidate candidate : queuedRemoteCandidates) {
                 PeerConnection pc = getPeerConnectionFor(streamId);
@@ -2165,7 +2198,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 }
             }
             queuedRemoteCandidates = null;
-        }
+
     }
 
     private PeerConnection getPeerConnectionFor(String streamId) {
@@ -2175,6 +2208,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
         return null;
     }
+
+    private PeerInfo getPeerInfoFor(String streamId){
+        PeerInfo peer = peers.get(streamId);
+        if(peer != null) {
+            return peer;
+        }
+        return null;
+
+    }
+
 
     private void switchCameraInternal() {
         if (videoCapturer instanceof CameraVideoCapturer) {
