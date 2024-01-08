@@ -1119,7 +1119,28 @@ public class WebRTCClientTest {
 
         verify(listener, times(1)).onBroadcastObject(broadcast);
     }
+    
+    @Test
+    public void testRelease() throws IllegalAccessException, NoSuchFieldException {
+        Field field = WebRTCClient.class.getDeclaredField("mainHandler");
+        field.setAccessible(true);
+        field.set(webRTCClient, getMockHandler());
+        webRTCClient.getConfig().localVideoRenderer = mock(SurfaceViewRenderer.class);
+        SurfaceViewRenderer renderer = mock(SurfaceViewRenderer.class);
+        doReturn(1).when(renderer).getTag();
+        webRTCClient.getConfig().remoteVideoRenderers = new ArrayList<SurfaceViewRenderer>() {{
+            add(renderer);
+        }};
+        doNothing().when(webRTCClient).releaseRenderer(any());
 
+        webRTCClient.release(false);
+
+        verify(wsHandler, never()).disconnect(true);
+        verify(webRTCClient).releaseRenderer(any(),any(),any());
+        verify(webRTCClient).releaseRenderer(any());
+
+    }
+    
     @Test
     public  void  releaseRendererTest() throws NoSuchFieldException, IllegalAccessException {
         String streamId = "stream1";
