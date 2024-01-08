@@ -241,4 +241,10 @@ public interface IWebRTCClient {
      */
     void getBroadcastObject(String streamId);
 
+    /**
+     * Toggle audio for all participants in a call.
+     * If 'enabled' is true, unmutes all participants; otherwise, mutes all participants.
+     */
+    void toggleAudioOfAllParticipants(boolean enabled);
+
 }

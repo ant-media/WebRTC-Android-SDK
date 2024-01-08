@@ -2215,6 +2215,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         isInitiator = initiator;
     }
 
+    public void toggleAudioOfAllParticipants(boolean enabled) {
+
+        for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
+            PeerConnection peerConnection = entry.getValue().peerConnection;
+            if (peerConnection != null) {
+                List<RtpReceiver> receivers = peerConnection.getReceivers();
+
+                for (RtpReceiver receiver : receivers) {
+                    MediaStreamTrack track = receiver.track();
+                    if (track != null && track.kind().equals("audio")) {
+                        AudioTrack audioTrack = (AudioTrack) track;
+                        audioTrack.setEnabled(enabled);
+                    }
+                }
+            }
+        }
+    }
+
     public void setHandler(Handler handler) {
         this.handler = handler;
     }
