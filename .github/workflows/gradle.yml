@@ -32,7 +32,7 @@ jobs:
       - uses: FedericoCarboni/setup-ffmpeg@v2
         id: setup-ffmpeg
         #send test stream to the server to play test
-      - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
+      - run: ffmpeg -stream_loop -1 -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
       
       - name: Setting up Python
         uses: actions/setup-python@v4
