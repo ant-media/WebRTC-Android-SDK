@@ -293,6 +293,24 @@ public class MainActivity extends AbstractSampleSDKActivity {
         //it's called when ice is disconnected
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (webRTCClient != null) {
+            webRTCClient.connectWebSocket();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
     public void onOffVideo(View view) {
         if (webRTCClient.isVideoOn()) {
             webRTCClient.disableVideo();
