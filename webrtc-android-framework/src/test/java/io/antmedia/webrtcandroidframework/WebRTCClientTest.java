@@ -962,27 +962,29 @@ public class WebRTCClientTest {
     }
 
     @Test
-    public void testCreatePeerConnectionInternal() {
+    public void testUnexpectedReconnection(){
         String streamId = "stream1";
-
-        doNothing().when(webRTCClient).setWebRTCLogLevel();
-        doReturn(mock(AudioTrack.class)).when(webRTCClient).createAudioTrack();
-
-        //no factory so nothing happens, return immediately
-        webRTCClient.createPeerConnectionInternal(streamId);
-
-        PeerConnectionFactory factory = mock(PeerConnectionFactory.class);
-        webRTCClient.setFactory(factory);
-
+        final Handler handler = mock(Handler.class);
+        webRTCClient.setHandler(handler);
+        when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            return null;
+        });
         PeerConnection pc = mock(PeerConnection.class);
-        when(factory.createPeerConnection(any(PeerConnection.RTCConfiguration.class), any(PeerConnection.Observer.class)))
-                .thenReturn(pc);
-
+        webRTCClient.addPeerConnection(streamId, pc);
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
-
-        webRTCClient.createPeerConnectionInternal(streamId);
-        verify(factory).createPeerConnection(any(PeerConnection.RTCConfiguration.class), any(PeerConnection.Observer.class));
+        peerInfo.setQueuedRemoteCandidates(null);
+        peerInfo.peerConnection = pc;
+        String fakeSdp = "";
+        webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+        verify(pc, never()).setLocalDescription(any(), any());
+        when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            invocation.getArgumentAt(0, Runnable.class).run();
+            return null;
+        });
+        webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+        verify(pc, timeout(3000).times(1)).setLocalDescription(any(),any());
+        webRTCClient.setHandler(handler);
     }
 
     @Test

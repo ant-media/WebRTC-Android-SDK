@@ -521,7 +521,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
             PeerInfo peerInfo = getPeerInfoFor(streamId);
             peerInfo.setLocalDescription(newDesc);
-            executor.execute(() -> {
+            handler.postAtFrontOfQueue(()->{
                 PeerConnection pc = peerInfo.peerConnection;
                 if (pc != null && !isError) {
                     Log.d(TAG, "Set local SDP from " + desc.type);
