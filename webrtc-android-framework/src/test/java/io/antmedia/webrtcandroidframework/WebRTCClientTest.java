@@ -118,6 +118,10 @@ public class WebRTCClientTest {
             invocation.getArgumentAt(0, Runnable.class).run();
             return null;
         });
+        when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            invocation.getArgumentAt(0, Runnable.class).run();
+            return null;
+        });
 
         when(handler.postDelayed(any(Runnable.class), anyLong())).thenAnswer((Answer<?>) invocation -> {
             Long delay = invocation.getArgumentAt(1, Long.class);
@@ -563,6 +567,9 @@ public class WebRTCClientTest {
     @Test
     public void testSDPObserver() {
         doNothing().when(wsHandler).disconnect(anyBoolean());
+        Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+
         String streamId = "stream1";
         String fakeStreamId = "fakeStreamId";
 
@@ -577,6 +584,7 @@ public class WebRTCClientTest {
 
         SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, "sdp");
         sdpObserver.onCreateSuccess(sessionDescription);
+
         verify(pc, timeout(1000)).setLocalDescription(eq(sdpObserver), any());
         {
             webRTCClient.setInitiator(true);
@@ -977,7 +985,8 @@ public class WebRTCClientTest {
         peerInfo.peerConnection = pc;
         String fakeSdp = "";
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
-        verify(pc, never()).setLocalDescription(any(), any());
+        verify(pc, timeout(3000).times(0)).setLocalDescription(any(),any());
+
         when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
             invocation.getArgumentAt(0, Runnable.class).run();
             return null;
