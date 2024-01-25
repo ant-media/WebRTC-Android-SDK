@@ -1015,7 +1015,17 @@ public class WebRTCClientTest {
 
 
     }
+    @Test public void switchCameraTest(){
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doReturn(null).when(webRTCClient).createVideoCapturer(any());
+        webRTCClient.initializeVideoCapturer();
+        assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.FRONT_CAMERA);
+        webRTCClient.switchCamera();
+        assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.REAR_CAMERA);
+        webRTCClient.switchCamera();
+        assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.FRONT_CAMERA);
 
+    }
     @Test
     public void testCreateSDP() {
         String streamId = "stream1";
