@@ -53,6 +53,7 @@ import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoCapturer;
+import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
@@ -1025,6 +1026,21 @@ public class WebRTCClientTest {
         webRTCClient.switchCamera();
         assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.FRONT_CAMERA);
 
+    }
+
+    @Test public void testChangeVideoSrc(){
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doReturn(null).when(webRTCClient).createVideoCapturer(any());
+        webRTCClient.initializeVideoCapturer();
+
+        webRTCClient.changeVideoSource(webRTCClient.getConfig().videoSource);
+        Mockito.verify(webRTCClient, never()).changeVideoCapturer(any());
+
+        IWebRTCClient.StreamSource streamSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
+        webRTCClient.changeVideoSource(streamSource);
+        Mockito.verify(webRTCClient).createVideoCapturer(any());
+
+        assertEquals(webRTCClient.getConfig().videoSource,streamSource);
     }
     @Test
     public void testCreateSDP() {
