@@ -1036,9 +1036,9 @@ public class WebRTCClientTest {
         webRTCClient.changeVideoSource(webRTCClient.getConfig().videoSource);
         Mockito.verify(webRTCClient, never()).changeVideoCapturer(any());
 
-        IWebRTCClient.StreamSource streamSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
+        IWebRTCClient.StreamSource streamSource = IWebRTCClient.StreamSource.REAR_CAMERA;
         webRTCClient.changeVideoSource(streamSource);
-        Mockito.verify(webRTCClient).createVideoCapturer(any());
+        Mockito.verify(webRTCClient,times(2)).createVideoCapturer(any());
 
         assertEquals(webRTCClient.getConfig().videoSource,streamSource);
     }
