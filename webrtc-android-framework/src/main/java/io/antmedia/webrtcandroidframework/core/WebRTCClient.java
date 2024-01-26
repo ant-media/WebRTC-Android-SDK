@@ -506,7 +506,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             final SessionDescription newDesc = new SessionDescription(desc.type, sdp);
             localDescription = newDesc;
-            executor.execute(() -> {
+            handler.postAtFrontOfQueue(()->{
                 PeerConnection pc = getPeerConnectionFor(streamId);
                 if (pc != null && !isError) {
                     Log.d(TAG, "Set local SDP from " + desc.type);
@@ -1956,7 +1956,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return localVideoTrack;
     }
 
-    private void findVideoSender(String streamId) {
+    public void findVideoSender(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
         if (pc != null) {
             for (RtpSender sender : pc.getSenders()) {
