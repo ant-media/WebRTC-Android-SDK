@@ -1984,7 +1984,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return localVideoTrack;
     }
 
-    private void findVideoSender(String streamId) {
+    public void findVideoSender(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
         if (pc != null) {
             for (RtpSender sender : pc.getSenders()) {

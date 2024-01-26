@@ -58,8 +58,10 @@ import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -1128,7 +1130,27 @@ public class WebRTCClientTest {
         webRTCClient.closeInternal();
         verify(webRTCClient, times(1)).onPeerConnectionClosed();
     }
+    @Test public void testFindVideoSender() throws NoSuchFieldException, IllegalAccessException {
+        String streamId = "stream1";
+        PeerConnection pc = mock(PeerConnection.class);
+        webRTCClient.addPeerConnection(streamId, pc);
 
+        VideoTrack track = mock(VideoTrack.class);
+        doReturn("video").when(track).kind();
+        RtpSender sender = mock(RtpSender.class);
+        doReturn(track).when(sender).track();
+
+        ArrayList<RtpSender> senderArray = new ArrayList<>(Arrays.asList(sender)) ;
+        doReturn(senderArray).when(pc).getSenders();
+
+        webRTCClient.findVideoSender(streamId);
+
+        Field field = WebRTCClient.class.getDeclaredField("localVideoSender");
+        field.setAccessible(true);
+        RtpSender  localVideoSender = (RtpSender) field.get(webRTCClient);
+
+        assertEquals(localVideoSender,sender);
+    }
     @Test
     public void testWaitWSHandler() {
         webRTCClient.setHandler(null);
