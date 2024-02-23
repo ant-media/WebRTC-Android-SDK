@@ -672,10 +672,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    public void setBitrate(int bitrate) {
-        setVideoMaxBitrate(bitrate);
-    }
-
     public void connectWebSocket() {
         if (wsHandler == null) {
             Log.i(TAG, "WebsocketHandler is null and creating a new instance");
@@ -1054,7 +1050,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if (config.videoStartBitrate > 0) {
                 Log.d(TAG, "Set video maximum bitrate: " + config.videoStartBitrate);
-                setVideoMaxBitrate(config.videoStartBitrate);
+                this.setMaxVideoBitrate(config.videoStartBitrate);
             }
         });
     }
@@ -1901,7 +1897,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    public void setVideoMaxBitrate(@androidx.annotation.Nullable final Integer maxBitrateKbps) {
+    public void setMaxVideoBitrate(@androidx.annotation.Nullable final Integer maxBitrateKbps) {
         executor.execute(() -> {
             if (localVideoSender == null || isError) {
                 return;

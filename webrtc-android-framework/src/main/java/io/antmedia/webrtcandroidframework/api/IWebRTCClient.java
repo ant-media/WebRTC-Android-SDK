@@ -240,5 +240,4 @@ public interface IWebRTCClient {
      * @param streamId: id for the broadcast
      */
     void getBroadcastObject(String streamId);
-
 }

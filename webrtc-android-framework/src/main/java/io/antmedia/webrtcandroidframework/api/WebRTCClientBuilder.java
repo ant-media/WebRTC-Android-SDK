@@ -136,6 +136,11 @@ public class WebRTCClientBuilder {
         return this;
     }
 
+    public WebRTCClientBuilder setMaxVideoBitrate(int maxVideoBitrateKbps){
+        webRTCClientConfig.videoStartBitrate = maxVideoBitrateKbps;
+        return this;
+    }
+
     public WebRTCClientConfig getConfig() {
         return webRTCClientConfig;
     }
