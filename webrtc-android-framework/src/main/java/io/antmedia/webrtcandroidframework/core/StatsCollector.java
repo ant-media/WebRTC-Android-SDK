@@ -20,9 +20,11 @@ public class StatsCollector {
     private long lastKnownVideoBytesSent;
     private long audioBitrate;
     private long videoBitrate;
+    public double audioLevel = 0.0;
 
     public void onStatsReport(RTCStatsReport report) {
         Log.i("Stats", "onStatsReport:\n"+report.toString());
+        onSenderReport(report);
 
     }
 
@@ -52,6 +54,17 @@ public class StatsCollector {
                     videoBitrate = (bytesSent - lastKnownVideoBytesSent) / timeDiffSeconds * 8;
                     lastKnownVideoBytesSent = bytesSent;
                 }
+
+
+            }
+            if("media-source".equals(value.getType())){
+                Map<String,Object> members =  value.getMembers();
+                if(members.containsKey("audioLevel")){
+                    audioLevel = (double) members.get("audioLevel");
+
+                }
+
+
             }
         }
         lastKnownStatsTimeStampMs = timeMs;

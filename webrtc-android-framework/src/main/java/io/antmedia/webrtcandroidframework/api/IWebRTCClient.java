@@ -6,11 +6,14 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.CustomWebRtcAudioRecord;
 
+import io.antmedia.webrtcandroidframework.core.StatsCollector;
+
 /**
  * Created by karinca on 20.10.2017.
  */
 
 public interface IWebRTCClient {
+
 
     /**
      * This enum is used to specify the stream source
@@ -240,5 +243,8 @@ public interface IWebRTCClient {
      * @param streamId: id for the broadcast
      */
     void getBroadcastObject(String streamId);
+
+
+    StatsCollector getStatsCollector();
 
 }
