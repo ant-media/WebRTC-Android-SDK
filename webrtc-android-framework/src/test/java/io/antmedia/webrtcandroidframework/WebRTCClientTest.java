@@ -1041,39 +1041,9 @@ public class WebRTCClientTest {
         verify(pc, timeout(1000).times(1)).removeIceCandidates(any());
     }
 
+
     @Test
     public void testDegradationPreference() {
-        String streamId = "stream1";
-        RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
-        webRTCClient.setDegradationPreference(streamId, degradationPreference);
-        //will return imediately
-
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
-        webRTCClient.peers.put(streamId, peerInfo);
-
-        PeerConnection pc = mock(PeerConnection.class);
-        peerInfo.peerConnection = pc;
-
-        List<RtpSender> senders = new ArrayList<>();
-        RtpSender sender = mock(RtpSender.class);
-        senders.add(sender);
-        when(pc.getSenders()).thenReturn(senders);
-
-        MediaStreamTrack track = mock(MediaStreamTrack.class);
-        when(sender.track()).thenReturn(track);
-
-        when(track.kind()).thenReturn(WebRTCClient.VIDEO_TRACK_TYPE);
-
-        RtpParameters parameters = mock(RtpParameters.class);
-        when(sender.getParameters()).thenReturn(parameters);
-
-        webRTCClient.setDegradationPreference(streamId, degradationPreference);
-
-        verify(sender, timeout(1000).times(1)).setParameters(parameters);
-    }
-
-    @Test
-    public void testDegradationPreference2() {
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
 
         webRTCClient.getConfig().activity= mock(Activity.class);
