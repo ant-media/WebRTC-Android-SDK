@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
+import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 /**
  * Default implementation of {@link IWebRTCListener}
@@ -192,6 +193,19 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         String messageText = "Status update for " + streamId + " mic: " + micStatus + " camera: " + cameraStatus;
         callbackCalled(messageText);
     }
+
+    @Override
+    public void onSessionRestored(String streamId) {
+        String messageText = "Session restored for " + streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onBroadcastObject(Broadcast broadcast) {
+        String messageText = "Broadcast object received";
+        callbackCalled(messageText);
+    }
+
 
     protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
