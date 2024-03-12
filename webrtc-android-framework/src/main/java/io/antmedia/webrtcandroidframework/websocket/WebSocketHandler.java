@@ -24,6 +24,9 @@ import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.DEFINITION;
 import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.NOTIFICATION_COMMAND;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     private static final String TAG = "WebSocketHandler";
     private static final int CLOSE_TIMEOUT = 1000;
@@ -39,10 +42,15 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     public static final  long TIMER_DELAY  = 3000L;
     public static final  long TIMER_PERIOD = 2000L;
 
+    Gson gson;
+
 
     public WebSocketHandler(AntMediaSignallingEvents signallingListener, Handler handler) {
         this.handler = handler;
         this.signallingListener = signallingListener;
+
+        GsonBuilder builder = new GsonBuilder();
+        gson = builder.create();
     }
 
     public void connect(final String wsUrl) {
@@ -196,7 +204,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     signallingListener.onPlayFinished(streamId);
                 }
                 else if (definition.equals(WebSocketConstants.SESSION_RESTORED_DESCRIPTION)) {
-                    signallingListener.onPublishStarted(streamId);
+                    signallingListener.onSessionRestored(streamId);
                 }
                 else if (definition.equals(WebSocketConstants.JOINED_THE_ROOM)) {
                     String[] streams = null;
@@ -222,6 +230,11 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     int audioBitrate = json.getInt(WebSocketConstants.AUDIO_BITRATE);
 
                     signallingListener.onBitrateMeasurement(streamId, targetBitrate, videoBitrate, audioBitrate);
+                }
+                else if (definition.equals(WebSocketConstants.BROADCAST_OBJECT_NOTIFICATION)) {
+                    String broadcastJson = json.getString(WebSocketConstants.BROADCAST);
+                    Broadcast broadcast = gson.fromJson(broadcastJson, Broadcast.class);
+                    signallingListener.onBroadcastObject(broadcast);
                 }
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
@@ -260,9 +273,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 pingPongTimoutCount = 0;
                 Log.i(TAG, "pong reply is received");
             }
-
             else {
-
                 Log.e(TAG, "Received offer for call receiver: " + msg);
             }
 
@@ -533,4 +544,15 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
+    public void getBroadcastObject(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_BROADCAST_OBJECT_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

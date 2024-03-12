@@ -60,7 +60,6 @@ public class ConferenceActivity extends TestableActivity {
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
             playOnly = b;
-            defaultConferenceListener.setPlayOnly(b);
             publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
@@ -87,7 +86,12 @@ public class ConferenceActivity extends TestableActivity {
             ((Button) v).setText("Leave");
             Log.i(getClass().getSimpleName(), "Calling join");
 
-            webRTCClient.joinToConferenceRoom(roomId, streamId);
+            if(playOnly) {
+                webRTCClient.joinToConferenceRoom(roomId);
+            }
+            else {
+                webRTCClient.joinToConferenceRoom(roomId, streamId);
+            }
         }
         else {
             ((Button) v).setText("Join");
@@ -109,15 +113,6 @@ public class ConferenceActivity extends TestableActivity {
 
     private DefaultConferenceWebRTCListener createWebRTCListener(String roomId, String streamId) {
         return new DefaultConferenceWebRTCListener(roomId, streamId) {
-
-            @Override
-            public void onJoinedTheRoom(String streamId, String[] streams) {
-                super.onJoinedTheRoom(streamId, streams);
-
-                if(playOnly) {
-                    decrementIdle();
-                }
-            }
 
             @Override
             public void onPublishStarted(String streamId) {

@@ -90,6 +90,12 @@ public interface IWebRTCClient {
     void joinToConferenceRoom(String roomId, String streamId);
 
     /**
+     * This is used to join a conference room as player
+     * @param roomId: id for the conference room
+     */
+    void joinToConferenceRoom(String roomId);
+
+    /**
      * This is used to leave from a conference room
      * @param roomId: id for the conference room
      */
@@ -228,4 +234,11 @@ public interface IWebRTCClient {
      * Called to requesr the subtracks for a main track from server
      */
     void getTrackList(String streamId, String token);
+
+    /**
+     * Called to get the broadcast object from server
+     * @param streamId: id for the broadcast
+     */
+    void getBroadcastObject(String streamId);
+
 }
