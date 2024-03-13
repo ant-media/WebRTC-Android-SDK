@@ -44,6 +44,7 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
         super.onPlayStarted(streamId);
         webRTCClient.getBroadcastObject(roomId);
         playStarted = true;
+        onJoinedTheRoom(streamId, null);
     }
 
     @Override
@@ -64,6 +65,7 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     public void onPlayFinished(String streamId) {
         super.onPlayFinished(streamId);
         playStarted = false;
+        onLeftTheRoom(streamId);
     }
 
     @Override
