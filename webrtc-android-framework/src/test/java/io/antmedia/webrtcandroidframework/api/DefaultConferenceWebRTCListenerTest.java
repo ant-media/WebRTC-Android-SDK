@@ -1,12 +1,8 @@
 package io.antmedia.webrtcandroidframework.api;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -18,16 +14,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import de.tavendo.autobahn.WebSocket;
-import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 public class DefaultConferenceWebRTCListenerTest{
     private String roomId;
@@ -240,5 +232,10 @@ public class DefaultConferenceWebRTCListenerTest{
         defaultWebRTCListener.onPlayStarted(roomId);
         defaultWebRTCListener.onPublishStarted(streamId);
         verify(mockWebRTCClient, times(1)).play(roomId);
+    }
+    @Test
+    public void testOnPeerConnectionCreated() {
+        defaultWebRTCListener.onPeerConnectionCreated("streamId");
+        verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
 }

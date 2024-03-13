@@ -202,7 +202,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     // enableVideo is set to true if video should be rendered and sent.
     private boolean renderVideo = true;
     @androidx.annotation.Nullable
-    private RtpSender localVideoSender;
+    public RtpSender localVideoSender;
 
     @androidx.annotation.Nullable
     private AudioTrack localAudioTrack;
@@ -1621,7 +1621,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.videoCallEnabled) {
                 findVideoSender(streamId);
             }
-
+            config.webRTCListener.onPeerConnectionCreated(streamId);
             Log.d(TAG, "Peer connection created.");
         } else {
             Log.e(TAG, "Peer connection is not created");
@@ -1659,27 +1659,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    public void setDegradationPreference(String streamId , RtpParameters.DegradationPreference degradationPreference) {
-        PeerConnection pc = getPeerConnectionFor(streamId);
-
-        if (config.activity == null || pc == null) {
-            Log.d(TAG, "Cannot set  Degradation Preference");
+    public void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference) {
+        if (localVideoSender == null || isError) {
+            Log.w(TAG, "Sender is not ready.");
             return;
         }
-
-        for (RtpSender sender : pc.getSenders()) {
-            MediaStreamTrack track = sender.track();
-            if (track != null) {
-                String trackType = track.kind();
-                if (trackType.equals(VIDEO_TRACK_TYPE)) {
-                    RtpParameters newParameters = sender.getParameters();
-                    if(newParameters != null) {
-                        newParameters.degradationPreference = degradationPreference;
-                        sender.setParameters(newParameters);
-                    }
-                }
+        executor.execute(() -> {
+            RtpParameters newParameters = localVideoSender.getParameters();
+            if (newParameters != null) {
+                newParameters.degradationPreference = degradationPreference;
+                localVideoSender.setParameters(newParameters);
             }
-        }
+        });
     }
 
     public void closeInternal() {
