@@ -613,6 +613,8 @@ public class WebRTCClientTest {
                 WebRTCClient.VIDEO_ROTATION_EXT_LINE +
                 "something else\r\n";
 
+        webRTCClient.setRemoveVideoRotationExtension(true);
+
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
         Awaitility.await().until(() -> peerInfo.getLocalDescription() != null);
 
@@ -1028,7 +1030,6 @@ public class WebRTCClientTest {
 
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
-        peerInfo.setQueuedRemoteCandidates(null);
 
         PeerConnection pc = mock(PeerConnection.class);
         peerInfo.peerConnection = pc;
@@ -1040,7 +1041,6 @@ public class WebRTCClientTest {
         verify(pc, timeout(1000).times(1)).addIceCandidate(any(), any());
 
         List<IceCandidate> iceCandidatesQ = new ArrayList<>();
-        peerInfo.setQueuedRemoteCandidates(iceCandidatesQ);
         webRTCClient.setQueuedRemoteCandidates(iceCandidatesQ);
         webRTCClient.addRemoteIceCandidate(streamId, iceCandidate);
         Awaitility.await().until(() -> iceCandidatesQ.size() == 1);
@@ -1053,33 +1053,24 @@ public class WebRTCClientTest {
         verify(pc, timeout(1000).times(1)).removeIceCandidates(any());
     }
 
+
     @Test
     public void testDegradationPreference() {
-        String streamId = "stream1";
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
-        webRTCClient.setDegradationPreference(streamId, degradationPreference);
-        //will return imediately
 
-        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
-        webRTCClient.peers.put(streamId, peerInfo);
-
-        PeerConnection pc = mock(PeerConnection.class);
-        peerInfo.peerConnection = pc;
-
+        webRTCClient.getConfig().activity= mock(Activity.class);
         List<RtpSender> senders = new ArrayList<>();
         RtpSender sender = mock(RtpSender.class);
         senders.add(sender);
-        when(pc.getSenders()).thenReturn(senders);
 
-        MediaStreamTrack track = mock(MediaStreamTrack.class);
-        when(sender.track()).thenReturn(track);
+        webRTCClient.localVideoSender = null;
+        webRTCClient.setDegradationPreference(degradationPreference);
+        verify(sender, never()).setParameters(any());
 
-        when(track.kind()).thenReturn(WebRTCClient.VIDEO_TRACK_TYPE);
-
+        webRTCClient.localVideoSender = sender;
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
-
-        webRTCClient.setDegradationPreference(streamId, degradationPreference);
+        webRTCClient.setDegradationPreference(degradationPreference);
 
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
     }
@@ -1089,7 +1080,44 @@ public class WebRTCClientTest {
         webRTCClient.closeInternal();
         verify(webRTCClient, times(1)).onPeerConnectionClosed();
     }
+    @Test
+    public void testSetVideoMaxBitrate() throws NoSuchFieldException, IllegalAccessException, InterruptedException {
 
+        List<RtpSender> senders = new ArrayList<>();
+        RtpSender sender = mock(RtpSender.class);
+        senders.add(sender);
+
+        webRTCClient.localVideoSender = null;
+        webRTCClient.setVideoMaxBitrate(3000);
+        verify(sender, never()).setParameters(any());
+
+        webRTCClient.localVideoSender = sender;
+
+        RtpParameters.Encoding encodings  = mock(RtpParameters.Encoding.class);
+        List<RtpParameters.Encoding> mockEncoding = Collections.emptyList();
+
+        RtpParameters parameters = mock(RtpParameters.class);
+        when(sender.getParameters()).thenReturn(parameters);
+        when(sender.getParameters()).thenReturn(parameters);
+
+
+        Field field = RtpParameters.class.getDeclaredField("encodings");
+        field.setAccessible(true);
+        field.set(parameters, mockEncoding);
+
+
+        webRTCClient.setVideoMaxBitrate(3000);
+        verify(sender, never()).setParameters(any());
+
+        Thread.sleep(3000);
+
+        mockEncoding = new ArrayList<>();
+        mockEncoding.add(encodings);
+        field.set(parameters, mockEncoding);
+
+        webRTCClient.setVideoMaxBitrate(3000);
+        verify(sender, timeout(1000).times(1)).setParameters(parameters);
+    }
     @Test
     public void testWaitWSHandler() {
         webRTCClient.setHandler(null);
@@ -1119,7 +1147,7 @@ public class WebRTCClientTest {
 
         verify(listener, times(1)).onBroadcastObject(broadcast);
     }
-    
+
     @Test
     public void testRelease() throws IllegalAccessException, NoSuchFieldException {
         Field field = WebRTCClient.class.getDeclaredField("mainHandler");
@@ -1140,7 +1168,7 @@ public class WebRTCClientTest {
         verify(webRTCClient).releaseRenderer(any());
 
     }
-    
+
     @Test
     public  void  releaseRendererTest() throws NoSuchFieldException, IllegalAccessException {
         String streamId = "stream1";
