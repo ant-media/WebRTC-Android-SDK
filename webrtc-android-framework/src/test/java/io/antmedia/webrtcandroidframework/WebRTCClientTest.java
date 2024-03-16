@@ -621,7 +621,7 @@ public class WebRTCClientTest {
         assertTrue(peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
 
-        webRTCClient.setRemoveVideoRotationExtention(true);
+        webRTCClient.setRemoveVideoRotationExtension(true);
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
 
         Awaitility.await().until(() -> !peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
