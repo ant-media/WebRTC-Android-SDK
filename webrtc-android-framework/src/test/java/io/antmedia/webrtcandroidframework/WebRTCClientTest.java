@@ -42,7 +42,6 @@ import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.IceCandidateErrorEvent;
 import org.webrtc.MediaStream;
-import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpParameters;
@@ -602,12 +601,8 @@ public class WebRTCClientTest {
     public void testAVideoRotationExtention() {
         String streamId = "stream1";
 
-        PeerConnection pc = mock(PeerConnection.class);
-        webRTCClient.addPeerConnection(streamId, pc);
-
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.peers.put(streamId, peerInfo);
-        peerInfo.setQueuedRemoteCandidates(null);
 
         String fakeSdp = "something\r\n" +
                 WebRTCClient.VIDEO_ROTATION_EXT_LINE +
@@ -616,15 +611,15 @@ public class WebRTCClientTest {
         webRTCClient.setRemoveVideoRotationExtension(true);
 
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
-        Awaitility.await().until(() -> peerInfo.getLocalDescription() != null);
 
-        assertTrue(peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+        assertNotNull(peerInfo.getLocalDescription());
+        assertFalse(peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
 
-        webRTCClient.setRemoveVideoRotationExtension(true);
+        webRTCClient.setRemoveVideoRotationExtension(false);
         webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
 
-        Awaitility.await().until(() -> !peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
+        assertTrue(peerInfo.getLocalDescription().description.contains(WebRTCClient.VIDEO_ROTATION_EXT_LINE));
 
     }
 
@@ -1036,12 +1031,12 @@ public class WebRTCClientTest {
 
         IceCandidate iceCandidate = mock(IceCandidate.class);
 
-        webRTCClient.setQueuedRemoteCandidates(null);
+        peerInfo.setQueuedRemoteCandidates(null);
         webRTCClient.addRemoteIceCandidate(streamId, iceCandidate);
         verify(pc, timeout(1000).times(1)).addIceCandidate(any(), any());
 
         List<IceCandidate> iceCandidatesQ = new ArrayList<>();
-        webRTCClient.setQueuedRemoteCandidates(iceCandidatesQ);
+        peerInfo.setQueuedRemoteCandidates(iceCandidatesQ);
         webRTCClient.addRemoteIceCandidate(streamId, iceCandidate);
         Awaitility.await().until(() -> iceCandidatesQ.size() == 1);
         assertEquals(iceCandidate, iceCandidatesQ.get(0));
@@ -1059,9 +1054,7 @@ public class WebRTCClientTest {
         RtpParameters.DegradationPreference degradationPreference = RtpParameters.DegradationPreference.BALANCED;
 
         webRTCClient.getConfig().activity= mock(Activity.class);
-        List<RtpSender> senders = new ArrayList<>();
         RtpSender sender = mock(RtpSender.class);
-        senders.add(sender);
 
         webRTCClient.localVideoSender = null;
         webRTCClient.setDegradationPreference(degradationPreference);
@@ -1083,9 +1076,7 @@ public class WebRTCClientTest {
     @Test
     public void testSetVideoMaxBitrate() throws NoSuchFieldException, IllegalAccessException, InterruptedException {
 
-        List<RtpSender> senders = new ArrayList<>();
         RtpSender sender = mock(RtpSender.class);
-        senders.add(sender);
 
         webRTCClient.localVideoSender = null;
         webRTCClient.setVideoMaxBitrate(3000);
