@@ -107,7 +107,7 @@ public class ConferenceActivityTest {
         }
     };
 
-    //@Test
+    @Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
