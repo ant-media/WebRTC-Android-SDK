@@ -42,6 +42,7 @@ import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.IceCandidateErrorEvent;
 import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpParameters;
@@ -62,6 +63,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -1137,6 +1139,55 @@ public class WebRTCClientTest {
         webRTCClient.onBroadcastObject(broadcast);
 
         verify(listener, times(1)).onBroadcastObject(broadcast);
+    }
+
+    @Test
+    public void testToggleAudioOfAllParticipants(){
+        PeerConnection pc = mock(PeerConnection.class);
+        String streamId1 = "stream1";
+
+        List<RtpReceiver> receivers = new LinkedList<>();
+
+        when(pc.getReceivers()).thenReturn(receivers);
+
+
+        RtpReceiver receiver1 = mock(RtpReceiver.class);
+
+
+        receivers.add(receiver1);
+
+        RtpReceiver receiver2 = mock(RtpReceiver.class);
+
+        RtpReceiver receiver3 = mock(RtpReceiver.class);
+
+
+        MediaStreamTrack videoTrack = mock(VideoTrack.class);
+        MediaStreamTrack audioTrack = mock(AudioTrack.class);
+
+
+        when(receiver2.track()).thenReturn(videoTrack);
+
+        when(videoTrack.kind()).thenReturn("video");
+
+        when(receiver3.track()).thenReturn(audioTrack);
+        when(audioTrack.kind()).thenReturn("audio");
+
+        receivers.add(receiver2);
+        receivers.add(receiver3);
+
+
+        webRTCClient.addPeerConnection(streamId1, null);
+
+        webRTCClient.toggleAudioOfAllParticipants(true);
+
+        webRTCClient.addPeerConnection(streamId1, pc);
+
+        webRTCClient.toggleAudioOfAllParticipants(false);
+
+        assertFalse(audioTrack.enabled());
+
+
+
     }
 
     @Test
