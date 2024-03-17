@@ -2178,7 +2178,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private void drainCandidates(String streamId) {
         PeerInfo peerInfo = getPeerInfoFor(streamId);
-        if(peerInfo == null){
+        if(peerInfo == null || peerInfo.getQueuedRemoteCandidates() == null){
             return;
         }
         List<IceCandidate> queuedRemoteCandidates = peerInfo.getQueuedRemoteCandidates();
