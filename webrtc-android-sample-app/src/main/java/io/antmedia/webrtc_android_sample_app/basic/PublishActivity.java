@@ -29,7 +29,6 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PublishActivity extends TestableActivity {
     private View broadcastingView;
-    private View startStreamingButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
 
@@ -41,12 +40,11 @@ public class PublishActivity extends TestableActivity {
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
         broadcastingView = findViewById(R.id.broadcasting_text_view);
-        startStreamingButton = findViewById(R.id.start_streaming_button);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        streamId = "streamId" + (int)(Math.random()*9999);
-        streamIdEditText.setText(streamId);
+        String generatedStreamId = "streamId" + (int)(Math.random()*9999);
+        streamIdEditText.setText(generatedStreamId);
 
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(fullScreenRenderer)
@@ -60,6 +58,7 @@ public class PublishActivity extends TestableActivity {
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                streamId = streamIdEditText.getText().toString();
                 startStopStream(v);
             }
         });

@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework.api;
 
 import org.webrtc.DataChannel;
+import org.webrtc.RtpParameters;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
@@ -113,6 +114,14 @@ public interface IWebRTCClient {
      * @param buffer: data to send
      */
     void sendMessageViaDataChannel(String streamId, DataChannel.Buffer buffer);
+
+    /**
+     * This Function Can be used to set Degradation Preference for the Stream such as to
+     * Maintaining resolution or FrameRate in bad network conditions
+     * @param degradationPreference : RtpParameters.DegradationPreference
+     */
+
+    void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference);
 
     /**
      * This is used to change video source on the fly
@@ -240,6 +249,11 @@ public interface IWebRTCClient {
      * @param streamId: id for the broadcast
      */
     void getBroadcastObject(String streamId);
+    /**
+     * Releases the renderer
+     * @param renderer: renderer to release 
+     */
+    void releaseRenderer(SurfaceViewRenderer renderer);
 
     /**
      * Toggle audio for all participants in a call.
