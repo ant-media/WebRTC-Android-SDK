@@ -131,8 +131,9 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         String messageText = "Video track ended";
         callbackCalled(messageText);
         for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
-            if (r.getTag() == track) {
-                r.setTag(null);
+            VideoTrack videoTrack = (VideoTrack) r.getTag();
+            if (videoTrack !=null && videoTrack.id().equals(track.id())) {
+                webRTCClient.releaseRenderer(r);
                 return;
             }
         }

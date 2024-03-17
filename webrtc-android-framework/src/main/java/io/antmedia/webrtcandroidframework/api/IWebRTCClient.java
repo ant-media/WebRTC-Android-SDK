@@ -249,5 +249,10 @@ public interface IWebRTCClient {
      * @param streamId: id for the broadcast
      */
     void getBroadcastObject(String streamId);
+    /**
+     * Releases the renderer
+     * @param renderer: renderer to release 
+     */
+    void releaseRenderer(SurfaceViewRenderer renderer);
 
 }
