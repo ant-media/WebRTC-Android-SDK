@@ -26,11 +26,15 @@ import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtc_android_sample_app.utility.SoundMeter;
 
 public class PublishActivity extends TestableActivity {
     private View broadcastingView;
     private String streamId;
     private IWebRTCClient webRTCClient;
+    private SoundMeter soundMeter;
+    boolean microphoneMuted = false;
+    private final double SPEAKING_DECIBEL_THRESHOLD = 45;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -43,7 +47,7 @@ public class PublishActivity extends TestableActivity {
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        String generatedStreamId = "streamId" + (int)(Math.random()*9999);
+        String generatedStreamId = "streamId" + (int) (Math.random() * 9999);
         streamIdEditText.setText(generatedStreamId);
 
         webRTCClient = IWebRTCClient.builder()
@@ -62,6 +66,57 @@ public class PublishActivity extends TestableActivity {
                 startStopStream(v);
             }
         });
+
+        Button toggleMicrophoneButton = findViewById(R.id.toggle_microphone_button);
+        toggleMicrophoneButton.setOnClickListener(v -> {
+            if (microphoneMuted) {
+                toggleMicrophoneButton.setText("Mute");
+                unMuteMicrophone();
+
+            } else {
+                toggleMicrophoneButton.setText("Unmute");
+                muteMicrophone();
+            }
+        });
+
+
+    }
+
+    public void startSoundMeter(){
+        try {
+            soundMeter = new SoundMeter(250, this, decibelLevel -> {
+                // Handle updated audio level here
+                // This method will be called whenever there's an audio level update
+                Log.d("PublishActivity", "Received audio level update: " + decibelLevel);
+                if(microphoneMuted && decibelLevel >= SPEAKING_DECIBEL_THRESHOLD){
+                    runOnUiThread(() -> {
+                        Toast.makeText(this,"Are you speaking?",Toast.LENGTH_SHORT).show();
+                    });
+                }
+            });
+            soundMeter.start();
+        }catch (SecurityException e){
+            runOnUiThread(() -> {
+                Toast.makeText(this,"Permission to record audio not granted", Toast.LENGTH_SHORT).show();
+            });
+
+        }
+    }
+
+    public void stopSoundMeter(){
+        if(soundMeter != null){
+            soundMeter.stop();
+        }
+    }
+
+    public void muteMicrophone(){
+        webRTCClient.setAudioEnabled(false);
+        microphoneMuted = true;
+    }
+
+    public void unMuteMicrophone(){
+        webRTCClient.setAudioEnabled(true);
+        microphoneMuted = false;
     }
 
     public void startStopStream(View v) {
@@ -97,6 +152,8 @@ public class PublishActivity extends TestableActivity {
                 super.onPublishStarted(streamId);
                 broadcastingView.setVisibility(View.VISIBLE);
                 decrementIdle();
+                startSoundMeter();
+
             }
 
             @Override
@@ -104,6 +161,7 @@ public class PublishActivity extends TestableActivity {
                 super.onPublishFinished(streamId);
                 broadcastingView.setVisibility(View.GONE);
                 decrementIdle();
+                stopSoundMeter();
             }
         };
     }
@@ -112,6 +170,14 @@ public class PublishActivity extends TestableActivity {
         final ByteBuffer buffer = ByteBuffer.wrap(messageToSend.getBytes(StandardCharsets.UTF_8));
         DataChannel.Buffer buf = new DataChannel.Buffer(buffer, false);
         webRTCClient.sendMessageViaDataChannel(streamId, buf);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(soundMeter != null){
+            soundMeter.stop();
+        }
     }
 
     public void showSendDataChannelMessageDialog(View view) {
