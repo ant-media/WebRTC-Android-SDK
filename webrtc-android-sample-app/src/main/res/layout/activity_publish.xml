@@ -45,16 +45,36 @@
         android:background="?android:attr/colorBackground"
         android:layout_above="@id/start_streaming_button"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start"
-        android:id="@+id/start_streaming_button"
-        android:onClick="startStreaming"
+    <RelativeLayout
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_margin="3dp"
-        />
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mute"
+            android:id="@+id/toggle_microphone_button"
+
+            android:layout_margin="3dp"
+            />
+        <Button
+            android:layout_centerInParent="true"
+            android:layout_gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start"
+            android:id="@+id/start_streaming_button"
+            android:onClick="startStreaming"
+
+            android:layout_margin="3dp"
+            />
+    </RelativeLayout>
+
+
 
         <TextView
             android:id="@+id/broadcasting_text_view"
