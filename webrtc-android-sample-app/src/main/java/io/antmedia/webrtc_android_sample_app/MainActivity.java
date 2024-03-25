@@ -22,6 +22,7 @@ import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtc_android_sample_app.advanced.CallNotificationActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishWithSurfaceActivity;
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(MP4PublishWithSurfaceActivity.class, "mp4 with Surface");
         addActivity(USBCameraActivity.class, "USB Camera");
         addActivity(MultiTrackPlayActivity.class, "Multi Track");
+        addActivity(CallNotificationActivity.class, "Call Notification");
         addActivity(SettingsActivity.class, "Settings");
 
     }

@@ -878,6 +878,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void join(String streamId) {
         join(streamId, "");
     }
+
+    public void registerPushNotificationToken(String subscriberId, String authToken, String pushNotificationToken, String tokenType) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType);
+        }
+    }
+
+    public void sendPushNotification(String subscriberId, String authToken, String pushNotificationContent, String subscriberIdsToNotify) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify);
+        }
+    }
         
     public void join(String streamId, String token) {
         Log.e(TAG, "Join: "+streamId);
