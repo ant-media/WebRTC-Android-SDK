@@ -559,7 +559,7 @@ public class WebRTCClientTest {
         when(pc.getTransceivers()).thenReturn(Collections.singletonList(transceiver));
         webRTCClient.addPeerConnection(streamId, pc);
         pcObserver.onAddTrack(receiver, tracks);
-        verify(listener, times(1)).onNewVideoTrack(videoTrack);
+        verify(listener, times(1)).onNewVideoTrack(videoTrack, streamId);
 
         pcObserver.onRemoveTrack(mock(RtpReceiver.class));
         assertNotNull(webRTCClient);

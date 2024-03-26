@@ -117,7 +117,7 @@ public class MultiTrackPlayActivity extends TestableActivity {
             }
 
             @Override
-            public void onNewVideoTrack(VideoTrack track) {
+            public void onNewVideoTrack(VideoTrack track, String streamId) {
                 runOnUiThread(() -> {
                     SurfaceViewRenderer renderer = new SurfaceViewRenderer(MultiTrackPlayActivity.this);
                     renderer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,

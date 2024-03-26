@@ -134,7 +134,7 @@ public class DefaultConferenceWebRTCListenerTest{
         mockWebRTCClient.getConfig().remoteVideoRenderers.add(mockSurfaceViewRenderer);
 
 
-        defaultWebRTCListener.onNewVideoTrack(mockVideoTrack);
+        defaultWebRTCListener.onNewVideoTrack(mockVideoTrack,"stream1");
 
         verify(mockSurfaceViewRenderer, times(1)).setTag(mockVideoTrack);
         verify(mockWebRTCClient, times(1)).setRendererForVideoTrack(mockSurfaceViewRenderer, mockVideoTrack);

@@ -1,5 +1,9 @@
 package io.antmedia.webrtcandroidframework.api;
 
+import org.webrtc.VideoTrack;
+
+import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+
 /**
  * Default implementation of {@link IWebRTCListener} for conference applications
  * You may extend this class and override methods that you need
@@ -7,6 +11,12 @@ package io.antmedia.webrtcandroidframework.api;
 public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     private final String roomId;
     private final String streamId;
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track, String streamId) {
+        super.onNewVideoTrack(track, streamId);
+
+    }
 
     /*
      * This flag is used to check if the play is started or not
@@ -25,6 +35,13 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
         super();
         this.roomId = roomId;
         this.streamId = streamId;
+    }
+
+    @Override
+    public void onBroadcastObject(Broadcast broadcast) {
+        super.onBroadcastObject(broadcast);
+
+
     }
 
     @Override
