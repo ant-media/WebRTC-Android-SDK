@@ -466,7 +466,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             String receiverId = receiver.id();
             String streamId = receiverId.substring("ARDAMSX".length());
 
-            Log.d("antmedia","on add track "+addedTrack.kind()+" "+addedTrack.id()+" "+addedTrack.state());
+            Log.d(TAG,"onAddTrack "+addedTrack.kind()+" "+addedTrack.id()+" "+addedTrack.state());
 
             if(addedTrack instanceof VideoTrack) {
                 VideoTrack videoTrack = (VideoTrack) addedTrack;
