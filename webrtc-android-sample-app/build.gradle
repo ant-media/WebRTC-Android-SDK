@@ -107,6 +107,8 @@ dependencies {
     androidTestImplementation 'com.google.code.gson:gson:2.8.9'
     implementation(name: 'sdk_uvc_camera_v23092707_debug', ext: 'aar')
     //implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
-
+    implementation platform('com.google.firebase:firebase-bom:32.8.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-messaging'
 
 }

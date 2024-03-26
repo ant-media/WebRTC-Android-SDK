@@ -1,10 +1,11 @@
-package io.antmedia.webrtc_android_sample_app;
+package io.antmedia.webrtc_android_sample_app.advanced.notification;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
+import io.antmedia.webrtc_android_sample_app.advanced.notification.NotificationHelper;
 import io.antmedia.webrtc_android_sample_app.basic.PeerActivity;
 
 public class AcceptCallReceiver extends BroadcastReceiver {

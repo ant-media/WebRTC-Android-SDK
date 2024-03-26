@@ -22,7 +22,7 @@ import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.antmedia.webrtc_android_sample_app.advanced.CallNotificationActivity;
+import io.antmedia.webrtc_android_sample_app.advanced.notification.CallNotificationActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishWithSurfaceActivity;

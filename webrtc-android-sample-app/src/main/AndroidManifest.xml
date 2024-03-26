@@ -94,12 +94,20 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
-        <activity android:name=".advanced.CallNotificationActivity"
+        <activity android:name=".advanced.notification.CallNotificationActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
-        <receiver android:name=".AcceptCallReceiver" android:exported="false"/>
-        <receiver android:name=".DeclineCallReceiver" android:exported="false"/>
+        <receiver android:name=".advanced.notification.AcceptCallReceiver" android:exported="false"/>
+        <receiver android:name=".advanced.notification.DeclineCallReceiver" android:exported="false"/>
+
+        <service
+            android:name=".advanced.notification.AntMediaFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
         <service
             android:name=".basic.MediaProjectionService"

@@ -1,11 +1,12 @@
-package io.antmedia.webrtc_android_sample_app;
+package io.antmedia.webrtc_android_sample_app.advanced.notification;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
-import io.antmedia.webrtc_android_sample_app.basic.PeerActivity;
+import io.antmedia.webrtc_android_sample_app.MainActivity;
+import io.antmedia.webrtc_android_sample_app.advanced.notification.NotificationHelper;
 
 public class DeclineCallReceiver extends BroadcastReceiver {
 
