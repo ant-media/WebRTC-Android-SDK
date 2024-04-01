@@ -30,6 +30,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -43,36 +44,42 @@ public class CallNotificationActivity extends ComponentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_simple_publish);
 
+        FirebaseApp.initializeApp(this);
+
+        //FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
 
         IWebRTCClient webRTCClient = IWebRTCClient.builder()
                 .setActivity(this)
                 .setLocalVideoRenderer(fullScreenRenderer)
-                .setServerUrl("wss://test.antmedia.io:5443/LiveApp/websocket")
+                .setServerUrl("wss://ovh36.antmedia.io:5443/LiveApp/websocket")
                 .build();
 
+        String streamId = "streamId" + (int)(Math.random()*9999);
+
+        PeerForNotificationActivity.streamId = streamId;
+
         //Define the subscriberId and it can be any subscriber Id
-        String subscriberId = "abc";
+        String subscriberId = "test1@antmedia.io";
 
         //Define the receiverSubscriberId and it can be any subscriber Id
-        String receiverSubscriberId = "cba";
+        String receiverSubscriberId = "test2@antmedia.io";
 
         //Get auth token for Ant Media Server to authenticate the user.
         //it's JWT token generated with Subscription Authentication Key(subscriptionAuthenticationKey) in Application settings with subscriberId claim  and it's value.
         //PushNotificationRestService can also be used to generate the authToken
         String authToken = "";
 
-        //this is the token get from FCM or APN
-        String pushNotificationToken = "";
+        String pushNotificationToken = AntMediaFirebaseMessagingService.fcmToken;
 
-        String tokenType = "fcm"; //fcm or apn
+        String tokenType = "fcm";
 
         webRTCClient.registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType);
 
-        webRTCClient.sendPushNotification(subscriberId, authToken, "{\"text\":\"This is a test message\"}", receiverSubscriberId);
+        webRTCClient.sendPushNotification(subscriberId, authToken, "{\"Caller\":\""+subscriberId+"\",\"StreamId\":\""+streamId+"\"}", receiverSubscriberId);
 
         askNotificationPermission();
-        //FirebaseMessaging.getInstance().setAutoInitEnabled(true);
     }
 
     // [START ask_post_notifications]

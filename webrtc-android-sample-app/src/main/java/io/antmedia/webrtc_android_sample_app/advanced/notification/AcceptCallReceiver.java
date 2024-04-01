@@ -5,8 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
 
-import io.antmedia.webrtc_android_sample_app.advanced.notification.NotificationHelper;
-import io.antmedia.webrtc_android_sample_app.basic.PeerActivity;
+import com.google.firebase.FirebaseApp;
 
 public class AcceptCallReceiver extends BroadcastReceiver {
 
@@ -23,7 +22,9 @@ public class AcceptCallReceiver extends BroadcastReceiver {
         }
          */
 
-        Intent callIntent = new Intent(context, PeerActivity.class);
+        PeerForNotificationActivity.streamId = "streamId";
+
+        Intent callIntent = new Intent(context, PeerForNotificationActivity.class);
         callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(callIntent);
     }

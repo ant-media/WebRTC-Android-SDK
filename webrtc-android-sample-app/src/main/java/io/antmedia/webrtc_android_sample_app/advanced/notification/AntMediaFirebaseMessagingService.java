@@ -11,6 +11,8 @@ public class AntMediaFirebaseMessagingService extends FirebaseMessagingService {
 
         private static final String TAG = "AntMediaFMS";
 
+        public static String fcmToken = "";
+
         @Override
         public void onMessageReceived(RemoteMessage remoteMessage) {
                 Log.d(TAG, "From: " + remoteMessage.getFrom());
@@ -37,12 +39,6 @@ public class AntMediaFirebaseMessagingService extends FirebaseMessagingService {
         public void onNewToken(@NonNull String token) {
                 Log.d(TAG, "Refreshed token: " + token);
 
-                // If you want to send messages to this application instance or
-                // manage this apps subscriptions on the server side, send the
-                // FCM registration token to your app server.
-                sendRegistrationToServer(token);
-        }
-        private void sendRegistrationToServer(String token) {
-                return;
+                fcmToken = token;
         }
 }
