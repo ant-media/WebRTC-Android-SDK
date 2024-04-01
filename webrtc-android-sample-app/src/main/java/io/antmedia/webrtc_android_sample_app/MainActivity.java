@@ -36,6 +36,8 @@ import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 
+import com.google.firebase.FirebaseApp;
+
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
     final private List<ActivityLink> activities = new ArrayList<>();
     private GridView list;
@@ -49,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         list = findViewById(R.id.list);
         createList();
         setListAdapter(activities);
+
+        FirebaseApp.initializeApp(this);
     }
 
     private void createList() {
