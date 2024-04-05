@@ -3,10 +3,12 @@ package io.antmedia.webrtcandroidframework.api;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 import java.util.ArrayList;
 
@@ -131,6 +133,7 @@ public class DefaultWebRTCListenerTest {
     @Test
     public void testOnVideoTrackEnded() {
         VideoTrack mockVideoTrack = mock(VideoTrack.class);
+        when(mockVideoTrack.id()).thenReturn("stream1");
         SurfaceViewRenderer mockSurfaceViewRenderer = mock(SurfaceViewRenderer.class);
 
         when(mockSurfaceViewRenderer.getTag()).thenReturn(mockVideoTrack);
@@ -139,7 +142,7 @@ public class DefaultWebRTCListenerTest {
 
         defaultWebRTCListener.onVideoTrackEnded(mockVideoTrack);
 
-        verify(mockSurfaceViewRenderer, times(1)).setTag(null);
+        verify(mockWebRTCClient, times(1)).releaseRenderer(mockSurfaceViewRenderer);
     }
 
     @Test
@@ -193,6 +196,11 @@ public class DefaultWebRTCListenerTest {
     @Test
     public void testOnSatatusUpdateFor() {
         defaultWebRTCListener.onSatatusUpdateFor("streamId", true, false);
+        verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
+    }
+    @Test
+    public void testOnBroadcastObject(){
+        defaultWebRTCListener.onBroadcastObject((Broadcast) Mockito.anyObject());
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
 }
