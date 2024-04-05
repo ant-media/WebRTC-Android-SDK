@@ -266,6 +266,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                         peerInfo.subscriberCode,
                                         peerInfo.streamName,
                                         peerInfo.mainTrackId);
+                                Log.i(TAG, "Published again!");
+
                             } else if (peerInfo.mode.equals(Mode.PLAY)) {
                                 play(peerInfo.id,
                                         peerInfo.token,
@@ -702,6 +704,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Log.i(TAG, "WebsocketHandler is null and creating a new instance");
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(config.serverUrl);
+
         } else if (!wsHandler.isConnected()) {
             Log.i(TAG, "WebSocketHandler already exists but not connected. Disconnecting and creating new one");
             wsHandler.disconnect(true);
@@ -836,21 +839,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peers.put(streamId, peerInfo);
 
         init();
-        waitForWSHandler();
+       // waitForWSHandler();
         wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
     }
 
 
-    //FIXME find a better way to do this
-    public void waitForWSHandler() {
-        while (wsHandler == null || !wsHandler.isConnected()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     public void play(String streamId) {
         play(streamId, "", null, "", "", "");
@@ -870,8 +863,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peerInfo.metaData = viewerInfo;
         peers.put(streamId, peerInfo);
 
-        init();
-        waitForWSHandler();
+        //init();
+        //waitForWSHandler();
         wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
     }
 
@@ -1266,6 +1259,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onRemoteIceCandidate(String streamId, IceCandidate candidate) {
         this.handler.post(() -> addRemoteIceCandidate(streamId, candidate));
+    }
+
+    @Override
+    public void onWebSocketConnected() {
+       config.webRTCListener.onWebSocketConnected();
+
     }
 
     @Override

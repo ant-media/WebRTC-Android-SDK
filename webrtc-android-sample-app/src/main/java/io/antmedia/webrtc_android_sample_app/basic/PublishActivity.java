@@ -32,6 +32,8 @@ public class PublishActivity extends TestableActivity {
     private String streamId;
     private IWebRTCClient webRTCClient;
 
+    Button startStreamingButton;
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +56,9 @@ public class PublishActivity extends TestableActivity {
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
+        webRTCClient.init();
+
+        startStreamingButton = findViewById(R.id.start_streaming_button);
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -97,6 +101,12 @@ public class PublishActivity extends TestableActivity {
                 super.onPublishStarted(streamId);
                 broadcastingView.setVisibility(View.VISIBLE);
                 decrementIdle();
+            }
+
+            @Override
+            public void onWebSocketConnected() {
+                startStreamingButton.setAlpha(1f);
+
             }
 
             @Override

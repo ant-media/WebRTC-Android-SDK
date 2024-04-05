@@ -188,4 +188,6 @@ public interface IWebRTCListener {
      * @param broadcast
      */
     void onBroadcastObject(Broadcast broadcast);
+
+    void onWebSocketConnected();
 }

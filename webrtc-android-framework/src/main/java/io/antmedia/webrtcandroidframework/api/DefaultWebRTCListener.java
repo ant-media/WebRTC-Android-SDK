@@ -212,6 +212,9 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
     }
 
+    @Override
+    public void onWebSocketConnected() {
 
+    }
 }
 

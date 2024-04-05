@@ -90,6 +90,8 @@ public interface IWebRTCClient {
      */
     void joinToConferenceRoom(String roomId, String streamId);
 
+    void init();
+
     /**
      * This is used to join a conference room as player
      * @param roomId: id for the conference room
