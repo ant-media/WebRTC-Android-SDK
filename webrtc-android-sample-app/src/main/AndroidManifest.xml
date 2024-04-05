@@ -93,6 +93,10 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <activity android:name=".advanced.PublishActivityWithAreYouSpeaking"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
 
         <service
             android:name=".basic.MediaProjectionService"
