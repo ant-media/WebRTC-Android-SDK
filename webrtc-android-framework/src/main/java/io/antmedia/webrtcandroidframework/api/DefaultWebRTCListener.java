@@ -113,7 +113,12 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
-    public void onNewVideoTrack(VideoTrack track, String streamId) {
+    public void onNewVideoTrack(VideoTrack track) {
+        onNewVideoTrack(track, null);
+    }
+
+    @Override
+    public void onNewVideoTrack(VideoTrack track, String trackId) {
         String messageText = "New video track received";
         callbackCalled(messageText);
 
