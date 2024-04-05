@@ -22,7 +22,7 @@ public class StatsCollector {
     private long videoBitrate;
 
     public void onStatsReport(RTCStatsReport report) {
-        Log.i("Stats", "onStatsReport:\n"+report.toString());
+        //Log.i("Stats", "onStatsReport:\n"+report.toString());
 
     }
 
