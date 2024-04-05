@@ -63,7 +63,7 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_conference);
+        setContentView(R.layout.activity_conference_with_speaker_indicators);
 
         SurfaceViewRenderer publisherRenderer = findViewById(R.id.publish_view_renderer);
 
