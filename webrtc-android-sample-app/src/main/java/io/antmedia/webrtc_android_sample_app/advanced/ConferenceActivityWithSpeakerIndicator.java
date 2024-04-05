@@ -52,7 +52,7 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
 
     //Audio level coming from server is between 0 and 100. Lower value means higher audio.
     //All remote conference participants audio levels come from server through data channel.
-    private final int SPEAKING_AUDIO_LEVEL_THRESHOLD = 65;
+    private final int SPEAKING_AUDIO_LEVEL_THRESHOLD = 55;
     //Audio level treshold for local speaker. Higher value means higher audio.
     private final double LOCAL_SPEAKING_AUDIO_LEVEL_THRESHOLD = 0.005;
 
@@ -161,21 +161,14 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
             private void handleAudioLevelUpdate(JSONObject messageJsonObj) throws JSONException {
                 String speakerParticipantStreamId = messageJsonObj.getString("streamId");
                 int audioLevel = messageJsonObj.getInt("audioLevel");
-                //sometimes local participant audio level does not come from datachannel. thats why we have local check.
-                boolean isLocalParticipant = speakerParticipantStreamId.equals(streamId);
                 boolean isSpeaking = audioLevel < SPEAKING_AUDIO_LEVEL_THRESHOLD;
-
-                runOnUiThread(() -> updateSpeakingIndicator(isLocalParticipant, speakerParticipantStreamId, isSpeaking));
+                runOnUiThread(() -> updateSpeakingIndicator(speakerParticipantStreamId, isSpeaking));
             }
 
-            private void updateSpeakingIndicator(boolean isLocalParticipant, String speakerParticipantStreamId, boolean isSpeaking) {
-                if (isLocalParticipant) {
-                    updateSpeakingIndicatorView(publisherSpeakingIndicatorText, isSpeaking);
-                } else {
+            private void updateSpeakingIndicator(String speakerParticipantStreamId, boolean isSpeaking) {
                     int speakerIndicatorIndex = getParticipantIndicator(speakerParticipantStreamId);
                     View indicatorView = getParticipantSpeakingIndicatorView(speakerIndicatorIndex);
                     updateSpeakingIndicatorView(indicatorView, isSpeaking);
-                }
             }
 
             private void updateSpeakingIndicatorView(View indicatorView, boolean isSpeaking) {

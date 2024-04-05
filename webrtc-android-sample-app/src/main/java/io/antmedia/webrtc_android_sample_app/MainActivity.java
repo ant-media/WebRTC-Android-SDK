@@ -22,6 +22,7 @@ import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithSpeakerIndicator;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishWithSurfaceActivity;
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(USBCameraActivity.class, "USB Camera");
         addActivity(MultiTrackPlayActivity.class, "Multi Track");
         addActivity(SettingsActivity.class, "Settings");
+        addActivity(ConferenceActivityWithSpeakerIndicator.class,"Conference with Speaking Indicator");
 
     }
 

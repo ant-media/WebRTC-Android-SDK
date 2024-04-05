@@ -62,7 +62,7 @@ public class StatsCollector {
         double timeMs = 0;
         for (Map.Entry<String, RTCStats> entry : statsMap.entrySet()) {
             RTCStats value = entry.getValue();
-             timeMs = value.getTimestampUs()/1000;
+            timeMs = value.getTimestampUs()/1000;
 
             if (OUTBOUND_RTP.equals(value.getType())) {
                 long timeDiffSeconds = (long) ((timeMs - lastKnownStatsTimeStampMs) / 1000); // convert it to seconds
@@ -92,75 +92,118 @@ public class StatsCollector {
                     lastKnownAudioBytesSent = bytesSent.longValue();
 
                 } else if (VIDEO.equals(value.getMembers().get(MEDIA_TYPE))) {
-                    long ssrc = (long) value.getMembers().get(SSRC);
-                    TrackStats videoTrackStat = videoTrackStatsMap.get(ssrc);
-                    if(videoTrackStat == null) {
-                        videoTrackStat = new TrackStats();
-                        videoTrackStatsMap.put(ssrc, videoTrackStat);
+                    if(value.getMembers().containsKey(SSRC)){
+                        long ssrc = (long) value.getMembers().get(SSRC);
+                        TrackStats videoTrackStat = videoTrackStatsMap.get(ssrc);
+                        if(videoTrackStat == null) {
+                            videoTrackStat = new TrackStats();
+                            videoTrackStatsMap.put(ssrc, videoTrackStat);
+                        }
+                        if (value.getMembers().containsKey(FIR_COUNT)) {
+                            long firCount = (long) value.getMembers().get(FIR_COUNT);
+                            videoTrackStat.setFirCount(firCount);
+                        }
+
+                        if (value.getMembers().containsKey(PLI_COUNT)) {
+                            long pliCount = (long) value.getMembers().get(PLI_COUNT);
+                            videoTrackStat.setPliCount(pliCount);
+                        }
+
+                        if (value.getMembers().containsKey(NACK_COUNT)) {
+                            long nackCount = (long) value.getMembers().get(NACK_COUNT);
+                            videoTrackStat.setNackCount(nackCount);
+                        }
+
+                        if (value.getMembers().containsKey(PACKETS_SENT)) {
+                            long packetsSent = (long) value.getMembers().get(PACKETS_SENT);
+                            videoTrackStat.setPacketsSent(packetsSent);
+                        }
+
+                        if (value.getMembers().containsKey(BYTES_SENT)) {
+                            BigInteger bytesSent = (BigInteger) value.getMembers().get(BYTES_SENT);
+                            videoTrackStat.setBytesSent(bytesSent);
+
+                            localVideoBitrate = (bytesSent.longValue() - lastKnownVideoBytesSent) / timeDiffSeconds * 8;
+                            lastKnownVideoBytesSent = bytesSent.bitCount();
+                        }
+
+                        if (value.getMembers().containsKey(FRAME_ENCODED)) {
+                            long framesEncoded = (long) value.getMembers().get(FRAME_ENCODED);
+                            videoTrackStat.setFramesEncoded(framesEncoded);
+                        }
+
+                        videoTrackStat.setTimeMs((long)timeMs);
+
+                        String trackSenderId = (String) value.getMembers().get(TRACK_ID);
+                        String trackId = (String) statsMap.get(trackSenderId).getMembers().get(TRACK_IDENTIFIER);
+                        trackId = trackId.replace(VIDEO_TRACK_ID, "");
+                        videoTrackStat.setTrackId(trackId);
                     }
-
-                    long firCount = (long)value.getMembers().get(FIR_COUNT);
-                    videoTrackStat.setFirCount(firCount);
-
-                    long pliCount = (long)value.getMembers().get(PLI_COUNT);
-                    videoTrackStat.setPliCount(pliCount);
-
-                    long nackCount = (long)value.getMembers().get(NACK_COUNT);
-                    videoTrackStat.setNackCount(nackCount);
-
-                    long packetsSent = (long)value.getMembers().get(PACKETS_SENT);
-                    videoTrackStat.setPacketsSent(packetsSent);
-                    BigInteger bytesSent = ((BigInteger)value.getMembers().get(BYTES_SENT));
-                    videoTrackStat.setBytesSent(bytesSent);
-
-                    long framesEncoded = (long)value.getMembers().get(FRAME_ENCODED);
-                    videoTrackStat.setFramesEncoded(framesEncoded);
-
-                    videoTrackStat.setTimeMs((long)timeMs);
-
-                    String trackSenderId = (String) value.getMembers().get(TRACK_ID);
-                    String trackId = (String) statsMap.get(trackSenderId).getMembers().get(TRACK_IDENTIFIER);
-                    trackId = trackId.replace(VIDEO_TRACK_ID, "");
-
-                    videoTrackStat.setTrackId(trackId);
-
-                    localVideoBitrate = (bytesSent.longValue() - lastKnownVideoBytesSent) / timeDiffSeconds * 8;
-                    lastKnownVideoBytesSent = bytesSent.bitCount();
 
                 }
 
             } else if (REMOTE_INBOUND_RTP.equals(value.getType()) ) {
                 if (VIDEO.equals(value.getMembers().get(KIND))) {
-                    long ssrc = (long) value.getMembers().get(SSRC);
-                    TrackStats videoTrackStat = videoTrackStatsMap.get(ssrc);
-                    if(videoTrackStat == null) {
-                        videoTrackStat = new TrackStats();
-                        videoTrackStatsMap.put(ssrc, videoTrackStat);
+
+                    if(value.getMembers().containsKey(SSRC)) {
+                        long ssrc = (long) value.getMembers().get(SSRC);
+                        TrackStats videoTrackStat = videoTrackStatsMap.get(ssrc);
+                        if(videoTrackStat == null) {
+                            videoTrackStat = new TrackStats();
+                            videoTrackStatsMap.put(ssrc, videoTrackStat);
+                        }
+
+                        if(value.getMembers().containsKey(PACKETS_LOST)){
+                            long packetsLost = (int)value.getMembers().get(PACKETS_LOST);
+                            videoTrackStat.setPacketsLost(packetsLost);
+                        }
+
+                        if(value.getMembers().containsKey(JITTER)) {
+                            double jitter = (double)value.getMembers().get(JITTER);
+                            videoTrackStat.setJitter(jitter);
+
+                        }
+
+                        if(value.getMembers().containsKey(ROUND_TRIP_TIME)) {
+                            double roundTripTime = (double)value.getMembers().get(ROUND_TRIP_TIME);
+                            videoTrackStat.setRoundTripTime(roundTripTime);
+
+                        }
+
                     }
 
-                    long packetsLost = (int)value.getMembers().get(PACKETS_LOST);
-                    double jitter = (double)value.getMembers().get(JITTER);
-                    double roundTripTime = (double)value.getMembers().get(ROUND_TRIP_TIME);
-
-                    videoTrackStat.setPacketsLost(packetsLost);
-                    videoTrackStat.setJitter(jitter);
-                    videoTrackStat.setRoundTripTime(roundTripTime);
 
                 } else if (AUDIO.equals(value.getMembers().get(KIND))) {
-                    long ssrc = (long) value.getMembers().get(SSRC);
-                    TrackStats audioTrackStat = audioTrackStatsMap.get(ssrc);
-                    if(audioTrackStat == null) {
-                        audioTrackStat = new TrackStats();
-                        audioTrackStatsMap.put(ssrc, audioTrackStat);
+                    if(value.getMembers().containsKey(SSRC)){
+                        long ssrc = (long) value.getMembers().get(SSRC);
+                        TrackStats audioTrackStat = audioTrackStatsMap.get(ssrc);
+                        if(audioTrackStat == null) {
+                            audioTrackStat = new TrackStats();
+                            audioTrackStatsMap.put(ssrc, audioTrackStat);
+                        }
+
+                        if(value.getMembers().containsKey(PACKETS_LOST)){
+                            long packetsLost = (int)value.getMembers().get(PACKETS_LOST);
+                            audioTrackStat.setPacketsLost(packetsLost);
+                        }
+
+                        if(value.getMembers().containsKey(JITTER)) {
+                            double jitter = (double)value.getMembers().get(JITTER);
+                            audioTrackStat.setJitter(jitter);
+
+                        }
+
+                        if(value.getMembers().containsKey(ROUND_TRIP_TIME)) {
+                            double roundTripTime = (double)value.getMembers().get(ROUND_TRIP_TIME);
+                            audioTrackStat.setRoundTripTime(roundTripTime);
+
+                        }
+
                     }
 
-                    long packetsLost = (int)value.getMembers().get(PACKETS_LOST);
-                    double jitter = (double)value.getMembers().get(JITTER);
-                    double roundTripTime = (double)value.getMembers().get(ROUND_TRIP_TIME);
 
-                    audioTrackStat.setPacketsLost(packetsLost);
-                    audioTrackStat.setJitter(jitter);
-                    audioTrackStat.setRoundTripTime(roundTripTime);
+
+
                 }
             }else if("media-source".equals(value.getType())){
                 Map<String,Object> members =  value.getMembers();
@@ -171,6 +214,7 @@ public class StatsCollector {
         }
         lastKnownStatsTimeStampMs = timeMs;
     }
+
 
     public static class TrackStats {
         /**
