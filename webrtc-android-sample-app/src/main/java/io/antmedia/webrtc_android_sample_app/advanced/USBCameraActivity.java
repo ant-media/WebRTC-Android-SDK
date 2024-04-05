@@ -119,6 +119,7 @@ public final class USBCameraActivity extends TestableActivity implements Handler
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                streamId = streamIdEditText.getText().toString();
                 startStopStream(v);
             }
         });
