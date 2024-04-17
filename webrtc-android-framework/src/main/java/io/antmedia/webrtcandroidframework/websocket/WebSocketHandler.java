@@ -108,10 +108,8 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     @Override
     public void onOpen() {
-
-        signallingListener.onWebSocketConnected();
-
         Log.d(TAG, "WebSocket connection opened.");
+        signallingListener.onWebSocketConnected();
     }
 
     @Override

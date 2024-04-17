@@ -132,6 +132,16 @@ public class MP4PublishActivity extends TestableActivity {
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
             @Override
+            public void onWebSocketConnected() {
+                super.onWebSocketConnected();
+                runOnUiThread(() -> {
+                    startStreamingButton.setEnabled(true);
+                    Toast.makeText(MP4PublishActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
+
+                });
+            }
+
+            @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
                 broadcastingView.setVisibility(View.VISIBLE);

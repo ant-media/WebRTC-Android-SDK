@@ -17,6 +17,7 @@ import org.webrtc.SurfaceViewRenderer;
 
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
+import io.antmedia.webrtc_android_sample_app.advanced.USBCameraActivity;
 import io.antmedia.webrtcandroidframework.api.DefaultConferenceWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
@@ -113,6 +114,15 @@ public class ConferenceActivity extends TestableActivity {
 
     private DefaultConferenceWebRTCListener createWebRTCListener(String roomId, String streamId) {
         return new DefaultConferenceWebRTCListener(roomId, streamId) {
+            @Override
+            public void onWebSocketConnected() {
+                super.onWebSocketConnected();
+                runOnUiThread(() -> {
+                    joinButton.setEnabled(true);
+                    Toast.makeText(ConferenceActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
+
+                });
+            }
 
             @Override
             public void onPublishStarted(String streamId) {

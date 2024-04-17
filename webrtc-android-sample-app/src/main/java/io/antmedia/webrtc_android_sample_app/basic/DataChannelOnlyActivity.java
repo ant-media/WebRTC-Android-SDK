@@ -138,6 +138,17 @@ public class DataChannelOnlyActivity extends TestableActivity {
 
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
+
+            @Override
+            public void onWebSocketConnected() {
+                super.onWebSocketConnected();
+                runOnUiThread(() -> {
+                    startStreamingButton.setEnabled(true);
+                    Toast.makeText(DataChannelOnlyActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
+
+                });
+            }
+
             @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);

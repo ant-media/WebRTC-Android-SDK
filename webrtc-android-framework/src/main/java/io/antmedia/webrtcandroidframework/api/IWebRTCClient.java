@@ -263,4 +263,9 @@ public interface IWebRTCClient {
      */
     void toggleAudioOfAllParticipants(boolean enabled);
 
+    /**
+     * Returns true if websocket is connected to server, false otherwise.
+     */
+    boolean isConnected();
+
 }

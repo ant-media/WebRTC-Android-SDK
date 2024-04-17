@@ -142,7 +142,7 @@ public class WebRTCClientConfig {
     /*
      * Flag indicating whether initate WebRTCClient (renderers, websocket, capturers etc.)  before stream publish starts
      */
-    public boolean initiateBeforeStream;
+    public boolean initiateBeforeStream = true;
 
     /*
      * Flag indicating whether custom audio feed is enabled

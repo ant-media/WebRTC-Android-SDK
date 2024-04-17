@@ -62,6 +62,7 @@ public class MP3PublishActivity extends TestableActivity {
                 .withAudioFrameListener(audioData -> onAudioData(audioData));
 
         View startStreamingButton = findViewById(R.id.start_streaming_button);
+
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -106,6 +107,16 @@ public class MP3PublishActivity extends TestableActivity {
 
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
+            @Override
+            public void onWebSocketConnected() {
+                super.onWebSocketConnected();
+                runOnUiThread(() -> {
+                    startStreamingButton.setEnabled(true);
+                    Toast.makeText(MP3PublishActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
+
+                });
+            }
+
             @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);

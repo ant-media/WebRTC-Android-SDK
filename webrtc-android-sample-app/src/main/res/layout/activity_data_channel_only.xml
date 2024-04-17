@@ -22,6 +22,7 @@
             />
 
         <Button
+            android:enabled="false"
             android:id="@+id/start_streaming_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

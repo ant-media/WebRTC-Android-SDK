@@ -157,6 +157,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private PeerConnectionFactory factory;
     private boolean requestExtendedRights = false;
 
+    private boolean closed = false;
+
     public static class PeerInfo {
 
         public PeerInfo(String id, Mode mode) {
@@ -825,6 +827,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
                         String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
+        if(!isConnected()){
+            Log.e(TAG, "Websocket is not connected. Can't publish.");
+            return;
+        }
+
+        if(closed){
+            init();
+        }
+
         Log.e(TAG, "Publish: "+streamId);
         requestExtendedRights = true;
 
@@ -838,8 +849,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peerInfo.mainTrackId = mainTrackId;
         peers.put(streamId, peerInfo);
 
-        init();
-       // waitForWSHandler();
         wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
     }
 
@@ -854,6 +863,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
+        if(!isConnected()){
+            Log.e(TAG, "Websocket is not connected. Can't play.");
+            return;
+        }
+
+        if(closed){
+            init();
+        }
+
         Log.e(TAG, "Play: "+streamId);
 
         PeerInfo peerInfo = new PeerInfo(streamId, Mode.PLAY);
@@ -863,8 +881,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peerInfo.metaData = viewerInfo;
         peers.put(streamId, peerInfo);
 
-        //init();
-        //waitForWSHandler();
         wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
     }
 
@@ -923,6 +939,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             wsHandler.disconnect(true);
             wsHandler = null;
         }
+
         if (config.localVideoRenderer != null) {
             releaseRenderer(config.localVideoRenderer,localVideoTrack,localVideoSink);
         }
@@ -1732,7 +1749,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             peers.clear();
         }
 
-
         Log.d(TAG, "Closing audio source.");
         if (audioSource != null) {
             audioSource.dispose();
@@ -1740,21 +1756,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
         Log.d(TAG, "Stopping capture.");
         if (videoCapturer != null && !videoCapturerStopped) {
-            try {
+           try {
                 videoCapturer.stopCapture();
             } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+               throw new RuntimeException(e);
+           }
             videoCapturerStopped = true;
         }
+
+
         Log.d(TAG, "Closing video source.");
         if (videoSource != null) {
             videoSource.dispose();
             videoSource = null;
         }
-        if (surfaceTextureHelper != null) {
+
+       if (surfaceTextureHelper != null) {
             surfaceTextureHelper.dispose();
-            surfaceTextureHelper = null;
+          surfaceTextureHelper = null;
         }
 
         Log.d(TAG, "Closing peer connection factory.");
@@ -1762,15 +1781,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             factory.dispose();
             factory = null;
         }
+
         if(eglBase != null) {
             eglBase.release();
-            eglBase = null;
+           eglBase = null;
         }
 
         localVideoSink.setTarget(null);
 
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
+        closed = true;
     }
 
 
@@ -2312,5 +2333,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setPermissionsHandlerForTest(PermissionsHandler permissionsHandler) {
         this.permissionsHandler = permissionsHandler;
+    }
+
+    public boolean isConnected(){
+        return wsHandler.isConnected();
     }
 }

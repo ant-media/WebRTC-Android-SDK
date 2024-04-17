@@ -189,5 +189,9 @@ public interface IWebRTCListener {
      */
     void onBroadcastObject(Broadcast broadcast);
 
+    /**
+    * It's called when websocket connection established to server.
+    * @param broadcast
+    */
     void onWebSocketConnected();
 }
