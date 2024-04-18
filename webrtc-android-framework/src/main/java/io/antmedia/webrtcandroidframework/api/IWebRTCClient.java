@@ -60,6 +60,13 @@ public interface IWebRTCClient {
     void play(String streamId);
 
     /**
+     * This is used to play a WebRTC stream
+     * @param streamId: id for the stream to play
+     * @param requestBluetoothForPlay: If true request bluetooth permission before play.
+     */
+    void play(String streamId, boolean requestBluetoothForPlay);
+
+    /**
      * This is used to play a multitrack WebRTC stream
      * @param streamId: id for the stream to play
      * @param tracks: subtracks to play in multitrack stream
@@ -68,14 +75,15 @@ public interface IWebRTCClient {
 
     /**
      * This is used to play a WebRTC stream with all parameters
-     * @param streamId: id for the stream to play
-     * @param token: token to authenticate
-     * @param tracks: subtracks to play in multitrack stream
-     * @param subscriberId: id of the subscriber
-     * @param subscriberCode: code of the subscriber
-     * @param viewerInfo: viewer info, any string is accepted
+     * @param streamId : id for the stream to play
+     * @param token : token to authenticate
+     * @param tracks : subtracks to play in multitrack stream
+     * @param subscriberId : id of the subscriber
+     * @param subscriberCode : code of the subscriber
+     * @param viewerInfo : viewer info, any string is accepted
+     * @param requestBluetoothForPlay
      */
-    void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo);
+    void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo, boolean requestBluetoothForPlay);
 
     /**
      * This is used to join a peer to peer call

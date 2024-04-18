@@ -215,7 +215,7 @@ public class WebRTCClientTest {
         webRTCClient.setAudioEnabled(audioCallEnabled);
         webRTCClient.setVideoEnabled(videoCallEnabled);
 
-        webRTCClient.play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+        webRTCClient.play(streamId, token, null, subscriberId, subscriberCode, viewerInfo, false);
 
         verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
 
@@ -410,6 +410,15 @@ public class WebRTCClientTest {
 
         // Verify that the audio device is selected using the AudioManager
         Mockito.verify(audioManager).selectAudioDevice(device);
+
+        availableDevices.clear();
+
+        availableDevices.add(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+        AppRTCAudioManager.AudioDevice speakerDevice = AppRTCAudioManager.AudioDevice.SPEAKER_PHONE;
+
+        webRTCClient.onAudioManagerDevicesChanged(speakerDevice, availableDevices);
+        Mockito.verify(audioManager).selectAudioDevice(speakerDevice);
+
     }
 
     @Test
@@ -632,7 +641,7 @@ public class WebRTCClientTest {
         tracks = new String[]{"other1", "self", "other2"};
 
         doNothing().when(webRTCClient).init();
-        doNothing().when(webRTCClient).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+        doNothing().when(webRTCClient).play(anyString(), anyString(), any(), anyString(), anyString(), anyString(), anyBoolean());
         doReturn("self").when(webRTCClient).getPublishStreamId();
         doReturn("main").when(webRTCClient).getMultiTrackStreamId();
         doReturn(false).when(webRTCClient).isStreaming("main");
@@ -663,7 +672,7 @@ public class WebRTCClientTest {
         doNothing().when(webRTCClient).init();
 
         String playStreamId = "playStreamId";
-        webRTCClient.play(playStreamId, "", null, "", "", "");
+        webRTCClient.play(playStreamId, "", null, "", "", "", false);
 
         String publishStreamId = "publishStreamId";
         webRTCClient.publish(publishStreamId, "", true, true, "","", "", "");
@@ -672,7 +681,7 @@ public class WebRTCClientTest {
 
         verify(listener, timeout(1000)).onDisconnected();
 
-        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString(), anyBoolean());
         verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).publish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
     }
 
@@ -751,7 +760,7 @@ public class WebRTCClientTest {
         webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
 
         webRTCClient.publish("stream1");
-        verify(permissionsHandler).checkAndRequestPermisssions(eq(true), any());
+        verify(permissionsHandler).checkAndRequestPermisssions(eq(true), eq(false), any());
     }
 
     @Test
@@ -765,7 +774,21 @@ public class WebRTCClientTest {
         webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
 
         webRTCClient.play("stream1");
-        verify(permissionsHandler).checkAndRequestPermisssions(eq(false), any());
+        verify(permissionsHandler).checkAndRequestPermisssions(eq(false), eq(false), any());
+    }
+
+    @Test
+    public void testCheckPermissionsForBluetoothPlay() {
+        mockMethodsInInit();
+
+        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+
+        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
+        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
+
+        webRTCClient.play("stream1", true);
+        verify(permissionsHandler).checkAndRequestPermisssions(eq(false), eq(true), any());
     }
 
     @Test
@@ -779,7 +802,7 @@ public class WebRTCClientTest {
         webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
 
         webRTCClient.join("stream1");
-        verify(permissionsHandler, times(1)).checkAndRequestPermisssions(eq(true), any());
+        verify(permissionsHandler, times(1)).checkAndRequestPermisssions(eq(true), eq(false), any());
     }
 
     private void mockMethodsInInit() {

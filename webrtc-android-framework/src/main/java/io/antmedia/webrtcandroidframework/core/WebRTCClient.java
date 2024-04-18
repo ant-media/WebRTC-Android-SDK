@@ -156,6 +156,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @androidx.annotation.Nullable
     private PeerConnectionFactory factory;
     private boolean requestExtendedRights = false;
+    private boolean requestBluetoothForPlay = false;
 
     public static class PeerInfo {
 
@@ -272,7 +273,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                         null,
                                         peerInfo.subscriberId,
                                         peerInfo.subscriberCode,
-                                        peerInfo.metaData);
+                                        peerInfo.metaData, false);
                             }
                             else if (peerInfo.mode.equals(Mode.P2P)) {
                                 config.localVideoRenderer.setZOrderOnTop(true);
@@ -614,7 +615,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public boolean checkPermissions(PermissionsHandler.PermissionCallback permissionCallback) {
-        return permissionsHandler.checkAndRequestPermisssions(requestExtendedRights, permissionCallback);
+        return permissionsHandler.checkAndRequestPermisssions(requestExtendedRights, requestBluetoothForPlay, permissionCallback);
     }
 
     public void initializeParameters() {
@@ -853,15 +854,23 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void play(String streamId) {
-        play(streamId, "", null, "", "", "");
+        play(streamId, "", null, "", "", "", false);
+    }
+
+    public void play(String streamId, boolean requestBluetoothForPlay) {
+        play(streamId, "", null, "", "", "", requestBluetoothForPlay);
     }
 
     public void play(String streamId, String[] tracks) {
-        play(streamId, "", tracks, "", "", "");
+        play(streamId, "", tracks, "", "", "", false);
     }
 
-    public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
+    public void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo, boolean requestBluetoothForPlay) {
         Log.e(TAG, "Play: "+streamId);
+
+        if(requestBluetoothForPlay){
+            this.requestBluetoothForPlay = true;
+        }
 
         PeerInfo peerInfo = new PeerInfo(streamId, Mode.PLAY);
         peerInfo.token = token;
@@ -918,7 +927,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.d(TAG, "onAudioManagerDevicesChanged: " + availableDevices + ", "
                 + "selected: " + device);
         // TODO(henrika): add callback handler.
+
         if(audioManager != null) {
+
+            for (AppRTCAudioManager.AudioDevice audioDevice : availableDevices) {
+                Log.d(TAG, "Audio device: " + audioDevice);
+                //always choose bluetooth device if available
+                if (audioDevice == AppRTCAudioManager.AudioDevice.BLUETOOTH) {
+                    audioManager.selectAudioDevice(AppRTCAudioManager.AudioDevice.BLUETOOTH);
+                    return;
+                }
+            }
+
             audioManager.selectAudioDevice(device);
         }
     }
