@@ -1,5 +1,6 @@
 package io.antmedia.webrtcandroidframework.websocket;
 
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
@@ -30,6 +31,10 @@ import com.google.gson.GsonBuilder;
 public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     private static final String TAG = "WebSocketHandler";
     private static final int CLOSE_TIMEOUT = 1000;
+    private static final int WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS = 5000;
+
+    Runnable websocketReconnectorRunnable;
+    private Handler wsReconnectionHandler = new Handler();
 
     private WebSocketConnection ws;
     private final Handler handler;
@@ -555,5 +560,35 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setUpWebsocketReconnection() {
+        if(websocketReconnectorRunnable != null){
+            return;
+        }
+        websocketReconnectorRunnable = () -> {
+            wsReconnectionHandler.postDelayed(websocketReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+            if (!isConnected()) {
+                connect(wsServerUrl);
+            }
+        };
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (!wsReconnectionHandler.hasCallbacks(websocketReconnectorRunnable)) {
+                wsReconnectionHandler.postDelayed(websocketReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+            }
+        } else {
+            wsReconnectionHandler.postDelayed(websocketReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+        }
+
+
+    }
+
+    public void stopReconnector(){
+        if(wsReconnectionHandler == null){
+            return;
+        }
+        wsReconnectionHandler.removeCallbacksAndMessages(null);
+        wsReconnectionHandler = null;
     }
 }

@@ -169,4 +169,13 @@ public class ConferenceActivity extends TestableActivity {
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(state);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(webRTCClient != null){
+            webRTCClient.stopWebsocketReconnector();
+        }
+    }
+
 }

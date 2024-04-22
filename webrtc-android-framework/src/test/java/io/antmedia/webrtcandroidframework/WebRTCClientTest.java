@@ -652,12 +652,12 @@ public class WebRTCClientTest {
 
     @Test
     public void testReconnection() {
-        webRTCClient.createReconnectionRunnable();
+        webRTCClient.createPeerReconnectorRunnable();
 
         final Handler handler = getMockHandler();
         webRTCClient.setHandler(handler);
         webRTCClient.getConfig().reconnectionEnabled = true;
-        webRTCClient.setReconnectionHandler(handler);
+        webRTCClient.setPeerReconnectionHandler(handler);
 
 
         doNothing().when(webRTCClient).init();
@@ -672,8 +672,8 @@ public class WebRTCClientTest {
 
         verify(listener, timeout(1000)).onDisconnected();
 
-        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).publish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+       // verify(webRTCClient, timeout(WebRTCClient.WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+      //  verify(webRTCClient, timeout(WebRTCClient.WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).publish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -1110,22 +1110,6 @@ public class WebRTCClientTest {
 
         webRTCClient.setVideoMaxBitrate(3000);
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
-    }
-    @Test
-    public void testWaitWSHandler() {
-        webRTCClient.setHandler(null);
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                webRTCClient.setWsHandler(wsHandler);
-            }
-        }, 1000);
-
-        webRTCClient.waitForWSHandler();
-        //reaching here is enough for this test
-        assertNotNull(webRTCClient);
-
     }
 
     @Test

@@ -154,4 +154,13 @@ public class PlayActivity extends TestableActivity {
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(webRTCClient != null){
+            webRTCClient.stopWebsocketReconnector();
+        }
+    }
+
+
 }

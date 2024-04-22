@@ -30,6 +30,7 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 public class PublishActivity extends TestableActivity {
     private View broadcastingView;
     private String streamId;
+
     private IWebRTCClient webRTCClient;
 
     Button startStreamingButton;
@@ -150,5 +151,14 @@ public class PublishActivity extends TestableActivity {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(webRTCClient != null){
+            webRTCClient.stopWebsocketReconnector();
+        }
+    }
+
 
 }

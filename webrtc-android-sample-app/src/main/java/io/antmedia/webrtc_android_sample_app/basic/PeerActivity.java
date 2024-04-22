@@ -103,7 +103,7 @@ public class PeerActivity extends TestableActivity {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
                     startStreamingButton.setEnabled(true);
-                    Toast.makeText(PeerActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PeerActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
 
                 });
             }
@@ -155,5 +155,14 @@ public class PeerActivity extends TestableActivity {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(webRTCClient != null){
+            webRTCClient.stopWebsocketReconnector();
+        }
+    }
+
 
 }

@@ -268,4 +268,10 @@ public interface IWebRTCClient {
      */
     boolean isConnected();
 
+    /**
+     * Stop websocket reconnector. Ideally call this when you are done with streaming.
+     * @param broadcast
+     */
+    void stopWebsocketReconnector();
+
 }

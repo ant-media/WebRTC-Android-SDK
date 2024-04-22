@@ -191,4 +191,13 @@ public class ScreenCaptureActivity extends TestableActivity {
         webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
         decrementIdle();
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(webRTCClient != null){
+            webRTCClient.stopWebsocketReconnector();
+        }
+    }
+
 }
