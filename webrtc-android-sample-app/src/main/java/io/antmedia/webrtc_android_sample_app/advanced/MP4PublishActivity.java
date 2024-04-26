@@ -75,6 +75,7 @@ public class MP4PublishActivity extends TestableActivity {
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                streamId = streamIdEditText.getText().toString();
                 startStopStream(v);
             }
         });
