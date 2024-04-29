@@ -10,6 +10,7 @@ android {
         applicationId "io.antmedia.webrtc_android_sample_app"
         minSdkVersion 22
         targetSdkVersion 33
+        multiDexEnabled true
 
         versionCode 1
         versionName "1.0"
