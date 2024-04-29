@@ -547,7 +547,7 @@ public class WebRTCClientTest {
         pcObserver.onRemoveStream(new MediaStream(0));
         pcObserver.onRenegotiationNeeded();
         pcObserver.onDataChannel(mock(DataChannel.class));
-        
+
         webRTCClient.getRemoteVideoSinks().add(mock(ProxyVideoSink.class));
         MediaStream[] tracks = {new MediaStream(0)};
         PeerConnection pc = mock(PeerConnection.class);
@@ -1111,6 +1111,43 @@ public class WebRTCClientTest {
         webRTCClient.setVideoMaxBitrate(3000);
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
     }
+
+    @Test
+        public void registerPushNotificationToken_registersTokenWhenWebSocketHandlerIsConnected() {
+            when(wsHandler.isConnected()).thenReturn(true);
+
+            webRTCClient.registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+
+            verify(wsHandler, times(1)).registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+        }
+
+        @Test
+        public void registerPushNotificationToken_doesNotRegisterTokenWhenWebSocketHandlerIsNotConnected() {
+            when(wsHandler.isConnected()).thenReturn(false);
+
+            webRTCClient.registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+
+            verify(wsHandler, times(0)).registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+        }
+    
+        @Test
+        public void sendPushNotification_sendsNotificationWhenWebSocketHandlerIsConnected() {
+            when(wsHandler.isConnected()).thenReturn(true);
+
+            webRTCClient.sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+
+            verify(wsHandler, times(1)).sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+        }
+
+        @Test
+        public void sendPushNotification_doesNotSendNotificationWhenWebSocketHandlerIsNotConnected() {
+            when(wsHandler.isConnected()).thenReturn(false);
+
+            webRTCClient.sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+
+            verify(wsHandler, times(0)).sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+        }
+
     @Test
     public void testWaitWSHandler() {
         webRTCClient.setHandler(null);
