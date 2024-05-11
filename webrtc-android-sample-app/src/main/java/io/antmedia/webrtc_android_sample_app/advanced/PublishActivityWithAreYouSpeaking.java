@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
-import io.antmedia.webrtc_android_sample_app.utility.SoundMeter;
+import io.antmedia.webrtcandroidframework.utility.SoundMeter;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;

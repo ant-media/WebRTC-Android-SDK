@@ -1,4 +1,4 @@
-package io.antmedia.webrtc_android_sample_app.utility;
+package io.antmedia.webrtcandroidframework.utility;
 
 public interface LocalAudioLevelListener {
     void onAudioLevelUpdated(double decibelLevel);
