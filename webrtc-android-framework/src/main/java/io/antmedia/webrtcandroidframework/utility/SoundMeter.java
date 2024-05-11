@@ -1,4 +1,4 @@
-package io.antmedia.webrtc_android_sample_app.utility;
+package io.antmedia.webrtcandroidframework.utility;
 
 import android.Manifest;
 import android.app.Activity;
@@ -31,19 +31,12 @@ public class SoundMeter {
 
     }
 
-    public SoundMeter(Activity activity, LocalAudioLevelListener listener) {
-        this.activity = activity;
-        this.audioLevelListener = listener;
-        init();
-
-    }
-
     private void init(){
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             throw new SecurityException("RECORD_AUDIO permission not granted.");
 
         }
-        this.audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BUFFER_SIZE);
+        setAudioRecord(new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT, BUFFER_SIZE));
 
     }
 
@@ -80,7 +73,7 @@ public class SoundMeter {
         }
     }
 
-    private double calculateRMS(short[] audioData, int numSamples) {
+    public double calculateRMS(short[] audioData, int numSamples) {
         double sum = 0;
         for (int i = 0; i < numSamples; i++) {
             sum += audioData[i] * audioData[i];
@@ -89,4 +82,7 @@ public class SoundMeter {
         return Math.sqrt(mean);
     }
 
+    public void setAudioRecord(AudioRecord audioRecord) {
+        this.audioRecord = audioRecord;
+    }
 }
