@@ -558,6 +558,8 @@ public class WebRTCClientTest {
         when(receiver.track()).thenReturn(videoTrack);
         when(pc.getTransceivers()).thenReturn(Collections.singletonList(transceiver));
         webRTCClient.addPeerConnection(streamId, pc);
+
+        when(receiver.id()).thenReturn("ARDAMSX"+streamId);
         pcObserver.onAddTrack(receiver, tracks);
         verify(listener, times(1)).onNewVideoTrack(videoTrack, streamId);
 
