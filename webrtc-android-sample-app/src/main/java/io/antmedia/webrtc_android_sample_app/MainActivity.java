@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(MP4PublishWithSurfaceActivity.class, "mp4 with Surface");
         addActivity(USBCameraActivity.class, "USB Camera");
         addActivity(MultiTrackPlayActivity.class, "Multi Track");
+        addActivity(PublishActivityWithAreYouSpeaking.class, "Are you talking?");
         addActivity(SettingsActivity.class, "Settings");
         addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
 
