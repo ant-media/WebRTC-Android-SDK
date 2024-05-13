@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "io.antmedia.webrtc_android_sample_app"
-        minSdkVersion 22
+        minSdkVersion 26
         targetSdkVersion 33
         multiDexEnabled true
 
