@@ -1,7 +1,5 @@
 package io.antmedia.webrtcandroidframework.core;
 
-import android.util.Log;
-
 import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
 
@@ -9,9 +7,14 @@ import java.math.BigInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Mostly used to retrieve localAudioLevel or
+ * webrtc connection quality parameters such as RTT, Jitter etc.
+ */
+
 public class StatsCollector {
     public static final String SSRC = "ssrc";
-    private static final String OUTBOUND_RTP = "outbound-rtp";
+    public static final String OUTBOUND_RTP = "outbound-rtp";
     private static final String AUDIO = "audio";
     private static final String MEDIA_TYPE = "mediaType";
     private static final String PACKETS_SENT = "packetsSent";
@@ -42,7 +45,9 @@ public class StatsCollector {
     public static final String AUDIO_TRACK_ID = "ARDAMSa";
 
     private double lastKnownStatsTimeStampMs;
+
     private long lastKnownAudioBytesSent;
+
     private long lastKnownVideoBytesSent;
     private long localAudioBitrate;
     private long localVideoBitrate;
@@ -167,12 +172,8 @@ public class StatsCollector {
                         if(value.getMembers().containsKey(ROUND_TRIP_TIME)) {
                             double roundTripTime = (double)value.getMembers().get(ROUND_TRIP_TIME);
                             videoTrackStat.setRoundTripTime(roundTripTime);
-
                         }
-
                     }
-
-
                 } else if (AUDIO.equals(value.getMembers().get(KIND))) {
                     if(value.getMembers().containsKey(SSRC)){
                         long ssrc = (long) value.getMembers().get(SSRC);
@@ -196,14 +197,8 @@ public class StatsCollector {
                         if(value.getMembers().containsKey(ROUND_TRIP_TIME)) {
                             double roundTripTime = (double)value.getMembers().get(ROUND_TRIP_TIME);
                             audioTrackStat.setRoundTripTime(roundTripTime);
-
                         }
-
                     }
-
-
-
-
                 }
             }else if("media-source".equals(value.getType())){
                 Map<String,Object> members =  value.getMembers();
@@ -235,10 +230,6 @@ public class StatsCollector {
         private float packetLostRatio;
 
         private long packetsLostDifference;
-
-
-        /***************************************/
-
 
         long firCount;
         long pliCount;
@@ -428,12 +419,20 @@ public class StatsCollector {
         return localAudioLevel;
     }
 
-    public double getLocalAudioBitrate(){
+    public long getLocalAudioBitrate(){
         return localAudioBitrate;
     }
 
-    public double getLocalVideoBitrate(){
+    public long getLocalVideoBitrate(){
         return localVideoBitrate;
+    }
+
+    public long getLastKnownAudioBytesSent() {
+        return lastKnownAudioBytesSent;
+    }
+
+    public long getLastKnownVideoBytesSent() {
+        return lastKnownVideoBytesSent;
     }
 
     public Map<Long, TrackStats> getVideoTrackStatsMap(){
