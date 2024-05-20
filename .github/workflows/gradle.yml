@@ -84,7 +84,7 @@ jobs:
             emulator.log
 
       - name: Upload Test Report to Codecov
-        uses: codecov/codecov-action@v4.3.1
+        uses: codecov/codecov-action@v3.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
