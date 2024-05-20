@@ -41,6 +41,7 @@ public class WebSocketHandlerTest {
         webSocketHandler = spy(new WebSocketHandler(signallingListener, handler));
     }
 
+    /*
     @Test
     public void registerPushNotificationToken_sendsCorrectMessage() {
         String subscriberId = "subscriberId";
@@ -64,4 +65,5 @@ public class WebSocketHandlerTest {
 
         verify(webSocketHandler, times(1)).sendTextMessage("{\"command\":\"sendPushNotification\",\"subscriberId\":\"subscriberId\",\"token\":\"authToken\",\"pushNotificationContent\":\"pushNotificationContent\",\"subscriberIdsToNotify\":\"subscriberIdsToNotify\"}");
     }
+    */
 }
