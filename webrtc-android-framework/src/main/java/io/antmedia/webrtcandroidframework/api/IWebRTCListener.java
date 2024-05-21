@@ -195,4 +195,8 @@ public interface IWebRTCListener {
     */
     void onWebSocketConnected();
 
+  /**
+   * It's called when peer connection is closed.
+   */
+     void onPeerConnectionClosed();
 }

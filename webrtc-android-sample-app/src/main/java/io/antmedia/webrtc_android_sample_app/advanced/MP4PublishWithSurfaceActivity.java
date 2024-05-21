@@ -148,9 +148,7 @@ public class MP4PublishWithSurfaceActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
-                    Toast.makeText(MP4PublishWithSurfaceActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
+                    Toast.makeText(MP4PublishWithSurfaceActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
                 });
             }
 

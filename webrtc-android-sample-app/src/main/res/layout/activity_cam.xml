@@ -70,7 +70,7 @@
         android:layout_above="@id/start_streaming_button"/>
 
     <Button
-        android:enabled="false"
+        android:enabled="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Start Streaming"

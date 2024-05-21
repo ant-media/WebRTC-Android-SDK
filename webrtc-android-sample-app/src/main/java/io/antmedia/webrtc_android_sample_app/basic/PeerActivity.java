@@ -102,7 +102,6 @@ public class PeerActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
                     Toast.makeText(PeerActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
 
                 });

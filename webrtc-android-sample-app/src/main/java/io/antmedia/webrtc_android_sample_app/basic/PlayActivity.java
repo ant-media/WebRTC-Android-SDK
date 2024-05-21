@@ -28,8 +28,8 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PlayActivity extends TestableActivity {
-    private View broadcastingView;
-    private View startStreamingButton;
+    private TextView playStatusTextView;
+    private Button startStreamingButton;
     private View streamInfoListSpinner;
     private String streamId;
     private IWebRTCClient webRTCClient;
@@ -42,12 +42,13 @@ public class PlayActivity extends TestableActivity {
         setContentView(R.layout.activity_play);
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        playStatusTextView = findViewById(R.id.broadcasting_text_view);
         startStreamingButton = findViewById(R.id.start_streaming_button);
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         streamIdEditText.setText("streamId");
 
         webRTCClient = IWebRTCClient.builder()
@@ -71,15 +72,11 @@ public class PlayActivity extends TestableActivity {
         incrementIdle();
         streamId = streamIdEditText.getText().toString();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling play start");
-
             webRTCClient.play(streamId);
         }
         else {
-            ((Button) v).setText("Start");
             Log.i(getClass().getSimpleName(), "Calling play start");
-
             webRTCClient.stop(streamId);
         }
     }
@@ -89,7 +86,6 @@ public class PlayActivity extends TestableActivity {
             @Override
             public void textMessageReceived(String messageText) {
                 super.textMessageReceived(messageText);
-                Toast.makeText(PlayActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -100,23 +96,46 @@ public class PlayActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
-                    Toast.makeText(PlayActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
+                    Toast.makeText(PlayActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
                 });
+            }
+
+            @Override
+            public void onPeerConnectionClosed() {
+                super.onPeerConnectionClosed();
+                startStreamingButton.setText("Start");
+            }
+
+            @Override
+            public void onDisconnected() {
+                super.onDisconnected();
+                if(webRTCClient.getConfig().reconnectionEnabled){
+                    playStatusTextView.setText("Reconnecting...");
+
+                }else{
+                    playStatusTextView.setText("Disconnected");
+                }
             }
 
             @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
+                playStatusTextView.setText("Playing");
+                startStreamingButton.setText("Stop");
+                playStatusTextView.setVisibility(View.VISIBLE);
                 decrementIdle();
+            }
+
+            @Override
+            public void onIceConnected(String streamId) {
+                super.onIceConnected(streamId);
+                startStreamingButton.setText("Start");
             }
 
             @Override
             public void onPlayFinished(String streamId) {
                 super.onPlayFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
+                playStatusTextView.setVisibility(View.GONE);
                 decrementIdle();
             }
         };
@@ -161,6 +180,4 @@ public class PlayActivity extends TestableActivity {
             webRTCClient.stopWebsocketReconnector();
         }
     }
-
-
 }

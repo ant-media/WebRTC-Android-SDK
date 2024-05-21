@@ -108,7 +108,6 @@ public class MultiTrackPlayActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
                     Toast.makeText(MultiTrackPlayActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
 
                 });

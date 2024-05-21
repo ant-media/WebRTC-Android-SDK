@@ -135,7 +135,6 @@ public class MP4PublishActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
                     Toast.makeText(MP4PublishActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
 
                 });

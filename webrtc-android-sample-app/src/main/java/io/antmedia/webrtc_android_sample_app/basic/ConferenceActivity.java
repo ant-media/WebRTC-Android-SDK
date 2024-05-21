@@ -25,7 +25,7 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 
 public class ConferenceActivity extends TestableActivity {
     private TextView broadcastingView;
-    private View joinButton;
+    private Button joinButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
     private String roomId;
@@ -53,6 +53,7 @@ public class ConferenceActivity extends TestableActivity {
         videoButton = findViewById(R.id.control_video_button);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
@@ -84,7 +85,6 @@ public class ConferenceActivity extends TestableActivity {
     public void joinLeaveRoom(View v) {
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Leave");
             Log.i(getClass().getSimpleName(), "Calling join");
 
             if(playOnly) {
@@ -95,7 +95,6 @@ public class ConferenceActivity extends TestableActivity {
             }
         }
         else {
-            ((Button) v).setText("Join");
             Log.i(getClass().getSimpleName(), "Calling leave");
 
             webRTCClient.leaveFromConference(roomId);
@@ -118,15 +117,27 @@ public class ConferenceActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    joinButton.setEnabled(true);
                     Toast.makeText(ConferenceActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
                 });
+            }
+
+            @Override
+            public void onDisconnected() {
+                super.onDisconnected();
+                if(webRTCClient.getConfig().reconnectionEnabled){
+                    broadcastingView.setText("Reconnecting...");
+
+                }else{
+                    broadcastingView.setText("Disconnected");
+                }
             }
 
             @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
+                joinButton.setText("Leave");
+                broadcastingView.setText("Connected");
+
                 broadcastingView.setVisibility(View.VISIBLE);
                 decrementIdle();
             }
@@ -134,6 +145,8 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
+                joinButton.setText("Join");
+
                 broadcastingView.setVisibility(View.GONE);
                 decrementIdle();
             }

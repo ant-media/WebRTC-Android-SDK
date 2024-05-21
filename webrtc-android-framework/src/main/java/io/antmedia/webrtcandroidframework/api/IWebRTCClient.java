@@ -32,14 +32,14 @@ public interface IWebRTCClient {
     }
 
     /**
-     * This is used to strart a WebRTC publish stream
+     * This is used to start a WebRTC publish stream
      * @param streamId: any name
      */
     void publish(String streamId);
 
 
     /**
-     * This is used to strart a WebRTC publish stream
+     * This is used to start a WebRTC publish stream
      * @param streamId: id for the stream to publish
      * @param token: token to authenticate
      * @param videoCallEnabled: true if it's a video call

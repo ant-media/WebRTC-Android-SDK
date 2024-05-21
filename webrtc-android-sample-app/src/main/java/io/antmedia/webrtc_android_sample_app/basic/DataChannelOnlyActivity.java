@@ -143,9 +143,7 @@ public class DataChannelOnlyActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
-                    Toast.makeText(DataChannelOnlyActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
+                    Toast.makeText(DataChannelOnlyActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
                 });
             }
 

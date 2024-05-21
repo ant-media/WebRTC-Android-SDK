@@ -124,9 +124,7 @@ public class ScreenCaptureActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
-                    Toast.makeText(ScreenCaptureActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
+                    Toast.makeText(ScreenCaptureActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
                 });
             }
 

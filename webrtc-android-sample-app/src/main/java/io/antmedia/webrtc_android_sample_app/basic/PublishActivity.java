@@ -28,11 +28,9 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PublishActivity extends TestableActivity {
-    private View broadcastingView;
+    private TextView publishStatusTextView;
     private String streamId;
-
     private IWebRTCClient webRTCClient;
-
     Button startStreamingButton;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -42,7 +40,7 @@ public class PublishActivity extends TestableActivity {
         setContentView(R.layout.activity_publish);
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        publishStatusTextView = findViewById(R.id.broadcasting_text_view);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
@@ -70,13 +68,11 @@ public class PublishActivity extends TestableActivity {
     public void startStopStream(View v) {
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling publish start");
 
             webRTCClient.publish(streamId);
         }
         else {
-            ((Button) v).setText("Start");
             Log.i(getClass().getSimpleName(), "Calling publish start");
 
             webRTCClient.stop(streamId);
@@ -99,22 +95,44 @@ public class PublishActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
                     Toast.makeText(PublishActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
                 });
             }
+            @Override
+            public void onPeerConnectionClosed() {
+                super.onPeerConnectionClosed();
+                startStreamingButton.setText("Start");
+            }
 
+            @Override
+            public void onDisconnected() {
+                super.onDisconnected();
+                if(webRTCClient.getConfig().reconnectionEnabled){
+                    publishStatusTextView.setText("Reconnecting...");
+
+                }else{
+                    publishStatusTextView.setText("Disconnected");
+                }
+            }
+
+            @Override
+            public void onIceConnected(String streamId) {
+                super.onIceConnected(streamId);
+                startStreamingButton.setText("Stop");
+            }
             @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
+                publishStatusTextView.setText("Broadcasting");
+                publishStatusTextView.setVisibility(View.VISIBLE);
                 decrementIdle();
             }
 
             @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
+                startStreamingButton.setText("Start");
+                publishStatusTextView.setVisibility(View.GONE);
                 decrementIdle();
             }
         };
@@ -159,6 +177,4 @@ public class PublishActivity extends TestableActivity {
             webRTCClient.stopWebsocketReconnector();
         }
     }
-
-
 }

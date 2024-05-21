@@ -89,6 +89,12 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
+    public void onPeerConnectionClosed() {
+        String messageText = "Peer Connection closed";
+        callbackCalled(messageText);
+    }
+
+    @Override
     public void onIceDisconnected(String streamId) {
         String messageText = "Ice disconnected for " + streamId;
         callbackCalled(messageText);

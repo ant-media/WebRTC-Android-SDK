@@ -165,9 +165,7 @@ public final class USBCameraActivity extends TestableActivity implements Handler
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
                 runOnUiThread(() -> {
-                    startStreamingButton.setEnabled(true);
-                    Toast.makeText(USBCameraActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
+                    Toast.makeText(USBCameraActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
                 });
             }
 
