@@ -22,10 +22,12 @@ import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithSpeakerIndicator;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishWithSurfaceActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MultiTrackPlayActivity;
+import io.antmedia.webrtc_android_sample_app.advanced.PublishActivityWithAreYouSpeaking;
 import io.antmedia.webrtc_android_sample_app.advanced.USBCameraActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.DataChannelOnlyActivity;
@@ -62,7 +64,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(MP4PublishWithSurfaceActivity.class, "mp4 with Surface");
         addActivity(USBCameraActivity.class, "USB Camera");
         addActivity(MultiTrackPlayActivity.class, "Multi Track");
+        addActivity(PublishActivityWithAreYouSpeaking.class, "Are you talking?");
         addActivity(SettingsActivity.class, "Settings");
+        addActivity(ConferenceActivityWithSpeakerIndicator.class,"Conference with Speaking Indicator");
+        addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
 
     }
 

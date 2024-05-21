@@ -472,14 +472,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         @Override
         public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
             MediaStreamTrack addedTrack = receiver.track();
+
             if(addedTrack == null) {
                 return;
             }
-            Log.d("antmedia","on add track "+addedTrack.kind()+" "+addedTrack.id()+" "+addedTrack.state());
+            String receiverId = receiver.id();
+            String streamId = receiverId.substring("ARDAMSX".length());
+
+            Log.d(TAG,"onAddTrack "+addedTrack.kind()+" "+addedTrack.id()+" "+addedTrack.state());
 
             if(addedTrack instanceof VideoTrack) {
                 VideoTrack videoTrack = (VideoTrack) addedTrack;
-                config.webRTCListener.onNewVideoTrack(videoTrack);
+                config.webRTCListener.onNewVideoTrack(videoTrack, streamId);
             }
         }
 
@@ -1197,6 +1201,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 if(pc == null) {
                     createPeerConnection(streamId);
                 }
+
                 setRemoteDescription(streamId, sdp);
                 createAnswer(streamId);
             }
@@ -1777,6 +1782,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         rtcConfig.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
 
         PeerConnection peerConnection = factory.createPeerConnection(rtcConfig, getPCObserver(streamId));
+
         if(peerConnection != null) {
 
             PeerInfo peer = peers.get(streamId);
@@ -1932,6 +1938,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (pc != null) {
             pc.getStats(this::onPeerConnectionStatsReady);
         }
+    }
+
+    public StatsCollector getStatsCollector() {
+        return statsCollector;
+
     }
 
     public void enableStatsEvents(String streamId, boolean enable, int periodMs) {
@@ -2141,6 +2152,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private void findVideoSender(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
+
         if (pc != null) {
             for (RtpSender sender : pc.getSenders()) {
                 MediaStreamTrack track = sender.track();

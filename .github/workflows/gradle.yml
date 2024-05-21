@@ -55,7 +55,7 @@ jobs:
           api-level: 33
           arch: x86_64
           target: playstore
-          emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
+          #emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
           disable-animations: true
           cores: 3
@@ -86,6 +86,7 @@ jobs:
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           fail_ci_if_error: true
 
