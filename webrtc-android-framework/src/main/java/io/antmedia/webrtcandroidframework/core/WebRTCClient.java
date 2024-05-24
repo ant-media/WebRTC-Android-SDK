@@ -302,6 +302,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         iceServers.add(PeerConnection.IceServer.builder(config.stunServerUri)
                 .createIceServer());
 
+        if(config.turnServerUri != null) {
+            iceServers.add(PeerConnection.IceServer.builder(config.turnServerUri)
+                            .setUsername(config.turnServerUserName)
+                            .setPassword(config.turnServerPassword)
+                    .createIceServer());
+        }
+
 
         if(config.initiateBeforeStream) {
             init();
