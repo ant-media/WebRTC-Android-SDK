@@ -34,11 +34,15 @@ public class PermissionsHandler {
         this.activity = activity;
     }
 
-    public boolean checkAndRequestPermisssions(boolean isExtended, PermissionCallback permissionCallback) {
+    public boolean checkAndRequestPermisssions(boolean isExtended, boolean requestBluetoothForPlay, PermissionCallback permissionCallback) {
         ArrayList<String> permissions = new ArrayList<>();
         permissions.addAll(Arrays.asList(REQUIRED_MINIMUM_PERMISSIONS));
         if(isExtended) {
             permissions.addAll(Arrays.asList(REQUIRED_EXTENDED_PERMISSIONS));
+        }
+
+        if(requestBluetoothForPlay){
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
         }
 
         if (hasPermissions(activity.getApplicationContext(), permissions)) {
