@@ -7,11 +7,14 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.CustomWebRtcAudioRecord;
 
+import io.antmedia.webrtcandroidframework.core.StatsCollector;
+
 /**
  * Created by karinca on 20.10.2017.
  */
 
 public interface IWebRTCClient {
+
 
     /**
      * This enum is used to specify the stream source
@@ -301,5 +304,7 @@ public interface IWebRTCClient {
      * Send push notification to subscribers.
      */
     void sendPushNotification(String subscriberId, String authToken, String pushNotificationContent, String subscriberIdsToNotify);
+
+    StatsCollector getStatsCollector();
 
 }
