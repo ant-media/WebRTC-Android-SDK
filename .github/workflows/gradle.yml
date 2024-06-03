@@ -55,7 +55,7 @@ jobs:
           api-level: 33
           arch: x86_64
           target: playstore
-          #emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
+          emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
           disable-animations: true
           cores: 3
