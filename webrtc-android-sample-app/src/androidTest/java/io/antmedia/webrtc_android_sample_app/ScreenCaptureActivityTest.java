@@ -93,8 +93,13 @@ public class ScreenCaptureActivityTest {
         onView(withId(R.id.rbScreen)).perform(click());
         Log.i(this.getClass().getSimpleName(), "after click screen");
 
-        File file = new File(Environment.getExternalStorageDirectory(), "screen.png");
-        device.takeScreenshot(file);
+        File file = new File("screen.png");
+        if(device.takeScreenshot(file)) {
+            Log.i(this.getClass().getSimpleName(), "SS created successfully");
+        }
+        else {
+            Log.i(this.getClass().getSimpleName(), "SS couldn't be created ");
+        }
 
         UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 100000);
         Log.i(this.getClass().getSimpleName(), "after getting Start now");
