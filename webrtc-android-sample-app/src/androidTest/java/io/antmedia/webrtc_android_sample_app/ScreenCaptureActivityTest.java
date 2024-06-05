@@ -12,6 +12,8 @@ import static org.junit.Assert.assertNotNull;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Environment;
+import android.util.Log;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
@@ -30,6 +32,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.io.File;
 
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
@@ -85,22 +89,44 @@ public class ScreenCaptureActivityTest {
 
         UiDevice device = UiDevice.getInstance(getInstrumentation());
 
+        Log.i(this.getClass().getSimpleName(), "before click screen");
         onView(withId(R.id.rbScreen)).perform(click());
+        Log.i(this.getClass().getSimpleName(), "after click screen");
+
+        File file = new File(Environment.getExternalStorageDirectory(), "screen.png");
+        device.takeScreenshot(file);
+
         UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 100000);
+        Log.i(this.getClass().getSimpleName(), "after getting Start now");
+
+
         assertNotNull(button);
         button.click();
+        Log.i(this.getClass().getSimpleName(), "after click Start now");
+
 
         //this switch operation causes to crash so that it's added here as test
         onView(withId(R.id.rbFront)).perform(click());
+        Log.i(this.getClass().getSimpleName(), "after click front");
+
         onView(withId(R.id.rbScreen)).perform(click());
+        Log.i(this.getClass().getSimpleName(), "after click screen again");
+
 
         button = device.wait(Until.findObject(By.text("Start now")), 100000);
         assertNotNull(button);
         button.click();
 
+        Log.i(this.getClass().getSimpleName(), "after click Start Now again");
+
+
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
+
         //Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Log.i(this.getClass().getSimpleName(), "after click Start");
+
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
@@ -109,6 +135,7 @@ public class ScreenCaptureActivityTest {
         onView(withId(R.id.start_streaming_button)).perform(click());
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
+        Log.i(this.getClass().getSimpleName(), "after click Stop");
 
         //Publish again without because it was failing
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
@@ -121,6 +148,9 @@ public class ScreenCaptureActivityTest {
         }
         onView(withId(R.id.start_streaming_button)).perform(click());
 
+        Log.i(this.getClass().getSimpleName(), "after click Start again");
+
+
         //Check it's publishing again
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
@@ -128,6 +158,8 @@ public class ScreenCaptureActivityTest {
         //Stop publishing
         onView(withId(R.id.start_streaming_button)).perform(click());
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+
+        Log.i(this.getClass().getSimpleName(), "after click Stop again");
 
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);

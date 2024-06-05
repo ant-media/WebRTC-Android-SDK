@@ -66,6 +66,9 @@ jobs:
             adb logcat io.antmedia:I >> emulator.log &
             ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
 
+      - name: Retrieve screenshots
+        run: adb pull /sdcard/screen.png screen.png
+
       - name: Archive Test Report
         if: always()
         uses: actions/upload-artifact@v3
@@ -80,7 +83,7 @@ jobs:
             webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
             webrtc-android-framework/build/reports/androidTests/
             webrtc-android-sample-app/build/logcat.txt
-            webrtc-android-sample-app/build/screen.png
+            screen.png
             emulator.log
 
       - name: Upload Test Report to Codecov
