@@ -64,10 +64,9 @@ jobs:
             touch emulator.log               
             chmod 777 emulator.log
             adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
-
-      - name: Retrieve screenshots
-        run: adb pull /sdcard/screen.png screen.png
+            ./gradlew jacocoTestReport; EXIT_CODE=$? 
+            adb pull /sdcard/screen.png screen.png
+            exit $EXIT_CODE
 
       - name: Archive Test Report
         if: always()
