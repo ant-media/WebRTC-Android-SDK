@@ -65,7 +65,7 @@ jobs:
             chmod 777 emulator.log
             adb logcat io.antmedia:I >> emulator.log &
             ./gradlew jacocoTestReport; EXIT_CODE=$?
-            adb pull /storage/emulated/0/Documents/screen.png ./screenshots/
+            adb pull /storage/emulated/0/Documents/screen.png .
             exit $EXIT_CODE
 
       - name: Archive Test Report
@@ -82,7 +82,7 @@ jobs:
             webrtc-android-framework/build/reports/jacoco/jacocoTestReport/
             webrtc-android-framework/build/reports/androidTests/
             webrtc-android-sample-app/build/logcat.txt
-            screenshots/screen.png
+            screen.png
             emulator.log
 
       - name: Upload Test Report to Codecov
