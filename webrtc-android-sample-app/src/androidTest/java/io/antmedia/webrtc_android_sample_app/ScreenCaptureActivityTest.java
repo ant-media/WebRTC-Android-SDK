@@ -93,7 +93,7 @@ public class ScreenCaptureActivityTest {
         onView(withId(R.id.rbScreen)).perform(click());
         Log.i(this.getClass().getSimpleName(), "after click screen");
 
-        File file = new File(Environment.getExternalStorageDirectory(),"screen.png");
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),"screen.png");
         Log.i(this.getClass().getSimpleName(), "ss path:"+file.getAbsolutePath());
         if(device.takeScreenshot(file)) {
             Log.i(this.getClass().getSimpleName(), "SS created successfully");
