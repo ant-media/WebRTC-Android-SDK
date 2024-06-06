@@ -63,14 +63,18 @@ jobs:
           script: |
             touch emulator.log               
             chmod 777 emulator.log
-            adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew jacocoTestReport
-            
-            
+            adb logcat io.antmedia:I >> emulator.log &            
+
+      - name: Wait for emulator
+        run: |
+          adb wait-for-device
+          adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done; input keyevent 82'
+
+      - name: Run Android Tests
+        run: ./gradlew jacocoTestReport
+
       - name: Retrieve screenshots
         run: adb pull /storage/emulated/0/Documents/screen.png .
-
-            
 
       - name: Archive Test Report
         if: always()
