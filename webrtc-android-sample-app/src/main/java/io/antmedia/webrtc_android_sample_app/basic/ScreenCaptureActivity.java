@@ -102,7 +102,7 @@ public class ScreenCaptureActivity extends TestableActivity {
         }
         else {
             ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling publish start");
+            Log.i(getClass().getSimpleName(), "Calling publish stop");
 
             webRTCClient.stop(streamId);
         }
