@@ -3,6 +3,7 @@ package io.antmedia.webrtc_android_sample_app;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -16,11 +17,16 @@ public abstract class TestableActivity extends Activity {
     protected SharedPreferences sharedPreferences;
 
     public void  incrementIdle() {
+        Log.i(getClass().getSimpleName(), "Increment idling:"+idlingResource.hashCode());
         idlingResource.increment();
     }
     public void decrementIdle() {
         if (!idlingResource.isIdleNow()) {
+            Log.i(getClass().getSimpleName(), "Decrement idling:"+idlingResource.hashCode());
             idlingResource.decrement();
+        }
+        else {
+            Log.i(getClass().getSimpleName(), "Not decrement idling, already idle:"+idlingResource.hashCode());
         }
     }
 
