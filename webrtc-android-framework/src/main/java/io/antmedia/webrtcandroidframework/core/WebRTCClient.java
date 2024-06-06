@@ -935,8 +935,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             wsHandler = null;
         }
         if (config.localVideoRenderer != null) {
+            Log.i(getClass().getSimpleName(), "Release local renderer");
             releaseRenderer(config.localVideoRenderer,localVideoTrack,localVideoSink);
         }
+
+        Log.i(getClass().getSimpleName(), "Release remote renderers");
 
         for (SurfaceViewRenderer remoteVideoRenderer : config.remoteVideoRenderers) {
             if(remoteVideoRenderer.getTag() != null) {
@@ -957,15 +960,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
     public void releaseRenderer(SurfaceViewRenderer renderer , VideoTrack track , VideoSink sink){
         mainHandler.post(()->{
+            Log.i(getClass().getSimpleName(), "Releasing renderer");
+
             VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
             VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
 
             if(videoTrack != null && videoSink !=null)
                 videoTrack.removeSink(videoSink);
             renderer.clearAnimation();
+            Log.i(getClass().getSimpleName(), "Releasing renderer clear image");
             mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
             mainHandler.post(()->{
+                Log.i(getClass().getSimpleName(), "Releasing renderer and clear tag");
                 renderer.release();
                 renderer.setTag(null);
             });
