@@ -61,6 +61,7 @@ import org.webrtc.audio.JavaAudioDeviceModule;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -125,7 +126,6 @@ public class WebRTCClientTest {
             invocation.getArgumentAt(0, Runnable.class).run();
             return null;
         });
-
         when(handler.postDelayed(any(Runnable.class), anyLong())).thenAnswer((Answer<?>) invocation -> {
             Long delay = invocation.getArgumentAt(1, Long.class);
             Thread thread = new Thread(() -> {
@@ -572,21 +572,30 @@ public class WebRTCClientTest {
     @Test
     public void testSDPObserver() {
         doNothing().when(wsHandler).disconnect(anyBoolean());
+        Handler handler = getMockHandler();
+        webRTCClient.setHandler(handler);
+
         String streamId = "stream1";
+        String fakeStreamId = "fakeStreamId";
 
         WebRTCClient.SDPObserver sdpObserver = webRTCClient.getSdpObserver(streamId);
         assertNotNull(sdpObserver);
+        WebRTCClient.SDPObserver sdpObserver2 = webRTCClient.getSdpObserver(fakeStreamId);
+        assertNotNull(sdpObserver2);
 
         PeerConnection pc = mock(PeerConnection.class);
         webRTCClient.addPeerConnection(streamId, pc);
+        // webRTCClient.addPeerConnection(fakeStreamId, pc);
 
         SessionDescription sessionDescription = new SessionDescription(SessionDescription.Type.OFFER, "sdp");
         sdpObserver.onCreateSuccess(sessionDescription);
         verify(pc, timeout(1000)).setLocalDescription(eq(sdpObserver), any());
 
+        verify(pc, timeout(1000)).setLocalDescription(eq(sdpObserver), any());
         {
             webRTCClient.setInitiator(true);
             sdpObserver.onSetSuccess();
+            sdpObserver2.onSetSuccess();
             verify(wsHandler, timeout(1000)).sendConfiguration(eq(streamId), any(), eq("offer"));
         }
         {
@@ -597,7 +606,6 @@ public class WebRTCClientTest {
         }
         sdpObserver.onCreateFailure("error");
         sdpObserver.onSetFailure("error");
-
         verify(wsHandler, timeout(1000)).disconnect(true);
     }
 
@@ -1141,6 +1149,78 @@ public class WebRTCClientTest {
         webRTCClient.onBroadcastObject(broadcast);
 
         verify(listener, times(1)).onBroadcastObject(broadcast);
+    }
+    @Test public void switchCameraTest(){
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doReturn(null).when(webRTCClient).createVideoCapturer(any());
+        webRTCClient.initializeVideoCapturer();
+        assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.FRONT_CAMERA);
+        webRTCClient.switchCamera();
+        assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.REAR_CAMERA);
+        webRTCClient.switchCamera();
+        assertEquals(webRTCClient.getConfig().videoSource,IWebRTCClient.StreamSource.FRONT_CAMERA);
+
+    }
+
+    @Test public void testChangeVideoSrc(){
+        Mockito.doNothing().when(webRTCClient).initializeRenderers();
+        Mockito.doReturn(null).when(webRTCClient).createVideoCapturer(any());
+        webRTCClient.initializeVideoCapturer();
+
+        webRTCClient.changeVideoSource(webRTCClient.getConfig().videoSource);
+        Mockito.verify(webRTCClient, never()).changeVideoCapturer(any());
+
+        IWebRTCClient.StreamSource streamSource = IWebRTCClient.StreamSource.REAR_CAMERA;
+        webRTCClient.changeVideoSource(streamSource);
+        Mockito.verify(webRTCClient,times(2)).createVideoCapturer(any());
+
+        assertEquals(webRTCClient.getConfig().videoSource,streamSource);
+    }
+    @Test public void testFindVideoSender() throws NoSuchFieldException, IllegalAccessException {
+        String streamId = "stream1";
+        PeerConnection pc = mock(PeerConnection.class);
+        webRTCClient.addPeerConnection(streamId, pc);
+
+        VideoTrack track = mock(VideoTrack.class);
+        doReturn("video").when(track).kind();
+        RtpSender sender = mock(RtpSender.class);
+        doReturn(track).when(sender).track();
+
+        ArrayList<RtpSender> senderArray = new ArrayList<>(Arrays.asList(sender)) ;
+        doReturn(senderArray).when(pc).getSenders();
+
+        webRTCClient.findVideoSender(streamId);
+
+        Field field = WebRTCClient.class.getDeclaredField("localVideoSender");
+        field.setAccessible(true);
+        RtpSender  localVideoSender = (RtpSender) field.get(webRTCClient);
+
+        assertEquals(localVideoSender,sender);
+    }
+    @Test
+    public void testUnexpectedReconnection(){
+        String streamId = "stream1";
+        final Handler handler = mock(Handler.class);
+        webRTCClient.setHandler(handler);
+        when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            return null;
+        });
+        PeerConnection pc = mock(PeerConnection.class);
+        webRTCClient.addPeerConnection(streamId, pc);
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
+        webRTCClient.peers.put(streamId, peerInfo);
+        peerInfo.peerConnection = pc;
+        String fakeSdp = "";
+        webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+        verify(pc, timeout(3000).times(0)).setLocalDescription(any(),any());
+
+        when(handler.postAtFrontOfQueue(any(Runnable.class))).thenAnswer((Answer<?>) invocation -> {
+            invocation.getArgumentAt(0, Runnable.class).run();
+            return null;
+        });
+        webRTCClient.getSdpObserver(streamId).onCreateSuccess(new SessionDescription(SessionDescription.Type.OFFER, fakeSdp));
+        verify(pc, timeout(3000).times(1)).setLocalDescription(any(),any());
+        webRTCClient.setHandler(handler);
     }
 
     @Test
