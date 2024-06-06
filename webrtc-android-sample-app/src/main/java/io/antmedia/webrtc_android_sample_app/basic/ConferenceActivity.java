@@ -63,15 +63,13 @@ public class ConferenceActivity extends TestableActivity {
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
 
-        serverUrl = "wss://fed3805de679.ngrok.app/LiveApp/websocket";
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
         if(PermissionHandler.checkCameraPermissions(this)){
-
             createWebRTCClient();
-
         }
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
@@ -80,13 +78,6 @@ public class ConferenceActivity extends TestableActivity {
             publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
-
-        joinButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                joinLeaveRoom();
-            }
-        });
     }
 
     public void createWebRTCClient(){
@@ -101,6 +92,13 @@ public class ConferenceActivity extends TestableActivity {
                 .setWebRTCListener(defaultConferenceListener)
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
+
+        joinButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                joinLeaveRoom();
+            }
+        });
     }
 
     public void joinLeaveRoom() {
@@ -108,19 +106,17 @@ public class ConferenceActivity extends TestableActivity {
         if (!webRTCClient.isStreaming(streamId)) {
             Log.i(getClass().getSimpleName(), "Calling join");
 
-            if(PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
-
                 if(playOnly) {
                     webRTCClient.joinToConferenceRoom(roomId);
                 }
                 else {
-                    webRTCClient.joinToConferenceRoom(roomId, streamId);
+                    if(PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
+                        webRTCClient.joinToConferenceRoom(roomId, streamId);
+                    }
                 }
             }
-        }
         else {
             Log.i(getClass().getSimpleName(), "Calling leave");
-
             webRTCClient.leaveFromConference(roomId);
         }
     }
@@ -245,8 +241,7 @@ public class ConferenceActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.destroy();
+            webRTCClient.stopReconnector();
         }
     }
-
 }

@@ -2,6 +2,7 @@ package io.antmedia.webrtc_android_sample_app.advanced;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.DataChannel;
@@ -19,6 +21,7 @@ import org.webrtc.SurfaceViewRenderer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import io.antmedia.webrtc_android_sample_app.PermissionHandler;
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
@@ -37,49 +40,64 @@ public class PublishActivityWithAreYouSpeaking extends TestableActivity {
     boolean microphoneMuted = false;
     private final double SPEAKING_DECIBEL_THRESHOLD = 45;
 
+    String serverUrl = "";
+    Button startStreamingButton;
+    TextView streamIdEditText;
+    SurfaceViewRenderer fullScreenRenderer;
+
+    boolean bluetoothEnabled = false;
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_publish_are_you_speaking);
 
-        SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
+        fullScreenRenderer = findViewById(R.id.full_screen_renderer);
         broadcastingView = findViewById(R.id.broadcasting_text_view);
-        TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         String generatedStreamId = "streamId" + (int) (Math.random() * 9999);
         streamIdEditText.setText(generatedStreamId);
+
+        if(PermissionHandler.checkCameraPermissions(this)){
+            createWebRTCClient();
+
+            Button toggleMicrophoneButton = findViewById(R.id.toggle_microphone_button);
+            toggleMicrophoneButton.setOnClickListener(v -> {
+                if (microphoneMuted) {
+                    toggleMicrophoneButton.setText("Mute");
+                    unMuteMicrophone();
+
+                } else {
+                    toggleMicrophoneButton.setText("Unmute");
+                    muteMicrophone();
+                }
+            });
+        }
+
+    }
+
+    public void createWebRTCClient(){
 
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
+                .setBluetoothEnabled(bluetoothEnabled)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
+        startStreamingButton = findViewById(R.id.start_streaming_button);
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 streamId = streamIdEditText.getText().toString();
-                startStopStream(v);
+                startStopStream();
             }
         });
-
-        Button toggleMicrophoneButton = findViewById(R.id.toggle_microphone_button);
-        toggleMicrophoneButton.setOnClickListener(v -> {
-            if (microphoneMuted) {
-                toggleMicrophoneButton.setText("Mute");
-                unMuteMicrophone();
-
-            } else {
-                toggleMicrophoneButton.setText("Unmute");
-                muteMicrophone();
-            }
-        });
-
 
     }
 
@@ -120,17 +138,18 @@ public class PublishActivityWithAreYouSpeaking extends TestableActivity {
         microphoneMuted = false;
     }
 
-    public void startStopStream(View v) {
+    public void startStopStream() {
+        if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
+            return;
+        }
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling publish start");
-
             webRTCClient.publish(streamId);
         }
         else {
-            ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling publish start");
+            startStreamingButton.setText("Start");
+            Log.i(getClass().getSimpleName(), "Calling publish stop");
 
             webRTCClient.stop(streamId);
         }
@@ -154,6 +173,7 @@ public class PublishActivityWithAreYouSpeaking extends TestableActivity {
                 broadcastingView.setVisibility(View.VISIBLE);
                 decrementIdle();
                 startSoundMeter();
+                startStreamingButton.setText("Stop");
 
             }
 
@@ -163,6 +183,7 @@ public class PublishActivityWithAreYouSpeaking extends TestableActivity {
                 broadcastingView.setVisibility(View.GONE);
                 decrementIdle();
                 stopSoundMeter();
+                startStreamingButton.setText("Start");
             }
         };
     }
@@ -179,6 +200,10 @@ public class PublishActivityWithAreYouSpeaking extends TestableActivity {
         if(soundMeter != null){
             soundMeter.stop();
         }
+        if(webRTCClient != null){
+            webRTCClient.stopReconnector();
+        }
+
     }
 
     public void showSendDataChannelMessageDialog(View view) {
@@ -204,6 +229,42 @@ public class PublishActivityWithAreYouSpeaking extends TestableActivity {
         }
         else {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if(requestCode == PermissionHandler.CAMERA_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                createWebRTCClient();
+            } else {
+                Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
+            }
+
+        }else if(requestCode == PermissionHandler.PUBLISH_PERMISSION_REQUEST_CODE){
+
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                startStopStream();
+            } else {
+                Toast.makeText(this,"Publish permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 

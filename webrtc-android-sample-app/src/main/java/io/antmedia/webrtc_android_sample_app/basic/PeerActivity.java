@@ -2,6 +2,7 @@ package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.DataChannel;
@@ -19,6 +21,7 @@ import org.webrtc.SurfaceViewRenderer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import io.antmedia.webrtc_android_sample_app.PermissionHandler;
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
@@ -34,55 +37,69 @@ public class PeerActivity extends TestableActivity {
     private IWebRTCClient webRTCClient;
     private TextView streamIdEditText;
 
+    boolean bluetoothEnabled = false;
+    String serverUrl = "";
+    SurfaceViewRenderer fullScreenRenderer;
+    SurfaceViewRenderer pipRenderer;
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_peer);
 
-        SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        SurfaceViewRenderer pipRenderer = findViewById(R.id.pip_view_renderer);
+        fullScreenRenderer = findViewById(R.id.full_screen_renderer);
+        pipRenderer = findViewById(R.id.pip_view_renderer);
 
         broadcastingView = findViewById(R.id.broadcasting_text_view);
         startStreamingButton = findViewById(R.id.start_streaming_button);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        String serverUrl = "wss://fed3805de679.ngrok.app/LiveApp/websocket";
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         streamIdEditText.setText("streamId");
 
+        if(PermissionHandler.checkCameraPermissions(this)){
+            createWebRTCClient();
+        }
+
+    }
+
+    public void createWebRTCClient(){
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(pipRenderer)
                 .addRemoteVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
+                .setBluetoothEnabled(bluetoothEnabled)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
+        startStreamingButton = findViewById(R.id.start_streaming_button);
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 streamId = streamIdEditText.getText().toString();
-                startStopStream(v);
+                startStopStream();
             }
         });
     }
 
-    public void startStopStream(View v) {
+    public void startStopStream() {
+        if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
+            return;
+        }
+
         incrementIdle();
         streamId = streamIdEditText.getText().toString();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
-            Log.i(getClass().getSimpleName(), "Calling play start");
+            Log.i(getClass().getSimpleName(), "Calling Join");
 
             webRTCClient.join(streamId);
         }
         else {
-            ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling play stop");
-
+            Log.i(getClass().getSimpleName(), "Calling stop");
             webRTCClient.stop(streamId);
         }
     }
@@ -105,6 +122,19 @@ public class PeerActivity extends TestableActivity {
             }
 
             @Override
+            public void onIceConnected(String streamId) {
+                super.onIceConnected(streamId);
+                startStreamingButton.setText("Stop");
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                startStreamingButton.setText("Start");
+
+            }
+
+            @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
                 broadcastingView.setVisibility(View.VISIBLE);
@@ -115,6 +145,7 @@ public class PeerActivity extends TestableActivity {
             public void onPlayFinished(String streamId) {
                 super.onPlayFinished(streamId);
                 broadcastingView.setVisibility(View.GONE);
+                startStreamingButton.setText("Start");
                 decrementIdle();
             }
         };
@@ -156,7 +187,44 @@ public class PeerActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.destroy();
+            webRTCClient.stopReconnector();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if(requestCode == PermissionHandler.CAMERA_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                createWebRTCClient();
+            } else {
+                Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
+            }
+
+
+        }else if(requestCode == PermissionHandler.PUBLISH_PERMISSION_REQUEST_CODE){
+
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                startStopStream();
+            } else {
+                Toast.makeText(this,"Publish permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 }

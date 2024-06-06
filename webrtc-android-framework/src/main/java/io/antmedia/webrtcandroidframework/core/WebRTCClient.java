@@ -768,7 +768,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             wsHandler = new WebSocketHandler(this, handler);
             wsHandler.connect(config.serverUrl);
         }
-
     }
 
     public DisplayMetrics getDisplayMetrics() {
@@ -2562,23 +2561,32 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return wsHandler.isConnected();
     }
 
-    public void destroy(){
-        if(wsHandler == null){
-            return;
-        }
-
-        if(peerReconnectionHandler != null){
-            peerReconnectionHandler.removeCallbacksAndMessages(null);
-        }
-
-        wsHandler.stopReconnector();
-    }
-
     private void releaseRemoteRenderers(){
         for (SurfaceViewRenderer remoteVideoRenderer : config.remoteVideoRenderers) {
             if(remoteVideoRenderer.getTag() != null) {
                 releaseRenderer(remoteVideoRenderer);
             }
         }
+    }
+
+    public void closeWebsocket(){
+        if(wsHandler == null){
+            return;
+        }
+        wsHandler.disconnect(true);
+        wsHandler.stopReconnector();
+        wsHandler = null;
+    }
+
+    public void stopReconnector(){
+        if(peerReconnectionHandler != null){
+            peerReconnectionHandler.removeCallbacksAndMessages(null);
+        }
+
+        if(wsHandler == null){
+            return;
+        }
+
+        wsHandler.stopReconnector();
     }
 }

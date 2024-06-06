@@ -1,6 +1,7 @@
 package io.antmedia.webrtc_android_sample_app.advanced;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,7 +10,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.json.JSONException;
@@ -24,6 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.antmedia.webrtc_android_sample_app.PermissionHandler;
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
@@ -35,7 +39,7 @@ import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
     private TextView broadcastingView;
-    private View joinButton;
+    private Button joinButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
     private String roomId;
@@ -59,18 +63,28 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
     private ScheduledFuture localAudioCheckerFuture;
     private ScheduledExecutorService localAudioCheckerExecutor;
 
+    String serverUrl = "";
+
+    SurfaceViewRenderer publisherRenderer;
+    SurfaceViewRenderer player1Renderer;
+    SurfaceViewRenderer player2Renderer;
+    SurfaceViewRenderer player3Renderer;
+    SurfaceViewRenderer player4Renderer;
+    boolean bluetoothEnabled = false;
+
+
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conference_with_speaker_indicators);
 
-        SurfaceViewRenderer publisherRenderer = findViewById(R.id.publish_view_renderer);
+        publisherRenderer = findViewById(R.id.publish_view_renderer);
 
-        SurfaceViewRenderer player1Renderer = findViewById(R.id.play_view_renderer1);
-        SurfaceViewRenderer player2Renderer = findViewById(R.id.play_view_renderer2);
-        SurfaceViewRenderer player3Renderer = findViewById(R.id.play_view_renderer3);
-        SurfaceViewRenderer player4Renderer = findViewById(R.id.play_view_renderer4);
+        player1Renderer = findViewById(R.id.play_view_renderer1);
+        player2Renderer = findViewById(R.id.play_view_renderer2);
+        player3Renderer = findViewById(R.id.play_view_renderer3);
+        player4Renderer = findViewById(R.id.play_view_renderer4);
 
         publisherSpeakingIndicatorText = findViewById(R.id.publisher_speaking_indicator_text);
         player1SpeakingIndicatorText = findViewById(R.id.player1_speaking_indicator_text);
@@ -85,7 +99,7 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
@@ -98,38 +112,52 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
             publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
+        if(PermissionHandler.checkCameraPermissions(this)){
+            createWebRTCClient();
+
+            joinButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    joinLeaveRoom();
+                }
+            });
+        }
+
+
+    }
+
+    public void createWebRTCClient(){
+        DefaultConferenceWebRTCListener defaultConferenceListener = createWebRTCListener(roomId, streamId);
+
         webRTCClient = IWebRTCClient.builder()
                 .addRemoteVideoRenderer(player1Renderer, player2Renderer, player3Renderer, player4Renderer)
                 .setLocalVideoRenderer(publisherRenderer)
                 .setServerUrl(serverUrl)
+                .setBluetoothEnabled(bluetoothEnabled)
                 .setActivity(this)
                 .setWebRTCListener(defaultConferenceListener)
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
-
-        joinButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                joinLeaveRoom(v);
-            }
-        });
     }
 
-    public void joinLeaveRoom(View v) {
+
+    public void joinLeaveRoom() {
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Leave");
+            joinButton.setText("Leave");
             Log.i(getClass().getSimpleName(), "Calling join");
 
             if(playOnly) {
                 webRTCClient.joinToConferenceRoom(roomId);
             }
             else {
-                webRTCClient.joinToConferenceRoom(roomId, streamId);
+                if(PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
+                    webRTCClient.joinToConferenceRoom(roomId, streamId);
+                }
             }
         }
         else {
-            ((Button) v).setText("Join");
+            joinButton.setText("Join");
             Log.i(getClass().getSimpleName(), "Calling leave");
             if(localAudioCheckerFuture != null){
                 localAudioCheckerFuture.cancel(true);
@@ -251,11 +279,54 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
         if(localAudioCheckerFuture != null){
             localAudioCheckerFuture.cancel(true);
         }
+
         if(localAudioCheckerExecutor != null){
             localAudioCheckerExecutor.shutdown();
+        }
+
+        if(webRTCClient != null){
+            webRTCClient.stopReconnector();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if(requestCode == PermissionHandler.CAMERA_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                createWebRTCClient();
+            } else {
+                Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
+            }
+
+
+        }else if(requestCode == PermissionHandler.PUBLISH_PERMISSION_REQUEST_CODE){
+
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                joinLeaveRoom();
+            } else {
+                Toast.makeText(this,"Publish permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 

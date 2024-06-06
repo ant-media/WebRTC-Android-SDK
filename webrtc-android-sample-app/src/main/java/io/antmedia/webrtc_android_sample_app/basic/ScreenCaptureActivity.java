@@ -4,6 +4,7 @@ import static io.antmedia.webrtc_android_sample_app.basic.MediaProjectionService
 
 import android.annotation.TargetApi;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,10 +14,12 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.SurfaceViewRenderer;
 
+import io.antmedia.webrtc_android_sample_app.PermissionHandler;
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
@@ -31,10 +34,15 @@ import android.media.projection.MediaProjectionManager;
 
 public class ScreenCaptureActivity extends TestableActivity {
     private View broadcastingView;
-    private View startStreamingButton;
+    private Button startStreamingButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
     private RadioGroup bg;
+
+    boolean bluetoothEnabled = false;
+    String serverUrl = "";
+    SurfaceViewRenderer fullScreenRenderer;
+    TextView streamIdEditText;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -42,67 +50,78 @@ public class ScreenCaptureActivity extends TestableActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_screenshare);
 
-        SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
+        fullScreenRenderer = findViewById(R.id.full_screen_renderer);
         broadcastingView = findViewById(R.id.broadcasting_text_view);
-        startStreamingButton = findViewById(R.id.start_streaming_button);
-        TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
+        streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         streamId = "streamId" + (int)(Math.random()*9999);
         streamIdEditText.setText(streamId);
 
         bg = findViewById(R.id.rbGroup);
         bg.check(R.id.rbFront);
-        bg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                IWebRTCClient.StreamSource newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
-                if(checkedId == R.id.rbScreen) {
-                    requestScreenCapture();
-                    return;
-                }
-                else if(checkedId == R.id.rbFront) {
-                    newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
-                }
-                else if(checkedId == R.id.rbRear) {
-                    newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
-                }
-                idlingResource.increment();
-                webRTCClient.changeVideoSource(newSource);
-                decrementIdle();
-            }
-        });
 
+        if(PermissionHandler.checkCameraPermissions(this)){
+            createWebRTCClient();
+
+            bg.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(RadioGroup group, int checkedId) {
+                    IWebRTCClient.StreamSource newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
+                    if(checkedId == R.id.rbScreen) {
+                        requestScreenCapture();
+                        return;
+                    }
+                    else if(checkedId == R.id.rbFront) {
+                        newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
+                    }
+                    else if(checkedId == R.id.rbRear) {
+                        newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
+                    }
+                    idlingResource.increment();
+                    webRTCClient.changeVideoSource(newSource);
+                    decrementIdle();
+                }
+            });
+        }
+    }
+
+    public void createWebRTCClient(){
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
+                .setBluetoothEnabled(false)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .setInitiateBeforeStream(true)
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
+        startStreamingButton = findViewById(R.id.start_streaming_button);
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 streamId = streamIdEditText.getText().toString();
-                startStopStream(v);
+                startStopStream();
             }
         });
     }
 
-    public void startStopStream(View v) {
+    public void startStopStream() {
+        if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
+            return;
+        }
+
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
+            startStreamingButton.setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling publish start");
 
             webRTCClient.publish(streamId);
         }
         else {
-            ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling publish start");
+            startStreamingButton.setText("Start");
+            Log.i(getClass().getSimpleName(), "Calling publish stop");
 
             webRTCClient.stop(streamId);
         }
@@ -191,7 +210,44 @@ public class ScreenCaptureActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.destroy();
+            webRTCClient.stopReconnector();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if(requestCode == PermissionHandler.CAMERA_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                createWebRTCClient();
+            } else {
+                Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
+            }
+
+
+        }else if(requestCode == PermissionHandler.PUBLISH_PERMISSION_REQUEST_CODE){
+
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                startStopStream();
+            } else {
+                Toast.makeText(this,"Publish permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 

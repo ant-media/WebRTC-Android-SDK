@@ -51,7 +51,7 @@ public class PublishActivity extends TestableActivity {
         publishStatusTextView = findViewById(R.id.broadcasting_text_view);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        serverUrl = "wss://fed3805de679.ngrok.app/LiveApp/websocket";
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         String generatedStreamId = "streamId" + (int)(Math.random()*9999);
         streamIdEditText.setText(generatedStreamId);
@@ -83,13 +83,14 @@ public class PublishActivity extends TestableActivity {
     }
 
     public void startStopStream() {
+        if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
+            return;
+        }
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
             Log.i(getClass().getSimpleName(), "Calling publish start");
 
-            if(PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
-                webRTCClient.publish(streamId);
-            }
+            webRTCClient.publish(streamId);
 
         }
         else {
@@ -192,7 +193,7 @@ public class PublishActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.destroy();
+            webRTCClient.stopReconnector();
         }
     }
 

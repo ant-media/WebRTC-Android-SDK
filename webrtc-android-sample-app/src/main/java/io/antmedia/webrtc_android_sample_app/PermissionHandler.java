@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 public class PermissionHandler {
 
@@ -44,7 +43,6 @@ public class PermissionHandler {
             requestPermissions(activity, permissions, CAMERA_PERMISSION_REQUEST_CODE);
             return false;
         }
-
     }
 
     public static boolean checkPublishPermissions(Activity activity, boolean bluetoothEnabled){
@@ -90,7 +88,7 @@ public class PermissionHandler {
             for (String permission : permissions) {
                 if (ActivityCompat.checkSelfPermission(activity, permission)
                         != PackageManager.PERMISSION_GRANTED) {
-                    Log.w(PermissionsHandler.class.getSimpleName(), "Permission required:"+permission);
+                    Log.w(PermissionHandler.class.getSimpleName(), "Permission required:"+permission);
                     return false;
                 }
             }

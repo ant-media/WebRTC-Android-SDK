@@ -272,11 +272,15 @@ public interface IWebRTCClient {
     boolean isConnected();
 
     /**
-     * Destroy webrtc client. Stops reconnection runnable. Ideally call this when you are done with streaming.
+     * Stops reconnection runnable. If called reconnection mechanism will be stopped.
+     * Ideally call this when you are done with streaming.
      */
-    void destroy();
+    void stopReconnector();
 
-
+    /**
+     * Close websocket connection to Ant Media Server.
+     */
+    void closeWebsocket();
 
     StatsCollector getStatsCollector();
 

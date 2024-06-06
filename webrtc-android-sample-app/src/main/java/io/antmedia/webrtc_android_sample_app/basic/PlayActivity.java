@@ -29,7 +29,6 @@ import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 public class PlayActivity extends TestableActivity {
     private TextView playStatusTextView;
@@ -56,7 +55,7 @@ public class PlayActivity extends TestableActivity {
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        serverUrl = "wss://fed3805de679.ngrok.app/LiveApp/websocket";
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         streamIdEditText.setText("streamId");
 
         if(PermissionHandler.checkPlayPermissions(this, bluetoothEnabled)){
@@ -75,7 +74,7 @@ public class PlayActivity extends TestableActivity {
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
+        startStreamingButton = findViewById(R.id.start_streaming_button);
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -213,7 +212,7 @@ public class PlayActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.destroy();
+            webRTCClient.stopReconnector();
         }
     }
 }
