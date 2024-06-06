@@ -142,9 +142,6 @@ public class DataChannelOnlyActivity extends TestableActivity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(DataChannelOnlyActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
-                });
             }
 
             @Override

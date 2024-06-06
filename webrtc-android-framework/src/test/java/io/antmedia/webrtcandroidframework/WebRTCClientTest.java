@@ -740,47 +740,6 @@ public class WebRTCClientTest {
         verify(listener, timeout(1000)).onBitrateMeasurement(streamId, 1000, 500, 100);
     }
 
-    @Test
-    public void testCheckPermissionsForPublish() {
-        mockMethodsInInit();
-
-        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
-        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
-
-        webRTCClient.publish("stream1");
-        verify(permissionsHandler).checkAndRequestPermisssions(eq(true), any());
-    }
-
-    @Test
-    public void testCheckPermissionsForPlay() {
-        mockMethodsInInit();
-
-        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
-        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
-
-        webRTCClient.play("stream1");
-        verify(permissionsHandler).checkAndRequestPermisssions(eq(false), any());
-    }
-
-    @Test
-    public void testCheckPermissionsForPeer() {
-        mockMethodsInInit();
-
-        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
-        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
-
-        webRTCClient.join("stream1");
-        verify(permissionsHandler, times(1)).checkAndRequestPermisssions(eq(true), any());
-    }
 
     private void mockMethodsInInit() {
         Mockito.doNothing().when(webRTCClient).initializeRenderers();

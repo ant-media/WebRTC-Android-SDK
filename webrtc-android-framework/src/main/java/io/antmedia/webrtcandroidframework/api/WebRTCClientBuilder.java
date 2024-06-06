@@ -26,6 +26,11 @@ public class WebRTCClientBuilder {
         return this;
     }
 
+    public WebRTCClientBuilder setBluetoothEnabled(boolean bluetoothEnabled) {
+        webRTCClientConfig.bluetoothEnabled = bluetoothEnabled;
+        return this;
+    }
+
     public WebRTCClientBuilder setStreamId(String streamId) {
         webRTCClientConfig.streamId = streamId;
         return this;

@@ -123,9 +123,6 @@ public class ScreenCaptureActivity extends TestableActivity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(ScreenCaptureActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
-                });
             }
 
             @Override
@@ -194,7 +191,7 @@ public class ScreenCaptureActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.stopWebsocketReconnector();
+            webRTCClient.destroy();
         }
     }
 

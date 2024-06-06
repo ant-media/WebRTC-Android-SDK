@@ -79,7 +79,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             ws.sendTextMessage(message);
             Log.e(TAG, "sent websocket message:" + message);
         } else {
-            Log.d(TAG, "Web Socket is not connected");
+
+            Log.d(TAG, "Web Socket is not connected.");
+
+
         }
     }
 
@@ -114,6 +117,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     @Override
     public void onOpen() {
         Log.d(TAG, "WebSocket connection opened.");
+
         signallingListener.onWebSocketConnected();
     }
 
@@ -268,11 +272,11 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }
                 if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
                     signallingListener.streamIdInUse(streamId);
-                    disconnect(true);
+                  //  disconnect(true);
                 }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
-                disconnect(true);
+               // disconnect(true);
             }
             else if (commandText.equals(WebSocketConstants.PONG_COMMAND))
             {
@@ -503,6 +507,19 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             Log.e(TAG, "Leave from conference room JSON error: " + e.getMessage());
         }
     }
+
+    public void leaveFromP2P(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Leave from conference room JSON error: " + e.getMessage());
+        }
+    }
+
 
     public void getRoomInfo(String roomName, String streamId) {
         checkIfCalledOnValidThread();

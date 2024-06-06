@@ -1,6 +1,7 @@
 package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,13 +12,14 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.SurfaceViewRenderer;
 
+import io.antmedia.webrtc_android_sample_app.PermissionHandler;
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
-import io.antmedia.webrtc_android_sample_app.advanced.USBCameraActivity;
 import io.antmedia.webrtcandroidframework.api.DefaultConferenceWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
@@ -33,6 +35,15 @@ public class ConferenceActivity extends TestableActivity {
     private Button videoButton;
     private boolean playOnly;
 
+    String serverUrl = "";
+
+    SurfaceViewRenderer publisherRenderer;
+    SurfaceViewRenderer player1Renderer;
+    SurfaceViewRenderer player2Renderer;
+    SurfaceViewRenderer player3Renderer;
+    SurfaceViewRenderer player4Renderer;
+
+    boolean bluetoothEnabled = false;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -40,11 +51,11 @@ public class ConferenceActivity extends TestableActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conference);
 
-        SurfaceViewRenderer publisherRenderer = findViewById(R.id.publish_view_renderer);
-        SurfaceViewRenderer player1Renderer = findViewById(R.id.play_view_renderer1);
-        SurfaceViewRenderer player2Renderer = findViewById(R.id.play_view_renderer2);
-        SurfaceViewRenderer player3Renderer = findViewById(R.id.play_view_renderer3);
-        SurfaceViewRenderer player4Renderer = findViewById(R.id.play_view_renderer4);
+        publisherRenderer = findViewById(R.id.publish_view_renderer);
+        player1Renderer = findViewById(R.id.play_view_renderer1);
+        player2Renderer = findViewById(R.id.play_view_renderer2);
+        player3Renderer = findViewById(R.id.play_view_renderer3);
+        player4Renderer = findViewById(R.id.play_view_renderer4);
 
         broadcastingView = findViewById(R.id.broadcasting_text_view);
         joinButton = findViewById(R.id.join_conference_button);
@@ -52,12 +63,16 @@ public class ConferenceActivity extends TestableActivity {
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        serverUrl = "wss://fed3805de679.ngrok.app/LiveApp/websocket";
 
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
-        DefaultConferenceWebRTCListener defaultConferenceListener = createWebRTCListener(roomId, streamId);
+        if(PermissionHandler.checkCameraPermissions(this)){
+
+            createWebRTCClient();
+
+        }
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
@@ -65,33 +80,42 @@ public class ConferenceActivity extends TestableActivity {
             publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
-        webRTCClient = IWebRTCClient.builder()
-                .addRemoteVideoRenderer(player1Renderer, player2Renderer, player3Renderer, player4Renderer)
-                .setLocalVideoRenderer(publisherRenderer)
-                .setServerUrl(serverUrl)
-                .setActivity(this)
-                .setWebRTCListener(defaultConferenceListener)
-                .setDataChannelObserver(createDatachannelObserver())
-                .build();
 
         joinButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                joinLeaveRoom(v);
+                joinLeaveRoom();
             }
         });
     }
 
-    public void joinLeaveRoom(View v) {
+    public void createWebRTCClient(){
+        DefaultConferenceWebRTCListener defaultConferenceListener = createWebRTCListener(roomId, streamId);
+
+        webRTCClient = IWebRTCClient.builder()
+                .addRemoteVideoRenderer(player1Renderer, player2Renderer, player3Renderer, player4Renderer)
+                .setLocalVideoRenderer(publisherRenderer)
+                .setServerUrl(serverUrl)
+                .setBluetoothEnabled(bluetoothEnabled)
+                .setActivity(this)
+                .setWebRTCListener(defaultConferenceListener)
+                .setDataChannelObserver(createDatachannelObserver())
+                .build();
+    }
+
+    public void joinLeaveRoom() {
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
             Log.i(getClass().getSimpleName(), "Calling join");
 
-            if(playOnly) {
-                webRTCClient.joinToConferenceRoom(roomId);
-            }
-            else {
-                webRTCClient.joinToConferenceRoom(roomId, streamId);
+            if(PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
+
+                if(playOnly) {
+                    webRTCClient.joinToConferenceRoom(roomId);
+                }
+                else {
+                    webRTCClient.joinToConferenceRoom(roomId, streamId);
+                }
             }
         }
         else {
@@ -116,9 +140,6 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(ConferenceActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-                });
             }
 
             @Override
@@ -184,10 +205,47 @@ public class ConferenceActivity extends TestableActivity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if(requestCode == PermissionHandler.CAMERA_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                createWebRTCClient();
+            } else {
+                Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
+            }
+
+
+        }else if(requestCode == PermissionHandler.PUBLISH_PERMISSION_REQUEST_CODE){
+
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                joinLeaveRoom();
+            } else {
+                Toast.makeText(this,"Publish permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.stopWebsocketReconnector();
+            webRTCClient.destroy();
         }
     }
 

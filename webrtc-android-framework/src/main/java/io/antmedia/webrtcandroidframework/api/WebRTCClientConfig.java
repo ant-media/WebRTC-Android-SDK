@@ -168,4 +168,11 @@ public class WebRTCClientConfig {
      * Flag indicating whether AGC (automatic gain contol) and HPF (high pass filter) is disabled in audio processing
      */
     public boolean disableWebRtcAGCAndHPF = false;
+
+
+    /*
+     * Flag for connecting bluetooth headphones.
+     */
+    public boolean bluetoothEnabled = false;
+
 }

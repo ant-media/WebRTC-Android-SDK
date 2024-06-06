@@ -36,10 +36,15 @@ public class SimplePublishActivity extends Activity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                Toast.makeText(SimplePublishActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
-                String streamId = "streamId" + (int)(Math.random()*9999);
-                webRTCClient.publish(streamId);
             }
         };
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(webRTCClient != null){
+            webRTCClient.destroy();
+        }
     }
 }

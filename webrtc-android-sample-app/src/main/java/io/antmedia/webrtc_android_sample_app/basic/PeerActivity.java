@@ -28,8 +28,8 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PeerActivity extends TestableActivity {
-    private View broadcastingView;
-    private View startStreamingButton;
+    private TextView broadcastingView;
+    private Button startStreamingButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
     private TextView streamIdEditText;
@@ -47,7 +47,8 @@ public class PeerActivity extends TestableActivity {
         startStreamingButton = findViewById(R.id.start_streaming_button);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        String serverUrl = "wss://fed3805de679.ngrok.app/LiveApp/websocket";
+
         streamIdEditText.setText("streamId");
 
         webRTCClient = IWebRTCClient.builder()
@@ -80,7 +81,7 @@ public class PeerActivity extends TestableActivity {
         }
         else {
             ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling play start");
+            Log.i(getClass().getSimpleName(), "Calling play stop");
 
             webRTCClient.stop(streamId);
         }
@@ -101,10 +102,6 @@ public class PeerActivity extends TestableActivity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(PeerActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
-
-                });
             }
 
             @Override
@@ -159,9 +156,7 @@ public class PeerActivity extends TestableActivity {
     protected void onDestroy() {
         super.onDestroy();
         if(webRTCClient != null){
-            webRTCClient.stopWebsocketReconnector();
+            webRTCClient.destroy();
         }
     }
-
-
 }

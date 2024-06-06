@@ -147,9 +147,6 @@ public class MP4PublishWithSurfaceActivity extends TestableActivity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(MP4PublishWithSurfaceActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
-                });
             }
 
             @Override

@@ -164,9 +164,6 @@ public final class USBCameraActivity extends TestableActivity implements Handler
         return new DefaultWebRTCListener() {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(USBCameraActivity.this,"Websocket connected", Toast.LENGTH_SHORT).show();
-                });
             }
 
             @Override

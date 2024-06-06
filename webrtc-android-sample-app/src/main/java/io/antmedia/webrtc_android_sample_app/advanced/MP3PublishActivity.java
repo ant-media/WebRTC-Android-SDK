@@ -110,10 +110,6 @@ public class MP3PublishActivity extends TestableActivity {
             @Override
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
-                runOnUiThread(() -> {
-                    Toast.makeText(MP3PublishActivity.this,"Websocket connected",Toast.LENGTH_SHORT).show();
-
-                });
             }
 
             @Override

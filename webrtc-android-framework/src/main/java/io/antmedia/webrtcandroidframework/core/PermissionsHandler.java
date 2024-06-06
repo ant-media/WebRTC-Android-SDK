@@ -26,6 +26,7 @@ public class PermissionsHandler {
             :
             new String[] {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA};
 
+
     // List of mandatory application permissions.
     public static final String[] REQUIRED_MINIMUM_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
             "android.permission.INTERNET"};
@@ -34,6 +35,7 @@ public class PermissionsHandler {
         this.activity = activity;
     }
 
+    //Permission handling should be done on application side, NOT SDK IMO.
     public boolean checkAndRequestPermisssions(boolean isExtended, PermissionCallback permissionCallback) {
         ArrayList<String> permissions = new ArrayList<>();
         permissions.addAll(Arrays.asList(REQUIRED_MINIMUM_PERMISSIONS));
@@ -69,6 +71,7 @@ public class PermissionsHandler {
         permissions.toArray(permissionArray);
         ActivityCompat.requestPermissions(activity, permissionArray, 1);
     }
+
 
     public void onRequestPermissionsResult(
             int requestCode,
