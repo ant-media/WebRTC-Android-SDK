@@ -163,9 +163,10 @@ public class ScreenCaptureActivityTest {
 
         //Stop publishing
         onView(withId(R.id.start_streaming_button)).perform(click());
+        Log.i(this.getClass().getSimpleName(), "after click Stop again");
         onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
 
-        Log.i(this.getClass().getSimpleName(), "after click Stop again");
+        Log.i(this.getClass().getSimpleName(), "after broadcasting check");
 
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
