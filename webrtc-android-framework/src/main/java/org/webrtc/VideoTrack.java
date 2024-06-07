@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import android.util.Log;
+
 import java.util.IdentityHashMap;
 
 /** Java version of VideoTrackInterface. */
@@ -47,11 +49,17 @@ public class VideoTrack extends MediaStreamTrack {
    * If the VideoSink was not attached to the track, this is a no-op.
    */
   public void removeSink(VideoSink sink) {
+    Log.i("debuggg:", "removeSink1");
     final Long nativeSink = sinks.remove(sink);
+    Log.i("debuggg:", "removeSink2");
     if (nativeSink != null) {
+      Log.i("debuggg:", "removeSink3");
       nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
+      Log.i("debuggg:", "removeSink4");
       nativeFreeSink(nativeSink);
+      Log.i("debuggg:", "removeSink5");
     }
+    Log.i("debuggg:", "removeSink6");
   }
 
   @Override
