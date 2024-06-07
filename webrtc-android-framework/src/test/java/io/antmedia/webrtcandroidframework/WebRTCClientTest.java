@@ -1218,7 +1218,7 @@ public class WebRTCClientTest {
         String streamId = "stream1";
         SurfaceViewRenderer renderer = mock(SurfaceViewRenderer.class);
         VideoTrack videoTrack = mock(VideoTrack.class);
-        VideoSink sink = mock(VideoSink.class);
+        ProxyVideoSink sink = mock(ProxyVideoSink.class);
         when(videoTrack.id()).thenReturn(streamId);
         when(renderer.getTag()).thenReturn(videoTrack);
         when(renderer.getId()).thenReturn(1);
