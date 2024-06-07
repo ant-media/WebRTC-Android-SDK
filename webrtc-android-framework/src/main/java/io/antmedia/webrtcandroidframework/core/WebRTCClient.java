@@ -935,13 +935,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             wsHandler = null;
         }
         if (config.localVideoRenderer != null) {
-            Log.i(getClass().getSimpleName(), "Release local renderer");
+            Log.i(getClass().getSimpleName(), "Release local renderer:"+config.localVideoRenderer);
             releaseRenderer(config.localVideoRenderer,localVideoTrack,localVideoSink);
         }
 
         Log.i(getClass().getSimpleName(), "Release remote renderers");
 
         for (SurfaceViewRenderer remoteVideoRenderer : config.remoteVideoRenderers) {
+            Log.i(getClass().getSimpleName(), "Release remote renderer:"+remoteVideoRenderer+" tag:"+remoteVideoRenderer.getTag());
             if(remoteVideoRenderer.getTag() != null) {
                 releaseRenderer(remoteVideoRenderer);
             }
@@ -960,13 +961,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
     public void releaseRenderer(SurfaceViewRenderer renderer , VideoTrack track , VideoSink sink){
         mainHandler.post(()->{
-            Log.i(getClass().getSimpleName(), "Releasing renderer");
+            Log.i(getClass().getSimpleName(), "Releasing renderer:"+renderer);
 
             VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
             VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
 
-            if(videoTrack != null && videoSink !=null)
+            Log.i(getClass().getSimpleName(), "Releasing renderer remove sink:"+videoSink+" from track:"+videoTrack+" renderer:"+renderer+" tag:"+renderer.getTag());
+
+            if(videoTrack != null && videoSink != null) {
                 videoTrack.removeSink(videoSink);
+            }
+
+            Log.i(getClass().getSimpleName(), "Releasing renderer clear animation");
+
+
             renderer.clearAnimation();
             Log.i(getClass().getSimpleName(), "Releasing renderer clear image");
             mainHandler.postAtFrontOfQueue(renderer::clearImage);
