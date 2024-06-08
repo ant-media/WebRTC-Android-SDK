@@ -67,7 +67,7 @@ public class ScreenCaptureActivity extends TestableActivity {
                 else if(checkedId == R.id.rbRear) {
                     newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
                 }
-                idlingResource.increment();
+                incrementIdle();
                 webRTCClient.changeVideoSource(newSource);
                 decrementIdle();
             }
