@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 
 /** Java wrapper for a C++ MediaStreamTrackInterface. */
@@ -112,6 +114,9 @@ public class MediaStreamTrack {
 
   long getNativeMediaStreamTrack() {
     checkMediaStreamTrackExists();
+
+    Log.i("debuggg:", "removeSink11 nativeTrack:"+nativeTrack);
+
     return nativeTrack;
   }
 

@@ -53,8 +53,9 @@ public class VideoTrack extends MediaStreamTrack {
     final Long nativeSink = sinks.remove(sink);
     Log.i("debuggg:", "removeSink2");
     if (nativeSink != null) {
-      Log.i("debuggg:", "removeSink3");
+      Log.i("debuggg:", "removeSink3 nativeSink:"+nativeSink);
       nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
+
       Log.i("debuggg:", "removeSink4");
       nativeFreeSink(nativeSink);
       Log.i("debuggg:", "removeSink5");
