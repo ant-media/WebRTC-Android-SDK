@@ -18,8 +18,19 @@ import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 public interface IWebRTCListener {
 
  /**
+  * It's called when websocket connection established to server.
+  */
+ void onWebSocketConnected();
+
+ /**
   * It's called when websocket connection has been disconnected
   */
+ void onWebSocketDisconnected();
+
+ /**
+  * It's called when websocket connection has been disconnected
+  */
+ @Deprecated //use onWebSocketDisconnected, onIceDisconnected instead
  void onDisconnected();
 
  /**
@@ -197,4 +208,6 @@ public interface IWebRTCListener {
      * @param broadcast
      */
     void onBroadcastObject(Broadcast broadcast);
+
+
 }

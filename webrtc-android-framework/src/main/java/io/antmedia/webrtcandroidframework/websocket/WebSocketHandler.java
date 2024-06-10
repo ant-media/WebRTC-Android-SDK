@@ -109,12 +109,13 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     @Override
     public void onOpen() {
         Log.d(TAG, "WebSocket connection opened.");
+        signallingListener.onWebSocketConnected();
     }
 
     @Override
     public void onClose(WebSocketCloseNotification webSocketCloseNotification, String s) {
         Log.d(TAG, "WebSocket connection closed.");
-        signallingListener.onDisconnected();
+        signallingListener.onWebSocketDisconnected();
         synchronized (closeEventLock) {
             closeEvent = true;
             closeEventLock.notify();
@@ -528,7 +529,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     }
 
     public boolean isConnected() {
-        return ws.isConnected();
+        return ws !=null && ws.isConnected();
     }
 
     public void forceStreamQuality(String streamId, int height) {

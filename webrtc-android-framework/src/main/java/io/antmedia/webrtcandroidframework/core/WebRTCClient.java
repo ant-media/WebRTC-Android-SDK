@@ -201,7 +201,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
 
     }
-    public Map<String, PeerInfo> peers = new ConcurrentHashMap<>();
+    private final Map<String, PeerInfo> peers = new ConcurrentHashMap<>();
     @androidx.annotation.Nullable
     private AudioSource audioSource;
     @androidx.annotation.Nullable
@@ -818,6 +818,36 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
+    @Override
+    public void onWebSocketConnected() {
+        Log.i(TAG, "WebSocket connected.");
+
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onWebSocketConnected();
+            }
+        });
+
+        publishPlayIfRequested();
+
+    }
+
+    private void publishPlayIfRequested(){
+        for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
+            PeerInfo peerInfo = entry.getValue();
+            Mode peerMode = peerInfo.mode;
+            if(peerMode == Mode.PUBLISH && peerInfo.peerConnection == null){
+                Log.i(TAG, "Processing publish request for peer streamId: "+ peerInfo.id);
+                wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
+            }
+
+            if(peerMode == Mode.PLAY && peerInfo.peerConnection == null){
+                Log.i(TAG, "Processing play request for peer streamId: "+ peerInfo.id);
+                wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.metaData);
+            }
+        }
+    }
+
     public void publish(String streamId) {
         publish(streamId, null, true, true,
                 null, null, streamId, null);
@@ -826,10 +856,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
                         String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
-        Log.e(TAG, "Publish: "+streamId);
+        Log.i(TAG, "Publish: "+streamId);
         requestExtendedRights = true;
 
-        PeerInfo peerInfo = new PeerInfo(streamId, Mode.PUBLISH);
+        createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null, Mode.PUBLISH);
+        init();
+
+        if(isWebSocketConnected()){
+            Log.i(TAG, "Publish request sent through ws for stream: "+streamId);
+            wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+        }
+        else {
+            Log.w(TAG, "Websocket is not connected. Set publish requested. It will be processed when ws is connected.");
+        }
+    }
+
+    private void createPeerInfo(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId, String metaData, Mode mode){
+        PeerInfo peerInfo;
+        peerInfo = new PeerInfo(streamId, mode);
         peerInfo.token = token;
         peerInfo.videoCallEnabled = videoCallEnabled || config.videoCallEnabled;
         peerInfo.audioCallEnabled = audioCallEnabled || config.audioCallEnabled;
@@ -837,23 +881,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peerInfo.subscriberCode = subscriberCode;
         peerInfo.streamName = streamName;
         peerInfo.mainTrackId = mainTrackId;
+        peerInfo.metaData = metaData;
         peers.put(streamId, peerInfo);
-
-        init();
-        waitForWSHandler();
-        wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
-    }
-
-
-    //FIXME find a better way to do this
-    public void waitForWSHandler() {
-        while (wsHandler == null || !wsHandler.isConnected()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public void play(String streamId) {
@@ -865,18 +894,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
-        Log.e(TAG, "Play: "+streamId);
+        Log.i(TAG, "Play: "+streamId);
 
-        PeerInfo peerInfo = new PeerInfo(streamId, Mode.PLAY);
-        peerInfo.token = token;
-        peerInfo.subscriberId = subscriberId;
-        peerInfo.subscriberCode = subscriberCode;
-        peerInfo.metaData = viewerInfo;
-        peers.put(streamId, peerInfo);
-
+        createPeerInfo(streamId, token, false, false, subscriberId, subscriberCode, "", "", viewerInfo, Mode.PLAY);
         init();
-        waitForWSHandler();
-        wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
+
+        if(isWebSocketConnected()){
+            Log.i(TAG, "Play request sent through ws for stream: "+streamId);
+            wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
+        }
+        else {
+            Log.w(TAG, "Websocket is not connected. Set play requested. It will be processed when ws is connected.");
+        }
     }
 
     public void join(String streamId) {
@@ -948,7 +977,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         remoteVideoSinks.clear();
 
-        executor.execute(this ::closeInternal);
+        mainHandler.post(() -> {
+            //if closeInternal works before releasing renderer, app stucks
+            executor.execute(this ::closeInternal);
+        });
+
 
         if (audioManager != null) {
             audioManager.stop();
@@ -970,6 +1003,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 renderer.setTag(null);
             });
         });
+    }
+
+    public boolean isWebSocketConnected(){
+        if(wsHandler == null){
+            return false;
+        }
+        return wsHandler.isConnected();
     }
     public void releaseRenderer(SurfaceViewRenderer renderer) {
         releaseRenderer(renderer,null, null);
@@ -1274,6 +1314,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     @Override
+    public void onWebSocketDisconnected() {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onWebSocketDisconnected();
+            }
+        });
+
+        onDisconnected();
+    }
+
+
+    @Deprecated //separate websocket and ice connection
     public void onDisconnected() {
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -2325,5 +2377,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setPermissionsHandlerForTest(PermissionsHandler permissionsHandler) {
         this.permissionsHandler = permissionsHandler;
+    }
+
+    public Map<String, PeerInfo> getPeersForTest() {
+        return peers;
     }
 }

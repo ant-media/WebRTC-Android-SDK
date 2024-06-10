@@ -78,9 +78,14 @@ public interface AntMediaSignallingEvents {
     void onRoomInformation(String[] streams);
 
     /**
+     * It's called when websocket connection is connected
+     */
+    void onWebSocketConnected();
+
+    /**
      * It's called when websocket connection is disconnected
      */
-    void onDisconnected();
+    void onWebSocketDisconnected();
 
     /**
      * It's called in responde the getTrackList methods
