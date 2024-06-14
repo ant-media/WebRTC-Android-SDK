@@ -1,5 +1,6 @@
 package io.antmedia.webrtcandroidframework.websocket;
 
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
@@ -41,6 +42,12 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     private int pingPongTimoutCount = 0;
     public static final  long TIMER_DELAY  = 3000L;
     public static final  long TIMER_PERIOD = 2000L;
+
+    private static final int WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS = 5000;
+
+    private Runnable wsReconnectorRunnable;
+    private Handler wsReconnectionHandler = new Handler();
+
 
     Gson gson;
 
@@ -263,7 +270,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }
                 if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
                     signallingListener.streamIdInUse(streamId);
-                    disconnect(true);
+                   // disconnect(true);
                 }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
@@ -555,5 +562,35 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setupWsReconnection() {
+        if(wsReconnectorRunnable != null){
+            return;
+        }
+        wsReconnectorRunnable = () -> {
+            wsReconnectionHandler.postDelayed(wsReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+            if (!isConnected()) {
+                connect(wsServerUrl);
+            }
+        };
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (!wsReconnectionHandler.hasCallbacks(wsReconnectorRunnable)) {
+                wsReconnectionHandler.postDelayed(wsReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+            }
+        } else {
+            wsReconnectionHandler.postDelayed(wsReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+        }
+
+
+    }
+
+    public void stopReconnector(){
+        if(wsReconnectionHandler == null){
+            return;
+        }
+        wsReconnectionHandler.removeCallbacksAndMessages(null);
+        wsReconnectionHandler = null;
     }
 }
