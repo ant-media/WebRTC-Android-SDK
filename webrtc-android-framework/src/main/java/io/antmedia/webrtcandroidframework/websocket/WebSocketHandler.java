@@ -43,9 +43,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     public static final  long TIMER_DELAY  = 3000L;
     public static final  long TIMER_PERIOD = 2000L;
 
-    private static final int WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS = 5000;
+    public static final long WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS = 5000;
 
     private Runnable wsReconnectorRunnable;
+
     private Handler wsReconnectionHandler = new Handler();
 
 
@@ -593,4 +594,17 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         wsReconnectionHandler.removeCallbacksAndMessages(null);
         wsReconnectionHandler = null;
     }
+
+    public Runnable getWsReconnectorRunnable() {
+        return wsReconnectorRunnable;
+    }
+
+    public Handler getWsReconnectionHandler() {
+        return wsReconnectionHandler;
+    }
+
+    public void setWsReconnectionHandler(Handler wsReconnectionHandler) {
+        this.wsReconnectionHandler = wsReconnectionHandler;
+    }
+
 }

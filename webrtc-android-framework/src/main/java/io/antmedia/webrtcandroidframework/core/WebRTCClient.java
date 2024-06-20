@@ -12,7 +12,6 @@ package io.antmedia.webrtcandroidframework.core;
 
 import android.app.Activity;
 import android.media.projection.MediaProjection;
-import android.os.Build;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -111,6 +110,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private EglBase eglBase;
     private String errorString = null;
+
     private boolean streamStoppedByUser = false;
     private boolean reconnectionInProgress = false;
 
@@ -231,16 +231,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private boolean removeVideoRotationExtension = true;
 
-
     //reconnection parameters
     private Handler peerReconnectionHandler = new Handler();
     private Runnable peerReconnectorRunnable;
+    public static final long PEER_RECONNECTION_DELAY_MS = 3000;
+    public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
 
 
     public void createPeerReconnectorRunnable() {
 
         peerReconnectorRunnable = () -> {
-            peerReconnectionHandler.postDelayed(peerReconnectorRunnable, 10000);
+            peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
             releaseRemoteRenderers();
 
             for (PeerInfo peerInfo : peers.values()) {
@@ -1161,14 +1162,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    private void rePublishPlay() {
+    public void rePublishPlay() {
         if(streamStoppedByUser){
             return;
         }
         reconnectionInProgress = true;
-        long delayTimeMs = 3000;
-        Log.d(TAG, "Peer was connected before. Will try to republish/replay in " + delayTimeMs + " ms.");
-        peerReconnectionHandler.postDelayed(peerReconnectorRunnable, delayTimeMs);
+
+        Log.d(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
+        peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
     }
 
     public void onIceDisconnected(String streamId) {
@@ -1263,7 +1264,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onPlayFinished(String streamId) {
         waitingForPlay = false;
         this.handler.post(() -> {
-            //release(false);
             if (config.webRTCListener != null) {
                 config.webRTCListener.onPlayFinished(streamId);
             }
@@ -2439,5 +2439,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public Map<String, PeerInfo> getPeersForTest() {
         return peers;
+    }
+
+    public boolean isStreamStoppedByUser() {
+        return streamStoppedByUser;
+    }
+
+    public void setStreamStoppedByUser(boolean streamStoppedByUser) {
+        this.streamStoppedByUser = streamStoppedByUser;
+    }
+
+    public Handler getPeerReconnectionHandler() {
+        return peerReconnectionHandler;
+    }
+
+    public void setPeerReconnectionHandler(Handler peerReconnectionHandler) {
+        this.peerReconnectionHandler = peerReconnectionHandler;
     }
 }
