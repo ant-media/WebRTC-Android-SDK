@@ -2,6 +2,7 @@ package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +12,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.DataChannel;
@@ -26,14 +28,19 @@ import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 public class PlayActivity extends TestableActivity {
-    private View broadcastingView;
-    private View startStreamingButton;
-    private View streamInfoListSpinner;
+    private TextView playStatusTextView;
+    private Button startStreamingButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
     private TextView streamIdEditText;
+
+    private String serverUrl = "";
+    SurfaceViewRenderer fullScreenRenderer;
+
+    boolean bluetoothEnabled = false;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -41,45 +48,53 @@ public class PlayActivity extends TestableActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
 
-        SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        fullScreenRenderer = findViewById(R.id.full_screen_renderer);
+        playStatusTextView = findViewById(R.id.broadcasting_text_view);
         startStreamingButton = findViewById(R.id.start_streaming_button);
-        streamInfoListSpinner = findViewById(R.id.stream_info_list);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         streamIdEditText.setText("streamId");
 
+        createWebRTCClient();
+
+    }
+
+    public void createWebRTCClient(){
         webRTCClient = IWebRTCClient.builder()
                 .addRemoteVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
+                .setVideoCallEnabled(false)
+                .setBluetoothEnabled(bluetoothEnabled)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
+        startStreamingButton = findViewById(R.id.start_streaming_button);
         startStreamingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startStopStream(v);
+                startStopStream();
             }
         });
+
     }
 
-    public void startStopStream(View v) {
+    public void startStopStream() {
+        if(!PermissionHandler.checkPlayPermissions(this, bluetoothEnabled)){
+            PermissionHandler.requestPlayPermissions(this, bluetoothEnabled);
+            return;
+        }
         incrementIdle();
         streamId = streamIdEditText.getText().toString();
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling play start");
-
             webRTCClient.play(streamId);
         }
         else {
-            ((Button) v).setText("Start");
             Log.i(getClass().getSimpleName(), "Calling play start");
-
             webRTCClient.stop(streamId);
         }
     }
@@ -89,7 +104,6 @@ public class PlayActivity extends TestableActivity {
             @Override
             public void textMessageReceived(String messageText) {
                 super.textMessageReceived(messageText);
-                Toast.makeText(PlayActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -97,16 +111,47 @@ public class PlayActivity extends TestableActivity {
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
             @Override
+            public void onWebSocketConnected() {
+                super.onWebSocketConnected();
+            }
+
+            @Override
+            public void onPeerConnectionClosed() {
+                super.onPeerConnectionClosed();
+                startStreamingButton.setText("Start");
+                playStatusTextView.setText("Disconnected");
+            }
+
+            @Override
+            public void onDisconnected() {
+                super.onDisconnected();
+                if(webRTCClient.getConfig().reconnectionEnabled){
+                    playStatusTextView.setText("Reconnecting...");
+
+                }else{
+                    playStatusTextView.setText("Disconnected");
+                }
+            }
+
+            @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
+                playStatusTextView.setText("Playing");
+                startStreamingButton.setText("Stop");
+                playStatusTextView.setVisibility(View.VISIBLE);
                 decrementIdle();
+            }
+
+            @Override
+            public void onIceConnected(String streamId) {
+                super.onIceConnected(streamId);
+                startStreamingButton.setText("Stop");
             }
 
             @Override
             public void onPlayFinished(String streamId) {
                 super.onPlayFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
+                playStatusTextView.setVisibility(View.GONE);
                 decrementIdle();
             }
         };
@@ -141,6 +186,27 @@ public class PlayActivity extends TestableActivity {
         }
         else {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if(requestCode == PermissionHandler.PLAY_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (allPermissionsGranted) {
+                startStopStream();
+            } else {
+                Toast.makeText(this,"Play permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
         }
     }
 

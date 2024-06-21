@@ -209,5 +209,7 @@ public interface IWebRTCListener {
      */
     void onBroadcastObject(Broadcast broadcast);
 
+    void onPeerConnectionClosed();
+
 
 }

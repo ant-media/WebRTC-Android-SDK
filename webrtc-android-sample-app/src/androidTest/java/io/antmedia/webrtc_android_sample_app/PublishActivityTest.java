@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -40,9 +39,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 public class PublishActivityTest {
     private IdlingResource mIdlingResource;
 
-    @Rule
-    public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+
 
     @Before
     public void before() {

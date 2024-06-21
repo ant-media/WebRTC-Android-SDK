@@ -36,7 +36,6 @@ import org.junit.runner.RunWith;
 
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 
 /**
@@ -52,9 +51,7 @@ public class ConferenceActivityTest {
 
     private IdlingResource mIdlingResource;
 
-    @Rule
-    public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+
 
     @Rule
     public ActivityScenarioRule<ConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(ConferenceActivity.class);

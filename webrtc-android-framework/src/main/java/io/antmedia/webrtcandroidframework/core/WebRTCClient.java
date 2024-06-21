@@ -121,7 +121,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
     private final ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
-    private PermissionsHandler permissionsHandler;
     private final StatsCollector statsCollector = new StatsCollector();
 
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
@@ -155,7 +154,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     @androidx.annotation.Nullable
     private PeerConnectionFactory factory;
-    private boolean requestExtendedRights = false;
 
     public static class PeerInfo {
 
@@ -296,7 +294,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public WebRTCClient(WebRTCClientConfig config) {
         this.config = config;
         config.webRTCListener.setWebRTCClient(this);
-        permissionsHandler = new PermissionsHandler(config.activity);
         mainHandler = new Handler(config.activity.getMainLooper());
 
         iceServers.add(PeerConnection.IceServer.builder(config.stunServerUri)
@@ -593,8 +590,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void init() {
-        //if permissions are not granted yet return now bu set init as callback to call it again after grant result
-        if(!checkPermissions(this::init)) {
+
+        if(config.videoCallEnabled && !PermissionHandler.checkCameraPermissions(config.activity)) {
+            Log.e(TAG,"Camera permissions not given. Cannot init.");
             return;
         }
 
@@ -612,13 +610,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             initializeVideoCapturer();
         }
 
-        initializeAudioManager();
-
         connectWebSocket();
-    }
-
-    public boolean checkPermissions(PermissionsHandler.PermissionCallback permissionCallback) {
-        return permissionsHandler.checkAndRequestPermisssions(requestExtendedRights, permissionCallback);
     }
 
     public void initializeParameters() {
@@ -676,7 +668,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             // MODE_IN_COMMUNICATION for best possible VoIP performance.
             Log.d(TAG, "Starting the audio manager...");
             // This method will be called each time the number of available audio devices has changed.
-            audioManager.start(this::onAudioManagerDevicesChanged);
+            audioManager.start(this::onAudioManagerDevicesChanged, config.bluetoothEnabled);
         }
     }
 
@@ -856,11 +848,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
                         String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
-        Log.i(TAG, "Publish: "+streamId);
-        requestExtendedRights = true;
+
 
         createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null, Mode.PUBLISH);
         init();
+
+        if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled)){
+            Log.e(TAG,"Publish permissions not given. Cant publish.");
+            return;
+        }
+
+        initializeAudioManager();
+
+        Log.i(TAG, "Publish: "+streamId);
 
         if(isWebSocketConnected()){
             Log.i(TAG, "Publish request sent through ws for stream: "+streamId);
@@ -894,10 +894,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void play(String streamId, String token, String[] tracks,  String subscriberId, String subscriberCode, String viewerInfo) {
-        Log.i(TAG, "Play: "+streamId);
 
         createPeerInfo(streamId, token, false, false, subscriberId, subscriberCode, "", "", viewerInfo, Mode.PLAY);
         init();
+
+        if(!PermissionHandler.checkPlayPermissions(config.activity, config.bluetoothEnabled)){
+            Log.e(TAG,"Play permissions not given.");
+            return;
+        }
+
+        initializeAudioManager();
+
+        Log.i(TAG, "Play: "+streamId);
+
 
         if(isWebSocketConnected()){
             Log.i(TAG, "Play request sent through ws for stream: "+streamId);
@@ -914,7 +923,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         
     public void join(String streamId, String token) {
         Log.e(TAG, "Join: "+streamId);
-        requestExtendedRights = true;
 
         PeerInfo peerInfo = new PeerInfo(streamId, Mode.P2P);
         peerInfo.token = token;
@@ -1164,7 +1172,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.w(getClass().getSimpleName(), "onConnected");
     }
 
-    public void onPeerConnectionClosed() {}
+    public void onPeerConnectionClosed() {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPeerConnectionClosed();
+            }
+        });
+
+
+    }
 
     public void  onPeerConnectionStatsReady(RTCStatsReport report) {
         this.handler.post(() -> {
@@ -2373,10 +2389,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {
         this.factory = factory;
-    }
-
-    public void setPermissionsHandlerForTest(PermissionsHandler permissionsHandler) {
-        this.permissionsHandler = permissionsHandler;
     }
 
     public Map<String, PeerInfo> getPeersForTest() {

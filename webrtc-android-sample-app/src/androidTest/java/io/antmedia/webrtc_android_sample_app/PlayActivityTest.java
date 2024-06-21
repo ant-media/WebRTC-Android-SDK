@@ -23,7 +23,6 @@ import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.rule.GrantPermissionRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -31,7 +30,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -42,9 +40,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 public class PlayActivityTest {
     private IdlingResource mIdlingResource;
 
-    @Rule
-    public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
 
     @Before
     public void before() {
