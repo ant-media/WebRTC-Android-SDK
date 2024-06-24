@@ -160,6 +160,21 @@ public class WebRTCClientConfig {
     public String stunServerUri = "stun:stun1.l.google.com:19302";
 
     /*
+     * TURN server uri
+     */
+    public String turnServerUri;
+
+    /*
+     * TURN server user name
+     */
+    public String turnServerUserName;
+
+    /*
+     * TURN server password
+     */
+    public String turnServerPassword;
+
+    /*
      * Flag indicating whether reconnection is enabled
      */
     public boolean reconnectionEnabled = true;

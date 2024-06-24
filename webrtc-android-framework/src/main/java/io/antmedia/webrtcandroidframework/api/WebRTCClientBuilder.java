@@ -131,6 +131,13 @@ public class WebRTCClientBuilder {
         return this;
     }
 
+    public WebRTCClientBuilder setTurnServer(String turnServerUri, String turnServerUserName, String turnServerPassword){
+        webRTCClientConfig.turnServerUri = turnServerUri;
+        webRTCClientConfig.turnServerUserName = turnServerUserName;
+        webRTCClientConfig.turnServerPassword = turnServerPassword;
+        return this;
+    }
+
     public WebRTCClientBuilder setReconnectionEnabled(boolean b) {
         webRTCClientConfig.reconnectionEnabled = b;
         return this;
