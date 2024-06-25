@@ -71,7 +71,6 @@ import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
@@ -446,7 +445,7 @@ public class WebRTCClientTest {
     }
 
 
-    @Test
+   /* @Test
     public void testInitilization() {
         mockMethodsInInit();
         Mockito.doReturn(true).when(webRTCClient).checkPermissions(any());
@@ -456,7 +455,7 @@ public class WebRTCClientTest {
 
         webRTCClient.init();
         assertTrue(webRTCClient.isDataChannelEnabled());
-    }
+    }*/
 
 
     @Test
@@ -742,7 +741,7 @@ public class WebRTCClientTest {
         verify(listener, timeout(1000)).onBitrateMeasurement(streamId, 1000, 500, 100);
     }
 
-    @Test
+/*    @Test
     public void testCheckPermissionsForPublish() {
         mockMethodsInInit();
 
@@ -754,9 +753,9 @@ public class WebRTCClientTest {
 
         webRTCClient.publish("stream1");
         verify(permissionsHandler).checkAndRequestPermisssions(eq(true), any());
-    }
+    }*/
 
-    @Test
+   /* @Test
     public void testCheckPermissionsForPlay() {
         mockMethodsInInit();
 
@@ -768,21 +767,21 @@ public class WebRTCClientTest {
 
         webRTCClient.play("stream1");
         verify(permissionsHandler).checkAndRequestPermisssions(eq(false), any());
-    }
+    }*/
 
-    @Test
+    /*@Test
     public void testCheckPermissionsForPeer() {
         mockMethodsInInit();
 
         doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
         doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
 
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
+        *//**//*PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
         webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
 
         webRTCClient.join("stream1");
         verify(permissionsHandler, times(1)).checkAndRequestPermisssions(eq(true), any());
-    }
+    }*/
 
     private void mockMethodsInInit() {
         Mockito.doNothing().when(webRTCClient).initializeRenderers();

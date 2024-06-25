@@ -196,7 +196,7 @@ public class AppRTCAudioManager {
   }
 
   @SuppressWarnings("deprecation") // TODO(henrika): audioManager.requestAudioFocus() is deprecated.
-  public void start(AudioManagerEvents audioManagerEvents) {
+  public void start(AudioManagerEvents audioManagerEvents, boolean bluetoothEnabled) {
     Log.d(TAG, "start");
     ThreadUtils.checkIsOnMainThread();
     if (amState == AudioManagerState.RUNNING) {
@@ -280,7 +280,9 @@ public class AppRTCAudioManager {
 
     // Initialize and start Bluetooth if a BT device is available or initiate
     // detection of new (enabled) BT devices.
-    bluetoothManager.start();
+    if(bluetoothEnabled){
+      bluetoothManager.start();
+    }
 
     // Do initial selection of audio device. This setting can later be changed
     // either by adding/removing a BT or wired headset or by covering/uncovering
