@@ -1,5 +1,6 @@
 package io.antmedia.webrtcandroidframework.websocket;
 
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 
@@ -41,6 +42,13 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     private int pingPongTimoutCount = 0;
     public static final  long TIMER_DELAY  = 3000L;
     public static final  long TIMER_PERIOD = 2000L;
+
+    public static final long WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS = 5000;
+
+    private Runnable wsReconnectorRunnable;
+
+    private Handler wsReconnectionHandler = new Handler();
+
 
     Gson gson;
 
@@ -109,12 +117,13 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     @Override
     public void onOpen() {
         Log.d(TAG, "WebSocket connection opened.");
+        signallingListener.onWebSocketConnected();
     }
 
     @Override
     public void onClose(WebSocketCloseNotification webSocketCloseNotification, String s) {
         Log.d(TAG, "WebSocket connection closed.");
-        signallingListener.onDisconnected();
+        signallingListener.onWebSocketDisconnected();
         synchronized (closeEventLock) {
             closeEvent = true;
             closeEventLock.notify();
@@ -262,7 +271,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }
                 if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
                     signallingListener.streamIdInUse(streamId);
-                    disconnect(true);
+                   // disconnect(true);
                 }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
@@ -558,7 +567,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     }
 
     public boolean isConnected() {
-        return ws.isConnected();
+        return ws !=null && ws.isConnected();
     }
 
     public void forceStreamQuality(String streamId, int height) {
@@ -585,4 +594,47 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             e.printStackTrace();
         }
     }
+
+    public void setupWsReconnection() {
+        if(wsReconnectorRunnable != null){
+            return;
+        }
+        wsReconnectorRunnable = () -> {
+            wsReconnectionHandler.postDelayed(wsReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+            if (!isConnected()) {
+                connect(wsServerUrl);
+            }
+        };
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (!wsReconnectionHandler.hasCallbacks(wsReconnectorRunnable)) {
+                wsReconnectionHandler.postDelayed(wsReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+            }
+        } else {
+            wsReconnectionHandler.postDelayed(wsReconnectorRunnable, WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS);
+        }
+
+
+    }
+
+    public void stopReconnector(){
+        if(wsReconnectionHandler == null){
+            return;
+        }
+        wsReconnectionHandler.removeCallbacksAndMessages(null);
+        wsReconnectionHandler = null;
+    }
+
+    public Runnable getWsReconnectorRunnable() {
+        return wsReconnectorRunnable;
+    }
+
+    public Handler getWsReconnectionHandler() {
+        return wsReconnectionHandler;
+    }
+
+    public void setWsReconnectionHandler(Handler wsReconnectionHandler) {
+        this.wsReconnectionHandler = wsReconnectionHandler;
+    }
+
 }
