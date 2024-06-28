@@ -158,12 +158,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private PeerConnectionFactory factory;
     private boolean requestExtendedRights = false;
 
-    private String roomId;
-
-    //used on reconnection, especially important for conference reconnection.
-    boolean publishConnected = false;
-    boolean playConnected = false;
-
     public static class PeerInfo {
 
         public PeerInfo(String id, Mode mode) {
@@ -271,11 +265,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     config.webRTCListener.onReconnectionAttempt(peerInfo.id);
                     if (peerInfo.mode.equals(Mode.PUBLISH)) {
 
-                        if (!publishConnected) {
                             Log.d(TAG, "Reconnect attempt for publish");
                             wsHandler.stop(peerInfo.id);
                             wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
-                        }
+
 
                     } else if (peerInfo.mode.equals(Mode.PLAY)) {
                         releaseRemoteRenderers();
@@ -325,7 +318,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void joinToConferenceRoom(String roomId, String streamId) {
-        this.roomId = roomId;
 
         publish(streamId, "",
                 true, true,
@@ -1181,13 +1173,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void onIceDisconnected(String streamId) {
-        PeerInfo peerInfo = getPeerInfoFor(streamId);
-
-        if (peerInfo != null && peerInfo.mode == Mode.PLAY) {
-            playConnected = false;
-        } else if (peerInfo != null && peerInfo.mode == Mode.PUBLISH) {
-            publishConnected = false;
-        }
 
         this.handler.post(() -> {
             Log.d(TAG, "ICE disconnected");
@@ -1205,13 +1190,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    private boolean isConference() {
-        return roomId != null;
+    private boolean isAllPeersConnected() {
+        for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
+            PeerConnection peerConnection = entry.getValue().peerConnection;
+            PeerConnection.PeerConnectionState peerConnectionState = peerConnection.connectionState();
+            if(peerConnectionState != PeerConnection.PeerConnectionState.CONNECTED){
+               return false;
+            }
+        }
+        return true;
     }
 
     public void onIceFailed(String streamId) {
         PeerInfo peerInfo = getPeerInfoFor(streamId);
-
 
         if (peerInfo.mode == Mode.PLAY && config.reconnectionEnabled) {
             rePublishPlay();
@@ -1230,23 +1221,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void onConnected(String streamId) {
         Log.i(TAG, "Connected for streamId:" + streamId);
-        PeerInfo peerInfo = getPeerInfoFor(streamId);
-        if (peerInfo.mode == Mode.PUBLISH) {
-            publishConnected = true;
-        } else if (peerInfo.mode == Mode.PLAY) {
-            playConnected = true;
-        }
 
-        if (!isConference()) {
+      if (config.reconnectionEnabled && isAllPeersConnected()) {
+            Log.i(TAG, "All peers reconnected.");
+            //TODO Add a reconnectSuccess callback here, so that activity can also know about it.
             reconnectionInProgress = false;
             peerReconnectionHandler.removeCallbacksAndMessages(null);
-        } else if (publishConnected && playConnected) {
-            Log.i(TAG, "Both publish and play connected.");
-            publishConnected = false;
-            playConnected = false;
-            reconnectionInProgress = false;
-            peerReconnectionHandler.removeCallbacksAndMessages(null);
-        }
+      }
+
     }
 
     public void onPeerConnectionClosed() {
