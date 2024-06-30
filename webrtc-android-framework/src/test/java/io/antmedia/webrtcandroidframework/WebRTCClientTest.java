@@ -437,7 +437,7 @@ public class WebRTCClientTest {
         doNothing().when(wsHandler).disconnect(anyBoolean());
         webRTCClient.setStreamStoppedByUser(true);
         webRTCClient.onIceDisconnected("streamId");
-        Mockito.verify(webRTCClient, times(1)).release(false);
+        Mockito.verify(webRTCClient, times(1)).release(true);
     }
 
 
@@ -645,7 +645,7 @@ public class WebRTCClientTest {
 
     @Test
     public void testReconnection() {
-        webRTCClient.createPeerReconnectorRunnable();
+        webRTCClient.createReconnectorRunnables();
 
         final Handler handler = getMockHandler();
         webRTCClient.setPeerReconnectionHandler(handler);
