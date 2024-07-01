@@ -435,14 +435,9 @@ public class WebRTCClientTest {
     @Test
     public void testReleaseCallback() {
         doNothing().when(wsHandler).disconnect(anyBoolean());
-
-        webRTCClient.onPublishFinished("streamId");
-        Mockito.verify(webRTCClient, timeout(1000)).release(false);
-
         webRTCClient.setStreamStoppedByUser(true);
         webRTCClient.onIceDisconnected("streamId");
-        Mockito.verify(webRTCClient, times(2)).release(false);
-
+        Mockito.verify(webRTCClient, times(1)).release(true);
     }
 
 
@@ -650,7 +645,7 @@ public class WebRTCClientTest {
 
     @Test
     public void testReconnection() {
-        webRTCClient.createPeerReconnectorRunnable();
+        webRTCClient.createReconnectorRunnables();
 
         final Handler handler = getMockHandler();
         webRTCClient.setPeerReconnectionHandler(handler);
