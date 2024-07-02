@@ -1,4 +1,4 @@
-package io.antmedia.webrtc_android_sample_app.basic;
+package io.antmedia.webrtc_android_sample_app.advanced.notification;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -6,7 +6,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,66 +20,42 @@ import java.nio.charset.StandardCharsets;
 
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
+import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
-public class PublishActivity extends TestableActivity {
-    private View broadcastingView;
-    private String streamId;
+public class PeerForNotificationActivity extends TestableActivity {
+    private TextView broadcastingTextView;
+    public static String streamId;
     private IWebRTCClient webRTCClient;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_publish);
+        setContentView(R.layout.activity_peer_for_notification);
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
-        TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
+        SurfaceViewRenderer pipRenderer = findViewById(R.id.pip_view_renderer);
+
+        broadcastingTextView = findViewById(R.id.broadcasting_text_view);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        String generatedStreamId = "streamId" + (int)(Math.random()*9999);
-        streamIdEditText.setText(generatedStreamId);
-
-
-
 
         webRTCClient = IWebRTCClient.builder()
-                .setLocalVideoRenderer(fullScreenRenderer)
+                .setLocalVideoRenderer(pipRenderer)
+                .addRemoteVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        View startStreamingButton = findViewById(R.id.start_streaming_button);
-        startStreamingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                streamId = streamIdEditText.getText().toString();
-                startStopStream(v);
-            }
-        });
-    }
-
-    public void startStopStream(View v) {
-        incrementIdle();
-        if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Stop");
-            Log.i(getClass().getSimpleName(), "Calling publish start");
-
-            webRTCClient.publish(streamId);
-        }
-        else {
-            ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling publish start");
-
-            webRTCClient.stop(streamId);
-        }
+        Log.i(getClass().getSimpleName(), "Calling play start");
+        webRTCClient.join(streamId);
     }
 
     private IDataChannelObserver createDatachannelObserver() {
@@ -88,7 +63,7 @@ public class PublishActivity extends TestableActivity {
             @Override
             public void textMessageReceived(String messageText) {
                 super.textMessageReceived(messageText);
-                Toast.makeText(PublishActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
+                Toast.makeText(PeerForNotificationActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -96,16 +71,16 @@ public class PublishActivity extends TestableActivity {
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
             @Override
-            public void onPublishStarted(String streamId) {
-                super.onPublishStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
+            public void onPlayStarted(String streamId) {
+                super.onPlayStarted(streamId);
+                broadcastingTextView.setVisibility(View.VISIBLE);
                 decrementIdle();
             }
 
             @Override
-            public void onPublishFinished(String streamId) {
-                super.onPublishFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
+            public void onPlayFinished(String streamId) {
+                super.onPlayFinished(streamId);
+                broadcastingTextView.setVisibility(View.GONE);
                 decrementIdle();
             }
         };

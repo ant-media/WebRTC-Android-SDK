@@ -22,6 +22,7 @@ import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtc_android_sample_app.advanced.notification.CallNotificationActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithSpeakerIndicator;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.MP4PublishActivity;
@@ -37,6 +38,8 @@ import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 
+import com.google.firebase.FirebaseApp;
+
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
     final private List<ActivityLink> activities = new ArrayList<>();
     private GridView list;
@@ -50,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         list = findViewById(R.id.list);
         createList();
         setListAdapter(activities);
+
+        FirebaseApp.initializeApp(this);
     }
 
     private void createList() {
@@ -64,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(MP4PublishWithSurfaceActivity.class, "mp4 with Surface");
         addActivity(USBCameraActivity.class, "USB Camera");
         addActivity(MultiTrackPlayActivity.class, "Multi Track");
+        addActivity(CallNotificationActivity.class, "Call Notification");
         addActivity(PublishActivityWithAreYouSpeaking.class, "Are you talking?");
         addActivity(SettingsActivity.class, "Settings");
         addActivity(ConferenceActivityWithSpeakerIndicator.class,"Conference with Speaking Indicator");

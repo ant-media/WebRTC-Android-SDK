@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "xxx",
+    "project_id": "antmedia-test-a6292",
+    "storage_bucket": "antmedia-test-xxx.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:xxx:android:xxx",
+        "android_client_info": {
+          "package_name": "io.antmedia.webrtc_android_sample_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "xxx"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
