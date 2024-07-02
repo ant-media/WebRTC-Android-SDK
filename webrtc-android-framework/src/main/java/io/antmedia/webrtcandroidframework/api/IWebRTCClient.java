@@ -1,5 +1,7 @@
 package io.antmedia.webrtcandroidframework.api;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.RtpParameters;
 import org.webrtc.SurfaceViewRenderer;
@@ -303,7 +305,7 @@ public interface IWebRTCClient {
     /**
      * Send push notification to subscribers.
      */
-    void sendPushNotification(String subscriberId, String authToken, String pushNotificationContent, String subscriberIdsToNotify);
+    void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray subscriberIdsToNotify);
 
     StatsCollector getStatsCollector();
 

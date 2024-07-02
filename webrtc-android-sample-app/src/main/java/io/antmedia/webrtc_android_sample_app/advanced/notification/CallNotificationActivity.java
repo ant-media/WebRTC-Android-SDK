@@ -1,43 +1,49 @@
 package io.antmedia.webrtc_android_sample_app.advanced.notification;
 
-import static androidx.activity.result.ActivityResultCallerKt.registerForActivityResult;
 
-import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.webrtc.SurfaceViewRenderer;
 
-import io.antmedia.webrtc_android_sample_app.MainActivity;
 import io.antmedia.webrtc_android_sample_app.R;
+import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
+import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Bundle;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 
-import android.util.Log;
-import android.widget.Toast;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.RemoteMessage;
-
-import java.util.concurrent.atomic.AtomicInteger;
-
 
 public class CallNotificationActivity extends ComponentActivity {
+
+    String streamId;
+
+    String subscriberId;
+
+    String receiverSubscriberId;
+
+    String authToken;
+
+    String pushNotificationToken;
+
+    String tokenType;
+
+    JSONObject pushNotificationContent;
+
+    JSONArray receiverSubscriberIdArray;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,40 +52,67 @@ public class CallNotificationActivity extends ComponentActivity {
 
         FirebaseApp.initializeApp(this);
 
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this);
+
         //FirebaseMessaging.getInstance().setAutoInitEnabled(true);
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
+        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         IWebRTCClient webRTCClient = IWebRTCClient.builder()
                 .setActivity(this)
+                .setInitiateBeforeStream(true)
+                .setWebRTCListener(createWebRTCListener())
                 .setLocalVideoRenderer(fullScreenRenderer)
-                .setServerUrl("wss://ovh36.antmedia.io:5443/LiveApp/websocket")
+                .setServerUrl(serverUrl)
                 .build();
 
-        String streamId = "streamId" + (int)(Math.random()*9999);
+        streamId = "streamId" + (int)(Math.random()*9999);
 
         PeerForNotificationActivity.streamId = streamId;
 
         //Define the subscriberId and it can be any subscriber Id
-        String subscriberId = "test1@antmedia.io";
+        subscriberId = "test1@antmedia.io";
 
         //Define the receiverSubscriberId and it can be any subscriber Id
-        String receiverSubscriberId = "test2@antmedia.io";
+        receiverSubscriberId = "test2@antmedia.io";
 
         //Get auth token for Ant Media Server to authenticate the user.
         //it's JWT token generated with Subscription Authentication Key(subscriptionAuthenticationKey) in Application settings with subscriberId claim  and it's value.
         //PushNotificationRestService can also be used to generate the authToken
-        String authToken = "";
+        authToken = "";
 
-        String pushNotificationToken = AntMediaFirebaseMessagingService.fcmToken;
+        pushNotificationToken = AntMediaFirebaseMessagingService.fcmToken;
 
-        String tokenType = "fcm";
+        tokenType = "fcm";
 
-        webRTCClient.registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType);
+        pushNotificationContent = new JSONObject();
+        receiverSubscriberIdArray = new JSONArray();
 
-        webRTCClient.sendPushNotification(subscriberId, authToken, "{\"Caller\":\""+subscriberId+"\",\"StreamId\":\""+streamId+"\"}", receiverSubscriberId);
+        try {
+            pushNotificationContent.put("Caller", subscriberId);
+            pushNotificationContent.put("StreamId", streamId);
+            receiverSubscriberIdArray.put(receiverSubscriberId);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
 
         askNotificationPermission();
+    }
+
+    private IWebRTCListener createWebRTCListener() {
+        return new DefaultWebRTCListener() {
+            @Override
+            public void onWebSocketConnected() {
+                super.onWebSocketConnected();
+                webRTCClient.registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType);
+                webRTCClient.sendPushNotification(subscriberId, authToken, pushNotificationContent, receiverSubscriberIdArray
+                );
+            }
+
+        };
     }
 
     // [START ask_post_notifications]

@@ -1129,18 +1129,41 @@ public class WebRTCClientTest {
         public void sendPushNotification_sendsNotificationWhenWebSocketHandlerIsConnected() {
             when(wsHandler.isConnected()).thenReturn(true);
 
-            webRTCClient.sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+            JSONObject pushNotificationContent = new JSONObject();
+            JSONArray receiverSubscriberIdArray = new JSONArray();
 
-            verify(wsHandler, times(1)).sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+            try{
+                pushNotificationContent.put("Caller","Caller1");
+                pushNotificationContent.put("StreamId", "stream1");
+                receiverSubscriberIdArray.put("subscriber1");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+
+            webRTCClient.sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
+
+            verify(wsHandler, times(1)).sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
         }
 
         @Test
         public void sendPushNotification_doesNotSendNotificationWhenWebSocketHandlerIsNotConnected() {
             when(wsHandler.isConnected()).thenReturn(false);
 
-            webRTCClient.sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+            JSONObject pushNotificationContent = new JSONObject();
+            JSONArray receiverSubscriberIdArray = new JSONArray();
 
-            verify(wsHandler, times(0)).sendPushNotification("subscriberId", "authToken", "pushNotificationContent", "subscriberIdsToNotify");
+            try{
+                pushNotificationContent.put("Caller","Caller1");
+                pushNotificationContent.put("StreamId", "stream1");
+                receiverSubscriberIdArray.put("subscriber1");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            webRTCClient.sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
+
+            verify(wsHandler, times(0)).sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
         }
 
     @Test

@@ -19,6 +19,8 @@ import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.webrtc.AddIceObserver;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -1028,9 +1030,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    public void sendPushNotification(String subscriberId, String authToken, String pushNotificationContent, String subscriberIdsToNotify) {
+    public void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray receiverSubscriberIdArray) {
         if (wsHandler != null && wsHandler.isConnected()) {
-            wsHandler.sendPushNotification(subscriberId, authToken, pushNotificationContent, subscriberIdsToNotify);
+            wsHandler.sendPushNotification(subscriberId, authToken, pushNotificationContent, receiverSubscriberIdArray);
         }
     }
   

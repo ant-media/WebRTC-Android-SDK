@@ -6,7 +6,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +28,7 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PeerForNotificationActivity extends TestableActivity {
-    private View broadcastingView;
+    private TextView broadcastingTextView;
     public static String streamId;
     private IWebRTCClient webRTCClient;
 
@@ -42,7 +41,7 @@ public class PeerForNotificationActivity extends TestableActivity {
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
         SurfaceViewRenderer pipRenderer = findViewById(R.id.pip_view_renderer);
 
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        broadcastingTextView = findViewById(R.id.broadcasting_text_view);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
@@ -74,14 +73,14 @@ public class PeerForNotificationActivity extends TestableActivity {
             @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
+                broadcastingTextView.setVisibility(View.VISIBLE);
                 decrementIdle();
             }
 
             @Override
             public void onPlayFinished(String streamId) {
                 super.onPlayFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
+                broadcastingTextView.setVisibility(View.GONE);
                 decrementIdle();
             }
         };

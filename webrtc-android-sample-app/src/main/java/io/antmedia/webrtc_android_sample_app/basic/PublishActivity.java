@@ -46,6 +46,9 @@ public class PublishActivity extends TestableActivity {
         String generatedStreamId = "streamId" + (int)(Math.random()*9999);
         streamIdEditText.setText(generatedStreamId);
 
+
+
+
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)

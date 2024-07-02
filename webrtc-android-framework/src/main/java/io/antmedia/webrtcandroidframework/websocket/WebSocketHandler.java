@@ -364,7 +364,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
-    public void sendPushNotification(String subscriberId, String authToken, String pushNotificationContent, String subscriberIdsToNotify) {
+    public void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray receiverSubscriberIdArray) {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
@@ -372,7 +372,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
             json.put(WebSocketConstants.TOKEN, authToken);
             json.put(WebSocketConstants.PUSH_NOTIFICATION_CONTENT, pushNotificationContent);
-            json.put(WebSocketConstants.SUBSCRIBER_IDS_TO_NOTIFY, subscriberIdsToNotify);
+            json.put(WebSocketConstants.SUBSCRIBER_IDS_TO_NOTIFY, receiverSubscriberIdArray);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
             e.printStackTrace();
