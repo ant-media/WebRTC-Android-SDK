@@ -965,6 +965,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
                         String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
         Log.i(TAG, "Publish: " + streamId);
+
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPublishAttempt(streamId);
+            }
+        });
         requestExtendedRights = true;
 
         createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null, Mode.PUBLISH);
@@ -1003,7 +1009,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo) {
         Log.i(TAG, "Play: " + streamId);
-
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onPlayAttempt(streamId);
+            }
+        });
         createPeerInfo(streamId, token, false, false, subscriberId, subscriberCode, "", "", viewerInfo, Mode.PLAY);
 
         if (!isReconnectionInProgress()) {
@@ -1374,6 +1384,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 peerReconnectionHandler.removeCallbacksAndMessages(null);
                 publishReconnectionHandler.removeCallbacksAndMessages(null);
                 playReconnectionHandler.removeCallbacksAndMessages(null);
+                this.handler.post(() -> {
+                    if (config.webRTCListener != null) {
+                        config.webRTCListener.onReconnectionSuccess();
+                    }
+                });
             }
     }
 

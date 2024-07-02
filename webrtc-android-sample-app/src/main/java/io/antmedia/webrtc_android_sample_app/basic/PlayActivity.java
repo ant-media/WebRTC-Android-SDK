@@ -28,7 +28,7 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PlayActivity extends TestableActivity {
-    private View broadcastingView;
+    private TextView statusIndicatorTextView;
     private View startStreamingButton;
     private View streamInfoListSpinner;
     private String streamId;
@@ -42,12 +42,13 @@ public class PlayActivity extends TestableActivity {
         setContentView(R.layout.activity_play);
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         startStreamingButton = findViewById(R.id.start_streaming_button);
         streamInfoListSpinner = findViewById(R.id.stream_info_list);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         streamIdEditText.setText("streamId");
 
         webRTCClient = IWebRTCClient.builder()
@@ -99,15 +100,48 @@ public class PlayActivity extends TestableActivity {
             @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
                 decrementIdle();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+            }
+
+            @Override
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+            }
+
+            @Override
+            public void onPlayAttempt(String streamId) {
+                super.onPlayAttempt(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
+                }
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
             }
 
             @Override
             public void onPlayFinished(String streamId) {
                 super.onPlayFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
                 decrementIdle();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
             }
         };
     }
