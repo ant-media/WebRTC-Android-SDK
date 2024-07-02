@@ -84,11 +84,6 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     }
 
     @Override
-    public void onDisconnected() {
-        super.onDisconnected();
-    }
-
-    @Override
     public void onReconnectionAttempt(String streamId) {
         super.onReconnectionAttempt(streamId);
         if(streamId.equals(this.streamId)) {

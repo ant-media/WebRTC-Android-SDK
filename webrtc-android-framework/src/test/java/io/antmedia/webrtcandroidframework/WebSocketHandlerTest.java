@@ -22,6 +22,7 @@ import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 import com.google.gson.Gson;
@@ -449,4 +450,34 @@ public class WebSocketHandlerTest {
         assertEquals(broadcast.getName(), broadcast2.getName());
 
     }
+
+    @Test
+    public void testWsReconnection(){
+        Handler wsReconnectionHandlerMock = mock(Handler.class);
+
+        webSocketHandler.setWsReconnectionHandler(wsReconnectionHandlerMock);
+
+        doReturn(false).when(webSocketHandler).isConnected();
+        webSocketHandler.setupWsReconnection();
+
+        ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+
+        verify(wsReconnectionHandlerMock, times(1)).postDelayed(runnableCaptor.capture(), eq(WebSocketHandler.WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS));
+
+        Runnable capturedRunnable = runnableCaptor.getValue();
+
+        doNothing().when(webSocketHandler).connect(anyString());
+
+        capturedRunnable.run();
+
+        verify(webSocketHandler, times(1)).connect(anyString());
+
+        doReturn(true).when(webSocketHandler).isConnected();
+
+        capturedRunnable.run();
+
+        verify(webSocketHandler, times(1)).connect(anyString());
+
+    }
+
 }

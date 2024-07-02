@@ -23,8 +23,20 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
+    public void onWebSocketConnected() {
+        String messageText = "Web Socket Connected";
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onWebSocketDisconnected() {
+        String messageText = "Web Socket Disconnected";
+        callbackCalled(messageText);
+    }
+
+    @Override
     public void onDisconnected() {
-        String messageText = "Disconnected";
+        String messageText = "Web Socket Disconnected";
         callbackCalled(messageText);
     }
 
