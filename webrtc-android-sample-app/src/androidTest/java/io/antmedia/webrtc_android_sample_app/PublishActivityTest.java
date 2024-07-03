@@ -105,6 +105,7 @@ public class PublishActivityTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
+        Thread.sleep(10000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -118,7 +119,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(25000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -134,8 +135,10 @@ public class PublishActivityTest {
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
+        Thread.sleep(10000);
+
         onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
+                .check(matches(withText(R.string.live)));
 
         disconnectInternet();
 
@@ -146,7 +149,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(25000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));

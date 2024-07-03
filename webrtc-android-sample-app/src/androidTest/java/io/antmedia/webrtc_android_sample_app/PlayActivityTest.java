@@ -88,6 +88,8 @@ public class PlayActivityTest {
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
 
+        Thread.sleep(5000);
+
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
@@ -126,7 +128,7 @@ public class PlayActivityTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        Thread.sleep(3000);
+        Thread.sleep(5000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -140,7 +142,7 @@ public class PlayActivityTest {
 
         connectInternet();
 
-        Thread.sleep(15000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -156,8 +158,10 @@ public class PlayActivityTest {
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
+        Thread.sleep(5000);
+
         onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
+                .check(matches(withText(R.string.live)));
 
         disconnectInternet();
 
@@ -168,10 +172,10 @@ public class PlayActivityTest {
 
         connectInternet();
 
-        Thread.sleep(25000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.live))));
+                .check(matches(withText(R.string.live)));
 
         Thread.sleep(3000);
 

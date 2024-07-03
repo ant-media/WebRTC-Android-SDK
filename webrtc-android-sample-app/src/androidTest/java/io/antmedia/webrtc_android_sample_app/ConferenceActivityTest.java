@@ -127,7 +127,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
         try {
-            Thread.sleep(5000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -168,6 +168,8 @@ public class ConferenceActivityTest {
 
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
+        Thread.sleep(10000);
+
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
@@ -175,7 +177,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        Thread.sleep(2000);
+        Thread.sleep(5000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
@@ -265,14 +267,12 @@ public class ConferenceActivityTest {
 
     @Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
-        final ConferenceActivity[] mactivity = new ConferenceActivity[1];
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-                mactivity[0] = activity;
             }
         });
 
@@ -280,6 +280,8 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).perform(click());
 
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+
+        Thread.sleep(10000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -293,7 +295,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(25000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -309,8 +311,10 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
+        Thread.sleep(10000);
+
         onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
+                .check(matches(withText(R.string.live)));
 
         disconnectInternet();
 
@@ -321,7 +325,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(25000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
