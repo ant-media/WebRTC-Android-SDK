@@ -16,6 +16,7 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
@@ -128,63 +129,109 @@ public class PlayActivityTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        Thread.sleep(5000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        disconnectInternet();
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
-
-        connectInternet();
-
-        Thread.sleep(40000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
-
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        Log.i("PlayActivityTest", "debug1");
 
         Thread.sleep(5000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
+        Log.i("PlayActivityTest", "debug2");
+
+
         disconnectInternet();
 
         Thread.sleep(10000);
 
+        Log.i("PlayActivityTest", "debug3");
+
+
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
+
+        Log.i("PlayActivityTest", "debug4");
+
 
         connectInternet();
 
         Thread.sleep(40000);
+
+        Log.i("PlayActivityTest", "debug5");
+
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
         Thread.sleep(3000);
 
+        Log.i("PlayActivityTest", "debug6");
+
+
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
+        Log.i("PlayActivityTest", "debug7");
+
+
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
+
+
+        Log.i("PlayActivityTest", "debug8");
+
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        Log.i("PlayActivityTest", "debug9");
+
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        Log.i("PlayActivityTest", "debug10");
+
+
+        disconnectInternet();
+
+        Thread.sleep(10000);
+
+        Log.i("PlayActivityTest", "debug11");
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
+
+
+        Log.i("PlayActivityTest", "debug12");
+
+        connectInternet();
+
+        Thread.sleep(40000);
+
+        Log.i("PlayActivityTest", "debug13");
+
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        Thread.sleep(3000);
+
+        Log.i("PlayActivityTest", "debug14");
+
+
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        Log.i("PlayActivityTest", "debug15");
+
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
+
+        Log.i("PlayActivityTest", "debug16");
+
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
