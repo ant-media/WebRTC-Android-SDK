@@ -2073,12 +2073,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
 
+
+        clearStatsCollector();
         reconnectionInProgress = false;
         peerReconnectionHandler.removeCallbacksAndMessages(null);
         publishReconnectionHandler.removeCallbacksAndMessages(null);
         playReconnectionHandler.removeCallbacksAndMessages(null);
     }
 
+    private void clearStatsCollector(){
+        statsCollector.getAudioTrackStatsMap().clear();
+        statsCollector.getVideoTrackStatsMap().clear();
+    }
 
     public void getStats(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
