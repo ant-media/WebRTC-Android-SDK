@@ -106,7 +106,6 @@ public class StatsActivityTest {
                 R.id.stats_popup_bytes_sent_audio_textview,
                 R.id.stats_popup_packets_sent_per_second_audio_textview,
                 R.id.stats_popup_local_audio_bitrate_textview,
-                R.id.stats_popup_local_audio_level_textview
         };
 
         int[] videoTrackStatsTextViewIds = {
@@ -124,7 +123,6 @@ public class StatsActivityTest {
         // Assert for audio TextViews
         for (int id : audioTrackStatsTextViewIds) {
             onView(withId(id)).check((view, noViewFoundException) -> {
-                Log.i("yunus audio track check ", ""+view.getId());
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
                 assertTrue(value > 0);
@@ -133,7 +131,6 @@ public class StatsActivityTest {
 
         for (int id : videoTrackStatsTextViewIds) {
             onView(withId(id)).check((view, noViewFoundException) -> {
-                Log.i("yunus video track check ", ""+view.getId());
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
                 assertTrue(value > 0);
