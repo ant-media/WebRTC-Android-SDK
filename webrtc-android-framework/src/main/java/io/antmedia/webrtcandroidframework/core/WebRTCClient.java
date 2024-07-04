@@ -1932,9 +1932,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.videoCallEnabled) {
                 peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
             }
-            if (config.audioCallEnabled) {
-                peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
-            }
+
+            peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+
 
             if (config.videoCallEnabled) {
                 findVideoSender(streamId);
