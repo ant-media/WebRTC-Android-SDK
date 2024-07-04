@@ -45,7 +45,7 @@ jobs:
         id: setup-ffmpeg
         #send test stream to the server to play test
       - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
-      
+
       - name: Setting up Python
         uses: actions/setup-python@v4
         with:
@@ -57,9 +57,14 @@ jobs:
           unzip chromedriver-linux64.zip
           cp chromedriver-linux64/chromedriver /home/ubuntu
           pip3 install requests selenium==4.14 flask 
-       
+
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
+
+      - name: Record emulator screen
+        run: |
+          adb shell screenrecord /sdcard/screenrecord.mp4 &
+          adb wait-for-device
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
@@ -94,6 +99,15 @@ jobs:
             webrtc-android-sample-app/build/logcat.txt
             webrtc-android-sample-app/build/screen.png
             emulator.log
+
+      - name: Pull screen recording
+        run: adb pull /sdcard/screenrecord.mp4
+
+      - name: Upload screen recording
+        uses: actions/upload-artifact@v3
+        with:
+          name: emulator-screenrecord
+          path: screenrecord.mp4
 
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
