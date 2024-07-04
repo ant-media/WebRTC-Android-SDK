@@ -50,7 +50,7 @@ jobs:
         run: python3 multitrack-conference-server.py &
 
       - name: Run Tests and Generate Report
-        uses: reactivecircus/android-emulator-runner@v2.28.0
+        uses: reactivecircus/android-emulator-runner@v2.27.0
         with:
           api-level: 33
           arch: x86_64
