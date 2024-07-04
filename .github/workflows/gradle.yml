@@ -61,11 +61,6 @@ jobs:
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
 
-      - name: Record emulator screen
-        run: |
-          adb shell screenrecord /sdcard/screenrecord.mp4 &
-          adb wait-for-device
-
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.27.0
         with:
@@ -99,15 +94,6 @@ jobs:
             webrtc-android-sample-app/build/logcat.txt
             webrtc-android-sample-app/build/screen.png
             emulator.log
-
-      - name: Pull screen recording
-        run: adb pull /sdcard/screenrecord.mp4
-
-      - name: Upload screen recording
-        uses: actions/upload-artifact@v3
-        with:
-          name: emulator-screenrecord
-          path: screenrecord.mp4
 
       - name: Upload Test Report to Codecov
         uses: codecov/codecov-action@v3.1.1
