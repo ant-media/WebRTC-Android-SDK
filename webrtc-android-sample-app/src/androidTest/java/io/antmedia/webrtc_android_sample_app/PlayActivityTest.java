@@ -122,10 +122,16 @@ public class PlayActivityTest {
             }
         });
 
+        Log.i("PlayActivityTest", "debug0");
+
+
         //stream556677i4d is the stream id in github actions
         onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
 
+        Log.i("PlayActivityTest", "debug01");
+
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
+        Log.i("PlayActivityTest", "debug02");
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
