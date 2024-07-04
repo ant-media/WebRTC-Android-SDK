@@ -124,8 +124,6 @@ public class StatsActivityTest {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
-                Log.i("yunus audio track check ", ""+view.getId()+" value"+ value);
-
                 assertTrue(value > 0);
             });
         }
@@ -134,7 +132,6 @@ public class StatsActivityTest {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
-                Log.i("yunus video track check ", ""+view.getId()+" value"+ value);
                 assertTrue(value > 0);
             });
         }
