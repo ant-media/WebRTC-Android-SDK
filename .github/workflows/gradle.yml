@@ -18,7 +18,7 @@ on: [push, pull_request]
 
 jobs:
   unit-tests:
-    runs-on: ovh36
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
