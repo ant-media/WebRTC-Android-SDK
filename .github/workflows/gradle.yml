@@ -22,6 +22,7 @@ on: [push, pull_request]
 #     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
 #
 
+
 jobs:
   unit-tests:
     runs-on: ovh36
