@@ -14,7 +14,13 @@ on: [push, pull_request]
 #     for more information -> https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service#customizing-the-self-hosted-runner-service
 #
 #   - For reactivecircus/android-emulator-runner@v2.27.0 , ANDROID_SDK_ROOT env should be set
-#     in later versions, ANDROID_HOME should be set
+#     in later versions, ANDROID_HOME should be set 
+#   
+#   - Important: In the actions-runner directory, add the following lines to the .env directory.
+#     ANDROID_HOME=/home/ubuntu/android
+#     ANDROID_SDK_ROOT=/home/ubuntu/android
+#     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+#
 
 jobs:
   unit-tests:
