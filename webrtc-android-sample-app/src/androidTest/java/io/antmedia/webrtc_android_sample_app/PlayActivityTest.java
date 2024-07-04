@@ -10,25 +10,30 @@ import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibilit
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
+import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
-import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
+import androidx.test.uiautomator.UiDevice;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
 import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
@@ -62,7 +67,7 @@ public class PlayActivityTest {
     }
 
     @Test
-    public void testPlaying() {
+    public void testPlaying() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
 
@@ -75,9 +80,6 @@ public class PlayActivityTest {
             }
         });
 
-
-
-        onView(withId(R.id.broadcasting_text_view)).check(matches(not(isDisplayed())));
         //stream556677i4d is the stream id in github actions
         onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
@@ -87,15 +89,125 @@ public class PlayActivityTest {
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
 
-        onView(withId(R.id.broadcasting_text_view)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        Thread.sleep(5000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        Thread.sleep(3000);
 
         //Stop playing
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        onView(withId(R.id.broadcasting_text_view)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+        Thread.sleep(3000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
+    }
+
+    @Test
+    public void testPlayReconnection() throws InterruptedException, IOException {
+        Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
+        ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
+
+        scenario.onActivity(new ActivityScenario.ActivityAction<PlayActivity>() {
+            @Override
+            public void perform(PlayActivity activity) {
+                mIdlingResource = activity.getIdlingResource();
+                IdlingRegistry.getInstance().register(mIdlingResource);
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+            }
+        });
+
+        //stream556677i4d is the stream id in github actions
+        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        disconnectInternet();
+
+        Thread.sleep(10000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
+
+        connectInternet();
+
+        Thread.sleep(40000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
+
+
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        disconnectInternet();
+
+        Thread.sleep(10000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
+
+        connectInternet();
+
+        Thread.sleep(40000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
+    }
+
+    private void disconnectInternet() throws IOException {
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi disable"); // Switch off Wifi
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data disable"); // Switch off Mobile Data
+    }
+
+    private void connectInternet() throws IOException {
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi enable"); // Switch Wifi on again
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
 
 }

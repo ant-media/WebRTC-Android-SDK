@@ -44,8 +44,8 @@ jobs:
       - uses: FedericoCarboni/setup-ffmpeg@v2
         id: setup-ffmpeg
         #send test stream to the server to play test
-      - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
-      
+      - run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
+
       - name: Setting up Python
         uses: actions/setup-python@v4
         with:
@@ -57,7 +57,7 @@ jobs:
           unzip chromedriver-linux64.zip
           cp chromedriver-linux64/chromedriver /home/ubuntu
           pip3 install requests selenium==4.14 flask 
-       
+
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
 
