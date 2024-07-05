@@ -241,7 +241,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private Runnable publishReconnectorRunnable;
     private Runnable playReconnectorRunnable;
 
-    public static final long PEER_RECONNECTION_DELAY_MS = 3000;
+    public static final long PEER_RECONNECTION_DELAY_MS = 5000;
     public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
 
     boolean released = false;
@@ -1276,7 +1276,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         reconnectionInProgress = true;
 
         if(isConference()){
-            Log.i(TAG, "Its conference! Will try to republish in  " + PEER_RECONNECTION_DELAY_MS + " ms.");
+            Log.i(TAG, "Conference! Will try to republish in  " + PEER_RECONNECTION_DELAY_MS + " ms.");
             publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
         }else{
             Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
@@ -1905,7 +1905,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void createPeerConnectionInternal(String streamId) {
         if (factory == null) {
-            Log.e(TAG, "Peerconnection factory is not created");
+            Log.e(TAG, "Peer connection factory is not created");
             return;
         }
         Log.d(TAG, "Create peer connection.");
@@ -1941,12 +1941,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             setWebRTCLogLevel();
 
             List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
-            if (config.videoCallEnabled) {
-                peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
+            try{
+                if (config.videoCallEnabled) {
+                    peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
+                }
+                peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+
+            }catch (IllegalStateException e){
+                Log.e(TAG,"Could not add track to PC. Is it in closed state? Peer connection state " + peerConnection.connectionState().name()+" Error message: "+e.getMessage());
+                return;
             }
-
-            peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
-
 
             if (config.videoCallEnabled) {
                 findVideoSender(streamId);
