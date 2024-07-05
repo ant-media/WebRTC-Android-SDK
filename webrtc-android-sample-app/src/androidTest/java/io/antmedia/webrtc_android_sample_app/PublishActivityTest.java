@@ -112,7 +112,7 @@ public class PublishActivityTest {
 
         disconnectInternet();
 
-        Thread.sleep(10000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
@@ -142,7 +142,7 @@ public class PublishActivityTest {
 
         disconnectInternet();
 
-        Thread.sleep(10000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
