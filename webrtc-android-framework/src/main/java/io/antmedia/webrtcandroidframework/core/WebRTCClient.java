@@ -408,16 +408,30 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         this.roomId = roomId;
 
+        //we will call play after publish started event
         publish(streamId, "",
                 true, true,
                 "",
                 "",
                 "",
                 roomId);
-        //we will call play after publish started event
+    }
+
+    public void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName) {
+
+        this.roomId = roomId;
+
+        publish(streamId, token,
+                videoCallEnabled, audioCallEnabled,
+                subscriberId,
+                subscriberCode,
+                streamName,
+                roomId);
     }
 
     public void joinToConferenceRoom(String roomId) {
+        this.roomId = roomId;
+
         play(roomId);
     }
 
@@ -2056,12 +2070,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
 
+
+        clearStatsCollector();
         reconnectionInProgress = false;
         peerReconnectionHandler.removeCallbacksAndMessages(null);
         publishReconnectionHandler.removeCallbacksAndMessages(null);
         playReconnectionHandler.removeCallbacksAndMessages(null);
     }
 
+    private void clearStatsCollector(){
+        statsCollector.getAudioTrackStatsMap().clear();
+        statsCollector.getVideoTrackStatsMap().clear();
+    }
 
     public void getStats(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
