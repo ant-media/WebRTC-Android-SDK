@@ -106,7 +106,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private final Handler mainHandler;
     @Nullable
     public AppRTCAudioManager audioManager = null;
-    private boolean isError;
     private final long callStartedTimeMs = 0;
 
     private EglBase eglBase;
@@ -500,9 +499,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 } else if (newState == PeerConnection.PeerConnectionState.DISCONNECTED) {
                     onDisconnected();
                 } else if (newState == PeerConnection.PeerConnectionState.FAILED) {
-                //    if (config.reconnectionEnabled && getPeerInfoFor(streamId).mode == Mode.PUBLISH) {
-                 //      rePublishPlay();
-                   // }
                     reportError(streamId, "DTLS connection failed.");
                 }
             });
@@ -631,7 +627,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             peerInfo.setLocalDescription(newDesc);
             executor.execute(() -> {
                 PeerConnection pc = peerInfo.peerConnection;
-                if (pc != null && !isError) {
+                if (pc != null) {
                     Log.d(TAG, "Set local SDP from " + desc.type);
                     pc.setLocalDescription(this, newDesc);
                 }
@@ -1057,10 +1053,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private void callConnected(String streamId) {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
         Log.i(TAG, "Call connected: delay=" + delta + "ms");
-        if (isError) {
-            Log.w(TAG, "Call is connected in closed or error state");
-            return;
-        }
         // Enable statistics callback.
         enableStatsEvents(streamId, true, STAT_CALLBACK_PERIOD);
     }
@@ -1154,15 +1146,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void reportError(String streamId, final String description) {
         this.handler.post(() -> {
-
-            if (!isError) {
-                //  isError = true;
                 errorString = description;
-
                 if (config.webRTCListener != null) {
                     config.webRTCListener.onError(description, streamId);
                 }
-            }
         });
     }
 
@@ -1397,9 +1384,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void onPeerConnectionStatsReady(RTCStatsReport report) {
         this.handler.post(() -> {
-            if (!isError) {
                 statsCollector.onStatsReport(report);
-            }
         });
     }
 
@@ -1761,8 +1746,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     private void createPeerConnectionFactoryInternal(PeerConnectionFactory.Options options) {
-        isError = false;
-
         // Check if ISAC is used by default.
         preferIsac = config.audioCodec != null && config.audioCodec.equals(AUDIO_CODEC_ISAC);
 
@@ -1907,7 +1890,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void createPeerConnectionInternal(String streamId) {
-        if (factory == null || isError) {
+        if (factory == null) {
             Log.e(TAG, "Peerconnection factory is not created");
             return;
         }
@@ -1995,7 +1978,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference) {
-        if (localVideoSender == null || isError) {
+        if (localVideoSender == null) {
             Log.w(TAG, "Sender is not ready.");
             return;
         }
@@ -2141,7 +2124,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Log.d(TAG, "Creating OFFER...");
             PeerConnection pc = getPeerConnectionFor(streamId);
             PeerInfo peerInfo = getPeerInfoFor(streamId);
-            if (pc != null && !isError) {
+            if (pc != null) {
                 Log.d(TAG, "PC Create OFFER");
                 isInitiator = true;
                 initDataChannel(streamId);
@@ -2168,7 +2151,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void createAnswer(String streamId) {
         executor.execute(() -> {
             PeerConnection pc = getPeerConnectionFor(streamId);
-            if (pc != null && !isError) {
+            if (pc != null) {
                 Log.d(TAG, "PC create ANSWER");
                 isInitiator = false;
                 pc.createAnswer(getSdpObserver(streamId), sdpMediaConstraints);
@@ -2183,7 +2166,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 return;
             }
             PeerConnection pc = peerInfo.peerConnection;
-            if (pc != null && !isError) {
+            if (pc != null) {
                 List<IceCandidate> queuedRemoteCandidates = peerInfo.getQueuedRemoteCandidates();
                 if (queuedRemoteCandidates != null) {
                     queuedRemoteCandidates.add(candidate);
@@ -2207,7 +2190,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void removeRemoteIceCandidates(String streamId, final IceCandidate[] candidates) {
         executor.execute(() -> {
             PeerConnection pc = getPeerConnectionFor(streamId);
-            if (pc != null && !isError) {
+            if (pc != null) {
                 // Drain the queued remote candidates if there is any so that
                 // they are processed in the proper order.
                 drainCandidates(streamId);
@@ -2219,7 +2202,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void setRemoteDescription(String streamId, final SessionDescription desc) {
         executor.execute(() -> {
             PeerConnection pc = getPeerConnectionFor(streamId);
-            if (pc == null || isError) {
+            if (pc == null) {
                 return;
             }
             String sdp = desc.description;
@@ -2266,7 +2249,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             return;
         }
         executor.execute(() -> {
-            if (localVideoSender == null || isError) {
+            if (localVideoSender == null) {
                 return;
             }
             Log.d(TAG, "Requested max video bitrate: " + maxBitrateKbps);
@@ -2552,9 +2535,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private void switchCameraInternal() {
         if (videoCapturer instanceof CameraVideoCapturer) {
-            if (!config.videoCallEnabled || isError) {
+            if (!config.videoCallEnabled) {
                 Log.e(TAG,
-                        "Failed to switch camera. Video: " + config.videoCallEnabled + ". Error : " + isError);
+                        "Failed to switch camera. Video: " + config.videoCallEnabled);
                 return; // No video is sent or only one camera is available or error happened.
             }
             Log.d(TAG, "Switch camera");
@@ -2566,9 +2549,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void changeCaptureFormat(int width, int height, int framerate) {
-        if (!config.videoCallEnabled || videoSource == null || isError) {
-            Log.e(TAG, "Failed to change capture format. Video: " + config.videoCallEnabled
-                    + ". Error : " + isError);
+        if (!config.videoCallEnabled || videoSource == null) {
+            Log.e(TAG, "Failed to change capture format. Video: " + config.videoCallEnabled);
             return;
         }
         Log.d(TAG, "changeCaptureFormat: " + width + "x" + height + "@" + framerate);
