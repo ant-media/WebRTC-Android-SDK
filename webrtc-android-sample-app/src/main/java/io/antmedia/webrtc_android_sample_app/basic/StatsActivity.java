@@ -265,7 +265,6 @@ public class StatsActivity extends TestableActivity {
 
             statCollectorExecutor = Executors.newScheduledThreadPool(1);
             statCollectorFuture = statCollectorExecutor.scheduleWithFixedDelay(() -> {
-                Log.i("yunus","executing...");
                 runOnUiThread(() -> {
                     try{
                         for (Map.Entry<Long, StatsCollector.TrackStats> entry : webRTCClient.getStatsCollector().getAudioTrackStatsMap().entrySet()) {
@@ -311,10 +310,7 @@ public class StatsActivity extends TestableActivity {
                     catch (Exception e) {
                         Log.e("StatsActivity", "Exception in task execution: " + e.getMessage());
                     }
-
-
                 });
-
 
             }, 0, UPDATE_STATS_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
