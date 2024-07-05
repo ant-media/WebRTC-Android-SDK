@@ -241,7 +241,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private Runnable publishReconnectorRunnable;
     private Runnable playReconnectorRunnable;
 
-    public static final long PEER_RECONNECTION_DELAY_MS = 5000;
+    public static final long PEER_RECONNECTION_DELAY_MS = 3000;
     public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
 
     boolean released = false;
@@ -909,7 +909,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void stop(String streamId, boolean byUser) {
         Log.i(getClass().getSimpleName(), "Stopping stream");
         streamStoppedByUser = byUser;
-
 
         if (wsHandler != null && wsHandler.isConnected()) {
             wsHandler.stop(streamId);
