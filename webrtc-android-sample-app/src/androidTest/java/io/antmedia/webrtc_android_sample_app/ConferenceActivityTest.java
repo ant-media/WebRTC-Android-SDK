@@ -110,7 +110,10 @@ public class ConferenceActivityTest {
             Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
         }
     };
+    @Test
+    public void emptyTest() {
 
+    }
     //@Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
