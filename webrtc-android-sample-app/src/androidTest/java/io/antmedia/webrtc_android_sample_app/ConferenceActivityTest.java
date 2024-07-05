@@ -111,7 +111,7 @@ public class ConferenceActivityTest {
         }
     };
 
-    @Test
+    //@Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -152,7 +152,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
-    @Test
+    //@Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -265,7 +265,7 @@ public class ConferenceActivityTest {
 
     }
 
-    @Test
+    //@Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override

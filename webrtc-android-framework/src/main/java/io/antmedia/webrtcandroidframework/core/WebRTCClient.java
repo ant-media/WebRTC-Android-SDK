@@ -98,17 +98,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public static final String VIDEO_ROTATION_EXT_LINE = "a=extmap:3 urn:3gpp:video-orientation\r\n";
     public static final String USER_REVOKED_CAPTURE_SCREEN_PERMISSION = "User revoked permission to capture the screen.";
-    public static final int STAT_CALLBACK_PERIOD = 1000;
+    public static int STAT_CALLBACK_PERIOD = 1000;
 
-    private final ProxyVideoSink localVideoSink = new ProxyVideoSink();
-    private final List<ProxyVideoSink> remoteVideoSinks = new ArrayList<>();
+    protected final ProxyVideoSink localVideoSink = new ProxyVideoSink();
+    protected final List<ProxyVideoSink> remoteVideoSinks = new ArrayList<>();
 
-    private final Handler mainHandler;
+    protected Handler mainHandler;
     @Nullable
     public AppRTCAudioManager audioManager = null;
     private final long callStartedTimeMs = 0;
 
-    private EglBase eglBase;
+    protected EglBase eglBase;
     private String errorString = null;
 
     private boolean streamStoppedByUser = false;
@@ -227,8 +227,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @androidx.annotation.Nullable
     public JavaAudioDeviceModule adm;
 
-    //PeerConnection Parameters
-    private final WebRTCClientConfig config;
+    private WebRTCClientConfig config;
 
     private boolean removeVideoRotationExtension = true;
 
