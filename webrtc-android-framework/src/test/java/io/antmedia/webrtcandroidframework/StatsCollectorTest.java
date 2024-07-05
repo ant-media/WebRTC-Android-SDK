@@ -127,8 +127,8 @@ public class StatsCollectorTest {
     // Helper method to create a members map
     private Map<String, Object> createMembersMap(String mediaType) {
         Map<String, Object> membersMap = new HashMap<>();
-        membersMap.put("mediaType", mediaType);
-        membersMap.put("packetsSent", 10L);
+        membersMap.put(StatsCollector.MEDIA_TYPE, mediaType);
+        membersMap.put(StatsCollector.PACKETS_SENT, BigInteger.valueOf(10));
         membersMap.put(StatsCollector.FIR_COUNT, 1000L);
         membersMap.put(StatsCollector.PLI_COUNT, 1000L);
         membersMap.put(StatsCollector.NACK_COUNT, 1000L);
@@ -141,17 +141,17 @@ public class StatsCollectorTest {
             membersMap.put(StatsCollector.TRACK_ID, "ARDAMSastream1");
             membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSastream1");
 
-            membersMap.put(StatsCollector.KIND, "audio");
-            membersMap.put("audioLevel", 100.0);
+            membersMap.put(StatsCollector.KIND, StatsCollector.AUDIO);
+            membersMap.put(StatsCollector.AUDIO_LEVEL, 100.0);
 
         }else if(mediaType.equals("video")){
             membersMap.put(StatsCollector.TRACK_ID, "ARDAMSvstream1");
             membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSvstream1");
 
-            membersMap.put(StatsCollector.KIND, "video");
+            membersMap.put(StatsCollector.KIND, StatsCollector.VIDEO);
         }
         membersMap.put(StatsCollector.SSRC, 64L);
-        membersMap.put("bytesSent", new BigInteger("1000"));
+        membersMap.put(StatsCollector.BYTES_SENT, new BigInteger("1000"));
         return membersMap;
     }
 }

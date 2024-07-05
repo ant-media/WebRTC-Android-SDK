@@ -9,11 +9,6 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 
-import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
-import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
-import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
-import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class WebRTCClientConfig {
 

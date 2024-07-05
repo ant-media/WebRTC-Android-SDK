@@ -31,8 +31,11 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 public class PlayActivity extends TestableActivity {
-    private TextView playStatusTextView;
-    private Button startStreamingButton;
+
+    private TextView statusIndicatorTextView;
+    private View startStreamingButton;
+    private View streamInfoListSpinner;
+
     private String streamId;
     private IWebRTCClient webRTCClient;
     private TextView streamIdEditText;
@@ -47,13 +50,15 @@ public class PlayActivity extends TestableActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play);
-
+        
         fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        playStatusTextView = findViewById(R.id.broadcasting_text_view);
+
+        statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         startStreamingButton = findViewById(R.id.start_streaming_button);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
 
         streamIdEditText.setText("streamId");
 
@@ -115,44 +120,56 @@ public class PlayActivity extends TestableActivity {
                 super.onWebSocketConnected();
             }
 
-            @Override
-            public void onPeerConnectionClosed() {
-                super.onPeerConnectionClosed();
-                startStreamingButton.setText("Start");
-                playStatusTextView.setText("Disconnected");
-            }
-
-            @Override
-            public void onDisconnected() {
-                super.onDisconnected();
-                if(webRTCClient.getConfig().reconnectionEnabled){
-                    playStatusTextView.setText("Reconnecting...");
-
-                }else{
-                    playStatusTextView.setText("Disconnected");
-                }
-            }
+        
 
             @Override
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
-                playStatusTextView.setText("Playing");
-                startStreamingButton.setText("Stop");
-                playStatusTextView.setVisibility(View.VISIBLE);
+
                 decrementIdle();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
             }
 
             @Override
-            public void onIceConnected(String streamId) {
-                super.onIceConnected(streamId);
-                startStreamingButton.setText("Stop");
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
             }
+
+            @Override
+            public void onPlayAttempt(String streamId) {
+                super.onPlayAttempt(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
+                }
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
+            }
+
+          
 
             @Override
             public void onPlayFinished(String streamId) {
                 super.onPlayFinished(streamId);
-                playStatusTextView.setVisibility(View.GONE);
                 decrementIdle();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
             }
         };
     }

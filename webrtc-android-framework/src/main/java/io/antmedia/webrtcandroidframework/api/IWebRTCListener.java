@@ -211,5 +211,22 @@ public interface IWebRTCListener {
 
     void onPeerConnectionClosed();
 
+    /**
+     * It's called when all peer connection states are CONNECTED after reconnection.
+     * @param broadcast
+     */
+    void onReconnectionSuccess();
 
+
+    /**
+     * It's called when user attempts to publish a stream.
+     * @param broadcast
+     */
+    void onPublishAttempt(String streamId);
+
+    /**
+     * It's called when user attempts to play a stream.
+     * @param broadcast
+     */
+    void onPlayAttempt(String streamId);
 }

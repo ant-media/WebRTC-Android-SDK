@@ -15,11 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StatsCollector {
     public static final String SSRC = "ssrc";
     public static final String OUTBOUND_RTP = "outbound-rtp";
-    private static final String AUDIO = "audio";
-    private static final String MEDIA_TYPE = "mediaType";
-    private static final String PACKETS_SENT = "packetsSent";
-    private static final String BYTES_SENT = "bytesSent";
-    private static final String VIDEO = "video";
+    public static final String AUDIO = "audio";
+    public static final String MEDIA_TYPE = "mediaType";
+    public static final String PACKETS_SENT = "packetsSent";
+    public static final String BYTES_SENT = "bytesSent";
+    public static final String VIDEO = "video";
 
     public static final String REMOTE_INBOUND_RTP = "remote-inbound-rtp";
     public static final String TRACK_ID = "trackId";
@@ -43,6 +43,8 @@ public class StatsCollector {
     public static final String VIDEO_TRACK_ID = "ARDAMSv";
 
     public static final String AUDIO_TRACK_ID = "ARDAMSa";
+
+    public static final String AUDIO_LEVEL = "audioLevel";
 
     private double lastKnownStatsTimeStampMs;
 
@@ -73,7 +75,7 @@ public class StatsCollector {
                 long timeDiffSeconds = (long) ((timeMs - lastKnownStatsTimeStampMs) / 1000); // convert it to seconds
                 timeDiffSeconds = timeDiffSeconds == 0 ? 1 : timeDiffSeconds; // avoid division by zero
 
-                if (AUDIO.equals(value.getMembers().get(MEDIA_TYPE))) {
+                if (AUDIO.equals(value.getMembers().get(KIND))) {
                     long ssrc = (long) value.getMembers().get(SSRC);
                     TrackStats audioTrackStat = audioTrackStatsMap.get(ssrc);
                     if(audioTrackStat == null) {
@@ -81,22 +83,26 @@ public class StatsCollector {
                         audioTrackStatsMap.put(ssrc, audioTrackStat);
                     }
 
-                    long packetsSent = (long)value.getMembers().get(PACKETS_SENT);
+                    long packetsSent = ((BigInteger) value.getMembers().get(PACKETS_SENT)).longValue();
                     audioTrackStat.setPacketsSent(packetsSent);
 
                     BigInteger bytesSent = ((BigInteger) value.getMembers().get(BYTES_SENT));
                     audioTrackStat.setBytesSent(bytesSent);
                     audioTrackStat.setTimeMs((long)timeMs);
 
+                    //TODO trackSenderId is always coming null. Fix later.
                     String trackSenderId = (String) value.getMembers().get(TRACK_ID);
-                    String trackId = (String) statsMap.get(trackSenderId).getMembers().get(TRACK_IDENTIFIER);
-                    trackId = trackId.replace(AUDIO_TRACK_ID, "");
-                    audioTrackStat.setTrackId(trackId);
+                    if(trackSenderId != null){
+                        String trackId = (String) statsMap.get(trackSenderId).getMembers().get(TRACK_IDENTIFIER);
+                        trackId = trackId.replace(AUDIO_TRACK_ID, "");
+                        audioTrackStat.setTrackId(trackId);
+                    }
+
 
                     localAudioBitrate = (bytesSent.longValue() - lastKnownAudioBytesSent) / timeDiffSeconds * 8;
                     lastKnownAudioBytesSent = bytesSent.longValue();
 
-                } else if (VIDEO.equals(value.getMembers().get(MEDIA_TYPE))) {
+                } else if (VIDEO.equals(value.getMembers().get(KIND))) {
                     if(value.getMembers().containsKey(SSRC)){
                         long ssrc = (long) value.getMembers().get(SSRC);
                         TrackStats videoTrackStat = videoTrackStatsMap.get(ssrc);
@@ -120,7 +126,7 @@ public class StatsCollector {
                         }
 
                         if (value.getMembers().containsKey(PACKETS_SENT)) {
-                            long packetsSent = (long) value.getMembers().get(PACKETS_SENT);
+                            long packetsSent = ((BigInteger) value.getMembers().get(PACKETS_SENT)).longValue();
                             videoTrackStat.setPacketsSent(packetsSent);
                         }
 
@@ -139,10 +145,14 @@ public class StatsCollector {
 
                         videoTrackStat.setTimeMs((long)timeMs);
 
+                        //TODO trackSenderId is always coming null. Fix later.
                         String trackSenderId = (String) value.getMembers().get(TRACK_ID);
-                        String trackId = (String) statsMap.get(trackSenderId).getMembers().get(TRACK_IDENTIFIER);
-                        trackId = trackId.replace(VIDEO_TRACK_ID, "");
-                        videoTrackStat.setTrackId(trackId);
+                        if(trackSenderId != null){
+                            String trackId = (String) statsMap.get(trackSenderId).getMembers().get(TRACK_IDENTIFIER);
+                            trackId = trackId.replace(VIDEO_TRACK_ID, "");
+                            videoTrackStat.setTrackId(trackId);
+                        }
+
                     }
 
                 }
@@ -202,8 +212,8 @@ public class StatsCollector {
                 }
             }else if("media-source".equals(value.getType())){
                 Map<String,Object> members =  value.getMembers();
-                if(members.containsKey("audioLevel")){
-                    localAudioLevel = (double) members.get("audioLevel");
+                if(members.containsKey(AUDIO_LEVEL)){
+                    localAudioLevel = (double) members.get(AUDIO_LEVEL);
                 }
             }
         }
@@ -390,7 +400,7 @@ public class StatsCollector {
 
         @Override
         public String toString() {
-            return "VideoTrackStats{" +
+            return "TrackStats {" +
                     "trackId='" + trackId +
                     ", time diff =" + timeDifference +
                     ", packetsLost=" + packetsLost +

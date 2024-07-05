@@ -9,7 +9,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
@@ -23,7 +22,7 @@ import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 
 public class ConferenceActivity extends TestableActivity {
-    private TextView broadcastingView;
+    private TextView statusIndicatorTextView;
     private View joinButton;
     private String streamId;
     private IWebRTCClient webRTCClient;
@@ -45,13 +44,14 @@ public class ConferenceActivity extends TestableActivity {
         SurfaceViewRenderer player3Renderer = findViewById(R.id.play_view_renderer3);
         SurfaceViewRenderer player4Renderer = findViewById(R.id.play_view_renderer4);
 
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         joinButton = findViewById(R.id.join_conference_button);
 
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
@@ -117,14 +117,52 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
                 decrementIdle();
+            }
+
+            @Override
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
+            }
+
+            @Override
+            public void onPublishAttempt(String streamId) {
+                super.onPublishAttempt(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
+                }
+            }
+
+            @Override
+            public void onPlayStarted(String streamId) {
+                super.onPlayStarted(streamId);
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+                decrementIdle();
+
             }
 
             @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
                 decrementIdle();
             }
         };

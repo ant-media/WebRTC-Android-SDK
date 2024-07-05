@@ -53,7 +53,7 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
     //Audio level coming from server is between 0 and 100. Lower value means higher audio.
     //All remote conference participants audio levels come from server through data channel.
     private final int SPEAKING_AUDIO_LEVEL_THRESHOLD = 55;
-    //Audio level treshold for local speaker. Higher value means higher audio.
+    //Audio level threshold for local speaker. Higher value means higher audio.
     private final double LOCAL_SPEAKING_AUDIO_LEVEL_THRESHOLD = 0.005;
 
     private ScheduledFuture localAudioCheckerFuture;
@@ -232,11 +232,13 @@ public class ConferenceActivityWithSpeakerIndicator extends TestableActivity {
         };
     }
 
-    //this method gets the volume of local publisher and checks if he is speaking.
-    //we have this method because local participants audio level does not come from server through data channel.
+    /*
+     * This method calculates the volume of the local publisher and checks if they are speaking.
+     * We need this method because the audio level of local isn't received from the server via the data channel.
+     */
     public void startLocalAudioChecker() {
         localAudioCheckerExecutor = Executors.newScheduledThreadPool(1);
-        localAudioCheckerFuture = localAudioCheckerExecutor.scheduleAtFixedRate(() -> {
+        localAudioCheckerFuture = localAudioCheckerExecutor.scheduleWithFixedDelay(() -> {
             double localAudioLevel = webRTCClient.getStatsCollector().getLocalAudioLevel();
             Log.d("localAudioLevel", String.valueOf(localAudioLevel));
             if (webRTCClient.getConfig().audioCallEnabled && localAudioLevel > LOCAL_SPEAKING_AUDIO_LEVEL_THRESHOLD) {

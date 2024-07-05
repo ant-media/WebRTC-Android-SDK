@@ -231,6 +231,23 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
+    public void onReconnectionSuccess() {
+        String messageText = "Reconnection success";
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onPublishAttempt(String streamId) {
+        String messageText = "Publish attempt for stream "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onPlayAttempt(String streamId) {
+        String messageText = "Play attempt for stream "+streamId;
+        callbackCalled(messageText);
+    }
+
     protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
     }

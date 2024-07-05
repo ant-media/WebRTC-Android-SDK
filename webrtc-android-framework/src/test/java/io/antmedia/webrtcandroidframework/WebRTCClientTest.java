@@ -434,19 +434,9 @@ public class WebRTCClientTest {
     @Test
     public void testReleaseCallback() {
         doNothing().when(wsHandler).disconnect(anyBoolean());
-
-        webRTCClient.onPublishFinished("streamId");
-        Mockito.verify(webRTCClient, timeout(1000)).release(false);
-
-        webRTCClient.onPlayFinished("streamId");
-        Mockito.verify(webRTCClient, times(2)).release(false);
-
-        webRTCClient.disconnectWithErrorMessage("error");
-        Mockito.verify(webRTCClient, times(1)).release(true);
-
+        webRTCClient.setStreamStoppedByUser(true);
         webRTCClient.onIceDisconnected("streamId");
-        Mockito.verify(webRTCClient, times(2)).release(false);
-
+        Mockito.verify(webRTCClient, times(1)).release(true);
     }
 
 
@@ -506,11 +496,14 @@ public class WebRTCClientTest {
 
     @Test
     public void testPCObserver() {
+        webRTCClient.getConfig();
         doNothing().when(webRTCClient).release(anyBoolean());
         String streamId = "stream1";
 
         WebRTCClient.PCObserver pcObserver = webRTCClient.getPCObserver(streamId);
         assertNotNull(pcObserver);
+
+        webRTCClient.getPeersForTest().put(streamId, mock(WebRTCClient.PeerInfo.class));
 
         IceCandidate iceCandidate = mock(IceCandidate.class);
         pcObserver.onIceCandidate(iceCandidate);
@@ -595,7 +588,7 @@ public class WebRTCClientTest {
         sdpObserver.onCreateFailure("error");
         sdpObserver.onSetFailure("error");
 
-        verify(wsHandler, timeout(1000)).disconnect(true);
+        verify(webRTCClient).reportError(streamId,"createSDP error: error");
     }
 
     @Test
@@ -651,13 +644,11 @@ public class WebRTCClientTest {
 
     @Test
     public void testReconnection() {
-        webRTCClient.createReconnectionRunnable();
+        webRTCClient.createReconnectorRunnables();
 
         final Handler handler = getMockHandler();
-        webRTCClient.setHandler(handler);
+        webRTCClient.setPeerReconnectionHandler(handler);
         webRTCClient.getConfig().reconnectionEnabled = true;
-        webRTCClient.setReconnectionHandler(handler);
-
 
         doNothing().when(webRTCClient).init();
 
@@ -667,12 +658,18 @@ public class WebRTCClientTest {
         String publishStreamId = "publishStreamId";
         webRTCClient.publish(publishStreamId, "", true, true, "","", "", "");
 
-        webRTCClient.onDisconnected();
+        webRTCClient.onIceDisconnected(playStreamId);
+        webRTCClient.onIceDisconnected(publishStreamId);
 
-        verify(listener, timeout(1000)).onDisconnected();
+        verify(listener, timeout(1000)).onIceDisconnected(playStreamId);
+        verify(listener, timeout(1000)).onIceDisconnected(publishStreamId);
 
-        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-        verify(webRTCClient, timeout(WebRTCClient.RECONNECTION_CONTROL_PERIOD_MLS).atLeast(2)).publish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        verify(webRTCClient,times(2)).rePublishPlay();
+
+        verify(webRTCClient, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
+
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(1)).startPublish(anyString(),anyString(),anyBoolean(),anyBoolean(),anyString(),anyString(),anyString(),anyString());
+
     }
 
     @Test
@@ -793,11 +790,9 @@ public class WebRTCClientTest {
     public void testOnStartStreaming() {
         String streamId = "stream1";
         doNothing().when(webRTCClient).createPeerConnection(streamId);
-        doNothing().when(webRTCClient).createOffer(streamId);
         webRTCClient.onStartStreaming(streamId);
 
         verify(webRTCClient, timeout(1000)).createPeerConnection(streamId);
-        verify(webRTCClient, timeout(1000)).createOffer(streamId);
     }
 
     @Test

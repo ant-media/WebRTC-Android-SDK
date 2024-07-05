@@ -2,7 +2,9 @@ package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,8 +33,11 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 public class PublishActivity extends TestableActivity {
-    private TextView publishStatusTextView;
+
+    private TextView statusIndicatorTextView;
+
     private String streamId;
+
     private IWebRTCClient webRTCClient;
     Button startStreamingButton;
     String serverUrl;
@@ -49,10 +54,11 @@ public class PublishActivity extends TestableActivity {
         setContentView(R.layout.activity_publish);
 
         fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        publishStatusTextView = findViewById(R.id.broadcasting_text_view);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
+        TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String generatedStreamId = "streamId" + (int)(Math.random()*9999);
         streamIdEditText.setText(generatedStreamId);
@@ -94,19 +100,16 @@ public class PublishActivity extends TestableActivity {
     }
 
     public void startStopStream() {
-        if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)) {
-            PermissionHandler.requestPublishPermissions(this, bluetoothEnabled);
-            return;
-        }
         incrementIdle();
         if (!webRTCClient.isStreaming(streamId)) {
+            startStreamingButton.setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling publish start");
-
             webRTCClient.publish(streamId);
-
         }
         else {
-            Log.i(getClass().getSimpleName(), "Calling publish start");
+            startStreamingButton.setText("Start");
+            Log.i(getClass().getSimpleName(), "Calling publish stop");
+
             webRTCClient.stop(streamId);
         }
     }
@@ -124,42 +127,49 @@ public class PublishActivity extends TestableActivity {
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
             @Override
-            public void onWebSocketConnected() {
-                super.onWebSocketConnected();
+            public void onPublishStarted(String streamId) {
+                super.onPublishStarted(streamId);
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+                decrementIdle();
             }
 
-
             @Override
-            public void onDisconnected() {
-                super.onDisconnected();
-                if(webRTCClient.getConfig().reconnectionEnabled){
-                    publishStatusTextView.setText("Reconnecting...");
-
+            public void onPublishAttempt(String streamId) {
+                super.onPublishAttempt(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
                 }else{
-                    publishStatusTextView.setText("Disconnected");
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
                 }
             }
 
             @Override
-            public void onIceConnected(String streamId) {
-                super.onIceConnected(streamId);
-                startStreamingButton.setText("Stop");
-                publishStatusTextView.setText("Broadcasting");
-
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
             }
+
             @Override
-            public void onPublishStarted(String streamId) {
-                super.onPublishStarted(streamId);
-                publishStatusTextView.setText("Broadcasting");
-                publishStatusTextView.setVisibility(View.VISIBLE);
-                decrementIdle();
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
             }
 
             @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
-                startStreamingButton.setText("Start");
-                publishStatusTextView.setVisibility(View.GONE);
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
                 decrementIdle();
             }
         };
@@ -234,4 +244,9 @@ public class PublishActivity extends TestableActivity {
             }
         }
     }
+
+    public IWebRTCClient getWebRTCClient() {
+        return webRTCClient;
+    }
+
 }

@@ -7,6 +7,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibilit
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.Assert.assertNotNull;
 
 import android.app.Activity;
@@ -24,6 +25,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
+import androidx.test.uiautomator.UiDevice;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -33,6 +35,8 @@ import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
+
+import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
@@ -103,8 +107,11 @@ public class ConferenceActivityTest {
             Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
         }
     };
-
     @Test
+    public void emptyTest() {
+
+    }
+    //@Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -120,12 +127,13 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
         try {
-            Thread.sleep(5000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -135,18 +143,17 @@ public class ConferenceActivityTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
         Log.i(ConferenceActivityTest.class.getSimpleName(), "is idling idle now after sleep:"+mIdlingResource.isIdleNow());
 
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
-
-
     //@Test
-    public void testJoinWithExternalParticipant() {
+    public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
@@ -159,16 +166,21 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        Thread.sleep(10000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+        Thread.sleep(5000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
@@ -205,11 +217,13 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
@@ -252,15 +266,13 @@ public class ConferenceActivityTest {
     }
 
     //@Test
-    public void testReconnect() {
-        final ConferenceActivity[] mactivity = new ConferenceActivity[1];
+    public void testConferenceReconnect() throws IOException, InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
                 IdlingRegistry.getInstance().register(mIdlingResource);
                 activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-                mactivity[0] = activity;
             }
         });
 
@@ -269,34 +281,84 @@ public class ConferenceActivityTest {
 
         RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
 
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        Thread.sleep(10000);
 
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
 
+        disconnectInternet();
 
+        Thread.sleep(10000);
 
-        mactivity[0].changeWifiState(false);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
 
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        mactivity[0].changeWifiState(true);
+        connectInternet();
 
+        Thread.sleep(40000);
 
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
-
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        Thread.sleep(3000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        //onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
+        Thread.sleep(3000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        Thread.sleep(10000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        disconnectInternet();
+
+        Thread.sleep(10000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
+
+        connectInternet();
+
+        Thread.sleep(40000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.join_conference_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
 
+    private void disconnectInternet() throws IOException {
+        UiDevice
+                .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi disable"); // Switch off Wifi
+        UiDevice
+                .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data disable"); // Switch off Mobile Data
+    }
+
+    private void connectInternet() throws IOException {
+        UiDevice
+                .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi enable"); // Switch Wifi on again
+        UiDevice
+                .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
 
 

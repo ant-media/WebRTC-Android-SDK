@@ -54,10 +54,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:text="Broadcasting"
-            android:textColor="@android:color/holo_red_dark"
-            android:textSize="11sp"
-            android:visibility="gone"
+            android:textSize="14sp"
+            android:visibility="visible"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
             android:textStyle="bold"/>
