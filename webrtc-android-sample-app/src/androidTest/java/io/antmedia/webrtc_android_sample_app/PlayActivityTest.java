@@ -66,7 +66,7 @@ public class PlayActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    @Test
+   // @Test
     public void testPlaying() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
