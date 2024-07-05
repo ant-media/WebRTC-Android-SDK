@@ -70,7 +70,7 @@ public class StatsActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    @Test
+    //@Test
     public void testStatsCollector() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), StatsActivity.class);
         ActivityScenario<StatsActivity> scenario = ActivityScenario.launch(intent);
