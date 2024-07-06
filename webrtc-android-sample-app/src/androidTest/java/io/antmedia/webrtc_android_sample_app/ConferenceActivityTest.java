@@ -296,7 +296,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(20000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -326,7 +326,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(20000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
