@@ -63,9 +63,10 @@ public class ConferenceActivityTest {
     private String roomName;
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         //try before method to make @Rule run properly
         System.out.println("before test");
+        connectInternet();
 
         getInstrumentation().waitForIdleSync();
 
