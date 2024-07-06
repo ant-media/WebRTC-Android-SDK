@@ -40,7 +40,7 @@ import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.StatsActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -53,7 +53,7 @@ public class StatsActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
     public void before() {
@@ -70,7 +70,7 @@ public class StatsActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    //@Test
+    @Test
     public void testStatsCollector() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), StatsActivity.class);
         ActivityScenario<StatsActivity> scenario = ActivityScenario.launch(intent);

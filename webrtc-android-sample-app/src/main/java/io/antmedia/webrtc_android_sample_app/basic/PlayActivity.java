@@ -33,8 +33,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 public class PlayActivity extends TestableActivity {
 
     private TextView statusIndicatorTextView;
-    private View startStreamingButton;
-    private View streamInfoListSpinner;
+    private Button startStreamingButton;
 
     private String streamId;
     private IWebRTCClient webRTCClient;
@@ -58,7 +57,6 @@ public class PlayActivity extends TestableActivity {
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-
 
         streamIdEditText.setText("streamId");
 
@@ -88,6 +86,7 @@ public class PlayActivity extends TestableActivity {
     }
 
     public void startStopStream() {
+        //It may not be required to check for play permissions. Add play permissions to your apps manifest.
         if(!PermissionHandler.checkPlayPermissions(this, bluetoothEnabled)){
             PermissionHandler.requestPlayPermissions(this, bluetoothEnabled);
             return;
@@ -95,11 +94,13 @@ public class PlayActivity extends TestableActivity {
         incrementIdle();
         streamId = streamIdEditText.getText().toString();
         if (!webRTCClient.isStreaming(streamId)) {
+            startStreamingButton.setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling play start");
             webRTCClient.play(streamId);
         }
         else {
-            Log.i(getClass().getSimpleName(), "Calling play start");
+            startStreamingButton.setText("Start");
+            Log.i(getClass().getSimpleName(), "Calling play stop");
             webRTCClient.stop(streamId);
         }
     }
@@ -119,8 +120,6 @@ public class PlayActivity extends TestableActivity {
             public void onWebSocketConnected() {
                 super.onWebSocketConnected();
             }
-
-        
 
             @Override
             public void onPlayStarted(String streamId) {
@@ -161,8 +160,6 @@ public class PlayActivity extends TestableActivity {
                     statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
                 }
             }
-
-          
 
             @Override
             public void onPlayFinished(String streamId) {

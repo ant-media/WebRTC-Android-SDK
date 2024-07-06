@@ -2,20 +2,6 @@ package io.antmedia.webrtcandroidframework.core;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.util.Log;
-import android.widget.Toast;
-
-import androidx.core.app.ActivityCompat;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
@@ -45,6 +31,27 @@ public class PermissionHandler {
     public static final String[] REQUIRED_MINIMUM_PERMISSIONS = {"android.permission.MODIFY_AUDIO_SETTINGS",
             "android.permission.INTERNET"};
 
+    public static final String[] FULL_PERMISSIONS = concatArrays(
+            BLUETOOTH_PERMISSIONS,
+            CAMERA_PERMISSIONS,
+            PUBLISH_PERMISSIONS,
+            REQUIRED_MINIMUM_PERMISSIONS
+    );
+
+    private static String[] concatArrays(String[]... arrays) {
+        int totalLength = 0;
+        for (String[] array : arrays) {
+            totalLength += array.length;
+        }
+        String[] result = new String[totalLength];
+        int index = 0;
+        for (String[] array : arrays) {
+            for (String element : array) {
+                result[index++] = element;
+            }
+        }
+        return result;
+    }
 
     public static boolean checkCameraPermissions(Activity activity){
         ArrayList<String> permissions = new ArrayList<>();

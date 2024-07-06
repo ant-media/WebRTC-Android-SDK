@@ -121,7 +121,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
     private final ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
-    private PermissionsHandler permissionsHandler;
     private final StatsCollector statsCollector = new StatsCollector();
 
     public static final String VIDEO_TRACK_ID = "ARDAMSv0";
@@ -383,9 +382,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public WebRTCClient(WebRTCClientConfig config) {
         this.config = config;
         config.webRTCListener.setWebRTCClient(this);
-        permissionsHandler = new PermissionsHandler(config.activity);
         mainHandler = new Handler(config.activity.getMainLooper());
-
         iceServers.add(PeerConnection.IceServer.builder(config.stunServerUri)
                 .createIceServer());
 
@@ -2659,10 +2656,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {
         this.factory = factory;
-    }
-
-    public void setPermissionsHandlerForTest(PermissionsHandler permissionsHandler) {
-        this.permissionsHandler = permissionsHandler;
     }
 
     public Map<String, PeerInfo> getPeersForTest() {

@@ -25,11 +25,9 @@ import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-<<<<<<< HEAD
-=======
+
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
->>>>>>> master
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -49,6 +48,9 @@ import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
 public class PlayActivityTest {
     private IdlingResource mIdlingResource;
 
+    @Rule
+    public GrantPermissionRule permissionRule
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
     public void before() {
@@ -65,7 +67,7 @@ public class PlayActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-   // @Test
+    @Test
     public void testPlaying() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
@@ -107,7 +109,7 @@ public class PlayActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testPlayReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
@@ -142,7 +144,7 @@ public class PlayActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -173,7 +175,7 @@ public class PlayActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));

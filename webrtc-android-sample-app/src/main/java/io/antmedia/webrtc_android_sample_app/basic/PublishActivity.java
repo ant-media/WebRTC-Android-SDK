@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -45,7 +44,7 @@ public class PublishActivity extends TestableActivity {
     SurfaceViewRenderer fullScreenRenderer;
 
     boolean bluetoothEnabled = false;
-    boolean initBeforeStream = true;
+    boolean initBeforeStream = false;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -81,8 +80,6 @@ public class PublishActivity extends TestableActivity {
                 .setLocalVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
-                .setReconnectionEnabled(false)
-                .setVideoCallEnabled(true)
                 .setInitiateBeforeStream(initBeforeStream)
                 .setBluetoothEnabled(bluetoothEnabled)
                 .setWebRTCListener(createWebRTCListener())
@@ -90,17 +87,25 @@ public class PublishActivity extends TestableActivity {
                 .build();
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
-        startStreamingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                streamId = streamIdEditText.getText().toString();
-                startStopStream();
-            }
+        startStreamingButton.setOnClickListener(v -> {
+            streamId = streamIdEditText.getText().toString();
+            startStopStream();
         });
     }
 
     public void startStopStream() {
         incrementIdle();
+
+        if(!initBeforeStream) {
+            if (!PermissionHandler.checkCameraPermissions(this)) {
+                PermissionHandler.requestCameraPermissions(this);
+                return;
+            }else if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
+                PermissionHandler.requestPublishPermissions(this, bluetoothEnabled);
+                return;
+            }
+        }
+
         if (!webRTCClient.isStreaming(streamId)) {
             startStreamingButton.setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling publish start");
@@ -151,6 +156,7 @@ public class PublishActivity extends TestableActivity {
                 super.onReconnectionSuccess();
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
+                decrementIdle();
             }
 
             @Override
@@ -207,7 +213,6 @@ public class PublishActivity extends TestableActivity {
         }
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -220,9 +225,12 @@ public class PublishActivity extends TestableActivity {
                     break;
                 }
             }
-            if (allPermissionsGranted) {
+            if (initBeforeStream && allPermissionsGranted) {
                 createWebRTCClient();
-            } else {
+            }else if(!initBeforeStream && allPermissionsGranted){
+                startStopStream();
+            }
+            else {
                 Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
             }
 
@@ -248,5 +256,4 @@ public class PublishActivity extends TestableActivity {
     public IWebRTCClient getWebRTCClient() {
         return webRTCClient;
     }
-
 }

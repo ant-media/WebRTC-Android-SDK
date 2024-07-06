@@ -40,6 +40,7 @@ import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 
 /**
@@ -50,12 +51,11 @@ import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
 
-    //match
-    private static final String START_NOW_TEXT = "Start now";
+    @Rule
+    public GrantPermissionRule permissionRule
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     private IdlingResource mIdlingResource;
-
-
 
     @Rule
     public ActivityScenarioRule<ConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(ConferenceActivity.class);
@@ -111,7 +111,7 @@ public class ConferenceActivityTest {
     public void emptyTest() {
 
     }
-    //@Test
+    @Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -152,7 +152,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
-    //@Test
+    @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -265,7 +265,7 @@ public class ConferenceActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -295,7 +295,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -325,7 +325,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -360,6 +360,4 @@ public class ConferenceActivityTest {
                 .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
-
-
 }

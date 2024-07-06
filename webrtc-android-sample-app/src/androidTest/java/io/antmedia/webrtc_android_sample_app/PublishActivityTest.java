@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -41,6 +42,9 @@ import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 public class PublishActivityTest {
     private IdlingResource mIdlingResource;
 
+    @Rule
+    public GrantPermissionRule permissionRule
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
 
     @Before
@@ -58,7 +62,7 @@ public class PublishActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    //@Test
+    @Test
     public void testPublishing() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
@@ -78,7 +82,8 @@ public class PublishActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
-        //Stop playing
+
+
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         onView(withId(R.id.broadcasting_text_view))
@@ -87,7 +92,7 @@ public class PublishActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testPublishReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
@@ -102,8 +107,6 @@ public class PublishActivityTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        Thread.sleep(10000);
-
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
@@ -116,7 +119,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -146,7 +149,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(20000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
