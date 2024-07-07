@@ -102,6 +102,19 @@ public interface IWebRTCClient {
     void joinToConferenceRoom(String roomId, String streamId);
 
     /**
+     * This is used to join a conference room
+     * @param roomId: id for the conference room
+     * @param streamId: id for the participant
+     * @param videoCallEnabled: true if it's a video call
+     * @param audioCallEnabled: true if it's an audio call
+     * @param token: token to authenticate
+     * @param subscriberId: id of the subscriber
+     * @param subscriberCode: code of the subscriber
+     * @param streamName: name of the stream
+     */
+    void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName);
+
+    /**
      * This is used to join a conference room as player
      *
      * @param roomId: id for the conference room

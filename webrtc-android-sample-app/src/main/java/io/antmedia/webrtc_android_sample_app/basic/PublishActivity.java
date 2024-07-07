@@ -2,6 +2,7 @@ package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -28,8 +29,9 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class PublishActivity extends TestableActivity {
-    private View broadcastingView;
+    private TextView statusIndicatorTextView;
     private String streamId;
+
     private IWebRTCClient webRTCClient;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -39,7 +41,7 @@ public class PublishActivity extends TestableActivity {
         setContentView(R.layout.activity_publish);
 
         SurfaceViewRenderer fullScreenRenderer = findViewById(R.id.full_screen_renderer);
-        broadcastingView = findViewById(R.id.broadcasting_text_view);
+        statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
@@ -72,12 +74,11 @@ public class PublishActivity extends TestableActivity {
         if (!webRTCClient.isStreaming(streamId)) {
             ((Button) v).setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling publish start");
-
             webRTCClient.publish(streamId);
         }
         else {
             ((Button) v).setText("Start");
-            Log.i(getClass().getSimpleName(), "Calling publish start");
+            Log.i(getClass().getSimpleName(), "Calling publish stop");
 
             webRTCClient.stop(streamId);
         }
@@ -98,14 +99,47 @@ public class PublishActivity extends TestableActivity {
             @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
-                broadcastingView.setVisibility(View.VISIBLE);
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 decrementIdle();
+            }
+
+            @Override
+            public void onPublishAttempt(String streamId) {
+                super.onPublishAttempt(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
+                }
+            }
+
+            @Override
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
             }
 
             @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
-                broadcastingView.setVisibility(View.GONE);
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
                 decrementIdle();
             }
         };
@@ -141,6 +175,10 @@ public class PublishActivity extends TestableActivity {
         else {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
+    }
+
+    public IWebRTCClient getWebRTCClient() {
+        return webRTCClient;
     }
 
 }

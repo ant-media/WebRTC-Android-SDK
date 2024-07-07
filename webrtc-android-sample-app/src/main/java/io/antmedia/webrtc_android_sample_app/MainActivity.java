@@ -37,6 +37,7 @@ import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
+import io.antmedia.webrtc_android_sample_app.basic.StatsActivity;
 
 import com.google.firebase.FirebaseApp;
 
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(SettingsActivity.class, "Settings");
         addActivity(ConferenceActivityWithSpeakerIndicator.class,"Conference with Speaking Indicator");
         addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
+        addActivity(StatsActivity.class, "Stats");
 
     }
 

@@ -14,11 +14,18 @@ on: [push, pull_request]
 #     for more information -> https://docs.github.com/en/actions/hosting-your-own-runners/configuring-the-self-hosted-runner-application-as-a-service#customizing-the-self-hosted-runner-service
 #
 #   - For reactivecircus/android-emulator-runner@v2.27.0 , ANDROID_SDK_ROOT env should be set
-#     in later versions, ANDROID_HOME should be set
+#     in later versions, ANDROID_HOME should be set 
+#   
+#   - Important: In the actions-runner directory, add the following lines to the .env directory.
+#     ANDROID_HOME=/home/ubuntu/android
+#     ANDROID_SDK_ROOT=/home/ubuntu/android
+#     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+#
+
 
 jobs:
   unit-tests:
-    runs-on: self-hosted
+    runs-on: ovh36
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -26,14 +33,19 @@ jobs:
         with:
           java-version: 11
           distribution: 'adopt'
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Gradle Cache
         uses: gradle/gradle-build-action@v2
 
       - uses: FedericoCarboni/setup-ffmpeg@v2
         id: setup-ffmpeg
         #send test stream to the server to play test
-      - run: ffmpeg -re -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
-      
+      - run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d &
+
       - name: Setting up Python
         uses: actions/setup-python@v4
         with:
@@ -45,7 +57,7 @@ jobs:
           unzip chromedriver-linux64.zip
           cp chromedriver-linux64/chromedriver /home/ubuntu
           pip3 install requests selenium==4.14 flask 
-       
+
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
 
