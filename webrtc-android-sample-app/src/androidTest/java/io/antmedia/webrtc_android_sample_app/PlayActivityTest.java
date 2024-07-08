@@ -52,8 +52,8 @@ public class PlayActivityTest {
             = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
 
     @Before
-    public void before() {
-        //try before method to make @Rule run properly
+    public void before() throws IOException {
+        connectInternet();
     }
 
     @Rule

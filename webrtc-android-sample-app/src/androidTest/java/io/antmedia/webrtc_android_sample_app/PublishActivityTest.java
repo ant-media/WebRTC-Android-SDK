@@ -47,7 +47,9 @@ public class PublishActivityTest {
             = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
 
     @Before
-    public void before() {
+    public void before() throws IOException {
+        connectInternet();
+
         //try before method to make @Rule run properly
     }
 
