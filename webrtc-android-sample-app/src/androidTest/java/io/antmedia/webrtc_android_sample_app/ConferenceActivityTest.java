@@ -66,10 +66,10 @@ public class ConferenceActivityTest {
     private String roomName;
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         //try before method to make @Rule run properly
         System.out.println("before test");
-
+        connectInternet();
         getInstrumentation().waitForIdleSync();
 
         roomName = "room_" + RandomStringUtils.randomNumeric(3);
@@ -114,7 +114,8 @@ public class ConferenceActivityTest {
     public void emptyTest() {
 
     }
-    //@Test
+
+    @Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -155,7 +156,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
-    //@Test
+    @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -191,7 +192,7 @@ public class ConferenceActivityTest {
     }
 
     //@Test
-    public void testJoinWithoutVideo() {
+    public void testJoinWithoutVideo() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
@@ -225,6 +226,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
+        Thread.sleep(5000);
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
@@ -268,7 +270,7 @@ public class ConferenceActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
@@ -298,7 +300,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -328,7 +330,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
