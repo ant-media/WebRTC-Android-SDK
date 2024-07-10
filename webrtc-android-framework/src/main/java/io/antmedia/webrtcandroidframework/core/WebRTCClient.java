@@ -572,13 +572,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 return;
             }
             String receiverId = receiver.id();
-            String streamId = receiverId.substring("ARDAMSX".length());
+
+            String videoTrackId = receiverId.substring(DataChannelConstants.TRACK_ID_PREFIX.length());
 
             Log.d(TAG, "onAddTrack " + addedTrack.kind() + " " + addedTrack.id() + " " + addedTrack.state());
 
             if (addedTrack instanceof VideoTrack) {
                 VideoTrack videoTrack = (VideoTrack) addedTrack;
-                config.webRTCListener.onNewVideoTrack(videoTrack, streamId);
+                config.webRTCListener.onNewVideoTrack(videoTrack, videoTrackId);
             }
         }
 

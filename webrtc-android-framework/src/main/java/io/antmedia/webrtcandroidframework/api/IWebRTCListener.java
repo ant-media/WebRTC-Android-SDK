@@ -112,14 +112,6 @@ public interface IWebRTCListener {
   * It's called when a new video track is added.
   *
   * @param track
-  * @return
-  */
- void onNewVideoTrack(VideoTrack track);
-
- /**
-  * It's called when a new video track is added.
-  *
-  * @param track
   * @param trackId
   * @return
   */
@@ -215,12 +207,15 @@ public interface IWebRTCListener {
      */
     void onReconnectionSuccess();
 
-
     /**
      * It's called when user attempts to publish a stream.
      * @param broadcast
      */
     void onPublishAttempt(String streamId);
 
- void onPlayAttempt(String streamId);
+   /**
+    * It's called when user attempts to play a stream.
+    * @param broadcast
+    */
+    void onPlayAttempt(String streamId);
 }
