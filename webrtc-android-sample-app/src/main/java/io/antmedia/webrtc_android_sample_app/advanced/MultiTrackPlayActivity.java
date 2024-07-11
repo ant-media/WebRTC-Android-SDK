@@ -1,16 +1,22 @@
 package io.antmedia.webrtc_android_sample_app.advanced;
 
+import android.app.AlertDialog;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,18 +27,28 @@ import org.webrtc.VideoTrack;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
+import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
+import io.antmedia.webrtc_android_sample_app.basic.stats.TrackStatsAdapter;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.core.DataChannelConstants;
+import io.antmedia.webrtcandroidframework.core.model.PlayStats;
+import io.antmedia.webrtcandroidframework.core.model.TrackStats;
 
 public class MultiTrackPlayActivity extends TestableActivity {
+    private final static long UPDATE_STATS_INTERVAL_MS = 500L;
+
     private IWebRTCClient webRTCClient;
     private EditText streamIdEditText;
     private String streamId;
@@ -46,10 +62,13 @@ public class MultiTrackPlayActivity extends TestableActivity {
      */
     private ArrayList<VideoTrack> videoTrackList = new ArrayList<>();
 
+    /*
+     * Store track assignments received through the data channel from the server.
+     */
     private JSONArray trackAssignments;
 
     /*
-     * A message will arrive with a data channel message containing the eventType VIDEO_TRACK_ASSIGNMENT_LIST.
+     * A data channel message will arrive containing the eventType VIDEO_TRACK_ASSIGNMENT_LIST.
      * This message includes a videoLabel (trackId) and trackId (actual streamId).
      * Upon receiving this message, we will match our videoTrack objects with the streamIds and store them in the map below.
      * This allows us to determine which video track belongs to which stream id.
@@ -60,6 +79,17 @@ public class MultiTrackPlayActivity extends TestableActivity {
 
     private HashMap<String, SurfaceViewRenderer> streamIdSurfaceViewRendererMap = new HashMap<>();
 
+    private boolean playStarted = false;
+
+    private AlertDialog statsPopup;
+    private ScheduledFuture statCollectorFuture;
+    private ScheduledExecutorService statCollectorExecutor;
+
+    private ArrayList<TrackStats> audioTrackStatItems = new ArrayList<>();
+    private ArrayList<TrackStats> videoTrackStatItems = new ArrayList<>();
+
+    private TrackStatsAdapter audioTrackStatsAdapter;
+    private TrackStatsAdapter videoTrackStatsAdapter;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -101,6 +131,95 @@ public class MultiTrackPlayActivity extends TestableActivity {
                 webRTCClient.getTrackList(streamIdEditText.getText().toString(), "");
             }
         });
+
+        Button showStatsButton = findViewById(R.id.show_stats_button);
+
+        showStatsButton.setOnClickListener(v -> {
+            if(playStarted){
+                showStatsPopup();
+            }else{
+                runOnUiThread(() -> {
+                    Toast.makeText(MultiTrackPlayActivity.this,"Start playing first.", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void showStatsPopup(){
+        LayoutInflater li = LayoutInflater.from(this);
+
+        View promptsView = li.inflate(R.layout.multitrack_stats_popup, null);
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        alertDialogBuilder.setView(promptsView);
+
+        alertDialogBuilder.setCancelable(true);
+        statsPopup  = alertDialogBuilder.create();
+
+        audioTrackStatsAdapter = new TrackStatsAdapter(audioTrackStatItems, this);
+        videoTrackStatsAdapter = new TrackStatsAdapter(videoTrackStatItems, this);
+
+        RelativeLayout publishStatsContainer = promptsView.findViewById(R.id.multitrack_stats_popup_publish_stats_main_container);
+        //this is only playing so hide publish stats
+        publishStatsContainer.setVisibility(View.GONE);
+
+        RecyclerView playStatsAudioTrackRecyclerview = promptsView.findViewById(R.id.multitrack_stats_popup_play_stats_audio_track_recyclerview);
+        RecyclerView playStatsVideoTrackRecyclerview = promptsView.findViewById(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview);
+
+        LinearLayoutManager linearLayoutManager1 = new LinearLayoutManager(this);
+        LinearLayoutManager linearLayoutManager2 = new LinearLayoutManager(this);
+
+        playStatsAudioTrackRecyclerview.setLayoutManager(linearLayoutManager1);
+        playStatsVideoTrackRecyclerview.setLayoutManager(linearLayoutManager2);
+
+        playStatsAudioTrackRecyclerview.setAdapter(audioTrackStatsAdapter);
+        playStatsVideoTrackRecyclerview.setAdapter(videoTrackStatsAdapter);
+
+        Button closeButton = promptsView.findViewById(R.id.multitrack_stats_popup_close_button);
+
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                statsPopup.dismiss();
+            }
+        });
+
+        statCollectorExecutor = Executors.newScheduledThreadPool(1);
+        statCollectorFuture = statCollectorExecutor.scheduleWithFixedDelay(() -> {
+            runOnUiThread(() -> {
+                try{
+
+                    PlayStats playStats = webRTCClient.getStatsCollector().getPlayStats();
+                    audioTrackStatItems.clear();
+                    audioTrackStatItems.addAll(playStats.getAudioTrackStatsMap().values());
+
+                    videoTrackStatItems.clear();
+                    videoTrackStatItems.addAll(playStats.getVideoTrackStatsMap().values());
+
+                    audioTrackStatsAdapter.notifyDataSetChanged();
+                    videoTrackStatsAdapter.notifyDataSetChanged();
+
+                }
+                catch (Exception e) {
+                    Log.e("MultiTrackPlayActivity", "Exception in task execution: " + e.getMessage());
+                }
+            });
+
+        }, 0, UPDATE_STATS_INTERVAL_MS, TimeUnit.MILLISECONDS);
+
+
+        statsPopup.setOnDismissListener(dialog -> {
+            if (statCollectorFuture != null && !statCollectorFuture.isCancelled()) {
+                statCollectorFuture.cancel(true);
+            }
+            if (statCollectorExecutor != null && !statCollectorExecutor.isShutdown()) {
+                statCollectorExecutor.shutdown();
+            }
+        });
+
+        statsPopup.show();
+
     }
 
     public void startStopStream(View v) {
@@ -177,6 +296,7 @@ public class MultiTrackPlayActivity extends TestableActivity {
             public void onPlayStarted(String streamId) {
                 super.onPlayStarted(streamId);
                 decrementIdle();
+                playStarted = true;
             }
 
             @Override

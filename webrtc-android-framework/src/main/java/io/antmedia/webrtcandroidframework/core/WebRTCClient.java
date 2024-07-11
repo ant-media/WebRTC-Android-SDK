@@ -2082,8 +2082,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     private void clearStatsCollector(){
-        statsCollector.getAudioTrackStatsMap().clear();
-        statsCollector.getVideoTrackStatsMap().clear();
+        statsCollector.getPublishStats().reset();
+        statsCollector.getPlayStats().reset();
     }
 
     public void getStats(String streamId) {
