@@ -7,7 +7,6 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
@@ -50,7 +49,6 @@ public class PublishActivityTest {
     @Before
     public void before() throws IOException {
         connectInternet();
-        //try before method to make @Rule run properly
     }
 
     @Rule

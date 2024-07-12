@@ -119,7 +119,6 @@ public class StatsActivityTest {
                 R.id.stats_popup_local_video_bitrate_textview
         };
 
-        // Assert for audio TextViews
         for (int id : audioTrackStatsTextViewIds) {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();

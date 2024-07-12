@@ -108,10 +108,7 @@ public class ConferenceActivityTest {
             Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
         }
     };
-    @Test
-    public void emptyTest() {
 
-    }
     @Test
     public void testJoinMultitrackRoom() {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
@@ -189,7 +186,7 @@ public class ConferenceActivityTest {
     }
 
     //@Test
-    public void testJoinWithoutVideo() {
+    public void testJoinWithoutVideo() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
@@ -223,6 +220,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
+        Thread.sleep(5000);
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 

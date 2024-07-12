@@ -53,8 +53,8 @@ public class PlayActivityTest {
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
-    public void before() {
-        //try before method to make @Rule run properly
+    public void before() throws IOException {
+        connectInternet();
     }
 
     @Rule
@@ -144,7 +144,7 @@ public class PlayActivityTest {
 
         connectInternet();
 
-        Thread.sleep(20000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -175,7 +175,7 @@ public class PlayActivityTest {
 
         connectInternet();
 
-        Thread.sleep(20000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));

@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -702,7 +703,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void init() {
         if(config.videoCallEnabled && !PermissionHandler.checkCameraPermissions(config.activity)) {
-            Log.e(TAG,"Camera permissions not given. Cannot init.");
+            Toast.makeText(config.activity,"Camera permissions not granted. Cannot init.", Toast.LENGTH_LONG).show();
+            Log.e(TAG,"Camera permissions not granted. Cannot init.");
             return;
         }
 
@@ -977,7 +979,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         init();
 
         if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled)){
-            Log.e(TAG,"Publish permissions not given. Cant publish.");
+            Toast.makeText(config.activity,"Publish permissions not granted. Cant publish.", Toast.LENGTH_LONG).show();
+            Log.e(TAG,"Publish permissions not granted. Cant publish.");
             return;
         }
 
@@ -1027,7 +1030,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
 
         if(!PermissionHandler.checkPlayPermissions(config.activity, config.bluetoothEnabled)){
-            Log.e(TAG,"Play permissions not given.");
+            Toast.makeText(config.activity,"Play permissions not granted. Cant play.", Toast.LENGTH_LONG).show();
+            Log.e(TAG,"Play permissions not granted. Cant play.");
             return;
         }
 
