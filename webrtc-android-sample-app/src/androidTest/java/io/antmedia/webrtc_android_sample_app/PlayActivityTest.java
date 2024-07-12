@@ -3,6 +3,7 @@ package io.antmedia.webrtc_android_sample_app;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
@@ -82,7 +83,7 @@ public class PlayActivityTest {
         });
 
         //stream556677i4d is the stream id in github actions
-        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+        onView(withId(R.id.stream_id_edittext)).perform(replaceText("stream556677i4d"));
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
@@ -124,7 +125,7 @@ public class PlayActivityTest {
         });
 
         //stream556677i4d is the stream id in github actions
-        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+        onView(withId(R.id.stream_id_edittext)).perform(replaceText("stream556677i4d"));
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
