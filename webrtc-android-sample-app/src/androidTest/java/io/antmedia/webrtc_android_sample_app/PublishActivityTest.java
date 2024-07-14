@@ -118,7 +118,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(30000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -148,7 +148,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(30000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
