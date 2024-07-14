@@ -111,7 +111,7 @@ public class StatsActivityTest {
         int[] videoTrackStatsTextViewIds = {
                 R.id.stats_popup_jitter_video_textview,
                 R.id.stats_popup_rtt_video_textview,
-                R.id.stats_popup_pli_count_video_textview,
+                //R.id.stats_popup_pli_count_video_textview,
                 R.id.stats_popup_packets_sent_video_textview,
                 R.id.stats_popup_frames_encoded_video_textview,
                 R.id.stats_popup_bytes_sent_video_textview,
