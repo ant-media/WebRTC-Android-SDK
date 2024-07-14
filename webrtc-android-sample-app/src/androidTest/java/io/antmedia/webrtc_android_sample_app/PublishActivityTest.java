@@ -47,7 +47,9 @@ public class PublishActivityTest {
             = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
 
     @Before
-    public void before() {
+    public void before() throws IOException {
+        connectInternet();
+
         //try before method to make @Rule run properly
     }
 
@@ -61,7 +63,7 @@ public class PublishActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    //@Test
+    @Test
     public void testPublishing() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
@@ -90,7 +92,7 @@ public class PublishActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testPublishReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
@@ -119,7 +121,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -149,7 +151,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(40000);
+        Thread.sleep(30000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));

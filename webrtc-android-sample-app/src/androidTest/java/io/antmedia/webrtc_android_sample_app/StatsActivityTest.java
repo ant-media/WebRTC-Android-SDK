@@ -70,7 +70,7 @@ public class StatsActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    //@Test
+    @Test
     public void testStatsCollector() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), StatsActivity.class);
         ActivityScenario<StatsActivity> scenario = ActivityScenario.launch(intent);
@@ -119,7 +119,6 @@ public class StatsActivityTest {
                 R.id.stats_popup_local_video_bitrate_textview
         };
 
-        // Assert for audio TextViews
         for (int id : audioTrackStatsTextViewIds) {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
