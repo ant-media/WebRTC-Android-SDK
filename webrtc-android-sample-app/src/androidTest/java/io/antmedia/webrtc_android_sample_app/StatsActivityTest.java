@@ -56,8 +56,8 @@ public class StatsActivityTest {
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
-    public void before() {
-        //try before method to make @Rule run properly
+    public void before() throws IOException {
+        connectInternet();
     }
 
     @Rule
@@ -144,5 +144,14 @@ public class StatsActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    private void connectInternet() throws IOException {
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi enable"); // Switch Wifi on again
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
 }
