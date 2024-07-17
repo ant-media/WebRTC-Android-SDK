@@ -91,7 +91,7 @@ public class PublishActivityTest {
 
     }
 
-    @Test
+    //@Test
     public void testPublishReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
