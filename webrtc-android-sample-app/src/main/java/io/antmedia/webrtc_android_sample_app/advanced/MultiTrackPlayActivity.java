@@ -3,6 +3,7 @@ package io.antmedia.webrtc_android_sample_app.advanced;
 import android.app.AlertDialog;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,7 +12,6 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
@@ -26,7 +26,9 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -34,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
-import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtc_android_sample_app.basic.stats.TrackStatsAdapter;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
@@ -43,8 +44,18 @@ import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.core.DataChannelConstants;
+import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.model.PlayStats;
 import io.antmedia.webrtcandroidframework.core.model.TrackStats;
+
+/*
+ * This sample demonstrates how to play multiple streams using a single WebRTC client.
+ * In Ant Media Server, a broadcast object includes an array field called 'subtracks'.
+ * By calling .play() with the streamId of a broadcast(maintrack), where 'subtracks' contains the streamIds of other streams,
+ * it will play those subtrack streams.
+ * For more information:
+ * https://antmedia.io/docs/guides/publish-live-stream/multitrack-publish-and-play-with-ams/#terminologies-related-to-multitrack
+ */
 
 public class MultiTrackPlayActivity extends TestableActivity {
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
@@ -55,10 +66,12 @@ public class MultiTrackPlayActivity extends TestableActivity {
     private Button startStreamingButton;
     private LinearLayout playersLayout;
     private LinearLayout checkboxesLayout;
+    private Handler handler = new Handler();
 
     /*
      * We will receive videoTrack objects from the server through the onNewVideoTrack callback of the webrtc client listener.
      * These videoTracks are not yet assigned to a streamId. We store them inside videoTrackList.
+     * A runnable will read those video tracks and assign them to surface view renderers.
      */
     private ArrayList<VideoTrack> videoTrackList = new ArrayList<>();
 
@@ -73,11 +86,13 @@ public class MultiTrackPlayActivity extends TestableActivity {
      * Upon receiving this message, we will match our videoTrack objects with the streamIds and store them in the map below.
      * This allows us to determine which video track belongs to which stream id.
      */
-    private HashMap<String,VideoTrack> streamIdVideoTrackMap = new HashMap<>();
+    private HashMap<String, VideoTrack> streamIdVideoTrackMap = new HashMap<>();
 
     private HashMap<SurfaceViewRenderer, VideoTrack> surfaceViewRendererVideoTrackMap = new HashMap<>();
 
     private HashMap<String, SurfaceViewRenderer> streamIdSurfaceViewRendererMap = new HashMap<>();
+
+    private Runnable videoTrackSurfaceViewRendererMatcherRunnable;
 
     private boolean playStarted = false;
 
@@ -90,7 +105,6 @@ public class MultiTrackPlayActivity extends TestableActivity {
 
     private TrackStatsAdapter audioTrackStatsAdapter;
     private TrackStatsAdapter videoTrackStatsAdapter;
-
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -118,18 +132,19 @@ public class MultiTrackPlayActivity extends TestableActivity {
                 .build();
 
         View startStreamingButton = findViewById(R.id.start_streaming_button);
-        startStreamingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startStopStream(v);
-            }
-        });
+        startStreamingButton.setOnClickListener(v -> startStopStream(v));
 
-        tracksButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                webRTCClient.getTrackList(streamIdEditText.getText().toString(), "");
-            }
+        tracksButton.setOnClickListener(v -> {
+            /*
+             * If you require, you can play certain subtracks with different resolutions.
+             * Don't forget to add your desired resolution as ABR on server side application settings.
+             * Play subtrack with 240p resolution:
+             * webRTCClient.forceStreamQuality("mainTrack", "subTrack1", 240);
+             * Play a stream with 720p resolution:
+             * webRTCClient.forceStreamQuality("someStreamId", "", 720);
+             *
+             */
+            webRTCClient.getTrackList(streamIdEditText.getText().toString(), "");
         });
 
         Button showStatsButton = findViewById(R.id.show_stats_button);
@@ -143,6 +158,37 @@ public class MultiTrackPlayActivity extends TestableActivity {
                 });
             }
         });
+
+        //Handle adding new video tracks as new surface view renderers.
+        //Handle setting new video tracks to existing surface view renderers. (reconnection case)
+        videoTrackSurfaceViewRendererMatcherRunnable = () -> {
+            handler.postDelayed(videoTrackSurfaceViewRendererMatcherRunnable, 500);
+            runOnUiThread(() -> {
+                for(VideoTrack videoTrack: videoTrackList){
+                    String streamId = getStreamIdByVideoTrack(videoTrack);
+                    if(streamId == null){
+                        return;
+                    }
+                    SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRendererByStreamId(streamId);
+                    if(surfaceViewRenderer == null){
+                        SurfaceViewRenderer renderer = new SurfaceViewRenderer(getApplicationContext());
+                        renderer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT));
+                        playersLayout.addView(renderer);
+                        webRTCClient.getConfig().remoteVideoRenderers.add(renderer);
+                        renderer.setTag(videoTrack);
+                        webRTCClient.setRendererForVideoTrack(renderer, videoTrack);
+                        surfaceViewRendererVideoTrackMap.put(renderer, videoTrack);
+                        matchStreamIdAndSurfaceViewRenderer();
+                    }else{
+                        //In case of a reconnection we need to set video tracks to our old surface view renderers.
+                        ProxyVideoSink remoteVideoSink = new ProxyVideoSink();
+                        remoteVideoSink.setTarget(surfaceViewRenderer);
+                        videoTrack.addSink(remoteVideoSink);
+                    }
+                }
+            });
+        };
     }
 
     private void showStatsPopup(){
@@ -189,7 +235,6 @@ public class MultiTrackPlayActivity extends TestableActivity {
         statCollectorFuture = statCollectorExecutor.scheduleWithFixedDelay(() -> {
             runOnUiThread(() -> {
                 try{
-
                     PlayStats playStats = webRTCClient.getStatsCollector().getPlayStats();
                     audioTrackStatItems.clear();
                     audioTrackStatItems.addAll(playStats.getAudioTrackStatsMap().values());
@@ -208,7 +253,6 @@ public class MultiTrackPlayActivity extends TestableActivity {
 
         }, 0, UPDATE_STATS_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-
         statsPopup.setOnDismissListener(dialog -> {
             if (statCollectorFuture != null && !statCollectorFuture.isCancelled()) {
                 statCollectorFuture.cancel(true);
@@ -219,7 +263,6 @@ public class MultiTrackPlayActivity extends TestableActivity {
         });
 
         statsPopup.show();
-
     }
 
     public void startStopStream(View v) {
@@ -233,7 +276,6 @@ public class MultiTrackPlayActivity extends TestableActivity {
         else {
             ((Button) v).setText("Start");
             Log.i(getClass().getSimpleName(), "Calling play start");
-
             webRTCClient.stop(streamId);
         }
     }
@@ -253,21 +295,21 @@ public class MultiTrackPlayActivity extends TestableActivity {
                 }catch (Exception e){
                     Log.e(getClass().getSimpleName(),"Cant parse data channel message to JSON object. "+e.getMessage());
                 }
-
             }
         };
     }
 
-    private void matchStreamIdAndVideoTrack(){
+    private void matchStreamIdAndVideoTrack() {
         try{
             for(int i=0;i<trackAssignments.length();i++){
-                // inside this object videoLabel is actually trackId(it is like videoTrack0) and trackId is our actual streamId
+                // inside this object videoLabel is actually trackId(ex:videoTrack0) and trackId is our actual streamId
                 JSONObject videoLabelTrackIdObj = trackAssignments.getJSONObject(i);
                 for(int k=0;k<videoTrackList.size();k++){
                     VideoTrack videoTrack = videoTrackList.get(k);
                     String videoTrackId = videoTrack.id().substring(DataChannelConstants.TRACK_ID_PREFIX.length());
                     if(videoLabelTrackIdObj.getString(DataChannelConstants.VIDEO_LABEL).equals(videoTrackId)){
-                        streamIdVideoTrackMap.put(videoLabelTrackIdObj.getString(DataChannelConstants.TRACK_ID), videoTrack);
+                        String subtrackStreamId = videoLabelTrackIdObj.getString(DataChannelConstants.TRACK_ID);
+                        streamIdVideoTrackMap.put(subtrackStreamId, videoTrack);
                     }
                 }
             }
@@ -276,7 +318,16 @@ public class MultiTrackPlayActivity extends TestableActivity {
         }
     }
 
-    private void matchStreamIdAndSurfaceViewRenderer(){
+    private String getStreamIdByVideoTrack(VideoTrack videoTrack) {
+        for (Map.Entry<String, VideoTrack> entry : streamIdVideoTrackMap.entrySet()) {
+            if (entry.getValue().equals(videoTrack)) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private void matchStreamIdAndSurfaceViewRenderer() {
         for (Map.Entry<String, VideoTrack> entry1 : streamIdVideoTrackMap.entrySet()) {
             String streamId = entry1.getKey();
             VideoTrack videoTrack1 = entry1.getValue();
@@ -290,6 +341,15 @@ public class MultiTrackPlayActivity extends TestableActivity {
         }
     }
 
+    private SurfaceViewRenderer getSurfaceViewRendererByStreamId(String streamId) {
+        for (Map.Entry<String, SurfaceViewRenderer> entry : streamIdSurfaceViewRendererMap.entrySet()) {
+            if (entry.getKey().equals(streamId)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
     private IWebRTCListener createWebRTCListener() {
         return new DefaultWebRTCListener() {
             @Override
@@ -297,6 +357,7 @@ public class MultiTrackPlayActivity extends TestableActivity {
                 super.onPlayStarted(streamId);
                 decrementIdle();
                 playStarted = true;
+                handler.postDelayed(videoTrackSurfaceViewRendererMatcherRunnable, 0);
             }
 
             @Override
@@ -306,22 +367,34 @@ public class MultiTrackPlayActivity extends TestableActivity {
             }
 
             @Override
+            public void onResolutionChange(String streamId, int resolution) {
+                super.onResolutionChange(streamId, resolution);
+                Toast.makeText(MultiTrackPlayActivity.this, "Resolution changed to "+ resolution + " for stream "+ streamId,Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onShutdown() {
+                super.onShutdown();
+                videoTrackList.clear();
+                streamIdVideoTrackMap.clear();
+                streamIdSurfaceViewRendererMap.clear();
+                surfaceViewRendererVideoTrackMap.clear();
+                playersLayout.removeAllViews();
+                handler.removeCallbacksAndMessages(null);
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                videoTrackList.clear();
+            }
+
+            @Override
             public void onNewVideoTrack(VideoTrack videoTrack, String trackId) {
-                super.onNewVideoTrack(videoTrack, trackId);
                 videoTrackList.add(videoTrack);
                 if(trackAssignments != null){
                     matchStreamIdAndVideoTrack();
                 }
-
-                runOnUiThread(() -> {
-                    SurfaceViewRenderer renderer = new SurfaceViewRenderer(getApplicationContext());
-                    renderer.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,
-                            LinearLayout.LayoutParams.WRAP_CONTENT));
-                    playersLayout.addView(renderer);
-                    webRTCClient.setRendererForVideoTrack(renderer, videoTrack);
-                    surfaceViewRendererVideoTrackMap.put(renderer, videoTrack);
-                    matchStreamIdAndSurfaceViewRenderer();
-                });
             }
 
             @Override

@@ -388,7 +388,7 @@ public class WebSocketHandlerTest {
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
 
-        webSocketHandler.forceStreamQuality(streamId, height);
+        webSocketHandler.forceStreamQuality(streamId, "", height);
 
         verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
 

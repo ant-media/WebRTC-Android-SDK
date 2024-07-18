@@ -133,4 +133,10 @@ public interface AntMediaSignallingEvents {
      * @param streamId
      */
     void onBroadcastObject(Broadcast broadcast);
+
+    /**
+     * It's called when streams/subtracks resolution changes.
+     * @param streamId
+     */
+    void onResolutionChange(String streamId, int resolution);
 }

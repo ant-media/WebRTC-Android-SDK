@@ -244,6 +244,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     String broadcastJson = json.getString(WebSocketConstants.BROADCAST);
                     Broadcast broadcast = gson.fromJson(broadcastJson, Broadcast.class);
                     signallingListener.onBroadcastObject(broadcast);
+                }else if(definition.equals(WebSocketConstants.RESOLUTION_CHANGE_INFO_COMMAND)){
+                    int resolution = json.getInt(WebSocketConstants.STREAM_HEIGHT);
+                    signallingListener.onResolutionChange(streamId, resolution);
+
                 }
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
@@ -267,11 +271,9 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 if (definition.equals(WebSocketConstants.NO_STREAM_EXIST))
                 {
                     signallingListener.noStreamExistsToPlay(streamId);
-                    //disconnect(true);
                 }
                 if(definition.equals(WebSocketConstants.STREAM_ID_IN_USE)){
                     signallingListener.streamIdInUse(streamId);
-                   // disconnect(true);
                 }
             }
             else if (commandText.equals(WebSocketConstants.STOP_COMMAND)) {
@@ -540,12 +542,13 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         return ws !=null && ws.isConnected();
     }
 
-    public void forceStreamQuality(String streamId, int height) {
+    public void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int height) {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
-            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.STREAM_ID, mainTrackStreamId);
+            json.put(WebSocketConstants.TRACK_ID, subTrackStreamId);
             json.put(WebSocketConstants.STREAM_HEIGHT, height);
             sendTextMessage(json.toString());
         } catch (JSONException e) {

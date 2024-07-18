@@ -166,7 +166,6 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
-
     @Override
     public void onRoomInformation(String[] streams) {
         String messageText = "Room information received";
@@ -240,10 +239,20 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
+    @Override
+    public void onResolutionChange(String streamId, int resolution) {
+        String messageText = "Resolution changed to " + resolution +" for stream "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onShutdown(){
+        String messageText = "Webrtc client shutdown.";
+        callbackCalled(messageText);
+    }
+
     protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
     }
 
-
 }
-

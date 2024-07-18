@@ -358,7 +358,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
 
                     } else if (peerInfo.mode.equals(Mode.PLAY)) {
-                        releaseRemoteRenderers();
+                        if(config.remoteVideoRenderers.size() == 1){ //if its multitrack play dont release.
+                            releaseRemoteRenderers();
+                        }
                         Log.d(TAG, "Reconnect attempt for play");
 
                         play(peerInfo.id,
@@ -368,9 +370,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                 peerInfo.subscriberCode,
                                 peerInfo.metaData
                         );
+
                     } else if (peerInfo.mode.equals(Mode.P2P)) {
                         Log.d(TAG, "Reconnect attempt for P2P");
-
                         config.localVideoRenderer.setZOrderOnTop(true);
                         join(peerInfo.id, peerInfo.token);
                     }
@@ -378,7 +380,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
         };
     }
-
 
     public WebRTCClient(WebRTCClientConfig config) {
         this.config = config;
@@ -1104,6 +1105,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 releaseRenderer(remoteVideoRenderer);
             }
         }
+
         localVideoTrack = null;
         localAudioTrack = null;
 
@@ -1119,6 +1121,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             audioManager.stop();
             audioManager = null;
         }
+
+        config.webRTCListener.onShutdown();
+
     }
 
     public void releaseRenderer(SurfaceViewRenderer renderer, VideoTrack track, VideoSink sink) {
@@ -1521,6 +1526,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     @Override
+    public void onResolutionChange(String streamId, int resolution) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onResolutionChange(streamId, resolution);
+            }
+        });
+    }
+
+    @Override
     public void streamIdInUse(String streamId) {
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -1622,8 +1636,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         wsHandler.getStreamInfoList(streamId);
     }
 
-    public void forceStreamQuality(String streamId, int height) {
-        wsHandler.forceStreamQuality(streamId, height);
+    public void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int height) {
+        wsHandler.forceStreamQuality(mainTrackStreamId, subTrackStreamId, height);
     }
 
     class DataChannelInternalObserver implements DataChannel.Observer {

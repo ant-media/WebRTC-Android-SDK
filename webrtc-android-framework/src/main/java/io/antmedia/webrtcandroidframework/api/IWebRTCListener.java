@@ -218,4 +218,15 @@ public interface IWebRTCListener {
     * @param broadcast
     */
     void onPlayAttempt(String streamId);
+
+   /**
+    * It's called when streams/subtracks resolution changes.
+    * @param broadcast
+    */
+    void onResolutionChange(String streamId, int resolution);
+
+    /**
+    * It's called when webrtc client releases all resources and shutdowns.
+    */
+    void onShutdown();
 }

@@ -60,12 +60,7 @@ public class PlayActivity extends TestableActivity {
                 .build();
 
         View startStreamingButton = findViewById(R.id.start_streaming_button);
-        startStreamingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startStopStream(v);
-            }
-        });
+        startStreamingButton.setOnClickListener(v -> startStopStream(v));
     }
 
     public void startStopStream(View v) {
@@ -74,7 +69,6 @@ public class PlayActivity extends TestableActivity {
         if (!webRTCClient.isStreaming(streamId)) {
             ((Button) v).setText("Stop");
             Log.i(getClass().getSimpleName(), "Calling play start");
-
             webRTCClient.play(streamId);
         }
         else {
@@ -177,5 +171,4 @@ public class PlayActivity extends TestableActivity {
             Toast.makeText(this, R.string.data_channel_not_available, Toast.LENGTH_LONG).show();
         }
     }
-
 }
