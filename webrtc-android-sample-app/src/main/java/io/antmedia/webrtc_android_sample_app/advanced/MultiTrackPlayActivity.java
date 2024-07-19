@@ -26,9 +26,7 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -59,6 +57,8 @@ import io.antmedia.webrtcandroidframework.core.model.TrackStats;
 
 public class MultiTrackPlayActivity extends TestableActivity {
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
+    private final static long UPDATE_SURFACE_VIEWS_INTERVAL_MS = 500L;
+
 
     private IWebRTCClient webRTCClient;
     private EditText streamIdEditText;
@@ -93,7 +93,7 @@ public class MultiTrackPlayActivity extends TestableActivity {
     private HashMap<String, SurfaceViewRenderer> streamIdSurfaceViewRendererMap = new HashMap<>();
 
 
-    private Runnable videoTrackSurfaceViewRendererMatcherRunnable;
+    private Runnable surfaceViewRendererUpdaterRunnable;
 
     private boolean playStarted = false;
 
@@ -164,8 +164,8 @@ public class MultiTrackPlayActivity extends TestableActivity {
 
         //Handle adding new video tracks as new surface view renderers.
         //Handle setting new video tracks to existing surface view renderers. (reconnection case)
-        videoTrackSurfaceViewRendererMatcherRunnable = () -> {
-            handler.postDelayed(videoTrackSurfaceViewRendererMatcherRunnable, 500);
+        surfaceViewRendererUpdaterRunnable = () -> {
+            handler.postDelayed(surfaceViewRendererUpdaterRunnable, UPDATE_SURFACE_VIEWS_INTERVAL_MS);
             runOnUiThread(() -> {
                 for(VideoTrack videoTrack: videoTrackList){
                     String streamId = getStreamIdByVideoTrack(videoTrack);
@@ -360,7 +360,7 @@ public class MultiTrackPlayActivity extends TestableActivity {
                 super.onPlayStarted(streamId);
                 decrementIdle();
                 playStarted = true;
-                handler.postDelayed(videoTrackSurfaceViewRendererMatcherRunnable, 0);
+                handler.postDelayed(surfaceViewRendererUpdaterRunnable, 0);
             }
 
             @Override
