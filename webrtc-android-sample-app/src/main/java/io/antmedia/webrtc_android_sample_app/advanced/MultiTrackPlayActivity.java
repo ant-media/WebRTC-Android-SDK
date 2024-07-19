@@ -92,10 +92,13 @@ public class MultiTrackPlayActivity extends TestableActivity {
 
     private HashMap<String, SurfaceViewRenderer> streamIdSurfaceViewRendererMap = new HashMap<>();
 
+
     private Runnable videoTrackSurfaceViewRendererMatcherRunnable;
 
     private boolean playStarted = false;
 
+
+    //Related to stats collector. Collect stats for each track periodically from stats collector.
     private AlertDialog statsPopup;
     private ScheduledFuture statCollectorFuture;
     private ScheduledExecutorService statCollectorExecutor;
@@ -373,6 +376,12 @@ public class MultiTrackPlayActivity extends TestableActivity {
             }
 
             @Override
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                Toast.makeText(MultiTrackPlayActivity.this,"Reconnected.",Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
             public void onShutdown() {
                 super.onShutdown();
                 videoTrackList.clear();
@@ -386,6 +395,8 @@ public class MultiTrackPlayActivity extends TestableActivity {
             @Override
             public void onIceDisconnected(String streamId) {
                 super.onIceDisconnected(streamId);
+                Toast.makeText(MultiTrackPlayActivity.this,"Disconnected.",Toast.LENGTH_SHORT).show();
+                //On reconnection we will get tracks again. So clear them here.
                 videoTrackList.clear();
             }
 
