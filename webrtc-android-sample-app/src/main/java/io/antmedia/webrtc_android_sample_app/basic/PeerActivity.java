@@ -52,6 +52,7 @@ public class PeerActivity extends TestableActivity {
 
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(pipRenderer)
+                .setInitiateBeforeStream(true)
                 .addRemoteVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)

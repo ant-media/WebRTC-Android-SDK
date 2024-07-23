@@ -369,7 +369,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                 peerInfo.metaData
                         );
                     } else if (peerInfo.mode.equals(Mode.P2P)) {
+                        releaseRemoteRenderers();
                         Log.d(TAG, "Reconnect attempt for P2P");
+                        wsHandler.leaveFromP2P(peerInfo.id);
 
                         config.localVideoRenderer.setZOrderOnTop(true);
                         join(peerInfo.id, peerInfo.token);
@@ -910,6 +912,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         streamStoppedByUser = byUser;
 
         if (wsHandler != null && wsHandler.isConnected()) {
+
+            PeerInfo peerInfo = getPeerInfoFor(streamId);
+            if(peerInfo != null && peerInfo.mode == Mode.P2P){
+                wsHandler.leaveFromP2P(streamId);
+                return;
+            }
+
+
             wsHandler.stop(streamId);
         }
     }
@@ -1290,8 +1300,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
+
             if (streamStoppedByUser) {
                 release(true);
+                streamStoppedByUser = false;
                 return;
             }
 
@@ -1472,7 +1484,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onStartStreaming(String streamId) {
         this.handler.post(() -> {
+
             createPeerConnection(streamId);
+            if(getPeerInfoFor(streamId).mode == Mode.P2P){
+                createOffer(streamId);
+            }
         });
     }
 

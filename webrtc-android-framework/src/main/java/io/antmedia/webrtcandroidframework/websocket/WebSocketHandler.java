@@ -507,6 +507,18 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
+    public void leaveFromP2P(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Leave from conference room JSON error: " + e.getMessage());
+        }
+    }
+
     public void getRoomInfo(String roomName, String streamId) {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
