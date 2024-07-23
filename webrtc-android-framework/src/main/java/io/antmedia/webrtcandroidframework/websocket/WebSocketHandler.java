@@ -515,7 +515,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
             json.put(WebSocketConstants.STREAM_ID, streamId);
             sendTextMessage(json.toString());
         } catch (JSONException e) {
-            Log.e(TAG, "Leave from conference room JSON error: " + e.getMessage());
+            Log.e(TAG, "Leave from P2P JSON error: " + e.getMessage());
         }
     }
 
