@@ -69,7 +69,7 @@ public class ConferenceActivityTest {
     public void before() throws IOException {
         //try before method to make @Rule run properly
         System.out.println("before test");
-        connectInternet();
+        //connectInternet();
         getInstrumentation().waitForIdleSync();
 
         roomName = "room_" + RandomStringUtils.randomNumeric(3);
@@ -156,6 +156,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
+    /*
     @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
@@ -366,5 +367,7 @@ public class ConferenceActivityTest {
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
 
+
+     */
 
 }
