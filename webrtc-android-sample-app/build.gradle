@@ -62,7 +62,9 @@ tasks.withType(Test) {
     }
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','createDebugCoverageReport']) {
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','connectedDebugAndroidTest']) {
+
+
 
     reports {
         xml.enabled = true
@@ -71,12 +73,15 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','creat
 
     def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
     def debugTree = fileTree(dir: "$project.buildDir/intermediates/javac/debug", excludes: fileFilter)
+    def kotlinDebugTree = fileTree(dir: "$project.buildDir/tmp/kotlin-classes/debug", excludes: fileFilter)
     def mainSrc = "$project.projectDir/src/main/java"
 
     sourceDirectories.setFrom(files([mainSrc]))
-    classDirectories.setFrom(files([debugTree]))
+    classDirectories.setFrom(files([debugTree, kotlinDebugTree]))
     executionData.setFrom(fileTree(dir: project.buildDir, includes: [
-            'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec'
+            'outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec',
+            'build/outputs/code_coverage/debugAndroidTest/connected/**/*.ec',
+            'build/outputs/code_coverage/debugAndroidTest/connected/**/coverage.ec'
     ]))
 }
 
