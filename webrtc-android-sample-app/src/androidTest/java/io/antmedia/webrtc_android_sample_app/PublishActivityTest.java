@@ -48,7 +48,7 @@ public class PublishActivityTest {
 
     @Before
     public void before() throws IOException {
-        connectInternet();
+        //connectInternet();
 
         //try before method to make @Rule run properly
     }
