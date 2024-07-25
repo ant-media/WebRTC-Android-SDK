@@ -53,7 +53,7 @@ public class PlayActivityTest {
 
     @Before
     public void before() throws IOException {
-        //connectInternet();
+        connectInternet();
     }
 
     @Rule
@@ -108,7 +108,7 @@ public class PlayActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testPlayReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);

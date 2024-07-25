@@ -48,7 +48,7 @@ public class PublishActivityTest {
 
     @Before
     public void before() throws IOException {
-        //connectInternet();
+        connectInternet();
 
         //try before method to make @Rule run properly
     }
@@ -92,7 +92,7 @@ public class PublishActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testPublishReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
