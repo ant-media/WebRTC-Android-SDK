@@ -313,8 +313,6 @@ public class StatsActivity extends TestableActivity {
 
             }, 0, UPDATE_STATS_INTERVAL_MS, TimeUnit.MILLISECONDS);
 
-
-
         statsPopup.setOnDismissListener(dialog -> {
             if (statCollectorFuture != null && !statCollectorFuture.isCancelled()) {
                 statCollectorFuture.cancel(true);

@@ -1,14 +1,16 @@
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco'
+apply plugin: 'com.google.gms.google-services'
 
 android {
 
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "io.antmedia.webrtc_android_sample_app"
-        minSdkVersion 22
+        minSdkVersion 26
         targetSdkVersion 33
+        multiDexEnabled true
 
         versionCode 1
         versionName "1.0"
@@ -62,7 +64,7 @@ tasks.withType(Test) {
     }
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','createDebugCoverageReport']) {
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','connectedDebugAndroidTest']) {
 
     reports {
         xml.enabled = true
@@ -84,11 +86,13 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','creat
 dependencies {
     api project(":webrtc-android-framework")
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.preference:preference:1.2.0'
     implementation 'androidx.test.espresso.idling:idling-net:3.5.0'
     implementation 'androidx.test:rules:1.5.0'
+    implementation 'com.google.firebase:firebase-messaging:23.4.1'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:1.10.19'
     androidTestUtil "androidx.test.services:test-services:1.4.2"
@@ -105,6 +109,10 @@ dependencies {
     androidTestImplementation 'com.google.code.gson:gson:2.8.9'
     implementation(name: 'sdk_uvc_camera_v23092707_debug', ext: 'aar')
     //implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
-
+    implementation platform('com.google.firebase:firebase-bom:32.8.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-messaging'
 
 }
+
+apply plugin: 'com.google.gms.google-services'

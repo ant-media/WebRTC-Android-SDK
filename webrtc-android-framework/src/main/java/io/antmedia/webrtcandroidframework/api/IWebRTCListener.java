@@ -184,7 +184,7 @@ public interface IWebRTCListener {
      */
     void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus);
 
-    /*
+    /**
      * It's called in WebRTCClient constructor to set
      */
     void setWebRTCClient(IWebRTCClient webRTCClient);
@@ -201,27 +201,20 @@ public interface IWebRTCListener {
      */
     void onBroadcastObject(Broadcast broadcast);
 
+    void onPeerConnectionClosed();
+
     /**
      * It's called when all peer connection states are CONNECTED after reconnection.
-     * @param broadcast
      */
     void onReconnectionSuccess();
 
     /**
      * It's called when user attempts to publish a stream.
-     * @param broadcast
      */
     void onPublishAttempt(String streamId);
 
    /**
-    * It's called when user attempts to play a stream.
-    * @param broadcast
-    */
-    void onPlayAttempt(String streamId);
-
-   /**
     * It's called when streams/subtracks resolution changes.
-    * @param broadcast
     */
     void onResolutionChange(String streamId, int resolution);
 
@@ -229,4 +222,10 @@ public interface IWebRTCListener {
     * It's called when webrtc client releases all resources and shutdowns.
     */
     void onShutdown();
+
+    /**
+     * It's called when user attempts to play a stream.
+     */
+    void onPlayAttempt(String streamId);
+
 }

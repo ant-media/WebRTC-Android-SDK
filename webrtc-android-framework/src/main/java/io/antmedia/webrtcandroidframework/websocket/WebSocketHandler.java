@@ -351,6 +351,36 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
+    public void registerPushNotificationToken(String subscriberId, String authToken, String pushNotificationToken, String tokenType) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.REGISTER_PUSH_NOTIFICATION_TOKEN_COMMAND);
+            json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.TOKEN, authToken);
+            json.put(WebSocketConstants.PNS_REGISTRATION_TOKEN, pushNotificationToken);
+            json.put(WebSocketConstants.PNS_TYPE, tokenType);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray receiverSubscriberIdArray) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.SEND_PUSH_NOTIFICATION_COMMAND);
+            json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.TOKEN, authToken);
+            json.put(WebSocketConstants.PUSH_NOTIFICATION_CONTENT, pushNotificationContent);
+            json.put(WebSocketConstants.SUBSCRIBER_IDS_TO_NOTIFY, receiverSubscriberIdArray);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void joinToPeer(String streamId, String token) {
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();

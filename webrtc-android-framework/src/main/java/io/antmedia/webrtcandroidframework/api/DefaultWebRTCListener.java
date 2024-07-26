@@ -222,6 +222,11 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
+    public void onPeerConnectionClosed() {
+        String messageText = "Peer connection closed";
+        callbackCalled(messageText);
+    }
+
     public void onReconnectionSuccess() {
         String messageText = "Reconnection success";
         callbackCalled(messageText);
