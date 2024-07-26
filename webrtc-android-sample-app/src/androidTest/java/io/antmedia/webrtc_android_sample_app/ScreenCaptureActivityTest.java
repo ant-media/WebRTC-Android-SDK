@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -49,7 +49,7 @@ public class ScreenCaptureActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
     public void before() {

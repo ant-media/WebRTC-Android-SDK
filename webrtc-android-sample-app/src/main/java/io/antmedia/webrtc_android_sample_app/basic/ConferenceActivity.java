@@ -1,7 +1,6 @@
 package io.antmedia.webrtc_android_sample_app.basic;
 
-import android.content.Context;
-import android.net.wifi.WifiManager;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,7 +8,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 
 import org.webrtc.SurfaceViewRenderer;
@@ -20,16 +21,26 @@ import io.antmedia.webrtcandroidframework.api.DefaultConferenceWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 public class ConferenceActivity extends TestableActivity {
     private TextView statusIndicatorTextView;
-    private View joinButton;
+    private Button joinButton;
     private String streamId;
+    private String serverUrl;
     private IWebRTCClient webRTCClient;
     private String roomId;
     private Button audioButton;
     private Button videoButton;
     private boolean playOnly;
+    boolean bluetoothEnabled = false;
+    boolean initBeforeStream = false;
+
+    private SurfaceViewRenderer localParticipantRenderer;
+    private SurfaceViewRenderer remoteParticipant1Renderer;
+    private SurfaceViewRenderer remoteParticipant2Renderer;
+    private SurfaceViewRenderer remoteParticipant3Renderer;
+    private SurfaceViewRenderer remoteParticipant4Renderer;
 
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -38,11 +49,11 @@ public class ConferenceActivity extends TestableActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_conference);
 
-        SurfaceViewRenderer publisherRenderer = findViewById(R.id.publish_view_renderer);
-        SurfaceViewRenderer player1Renderer = findViewById(R.id.play_view_renderer1);
-        SurfaceViewRenderer player2Renderer = findViewById(R.id.play_view_renderer2);
-        SurfaceViewRenderer player3Renderer = findViewById(R.id.play_view_renderer3);
-        SurfaceViewRenderer player4Renderer = findViewById(R.id.play_view_renderer4);
+        localParticipantRenderer = findViewById(R.id.local_participant_renderer);
+        remoteParticipant1Renderer = findViewById(R.id.remote_participant_1_renderer);
+        remoteParticipant2Renderer = findViewById(R.id.remote_participant_2_renderer);
+        remoteParticipant3Renderer = findViewById(R.id.remote_participant_3_renderer);
+        remoteParticipant4Renderer = findViewById(R.id.remote_participant_4_renderer);
 
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         joinButton = findViewById(R.id.join_conference_button);
@@ -50,40 +61,64 @@ public class ConferenceActivity extends TestableActivity {
         audioButton = findViewById(R.id.control_audio_button);
         videoButton = findViewById(R.id.control_video_button);
 
-        String serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+        serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
-        DefaultConferenceWebRTCListener defaultConferenceListener = createWebRTCListener(roomId, streamId);
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
             playOnly = b;
-            publisherRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
+            localParticipantRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
         });
 
+        if(initBeforeStream){
+            if(PermissionHandler.checkCameraPermissions(this)){
+                createWebRTCClient();
+            }else{
+                PermissionHandler.requestCameraPermissions(this);
+            }
+        }else{
+            createWebRTCClient();
+        }
+
+    }
+
+    public void createWebRTCClient(){
         webRTCClient = IWebRTCClient.builder()
-                .addRemoteVideoRenderer(player1Renderer, player2Renderer, player3Renderer, player4Renderer)
-                .setLocalVideoRenderer(publisherRenderer)
+                .addRemoteVideoRenderer(remoteParticipant1Renderer, remoteParticipant2Renderer, remoteParticipant3Renderer, remoteParticipant4Renderer)
+                .setLocalVideoRenderer(localParticipantRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
-                .setWebRTCListener(defaultConferenceListener)
+                .setInitiateBeforeStream(initBeforeStream)
+                .setBluetoothEnabled(bluetoothEnabled)
+                .setWebRTCListener(createWebRTCListener(roomId, streamId))
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
-        joinButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                joinLeaveRoom(v);
-            }
+        joinButton = findViewById(R.id.join_conference_button);
+        joinButton.setOnClickListener(v -> {
+            joinLeaveRoom();
         });
     }
 
-    public void joinLeaveRoom(View v) {
+
+    public void joinLeaveRoom() {
         incrementIdle();
+
+        if(!initBeforeStream) {
+            if (!PermissionHandler.checkCameraPermissions(this)) {
+                PermissionHandler.requestCameraPermissions(this);
+                return;
+            }else if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
+                PermissionHandler.requestPublishPermissions(this, bluetoothEnabled);
+                return;
+            }
+        }
+
         if (!webRTCClient.isStreaming(streamId)) {
-            ((Button) v).setText("Leave");
+            joinButton.setText("Leave");
             Log.i(getClass().getSimpleName(), "Calling join");
 
             if(playOnly) {
@@ -94,7 +129,7 @@ public class ConferenceActivity extends TestableActivity {
             }
         }
         else {
-            ((Button) v).setText("Join");
+            joinButton.setText("Join");
             Log.i(getClass().getSimpleName(), "Calling leave");
 
             webRTCClient.leaveFromConference(roomId);
@@ -106,7 +141,6 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void textMessageReceived(String messageText) {
                 super.textMessageReceived(messageText);
-                //Toast.makeText(ConferenceActivity.this, "Message received: " + messageText, Toast.LENGTH_SHORT).show();
             }
         };
     }
@@ -188,13 +222,43 @@ public class ConferenceActivity extends TestableActivity {
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-    /**
-     * This method is used to change the state of the wifi for testing purposes
-     * @param state
-     */
-    public void changeWifiState(boolean state) {
-        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        wifiManager.setWifiEnabled(state);
+        if(requestCode == PermissionHandler.CAMERA_PERMISSION_REQUEST_CODE){
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+            if (initBeforeStream && allPermissionsGranted) {
+                createWebRTCClient();
+            }else if(!initBeforeStream && allPermissionsGranted){
+                joinLeaveRoom();
+            }
+            else {
+                Toast.makeText(this,"Camera permissions are not granted. Cannot initialize.", Toast.LENGTH_LONG).show();
+            }
+
+
+        }else if(requestCode == PermissionHandler.PUBLISH_PERMISSION_REQUEST_CODE){
+
+            boolean allPermissionsGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allPermissionsGranted = false;
+                    break;
+                }
+            }
+
+            if (allPermissionsGranted) {
+                joinLeaveRoom();
+            } else {
+                Toast.makeText(this,"Publish permissions are not granted.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }

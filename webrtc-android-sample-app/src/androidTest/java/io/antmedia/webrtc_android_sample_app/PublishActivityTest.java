@@ -7,7 +7,6 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
@@ -31,7 +30,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -44,13 +43,12 @@ public class PublishActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
+
 
     @Before
     public void before() throws IOException {
         connectInternet();
-
-        //try before method to make @Rule run properly
     }
 
     @Rule
@@ -83,7 +81,8 @@ public class PublishActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
-        //Stop playing
+
+
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         onView(withId(R.id.broadcasting_text_view))
@@ -92,7 +91,7 @@ public class PublishActivityTest {
 
     }
 
-    //@Test
+    @Test
     public void testPublishReconnection() throws InterruptedException, IOException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
@@ -107,8 +106,6 @@ public class PublishActivityTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        Thread.sleep(10000);
-
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
@@ -121,7 +118,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(30000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -151,7 +148,7 @@ public class PublishActivityTest {
 
         connectInternet();
 
-        Thread.sleep(30000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));

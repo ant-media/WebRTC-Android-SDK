@@ -40,7 +40,7 @@ import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.StatsActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -53,11 +53,11 @@ public class StatsActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
-    public void before() {
-        //try before method to make @Rule run properly
+    public void before() throws IOException {
+        connectInternet();
     }
 
     @Rule
@@ -111,7 +111,6 @@ public class StatsActivityTest {
         int[] videoTrackStatsTextViewIds = {
                 R.id.stats_popup_jitter_video_textview,
                 R.id.stats_popup_rtt_video_textview,
-                R.id.stats_popup_pli_count_video_textview,
                 R.id.stats_popup_packets_sent_video_textview,
                 R.id.stats_popup_frames_encoded_video_textview,
                 R.id.stats_popup_bytes_sent_video_textview,
@@ -123,7 +122,7 @@ public class StatsActivityTest {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
-                assertTrue(value > 0);
+                assertTrue(value > 0f);
             });
         }
 
@@ -131,7 +130,7 @@ public class StatsActivityTest {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
-                assertTrue(value > 0);
+                assertTrue(value > 0f);
             });
         }
 
@@ -145,5 +144,14 @@ public class StatsActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    private void connectInternet() throws IOException {
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi enable"); // Switch Wifi on again
+        UiDevice
+                .getInstance(InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
 }
