@@ -20,6 +20,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.webrtc.AddIceObserver;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -1050,7 +1052,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void join(String streamId) {
         join(streamId, "");
     }
+  
+    public void registerPushNotificationToken(String subscriberId, String authToken, String pushNotificationToken, String tokenType) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.registerPushNotificationToken(subscriberId, authToken, pushNotificationToken, tokenType);
+        }
+    }
 
+    public void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray receiverSubscriberIdArray) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.sendPushNotification(subscriberId, authToken, pushNotificationContent, receiverSubscriberIdArray);
+        }
+    }
+  
     public void join(String streamId, String token) {
         Log.e(TAG, "Join: " + streamId);
         requestExtendedRights = true;

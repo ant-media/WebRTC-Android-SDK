@@ -18,6 +18,10 @@ public class WebSocketConstants {
 
     public static final String COMMAND = "command";
 
+    public static final String REGISTER_PUSH_NOTIFICATION_TOKEN_COMMAND = "registerPushNotificationToken";
+
+    public static final String SEND_PUSH_NOTIFICATION_COMMAND = "sendPushNotification";
+
     public static final String ATTR_SIGNALLING_CONNECTION = "ATTR_SIGNALLING_CONNECTION";
 
     public static final String STREAM_ID = "streamId";
@@ -31,6 +35,14 @@ public class WebSocketConstants {
     public static final String SDP = "sdp";
 
     public static final String TYPE = "type";
+
+    public static final String PNS_REGISTRATION_TOKEN = "pnsRegistrationToken";
+
+    public static final String PNS_TYPE = "pnsType";
+
+    public static final String PUSH_NOTIFICATION_CONTENT = "pushNotificationContent";
+
+    public static final String SUBSCRIBER_IDS_TO_NOTIFY = "subscriberIdsToNotify";
 
     public static final String PLAY_FINISHED = "play_finished";
 

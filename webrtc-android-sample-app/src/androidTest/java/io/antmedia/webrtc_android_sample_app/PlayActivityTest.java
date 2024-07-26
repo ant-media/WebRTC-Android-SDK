@@ -1,23 +1,17 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.replaceText;
-import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
@@ -73,13 +67,10 @@ public class PlayActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<PlayActivity>() {
-            @Override
-            public void perform(PlayActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         //stream556677i4d is the stream id in github actions
@@ -211,5 +202,4 @@ public class PlayActivityTest {
                 .getInstance(InstrumentationRegistry.getInstrumentation())
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
-
 }

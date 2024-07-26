@@ -1,7 +1,6 @@
 package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -61,7 +60,6 @@ public class PublishActivity extends TestableActivity {
 
         String generatedStreamId = "streamId" + (int)(Math.random()*9999);
         streamIdEditText.setText(generatedStreamId);
-
 
         if(initBeforeStream){
             if(PermissionHandler.checkCameraPermissions(this)){
@@ -196,13 +194,10 @@ public class PublishActivity extends TestableActivity {
             final View customLayout = getLayoutInflater().inflate(R.layout.send_message_data_channel, null);
             builder.setView(customLayout);
             // add a button
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    // send data from the AlertDialog to the Activity
-                    EditText editText = customLayout.findViewById(R.id.message_text_input);
-                    sendTextMessage(editText.getText().toString());
-                }
+            builder.setPositiveButton("OK", (dialog, which) -> {
+                // send data from the AlertDialog to the Activity
+                EditText editText = customLayout.findViewById(R.id.message_text_input);
+                sendTextMessage(editText.getText().toString());
             });
             // create and show the alert dialog
             AlertDialog dialog = builder.create();
