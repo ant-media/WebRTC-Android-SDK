@@ -2,7 +2,6 @@ package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -68,23 +67,20 @@ public class PlayActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<PlayActivity>() {
-            @Override
-            public void perform(PlayActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         //stream556677i4d is the stream id in github actions
         onView(withId(R.id.stream_id_edittext)).perform(replaceText("stream556677i4d"));
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(scrollTo()).perform(click());
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
 
-        onView(withId(R.id.start_streaming_button)).perform(scrollTo()).check(matches(withText("Stop")));
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
 
         Thread.sleep(5000);
 
@@ -94,7 +90,7 @@ public class PlayActivityTest {
         Thread.sleep(3000);
 
         //Stop playing
-        onView(withId(R.id.start_streaming_button)).perform(scrollTo()).perform(click());
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
@@ -124,7 +120,7 @@ public class PlayActivityTest {
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(scrollTo()).perform(click());
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(5000);
 
