@@ -62,7 +62,7 @@ tasks.withType(Test) {
     }
 }
 
-task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','createDebugCoverageReport']) {
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','connectedDebugAndroidTest']) {
 
     reports {
         xml.enabled = true
