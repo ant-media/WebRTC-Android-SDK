@@ -395,6 +395,7 @@ public class WebSocketHandlerTest {
         JSONObject expectedJson = new JSONObject();
         expectedJson.put(WebSocketConstants.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
         expectedJson.put(WebSocketConstants.STREAM_ID, streamId);
+        expectedJson.put(WebSocketConstants.TRACK_ID, "");
         expectedJson.put(WebSocketConstants.STREAM_HEIGHT, height);
 
         assertEquals(expectedJson.toString(), jsonCaptor.getValue());
