@@ -63,7 +63,7 @@ public class PublishActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-    //@Test
+    @Test
     public void testPublishing() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
