@@ -38,6 +38,7 @@ import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtc_android_sample_app.basic.StatsActivity;
+import io.antmedia.webrtc_android_sample_app.minimal.SimplePublishActivity;
 
 import com.google.firebase.FirebaseApp;
 

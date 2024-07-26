@@ -144,4 +144,9 @@ public class WebRTCClientBuilder {
         webRTCClientConfig.videoSource = rearCamera;
         return this;
     }
+
+    public WebRTCClientBuilder setBluetoothEnabled(boolean bluetoothEnabled) {
+        webRTCClientConfig.bluetoothEnabled = bluetoothEnabled;
+        return this;
+    }
 }

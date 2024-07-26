@@ -1,23 +1,18 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.scrollTo;
-import static androidx.test.espresso.action.ViewActions.typeText;
+import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
@@ -26,6 +21,7 @@ import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
@@ -37,7 +33,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -50,7 +46,7 @@ public class PlayActivityTest {
 
     @Rule
     public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     @Before
     public void before() throws IOException {
@@ -82,7 +78,7 @@ public class PlayActivityTest {
         });
 
         //stream556677i4d is the stream id in github actions
-        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+        onView(withId(R.id.stream_id_edittext)).perform(replaceText("stream556677i4d"));
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(scrollTo()).perform(click());
@@ -124,7 +120,7 @@ public class PlayActivityTest {
         });
 
         //stream556677i4d is the stream id in github actions
-        onView(withId(R.id.stream_id_edittext)).perform(clearText(), typeText("stream556677i4d"));
+        onView(withId(R.id.stream_id_edittext)).perform(replaceText("stream556677i4d"));
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
@@ -210,5 +206,4 @@ public class PlayActivityTest {
                 .getInstance(InstrumentationRegistry.getInstrumentation())
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
-
 }
