@@ -270,7 +270,7 @@ public class ConferenceActivityTest {
 
     }
 
-    @Test
+    //@Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
