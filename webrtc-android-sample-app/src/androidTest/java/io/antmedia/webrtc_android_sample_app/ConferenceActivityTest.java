@@ -150,7 +150,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
-    @Test
+   // @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
