@@ -3,27 +3,21 @@ package io.antmedia.webrtc_android_sample_app;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.Assert.assertNotNull;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
-import androidx.test.espresso.assertion.ViewAssertions;
-import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
@@ -117,13 +111,10 @@ public class ConferenceActivityTest {
 
     @Test
     public void testJoinMultitrackRoom() {
-        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
-            @Override
-            public void perform(ConferenceActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        activityScenarioRule.getScenario().onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
@@ -158,24 +149,22 @@ public class ConferenceActivityTest {
 
     @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
-        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
-            @Override
-            public void perform(ConferenceActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        activityScenarioRule.getScenario().onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+        RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
         Thread.sleep(10000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
+
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
@@ -211,7 +200,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+        RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
         onView(withId(R.id.control_audio_button)).check(matches(withText("Enable Audio")));
         onView(withId(R.id.control_audio_button)).perform(click());
@@ -253,7 +242,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+        RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
         try {
             Thread.sleep(2000);
@@ -284,7 +273,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        RemoteParticipant participant = RemoteParticipant.addParticipant(roomName, runningTest);
+        RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
         Thread.sleep(10000);
 
