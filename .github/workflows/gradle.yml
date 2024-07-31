@@ -152,6 +152,9 @@ jobs:
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
 
+      - name: Username
+        run : echo "Username:" `whoami`
+
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.32.0
         with:
