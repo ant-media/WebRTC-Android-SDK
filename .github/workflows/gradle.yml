@@ -1,11 +1,7 @@
 name: Android SDK CI
 on:
   push:
-    branches:
-      - "*"
-  pull_request:
-    branches:
-      - "*"
+    branches: [ "update-ci" ]
   workflow_dispatch:
 #   Important Information:
 #   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
