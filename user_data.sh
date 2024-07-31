@@ -11,9 +11,6 @@ RUNNER_TOKEN=$(curl -s -L -X POST -H "Accept: application/vnd.github+json" -H "A
 USER="ubuntu"
 
 # Install Runner
-#useradd -m -d /home/runner -s /bin/bash runner
-#sudo usermod -aG sudo runner
-#echo "runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 su - $USER -c "
 mkdir -p actions-runner
 cd actions-runner
@@ -39,7 +36,7 @@ whoami >> /tmp/id.txt
 cat <<EOF >> ~/.bashrc
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
 export ANDROID_HOME=/home/$USER/android/
-export PATH=\${ANDROID_HOME}/tools:\${PATH}
-export PATH=\${ANDROID_HOME}/emulator:\${PATH}
-export PATH=\${ANDROID_HOME}/platform-tools:\${PATH}
+export PATH=/home/$USER/tools:\${PATH}
+export PATH=/home/$USER/emulator:\${PATH}
+export PATH=/home/$USER/platform-tools:\${PATH}
 EOF"
