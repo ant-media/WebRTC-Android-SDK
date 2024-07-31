@@ -238,4 +238,4 @@ jobs:
       run: |
         SERVER_ID="${{ needs.setup-runner.outputs.server_id }}"
         echo "server id" $SERVER_ID
-        #openstack server delete $SERVER_ID
+        openstack server delete $SERVER_ID
