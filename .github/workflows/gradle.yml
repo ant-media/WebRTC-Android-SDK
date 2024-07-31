@@ -35,7 +35,7 @@ env:
   OS_TENANT_NAME: ${{ secrets.OS_TENANT_NAME }}
   OS_API_VERSION: ${{ secrets.OS_API_VERSION }}
   OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME }}
-  INSTANCE_TYPE: "b3-8"
+  INSTANCE_TYPE: "c3-8"
   IMAGE_ID: "Ubuntu 24.04"
 
 jobs:
@@ -242,7 +242,7 @@ jobs:
         SERVER_ID="${{ needs.setup-runner.outputs.server_id }}"
         echo "server id" $SERVER_ID
         if [ -n "$SERVER_ID" ]; then
-          #openstack server delete $SERVER_ID
+          openstack server delete $SERVER_ID
           echo $SERVER_ID
         else
           echo "SERVER_ID is empty, skipping server delete."
