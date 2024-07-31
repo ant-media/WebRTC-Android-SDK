@@ -14,11 +14,11 @@ RUNNER_TOKEN=$(curl -s -L -X POST -H "Accept: application/vnd.github+json" -H "A
 useradd -m -d /home/runner -s /bin/bash runner
 sudo usermod -aG sudo runner
 echo "runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-whoami > /tmp/id.txt
+su - runner -c "
 mkdir -p actions-runner
 cd actions-runner
 curl -o actions-runner-linux-x64-$RUNNER_VERSION.tar.gz -L https://github.com/actions/runner/releases/download/v$RUNNER_VERSION/actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
-tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
+tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz"
 
 su - runner -c "
 /home/runner/actions-runner/config.sh --url https://github.com/$RUNNER_ORG --token $RUNNER_TOKEN --unattended"
@@ -33,4 +33,13 @@ wget https://dl.google.com/android/repository/commandlinetools-linux-"$SDK_VERSI
 mkdir -p ~/android/cmdline-tools/latest
 mkdir -p ~/android/tmp
 unzip ~/commandlinetools-linux-"$SDK_VERSION"_latest.zip -d ~/android/tmp/
-mv ~/android/tmp/cmdline-tools/* ~/android/cmdline-tools/latest/"
+mv ~/android/tmp/cmdline-tools/* ~/android/cmdline-tools/latest/
+echo $HOME >> /tmp/id.txt
+whoami >> /tmp/id.txt
+cat <<EOF >> ~/.bashrc
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
+export ANDROID_HOME=\${HOME}/android/
+export PATH=\${ANDROID_HOME}/tools:\${PATH}
+export PATH=\${ANDROID_HOME}/emulator:\${PATH}
+export PATH=\${ANDROID_HOME}/platform-tools:\${PATH}
+EOF"
