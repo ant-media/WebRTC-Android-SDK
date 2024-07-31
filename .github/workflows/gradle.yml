@@ -58,7 +58,8 @@ jobs:
           wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
           unzip chromedriver-linux64.zip
           cp chromedriver-linux64/chromedriver /home/ubuntu
-          pip3 install requests selenium==4.14 flask 
+          pip3 install requests selenium==4.14 flask
+          whoami
 
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
@@ -75,7 +76,6 @@ jobs:
           cores: 3
           emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
           script: |
-            echo "User:" whoami
             touch emulator.log               
             chmod 777 emulator.log
             adb logcat io.antmedia:I >> emulator.log &
