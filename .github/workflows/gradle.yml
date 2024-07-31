@@ -1,6 +1,12 @@
 name: Android SDK CI
-on: [push, pull_request]
-
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 #   Important Information:
 #   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
 #    Check this out -> https://developer.android.com/studio/run/emulator-acceleration#vm-linux
