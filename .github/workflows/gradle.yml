@@ -22,16 +22,106 @@ on: [push, pull_request]
 #     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
 #
 
+env:
+  GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+  REPO: ${{ github.repository }}
+  OWNER: ${{ github.repository_owner }}
+  OS_USERNAME: ${{ secrets.OS_USERNAME }}
+  OS_PASSWORD: ${{ secrets.OS_PASSWORD }}
+  OS_PROJECT_NAME: ${{ secrets.OS_PROJECT_NAME }}
+  OS_AUTH_URL: ${{ secrets.OS_AUTH_URL }}
+  OS_REGION_NAME: ${{ secrets.OS_REGION_NAME }}
+  OS_TENANT_ID: ${{ secrets.OS_TENANT_ID }}
+  OS_TENANT_NAME: ${{ secrets.OS_TENANT_NAME }}
+  OS_API_VERSION: ${{ secrets.OS_API_VERSION }}
+  OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME }}
+  INSTANCE_TYPE: "c3-4"
+  IMAGE_ID: "Ubuntu 24.04"
 
 jobs:
+
+  setup-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      server_id: ${{ steps.set-server-id.outputs.server_id }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
+        sudo pip3 install python-openstackclient
+
+    - name: server-id
+      id: set-server-id
+      run: |
+        REPO=$(echo "$REPO" | cut -d'/' -f2)
+        SERVER_ID="ci-$REPO"
+        echo "server_id=$SERVER_ID" >> $GITHUB_OUTPUT
+        
+    - name: Configure OpenStack CLI and Create Instance
+      run: |
+        echo "Setting up OpenStack CLI environment variables..."
+        echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
+        sed -i "s/^GITHUB_TOKEN=.*$/GITHUB_TOKEN=${GITHUB_TOKEN}/" user_data.sh
+        sed -i "s|RUNNER_ORG=\"[^\"]*\"|RUNNER_ORG=\"$REPO\"|g" user_data.sh
+        SERVER_ID="${{ steps.set-server-id.outputs.server_id }}"
+        echo $SERVER_ID
+        openstack server create --flavor "$INSTANCE_TYPE" --image "$IMAGE_ID" --key-name ovh --security-group default --user-data user_data.sh --network Ext-Net $SERVER_ID
+        echo "Server creation initiated."
+ 
+        STATUS=$(openstack server show $SERVER_ID -f value -c status)
+
+        echo "Current server status: $STATUS"
+        while [[ "$STATUS" != "ACTIVE" && "$STATUS" != "ERROR" ]]; do
+          echo "Waiting for server to be ACTIVE. Current status: $STATUS"
+          sleep 10
+          STATUS=$(openstack server show $SERVER_ID -f value -c status)
+        done
+
+        if [[ "$STATUS" == "ERROR" ]]; then
+          echo "Server creation failed."
+          exit 1
+        fi
+
+    - name: Check runner status and wait if offline
+      id: check_status
+      run: |
+        RUNNER_STATUS=$(curl -s -L \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/$REPO/actions/runners | jq -r '.runners[0].status')
+        echo "Initial Runner status is: $RUNNER_STATUS"
+    
+        while [[ "$RUNNER_STATUS" != "online" ]]; do
+          echo "Runner is $RUNNER_STATUS. Waiting for 10 seconds..."
+          sleep 10
+          RUNNER_STATUS=$(curl -s -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/$REPO/actions/runners | jq -r '.runners[0].status')
+          echo "Runner status is: $RUNNER_STATUS"
+        done
+
+        echo "::set-output name=runner_status::$RUNNER_STATUS"
+      
+    - name: Cancel workflow if runner is still offline
+      if: steps.check_status.outputs.runner_status == 'offline'
+      run: |
+        exit 1
+
   unit-tests:
-    runs-on: ovh36
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: 11
+          java-version: 17
           distribution: 'adopt'
       - name: Enable KVM
         run: |
@@ -113,3 +203,37 @@ jobs:
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
 
+  clean:
+    needs: [setup-runner, unit-tests]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Delete runner
+      if: ${{ always() }}
+      run: |
+        echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
+        RUNNER_ID=$(curl -s -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/$REPO/actions/runners | jq -r '.runners[0].id')
+        
+        echo "Deleting runner with ID: $RUNNER_ID"
+        curl -X DELETE -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/$REPO/actions/runners/$RUNNER_ID
+        
+        echo "Runner deleted successfully."
+    - name: Install Dependencies
+      if: ${{ always() }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
+        sudo pip3 install python-openstackclient
+    - name: Delete CI Instance
+      if: ${{ always() }}
+      run: |
+        SERVER_ID="${{ needs.setup-runner.outputs.server_id }}"
+        echo "server id" $SERVER_ID
+        #openstack server delete $SERVER_ID
