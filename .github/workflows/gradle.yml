@@ -115,6 +115,7 @@ jobs:
         exit 1
 
   unit-tests:
+    needs: setup-runner
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
