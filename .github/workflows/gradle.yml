@@ -59,7 +59,10 @@ jobs:
           unzip chromedriver-linux64.zip
           cp chromedriver-linux64/chromedriver /home/ubuntu
           pip3 install requests selenium==4.14 flask
-          whoami
+          echo "Username:" `whoami`
+
+      - name: Username
+        run: echo "Username:" `whoami`
 
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
