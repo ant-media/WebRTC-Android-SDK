@@ -15,9 +15,14 @@ su - $USER -c "
 mkdir -p actions-runner
 cd actions-runner
 curl -o actions-runner-linux-x64-$RUNNER_VERSION.tar.gz -L https://github.com/actions/runner/releases/download/v$RUNNER_VERSION/actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
-tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz"
+tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
+cat <<EOF >> ~/actions-runner/.env
+ANDROID_HOME=/home/$USER/android
+ANDROID_SDK_ROOT=/home/$USER/android
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
+EOF"
 
-su - ubuntu -c "
+su - $USER -c "
 /home/$USER/actions-runner/config.sh --url https://github.com/$RUNNER_ORG --token $RUNNER_TOKEN --unattended"
 
 cd /home/$USER/actions-runner/
