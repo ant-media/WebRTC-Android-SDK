@@ -146,7 +146,7 @@ jobs:
         run: |
           wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
           unzip chromedriver-linux64.zip
-          cp chromedriver-linux64/chromedriver /home/ubuntu
+          cp chromedriver-linux64/chromedriver /home/runner
           pip3 install requests selenium==4.14 flask 
 
       - name: Run Multitrack Conference Test Server
