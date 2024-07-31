@@ -35,7 +35,7 @@ env:
   OS_TENANT_NAME: ${{ secrets.OS_TENANT_NAME }}
   OS_API_VERSION: ${{ secrets.OS_API_VERSION }}
   OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME }}
-  INSTANCE_TYPE: "c3-4"
+  INSTANCE_TYPE: "c3-16"
   IMAGE_ID: "Ubuntu 24.04"
 
 jobs:
@@ -207,6 +207,7 @@ jobs:
   clean:
     needs: [setup-runner, unit-tests]
     runs-on: ubuntu-latest
+    if: always()
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
