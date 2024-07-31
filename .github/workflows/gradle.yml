@@ -2,10 +2,10 @@ name: Android SDK CI
 on:
   push:
     branches:
-      - master
+      - "*"
   pull_request:
     branches:
-      - master
+      - "*"
   workflow_dispatch:
 #   Important Information:
 #   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
