@@ -36,7 +36,7 @@ whoami >> /tmp/id.txt
 cat <<EOF >> ~/.bashrc
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
 export ANDROID_HOME=/home/$USER/android/
-export PATH=/home/$USER/tools:\${PATH}
-export PATH=/home/$USER/emulator:\${PATH}
-export PATH=/home/$USER/platform-tools:\${PATH}
+export PATH=/home/$USER/android/tools:\${PATH}
+export PATH=/home/$USER/android/emulator:\${PATH}
+export PATH=/home/$USER/android/platform-tools:\${PATH}
 EOF"
