@@ -35,7 +35,7 @@ env:
   OS_TENANT_NAME: ${{ secrets.OS_TENANT_NAME }}
   OS_API_VERSION: ${{ secrets.OS_API_VERSION }}
   OS_USER_DOMAIN_NAME: ${{ secrets.OS_USER_DOMAIN_NAME }}
-  INSTANCE_TYPE: "c3-16"
+  INSTANCE_TYPE: "b3-8"
   IMAGE_ID: "Ubuntu 24.04"
 
 jobs:
