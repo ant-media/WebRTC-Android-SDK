@@ -1,5 +1,5 @@
 name: Android SDK CI
-on: [push, pull_request]
+on: [pull_request]
 
 #   Important Information:
 #   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
