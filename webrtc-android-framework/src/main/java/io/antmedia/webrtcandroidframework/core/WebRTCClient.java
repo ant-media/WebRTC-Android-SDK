@@ -1321,8 +1321,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
+
             if (streamStoppedByUser) {
                 release(true);
+                return;
+            }
+
+            if(streamId.equals(roomId)){
                 return;
             }
 

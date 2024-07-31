@@ -14,7 +14,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-class RemoteParticipant {
+class RemoteConferenceParticipant {
 
     NetworkClient client = new NetworkClient();
     String response = null;
@@ -23,7 +23,13 @@ class RemoteParticipant {
     private String roomName;
     private String runningTest;
 
-    public RemoteParticipant(String roomName, String runningTest) {
+    public static final String CREATE_ROUTE = "createConference";
+    public static final String JOIN_ROUTE = "joinConference";
+    public static final String LEAVE_ROUTE = "leaveConference";
+    public static final String DELETE_ROUTE = "deleteConference";
+
+
+    public RemoteConferenceParticipant(String roomName, String runningTest) {
         this.roomName = roomName;
         this.runningTest = runningTest;
     }
@@ -60,11 +66,11 @@ class RemoteParticipant {
 
     public void join() {
         try {
-            response = client.get("create", participantName);
+            response = client.get(CREATE_ROUTE, participantName);
             Log.i("RemoteParticipant", "create: " + response);
             assertNotNull(response);
 
-            response = client.get("join", participantName);
+            response = client.get(JOIN_ROUTE, participantName);
             Log.i("RemoteParticipant", "join: " + response);
             assertNotNull(response);
         } catch (IOException e) {
@@ -74,11 +80,11 @@ class RemoteParticipant {
 
     public void leave() {
         try {
-            response = client.get("leave", participantName);
+            response = client.get(LEAVE_ROUTE, participantName);
             Log.i("RemoteParticipant", "leave: " + response);
             assertNotNull(response);
 
-            response = client.get("delete", participantName);
+            response = client.get(DELETE_ROUTE, participantName);
             Log.i("RemoteParticipant", "delete: " + response);
             assertNotNull(response);
         } catch (IOException e) {
@@ -86,8 +92,8 @@ class RemoteParticipant {
         }
     }
 
-    public static RemoteParticipant addParticipant(String roomName, String runningTest) {
-        RemoteParticipant participant = new RemoteParticipant(roomName, runningTest);
+    public static RemoteConferenceParticipant addConferenceParticipant(String roomName, String runningTest) {
+        RemoteConferenceParticipant participant = new RemoteConferenceParticipant(roomName, runningTest);
         participant.join();
 
         try {

@@ -115,6 +115,15 @@ public interface IWebRTCListener {
   * @param trackId
   * @return
   */
+ void onNewVideoTrack(VideoTrack track);
+
+ /**
+  * It's called when a new video track is added.
+  *
+  * @param track
+  * @param trackId
+  * @return
+  */
  void onNewVideoTrack(VideoTrack track, String trackId);
 
  /**

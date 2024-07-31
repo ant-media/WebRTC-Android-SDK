@@ -45,7 +45,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 public class ConferenceActivity extends TestableActivity {
 
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
-
     private TextView statusIndicatorTextView;
     private Button joinButton;
     private String streamId;
@@ -115,9 +114,9 @@ public class ConferenceActivity extends TestableActivity {
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
-        roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
+        //roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
-
+        roomId = ROOM_ID_FOR_TEST;
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
@@ -156,6 +155,7 @@ public class ConferenceActivity extends TestableActivity {
 
         Button showStatsButton = findViewById(R.id.show_stats_button);
         showStatsButton.setOnClickListener(v -> {
+
             if(publishStarted){
                 showStatsPopup();
             }else{
@@ -169,8 +169,6 @@ public class ConferenceActivity extends TestableActivity {
 
 
     public void joinLeaveRoom() {
-        incrementIdle();
-
         if(!initBeforeStream) {
             if (!PermissionHandler.checkCameraPermissions(this)) {
                 PermissionHandler.requestCameraPermissions(this);
@@ -248,6 +246,13 @@ public class ConferenceActivity extends TestableActivity {
             }
 
             @Override
+            public void onShutdown() {
+                super.onShutdown();
+                videoTrackList.clear();
+                streamIdVideoTrackMap.clear();
+            }
+
+            @Override
             public void onReconnectionSuccess() {
                 super.onReconnectionSuccess();
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
@@ -257,6 +262,7 @@ public class ConferenceActivity extends TestableActivity {
             @Override
             public void onIceDisconnected(String streamId) {
                 super.onIceDisconnected(streamId);
+
                 if(webRTCClient.isReconnectionInProgress()){
                     statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
                     statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
@@ -284,7 +290,6 @@ public class ConferenceActivity extends TestableActivity {
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 decrementIdle();
-
             }
 
             @Override

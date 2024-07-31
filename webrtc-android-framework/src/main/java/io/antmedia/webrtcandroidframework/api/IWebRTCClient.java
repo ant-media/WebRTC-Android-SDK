@@ -162,7 +162,7 @@ public interface IWebRTCClient {
     /**
      * Sets quality of a stream/subtrack to certain resolution.
      * @param mainTrackStreamId : If its a single stream pass its streamId as mainTrackId. If you want to change resolution of a subtrack, pass mainTrack stream Id and subtrack stream Id.
-     * @param subTrackStreamId : If you want to change resolution of subtrack, pass its subTrack stream Id. If you dont want to change subtrack resolution pass null or empty str.
+     * @param subTrackStreamId : If you want to change resolution of sub track, pass its subTrack stream Id. If you dont want to change subtrack resolution pass null or empty str.
      * @param resolutionHeight: The height to be forced. If you set the height to zero, it will become auto. example: For 720p pass 720 as resolution.
      */
     void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int resolutionHeight);
