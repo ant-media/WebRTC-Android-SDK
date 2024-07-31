@@ -146,7 +146,7 @@ jobs:
         run: |
           wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
           unzip chromedriver-linux64.zip
-          cp chromedriver-linux64/chromedriver /home/runner
+          cp chromedriver-linux64/chromedriver /home/ubuntu
           pip3 install requests selenium==4.14 flask 
 
       - name: Run Multitrack Conference Test Server
@@ -238,4 +238,9 @@ jobs:
       run: |
         SERVER_ID="${{ needs.setup-runner.outputs.server_id }}"
         echo "server id" $SERVER_ID
-        openstack server delete $SERVER_ID
+        if [ -n "$SERVER_ID" ]; then
+          #openstack server delete $SERVER_ID
+          echo $SERVER_ID
+        else
+          echo "SERVER_ID is empty, skipping server delete."
+        fi
