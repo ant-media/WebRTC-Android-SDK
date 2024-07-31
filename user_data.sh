@@ -18,19 +18,19 @@ mv ~/android/tmp/cmdline-tools/* ~/android/cmdline-tools/latest/
 
 
 # Install Runner
-useradd -m -d /home/runner -s /bin/bash runner
-sudo usermod -aG sudo runner
-echo "runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-cd /home/runner
+#useradd -m -d /home/runner -s /bin/bash runner
+#sudo usermod -aG sudo runner
+#echo "runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+whoami > /tmp/id.txt
+cd /home/ubuntu
 mkdir -p actions-runner
 cd actions-runner
 curl -o actions-runner-linux-x64-$RUNNER_VERSION.tar.gz -L https://github.com/actions/runner/releases/download/v$RUNNER_VERSION/actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
 tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
 
-su - runner -c "
+su - ubuntu -c "
 /home/runner/actions-runner/config.sh --url https://github.com/$RUNNER_ORG --token $RUNNER_TOKEN --unattended"
 
-cd /home/runner/actions-runner/
+cd /home/ubuntu/actions-runner/
 ./svc.sh install runner
 ./svc.sh start
