@@ -132,8 +132,7 @@ jobs:
       - name: Gradle Cache
         uses: gradle/gradle-build-action@v2
 
-      - uses: FedericoCarboni/setup-ffmpeg@v2
-        id: setup-ffmpeg
+      - name: Run ffmpeg
         #send test stream to the server to play test
       - run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
 
