@@ -228,6 +228,7 @@ public class StatsCollector {
                     if(value.getMembers().containsKey(SSRC)) {
 
                         TrackStats videoTrackStats = new TrackStats();
+                        videoTrackStats.setVideoTrackStats(true);
 
                         if (value.getMembers().containsKey(FIR_COUNT)) {
                             long firCount = (long) value.getMembers().get(FIR_COUNT);
@@ -304,6 +305,7 @@ public class StatsCollector {
                 } else if (AUDIO.equals(value.getMembers().get(KIND))) {
                     if(value.getMembers().containsKey(SSRC)){
                         TrackStats audioTrackStat = new TrackStats();
+                        audioTrackStat.setAudioTrackStats(true);
 
                         if(value.getMembers().containsKey(PACKETS_LOST)){
                             int packetsLost = (int)value.getMembers().get(PACKETS_LOST);

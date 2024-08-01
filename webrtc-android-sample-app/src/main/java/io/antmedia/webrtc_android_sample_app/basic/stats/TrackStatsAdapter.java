@@ -73,8 +73,6 @@ public class TrackStatsAdapter extends RecyclerView.Adapter<TrackStatsAdapter.Tr
         holder.framesReceivedContainer.setVisibility(View.VISIBLE);
         holder.framesDroppedContainer.setVisibility(View.VISIBLE);
         holder.totalFreezeDurationContainer.setVisibility(View.VISIBLE);
-
-
     }
 
     private void showAudioStatFields(TrackStatsViewHolder holder){
@@ -86,13 +84,11 @@ public class TrackStatsAdapter extends RecyclerView.Adapter<TrackStatsAdapter.Tr
 
     }
 
-    private void hideAudioStatFields(TrackStatsViewHolder holder){
-
+    private void hideAudioStatFields(TrackStatsViewHolder holder) {
         holder.packetLostContainer.setVisibility(View.GONE);
         holder.jitterContainer.setVisibility(View.GONE);
         holder.rttContainer.setVisibility(View.GONE);
         holder.concealmentEventsContainer.setVisibility(View.GONE);
-
     }
 
 
@@ -102,7 +98,7 @@ public class TrackStatsAdapter extends RecyclerView.Adapter<TrackStatsAdapter.Tr
 
         holder.trackIdText.setText(item.getTrackId());
 
-        if(item.getTrackId().contains(StatsCollector.AUDIO)){
+        if(item.isAudioTrackStats()){
 
             hideVideoStatFields(holder);
             showAudioStatFields(holder);
@@ -114,7 +110,7 @@ public class TrackStatsAdapter extends RecyclerView.Adapter<TrackStatsAdapter.Tr
 
 
 
-        } else if (item.getTrackId().contains(StatsCollector.VIDEO)) {
+        } else if (item.isVideoTrackStats()) {
             hideAudioStatFields(holder);
             showVideoStatFields(holder);
 
@@ -177,19 +173,19 @@ public class TrackStatsAdapter extends RecyclerView.Adapter<TrackStatsAdapter.Tr
             super(view);
             trackIdContainer = view.findViewById(R.id.track_stats_item_track_id_container);
             packetLostContainer = view.findViewById(R.id.track_stats_item_packet_lost_container);
-             jitterContainer = view.findViewById(R.id.track_stats_item_jitter_container);
-             rttContainer = view.findViewById(R.id.track_stats_item_rtt_container);
-             concealmentEventsContainer = view.findViewById(R.id.track_stats_item_concealment_events_container);
-             firCountContainer = view.findViewById(R.id.track_stats_item_fir_count_container);
-             pliCountContainer = view.findViewById(R.id.track_stats_item_pli_count_container);
-             nackCountContainer = view.findViewById(R.id.track_stats_item_nack_count_container);
-             packetsReceivedContainer = view.findViewById(R.id.track_stats_item_packets_received_container);
-             bytesReceivedContainer = view.findViewById(R.id.track_stats_item_bytes_received_container);
-             framesEncodedContainer = view.findViewById(R.id.track_stats_item_frames_encoded_container);
-             framesDecodedContainer = view.findViewById(R.id.track_stats_item_frames_decoded_container);
-             framesReceivedContainer = view.findViewById(R.id.track_stats_item_frames_received_container);
-             framesDroppedContainer = view.findViewById(R.id.track_stats_item_frames_dropped_container);
-             totalFreezeDurationContainer = view.findViewById(R.id.track_stats_item_total_freeze_duration_container);
+            jitterContainer = view.findViewById(R.id.track_stats_item_jitter_container);
+            rttContainer = view.findViewById(R.id.track_stats_item_rtt_container);
+            concealmentEventsContainer = view.findViewById(R.id.track_stats_item_concealment_events_container);
+            firCountContainer = view.findViewById(R.id.track_stats_item_fir_count_container);
+            pliCountContainer = view.findViewById(R.id.track_stats_item_pli_count_container);
+            nackCountContainer = view.findViewById(R.id.track_stats_item_nack_count_container);
+            packetsReceivedContainer = view.findViewById(R.id.track_stats_item_packets_received_container);
+            bytesReceivedContainer = view.findViewById(R.id.track_stats_item_bytes_received_container);
+            framesEncodedContainer = view.findViewById(R.id.track_stats_item_frames_encoded_container);
+            framesDecodedContainer = view.findViewById(R.id.track_stats_item_frames_decoded_container);
+            framesReceivedContainer = view.findViewById(R.id.track_stats_item_frames_received_container);
+            framesDroppedContainer = view.findViewById(R.id.track_stats_item_frames_dropped_container);
+            totalFreezeDurationContainer = view.findViewById(R.id.track_stats_item_total_freeze_duration_container);
             trackIdText = view.findViewById(R.id.track_stats_item_track_id_textview);
             packetLostText = view.findViewById(R.id.track_stats_item_packet_lost_textview);
             jitterText = view.findViewById(R.id.track_stats_item_jitter_textview);

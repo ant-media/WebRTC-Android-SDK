@@ -322,8 +322,6 @@ public class StatsActivity extends TestableActivity {
             }
         });
         statsPopup.show();
-
-
     }
 
     public IWebRTCClient getWebRTCClient() {

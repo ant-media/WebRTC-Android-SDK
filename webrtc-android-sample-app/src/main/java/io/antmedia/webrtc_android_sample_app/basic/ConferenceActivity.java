@@ -2,7 +2,6 @@ package io.antmedia.webrtc_android_sample_app.basic;
 
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -13,7 +12,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -94,7 +92,6 @@ public class ConferenceActivity extends TestableActivity {
      */
     private HashMap<String,VideoTrack> streamIdVideoTrackMap = new HashMap<>();
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,7 +113,7 @@ public class ConferenceActivity extends TestableActivity {
 
         //roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
-        roomId = ROOM_ID_FOR_TEST;
+        roomId = CONFERENCE_ROOM_ID_FOR_TEST;
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {

@@ -25,6 +25,8 @@ class RemoteP2PParticipant {
     public static final String CREATE_ROUTE = "createP2P";
     public static final String JOIN_ROUTE = "joinP2P";
     public static final String LEAVE_ROUTE = "leaveP2P";
+    public static final String DELETE_ROUTE = "deleteP2P";
+
 
     public RemoteP2PParticipant(String streamName, String runningTest) {
         this.streamName = streamName;
@@ -63,11 +65,11 @@ class RemoteP2PParticipant {
     public void join() {
         try {
             response = client.get(CREATE_ROUTE);
-            Log.i("RemoteParticipant", "create: " + response);
+            Log.i("RemoteP2PParticipant", "create: " + response);
             assertNotNull(response);
 
             response = client.get(JOIN_ROUTE);
-            Log.i("RemoteParticipant", "join: " + response);
+            Log.i("RemoteP2PParticipant", "join: " + response);
             assertNotNull(response);
         } catch (IOException e) {
             e.printStackTrace();
@@ -77,7 +79,11 @@ class RemoteP2PParticipant {
     public void leave() {
         try {
             response = client.get(LEAVE_ROUTE);
-            Log.i("RemoteParticipant", "leave: " + response);
+            Log.i("RemoteP2PParticipant", "leave: " + response);
+            assertNotNull(response);
+
+            response = client.get(DELETE_ROUTE);
+            Log.i("RemoteP2PParticipant", "delete: " + response);
             assertNotNull(response);
 
         } catch (IOException e) {

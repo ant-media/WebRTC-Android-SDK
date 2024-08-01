@@ -237,4 +237,18 @@ public interface IWebRTCListener {
      */
     void onPlayAttempt(String streamId);
 
+    /**
+     * It's called when user attempts to join peer to peer.
+     */
+    void onJoinAttempt(String streamId);
+
+    /**
+     * It's called when user joins to a P2P room.
+     */
+    void onJoined(String streamId);
+
+    /**
+     * It's called when user left P2P room.
+     */
+    void onLeft(String streamId);
 }

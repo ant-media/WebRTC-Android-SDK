@@ -3,9 +3,12 @@ package io.antmedia.webrtcandroidframework.core.model;
 import java.math.BigInteger;
 
 public class TrackStats {
+
     /**
     *   https://www.w3.org/TR/webrtc-stats/
     */
+    boolean isVideoTrackStats = false;
+    boolean isAudioTrackStats = false;
 
     /**
      * The number of the total packets lost
@@ -281,6 +284,22 @@ public class TrackStats {
 
     public void setFramesSent(long framesSent) {
         this.framesSent = framesSent;
+    }
+
+    public boolean isVideoTrackStats() {
+        return isVideoTrackStats;
+    }
+
+    public void setVideoTrackStats(boolean videoTrackStats) {
+        isVideoTrackStats = videoTrackStats;
+    }
+
+    public boolean isAudioTrackStats() {
+        return isAudioTrackStats;
+    }
+
+    public void setAudioTrackStats(boolean audioTrackStats) {
+        isAudioTrackStats = audioTrackStats;
     }
 
     @Override

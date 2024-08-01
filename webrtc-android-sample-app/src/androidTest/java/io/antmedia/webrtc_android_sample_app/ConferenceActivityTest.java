@@ -12,7 +12,7 @@ import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentat
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.Assert.assertTrue;
 
-import static io.antmedia.webrtc_android_sample_app.TestableActivity.ROOM_ID_FOR_TEST;
+import static io.antmedia.webrtc_android_sample_app.TestableActivity.CONFERENCE_ROOM_ID_FOR_TEST;
 
 
 import android.content.Intent;
@@ -72,7 +72,7 @@ public class ConferenceActivityTest {
 
         getInstrumentation().waitForIdleSync();
 
-        roomName = ROOM_ID_FOR_TEST;
+        roomName = CONFERENCE_ROOM_ID_FOR_TEST;
     }
 
     @After
@@ -187,6 +187,8 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
+        Thread.sleep(3000);
+
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
@@ -286,6 +288,8 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
+        Thread.sleep(3000);
+
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
         Thread.sleep(5000);
@@ -350,6 +354,8 @@ public class ConferenceActivityTest {
                 });
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 

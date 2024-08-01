@@ -233,6 +233,20 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     }
                     signallingListener.onLeftTheRoom(roomId);
                 }
+                else if (definition.equals(WebSocketConstants.LEAVED_STREAM)) { // p2p
+                    String roomId = null;
+                    if (json.has(WebSocketConstants.STREAM_ID)) {
+                        roomId = json.getString(WebSocketConstants.STREAM_ID);
+                    }
+                    signallingListener.onLeft(roomId);
+                }
+                else if (definition.equals(WebSocketConstants.JOINED_THE_STREAM)) { // p2p
+                    String roomId = null;
+                    if (json.has(WebSocketConstants.STREAM_ID)) {
+                        roomId = json.getString(WebSocketConstants.STREAM_ID);
+                    }
+                    signallingListener.onJoined(roomId);
+                }
                 else if (definition.equals(WebSocketConstants.BITRATE_MEASUREMENT)) {
                     int targetBitrate = json.getInt(WebSocketConstants.TARGET_BITRATE);
                     int videoBitrate = json.getInt(WebSocketConstants.VIDEO_BITRATE);

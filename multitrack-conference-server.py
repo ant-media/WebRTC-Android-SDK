@@ -84,7 +84,7 @@ chrome.init(True)
 
 @app.route('/createConference', methods=['GET'])
 def createConference():
-    print("create request came")
+    print("create conference request came")
     url = serverUrl + appName + "conference.html"
     room = request.args.get('room')
     test = request.args.get('test')
@@ -95,7 +95,7 @@ def createConference():
 
 @app.route('/joinConference', methods=['GET'])
 def joinConference():
-    print("join request came")
+    print("join conference request came")
     room = request.args.get('room')
     test = request.args.get('test')
     participant = request.args.get('participant')
@@ -119,7 +119,7 @@ def leaveConference():
 
 @app.route('/deleteConference', methods=['GET'])
 def deleteConference():
-    print("delete request came")
+    print("delete conference request came")
     room = request.args.get('room')
     test = request.args.get('test')
     participant = request.args.get('participant')
@@ -136,7 +136,7 @@ def createP2P():
     test = request.args.get('test')
     print("\n create p2p for streamName:"+streamName+" in "+test)
     chrome.open_in_new_tab(url, streamName)
-    streamNameInput = chrome.find_element_by_id('streamName')
+    streamNameInput = chrome.get_element_by_id('streamName')
     streamNameInput.clear()
     streamNameInput.send_keys(streamName)
 
@@ -162,11 +162,11 @@ def leaveP2P():
     chrome.switch_to_tab(streamName)
     leave_button = chrome.get_element_by_id("leave_button")
     leave_button.click()
-    return f'Left the room', 200
+    return f'Left P2P room', 200
 
 @app.route('/deleteP2P', methods=['GET'])
 def deleteP2P():
-    print("delete request came")
+    print("delete p2p request came")
     streamName = request.args.get('streamName')
     test = request.args.get('test')
     streamName = request.args.get('streamName')
@@ -174,7 +174,6 @@ def deleteP2P():
     chrome.switch_to_tab(streamName)
     chrome.close()
     return f'P2P Tab closed', 200
-
 
 
 if __name__ == '__main__':

@@ -67,11 +67,11 @@ class RemoteConferenceParticipant {
     public void join() {
         try {
             response = client.get(CREATE_ROUTE, participantName);
-            Log.i("RemoteParticipant", "create: " + response);
+            Log.i("RemoteConferenceParticipant", "create: " + response);
             assertNotNull(response);
 
             response = client.get(JOIN_ROUTE, participantName);
-            Log.i("RemoteParticipant", "join: " + response);
+            Log.i("RemoteConferenceParticipant", "join: " + response);
             assertNotNull(response);
         } catch (IOException e) {
             e.printStackTrace();
@@ -81,11 +81,11 @@ class RemoteConferenceParticipant {
     public void leave() {
         try {
             response = client.get(LEAVE_ROUTE, participantName);
-            Log.i("RemoteParticipant", "leave: " + response);
+            Log.i("RemoteConferenceParticipant", "leave: " + response);
             assertNotNull(response);
 
             response = client.get(DELETE_ROUTE, participantName);
-            Log.i("RemoteParticipant", "delete: " + response);
+            Log.i("RemoteConferenceParticipant", "delete: " + response);
             assertNotNull(response);
         } catch (IOException e) {
             e.printStackTrace();

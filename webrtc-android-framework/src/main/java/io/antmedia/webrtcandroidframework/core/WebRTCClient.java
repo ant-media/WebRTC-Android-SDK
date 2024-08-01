@@ -87,10 +87,6 @@ import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
-/**
- * Activity for peer connection call setup, call waiting
- * and call view.
- */
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private static final String TAG = "WebRTCClient";
 
@@ -157,7 +153,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     @androidx.annotation.Nullable
     private PeerConnectionFactory factory;
-    private boolean requestExtendedRights = false;
 
     public static class PeerInfo {
 
@@ -987,8 +982,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
         });
 
-        requestExtendedRights = true;
-
         createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null, Mode.PUBLISH);
         init();
 
@@ -1079,8 +1072,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
   
     public void join(String streamId, String token) {
         Log.e(TAG, "Join: " + streamId);
-        requestExtendedRights = true;
 
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onJoinAttempt(streamId);
+            }
+        });
         PeerInfo peerInfo = new PeerInfo(streamId, Mode.P2P);
         peerInfo.token = token;
         peers.put(streamId, peerInfo);
@@ -1580,6 +1577,24 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onResolutionChange(streamId, resolution);
+            }
+        });
+    }
+
+    @Override
+    public void onJoined(String streamId) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onJoined(streamId);
+            }
+        });
+    }
+
+    @Override
+    public void onLeft(String streamId) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onLeft(streamId);
             }
         });
     }
@@ -2721,10 +2736,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setStreamStoppedByUser(boolean streamStoppedByUser) {
         this.streamStoppedByUser = streamStoppedByUser;
-    }
-
-    public Handler getPeerReconnectionHandler() {
-        return peerReconnectionHandler;
     }
 
     public void setPeerReconnectionHandler(Handler peerReconnectionHandler) {

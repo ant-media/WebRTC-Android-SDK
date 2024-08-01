@@ -241,6 +241,24 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
+    public void onJoinAttempt(String streamId) {
+        String messageText = "Join attempt for stream "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onJoined(String streamId) {
+        String messageText = "Joined P2P room with id "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onLeft(String streamId) {
+        String messageText = "Left P2P room with id "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
     public void onPlayAttempt(String streamId) {
         String messageText = "Play attempt for stream "+streamId;
         callbackCalled(messageText);
