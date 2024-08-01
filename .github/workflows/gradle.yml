@@ -20,7 +20,7 @@ on: [pull_request]
 #     ANDROID_HOME=/home/ubuntu/android
 #     ANDROID_SDK_ROOT=/home/ubuntu/android
 #     JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/ 
-#
+# 
 
 env:
   GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
