@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt-get update && apt-get install jq curl unzip openjdk-17-jdk -y -qq
+sudo apt-get update && apt-get install jq curl unzip openjdk-17-jdk ffmpeg -y -qq
 
 GITHUB_TOKEN=""
 echo $GITHUB_TOKEN > /tmp/token.txt
