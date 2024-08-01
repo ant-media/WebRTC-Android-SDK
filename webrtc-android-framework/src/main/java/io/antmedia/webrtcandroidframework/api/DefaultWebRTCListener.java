@@ -124,7 +124,10 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
-
+    @Override
+    public void onNewVideoTrack(VideoTrack track) {
+        onNewVideoTrack(track, null);
+    }
 
     @Override
     public void onNewVideoTrack(VideoTrack track, String trackId) {
@@ -134,7 +137,6 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
             if (r.getTag() == null) {
                 r.setTag(track);
-
                 webRTCClient.setRendererForVideoTrack(r, track);
                 break;
             }
