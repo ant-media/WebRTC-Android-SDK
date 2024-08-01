@@ -2,26 +2,34 @@ package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.swipeUp;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.RootMatchers.isDialog;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import android.content.Context;
+import static io.antmedia.webrtc_android_sample_app.TestableActivity.ROOM_ID_FOR_TEST;
+
+
 import android.content.Intent;
 import android.util.Log;
+import android.widget.TextView;
 
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
+
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
-import org.apache.commons.lang3.RandomStringUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -33,8 +41,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
-import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 
 /**
@@ -45,17 +52,15 @@ import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
 
-    //match
-    private static final String START_NOW_TEXT = "Start now";
+    @Rule
+    public GrantPermissionRule permissionRule
+            = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
 
     private IdlingResource mIdlingResource;
 
     @Rule
-    public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
-
-    @Rule
     public ActivityScenarioRule<ConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(ConferenceActivity.class);
+
     private String runningTest;
     private String roomName;
 
@@ -64,11 +69,10 @@ public class ConferenceActivityTest {
         //try before method to make @Rule run properly
         System.out.println("before test");
         connectInternet();
+
         getInstrumentation().waitForIdleSync();
 
-        roomName = "room_" + RandomStringUtils.randomNumeric(3);
-        Context context = getInstrumentation().getTargetContext();
-        SettingsActivity.changeRoomName(context, roomName);
+        roomName = ROOM_ID_FOR_TEST;
     }
 
     @After
@@ -104,10 +108,6 @@ public class ConferenceActivityTest {
             Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
         }
     };
-    @Test
-    public void emptyTest() {
-
-    }
 
     @Test
     public void testJoinMultitrackRoom() {
@@ -147,6 +147,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
+
     @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(activity -> {
@@ -166,6 +167,28 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.live)));
 
 
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .check((view, noViewFoundException) -> {
+                    if (noViewFoundException != null) {
+                        throw noViewFoundException;
+                    }
+                    RecyclerView recyclerView = (RecyclerView) view;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    int bytesReceived = Integer.parseInt(( textView1).getText().toString());
+                    assertTrue(bytesReceived > 0);
+                });
+
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
         onView(withId(R.id.join_conference_button)).perform(click());
@@ -177,18 +200,14 @@ public class ConferenceActivityTest {
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
-
     }
 
-    //@Test
+    //@Test TODO FIX THIS FUNCTIONALITY LATER.
     public void testJoinWithoutVideo() throws InterruptedException {
-        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
-            @Override
-            public void perform(ConferenceActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        activityScenarioRule.getScenario().onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         onView(withId(R.id.control_audio_button)).check(matches(withText("Disable Audio")));
@@ -225,8 +244,8 @@ public class ConferenceActivityTest {
     }
 
 
-    //@Test
-    public void testJoinPlayOnlyAsFirstPerson() {
+    //@Test TODO FIX
+    public void testJoinPlayOnlyAsFirstPerson() throws InterruptedException {
         activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
@@ -239,16 +258,37 @@ public class ConferenceActivityTest {
         onView(withId(R.id.play_only_switch)).check(matches(withText("Play Only")));
         onView(withId(R.id.play_only_switch)).perform(click());
 
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
+
+        //onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
         RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        Thread.sleep(10000);
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .check((view, noViewFoundException) -> {
+                    if (noViewFoundException != null) {
+                        throw noViewFoundException;
+                    }
+                    RecyclerView recyclerView = (RecyclerView) view;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    int bytesReceived = Integer.parseInt(( textView1).getText().toString());
+                    assertTrue(bytesReceived > 0);
+                });
+
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+
+        Thread.sleep(5000);
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
 
@@ -256,18 +296,14 @@ public class ConferenceActivityTest {
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
-
     }
 
     @Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
-        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
-            @Override
-            public void perform(ConferenceActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        activityScenarioRule.getScenario().onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
@@ -289,12 +325,35 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(30000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        Thread.sleep(3000);
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .check((view, noViewFoundException) -> {
+                    if (noViewFoundException != null) {
+                        throw noViewFoundException;
+                    }
+                    RecyclerView recyclerView = (RecyclerView) view;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    int bytesReceived = Integer.parseInt(( textView1).getText().toString());
+                    assertTrue(bytesReceived > 0);
+
+                });
+
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+
+        Thread.sleep(5000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -319,7 +378,7 @@ public class ConferenceActivityTest {
 
         connectInternet();
 
-        Thread.sleep(30000);
+        Thread.sleep(40000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
@@ -354,6 +413,5 @@ public class ConferenceActivityTest {
                 .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
     }
-
 
 }

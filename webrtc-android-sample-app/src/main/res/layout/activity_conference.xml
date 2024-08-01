@@ -21,7 +21,7 @@
     </LinearLayout>
 
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/publish_view_renderer"
+        android:id="@+id/local_participant_renderer"
         android:layout_width="144dp"
         android:layout_height="144dp"
 
@@ -64,25 +64,25 @@
     </LinearLayout>
 
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer1"
+        android:id="@+id/remote_participant_1_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="top|start"
         android:layout_margin="16dp" />
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer2"
+        android:id="@+id/remote_participant_2_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="top|end"
         android:layout_margin="16dp"/>
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer3"
+        android:id="@+id/remote_participant_3_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="bottom|start"
         android:layout_margin="16dp"/>
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer4"
+        android:id="@+id/remote_participant_4_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="bottom|end"
@@ -93,13 +93,24 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:gravity="center">
+
         <Button
+            android:id="@+id/show_stats_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Stats"
+            />
+
+        <Button
+            android:layout_marginStart="10dp"
             android:id="@+id/join_conference_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join Conference"
             android:onClick="joinConference"
             />
+
+
     </LinearLayout>
 
     <FrameLayout

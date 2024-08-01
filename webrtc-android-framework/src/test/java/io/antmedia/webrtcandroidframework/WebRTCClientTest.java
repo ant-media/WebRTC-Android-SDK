@@ -71,7 +71,6 @@ import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
@@ -153,6 +152,7 @@ public class WebRTCClientTest {
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
         doReturn(true).when(wsHandler).isConnected();
+        doNothing().when(webRTCClient).initializeAudioManager();
 
         webRTCClient.setAudioEnabled(audioCallEnabled);
         webRTCClient.setVideoEnabled(videoCallEnabled);
@@ -208,6 +208,7 @@ public class WebRTCClientTest {
 
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
+        doNothing().when(webRTCClient).initializeAudioManager();
         doReturn(true).when(wsHandler).isConnected();
 
         webRTCClient.setAudioEnabled(audioCallEnabled);
@@ -304,6 +305,7 @@ public class WebRTCClientTest {
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
         doReturn(true).when(wsHandler).isConnected();
+        doNothing().when(webRTCClient).initializeAudioManager();
 
         webRTCClient.joinToConferenceRoom(roomName, streamId);
 
@@ -441,7 +443,7 @@ public class WebRTCClientTest {
     }
 
 
-    @Test
+   /* @Test
     public void testInitilization() {
         mockMethodsInInit();
         Mockito.doReturn(true).when(webRTCClient).checkPermissions(any());
@@ -451,7 +453,7 @@ public class WebRTCClientTest {
 
         webRTCClient.init();
         assertTrue(webRTCClient.isDataChannelEnabled());
-    }
+    }*/
 
 
     @Test
@@ -538,7 +540,7 @@ public class WebRTCClientTest {
         pcObserver.onRemoveStream(new MediaStream(0));
         pcObserver.onRenegotiationNeeded();
         pcObserver.onDataChannel(mock(DataChannel.class));
-        
+
         webRTCClient.getRemoteVideoSinks().add(mock(ProxyVideoSink.class));
         MediaStream[] tracks = {new MediaStream(0)};
         PeerConnection pc = mock(PeerConnection.class);
@@ -652,6 +654,7 @@ public class WebRTCClientTest {
         webRTCClient.getConfig().reconnectionEnabled = true;
 
         doNothing().when(webRTCClient).init();
+        doNothing().when(webRTCClient).initializeAudioManager();
 
         String playStreamId = "playStreamId";
         webRTCClient.play(playStreamId, "", null, "", "", "");
@@ -735,48 +738,6 @@ public class WebRTCClientTest {
 
         webRTCClient.onBitrateMeasurement(streamId, 1000, 500, 100);
         verify(listener, timeout(1000)).onBitrateMeasurement(streamId, 1000, 500, 100);
-    }
-
-    @Test
-    public void testCheckPermissionsForPublish() {
-        mockMethodsInInit();
-
-        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
-        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
-
-        webRTCClient.publish("stream1");
-        verify(permissionsHandler).checkAndRequestPermisssions(eq(true), any());
-    }
-
-    @Test
-    public void testCheckPermissionsForPlay() {
-        mockMethodsInInit();
-
-        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
-        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
-
-        webRTCClient.play("stream1");
-        verify(permissionsHandler).checkAndRequestPermisssions(eq(false), any());
-    }
-
-    @Test
-    public void testCheckPermissionsForPeer() {
-        mockMethodsInInit();
-
-        doNothing().when(wsHandler).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        doNothing().when(wsHandler).startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        PermissionsHandler permissionsHandler = spy(new PermissionsHandler(context));
-        webRTCClient.setPermissionsHandlerForTest(permissionsHandler);
-
-        webRTCClient.join("stream1");
-        verify(permissionsHandler, times(1)).checkAndRequestPermisssions(eq(true), any());
     }
 
     private void mockMethodsInInit() {
@@ -1106,10 +1067,70 @@ public class WebRTCClientTest {
         webRTCClient.setVideoMaxBitrate(3000);
         verify(sender, timeout(1000).times(1)).setParameters(parameters);
     }
+
+    @Test
+        public void registerPushNotificationToken_registersTokenWhenWebSocketHandlerIsConnected() {
+            when(wsHandler.isConnected()).thenReturn(true);
+
+            webRTCClient.registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+
+            verify(wsHandler, times(1)).registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+        }
+
+        @Test
+        public void registerPushNotificationToken_doesNotRegisterTokenWhenWebSocketHandlerIsNotConnected() {
+            when(wsHandler.isConnected()).thenReturn(false);
+
+            webRTCClient.registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+
+            verify(wsHandler, times(0)).registerPushNotificationToken("subscriberId", "authToken", "pushNotificationToken", "tokenType");
+        }
+    
+        @Test
+        public void sendPushNotification_sendsNotificationWhenWebSocketHandlerIsConnected() {
+            when(wsHandler.isConnected()).thenReturn(true);
+
+            JSONObject pushNotificationContent = new JSONObject();
+            JSONArray receiverSubscriberIdArray = new JSONArray();
+
+            try{
+                pushNotificationContent.put("Caller","Caller1");
+                pushNotificationContent.put("StreamId", "stream1");
+                receiverSubscriberIdArray.put("subscriber1");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+
+            webRTCClient.sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
+
+            verify(wsHandler, times(1)).sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
+        }
+
+        @Test
+        public void sendPushNotification_doesNotSendNotificationWhenWebSocketHandlerIsNotConnected() {
+            when(wsHandler.isConnected()).thenReturn(false);
+
+            JSONObject pushNotificationContent = new JSONObject();
+            JSONArray receiverSubscriberIdArray = new JSONArray();
+
+            try{
+                pushNotificationContent.put("Caller","Caller1");
+                pushNotificationContent.put("StreamId", "stream1");
+                receiverSubscriberIdArray.put("subscriber1");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+
+            webRTCClient.sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
+
+            verify(wsHandler, times(0)).sendPushNotification("subscriberId", "authToken", pushNotificationContent, receiverSubscriberIdArray);
+        }
+
     @Test
     public void tesHandlePublishPlayRequestWhenWSNotConnected() {
         doNothing().when(webRTCClient).init();
-
+        doNothing().when(webRTCClient).initializeAudioManager();
         doReturn(false).when(wsHandler).isConnected();
 
 

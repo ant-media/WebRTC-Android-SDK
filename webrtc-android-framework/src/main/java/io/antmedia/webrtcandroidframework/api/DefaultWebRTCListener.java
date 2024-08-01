@@ -137,7 +137,6 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
             if (r.getTag() == null) {
                 r.setTag(track);
-
                 webRTCClient.setRendererForVideoTrack(r, track);
                 break;
             }
@@ -168,7 +167,6 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         String messageText = "Joined the room for " + streamId;
         callbackCalled(messageText);
     }
-
 
     @Override
     public void onRoomInformation(String[] streams) {
@@ -226,6 +224,11 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
+    public void onPeerConnectionClosed() {
+        String messageText = "Peer connection closed";
+        callbackCalled(messageText);
+    }
+
     public void onReconnectionSuccess() {
         String messageText = "Reconnection success";
         callbackCalled(messageText);
@@ -243,10 +246,20 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
+    @Override
+    public void onResolutionChange(String streamId, int resolution) {
+        String messageText = "Resolution changed to " + resolution +" for stream "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onShutdown(){
+        String messageText = "Webrtc client shutdown.";
+        callbackCalled(messageText);
+    }
+
     protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
     }
 
-
 }
-

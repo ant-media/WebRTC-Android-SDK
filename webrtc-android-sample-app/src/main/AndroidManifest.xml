@@ -24,6 +24,7 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-feature android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -93,6 +94,24 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <activity android:name=".advanced.notification.CallNotificationActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <activity android:name=".advanced.notification.PeerForNotificationActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <receiver android:name=".advanced.notification.AcceptCallReceiver" android:exported="false"/>
+        <receiver android:name=".advanced.notification.DeclineCallReceiver" android:exported="false"/>
+
+        <service
+            android:name=".advanced.notification.AntMediaFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <activity android:name=".advanced.ConferenceActivityWithSpeakerIndicator"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
@@ -106,6 +125,12 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+
+        <activity android:name=".minimal.SimplePublishActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+
 
         <service
             android:name=".basic.MediaProjectionService"
