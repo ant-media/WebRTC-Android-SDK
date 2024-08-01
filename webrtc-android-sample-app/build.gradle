@@ -46,6 +46,14 @@ android {
     testOptions {
         animationsDisabled true
         unitTests.all {
+            tasks.withType(Test).configureEach {
+                jvmArgs("--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED")
+                jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
+                jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+                jvmArgs("--add-opens", "java.base/java.nio=ALL-UNNAMED")
+                jvmArgs("--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED")
+            }
+
             jacoco {
                 includeNoLocationClasses = true
             }
@@ -114,5 +122,6 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging'
 
 }
+
 
 apply plugin: 'com.google.gms.google-services'
