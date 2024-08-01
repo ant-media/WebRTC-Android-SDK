@@ -134,7 +134,7 @@ jobs:
 
       - name: Run ffmpeg
         #send test stream to the server to play test
-      - run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
+        run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
 
       - name: Setting up Python
         uses: actions/setup-python@v4
@@ -150,9 +150,6 @@ jobs:
 
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
-
-      - name: Username
-        run : echo "Username:" `whoami`
 
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.32.0
