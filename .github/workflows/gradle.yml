@@ -137,9 +137,16 @@ jobs:
         run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
       
       - uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
         with:
          chrome-version: 127
          install-chromedriver: true
+
+      - name: Get Chrome and ChromeDriver Paths
+        id: paths
+        run: |
+          echo "CHROME_PATH=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
+          echo "CHROMEDRIVER_PATH=${{ steps.setup-chrome.outputs.chromedriver-path }}" >> $GITHUB_ENV
 
       - name: Setting up Python
         uses: actions/setup-python@v4
