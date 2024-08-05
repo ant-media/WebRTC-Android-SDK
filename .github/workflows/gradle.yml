@@ -135,6 +135,11 @@ jobs:
       - name: Run ffmpeg
         #send test stream to the server to play test
         run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
+      
+      - uses: browser-actions/setup-chrome@v1
+        with:
+         chrome-version: 127
+         install-chromedriver: true
 
       - name: Setting up Python
         uses: actions/setup-python@v4
@@ -143,9 +148,9 @@ jobs:
 
       - name: Install python packages
         run: |
-          wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
-          unzip chromedriver-linux64.zip
-          cp chromedriver-linux64/chromedriver /home/ubuntu
+          #wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/119.0.6045.105/linux64/chromedriver-linux64.zip
+          #unzip chromedriver-linux64.zip
+          #cp chromedriver-linux64/chromedriver /home/ubuntu
           pip3 install requests selenium==4.14 flask 
 
       - name: Run Multitrack Conference Test Server
@@ -238,7 +243,7 @@ jobs:
         SERVER_ID="${{ needs.setup-runner.outputs.server_id }}"
         echo "server id" $SERVER_ID
         if [ -n "$SERVER_ID" ]; then
-          openstack server delete $SERVER_ID
+          #openstack server delete $SERVER_ID
           echo $SERVER_ID
         else
           echo "SERVER_ID is empty, skipping server delete."
