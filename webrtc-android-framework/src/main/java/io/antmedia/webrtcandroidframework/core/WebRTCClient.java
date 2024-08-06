@@ -1523,7 +1523,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.handler.post(() -> {
 
             createPeerConnection(streamId);
-            if(getPeerInfoFor(streamId).mode == Mode.P2P){
+            PeerInfo peerInfo = getPeerInfoFor(streamId);
+            if(peerInfo != null && peerInfo.mode == Mode.P2P){
                 createOffer(streamId);
             }
         });
