@@ -167,9 +167,14 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(5000);
+        Thread.sleep(10000);
+
+        onView(withId(R.id.stats_popup_container)).perform(swipeUp());
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
+
+        Thread.sleep(5000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
@@ -332,7 +337,11 @@ public class ConferenceActivityTest {
 
         Thread.sleep(5000);
 
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        Thread.sleep(5000);
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
