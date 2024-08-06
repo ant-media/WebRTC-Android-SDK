@@ -1,4 +1,4 @@
-import os
+import os 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -10,8 +10,6 @@ from selenium.webdriver.common.alert import Alert
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from flask import Flask, request
 from selenium.webdriver.chrome.service import Service
-
-
 
 
 class Browser:
@@ -37,7 +35,6 @@ class Browser:
 
     service = Service(executable_path=chromedriver_path) 
     #service = Service(executable_path='C:/Users/yunus/Desktop/antmedia/chromedriver-win64/chromedriver.exe')
-
 
     self.driver = webdriver.Chrome(service=service, options=browser_options)
 
