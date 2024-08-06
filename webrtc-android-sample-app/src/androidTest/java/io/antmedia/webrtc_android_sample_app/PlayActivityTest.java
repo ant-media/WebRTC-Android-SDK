@@ -106,13 +106,10 @@ public class PlayActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PlayActivity.class);
         ActivityScenario<PlayActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(new ActivityScenario.ActivityAction<PlayActivity>() {
-            @Override
-            public void perform(PlayActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         //stream556677i4d is the stream id in github actions

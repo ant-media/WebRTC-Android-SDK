@@ -93,13 +93,24 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:gravity="center">
+
         <Button
+            android:id="@+id/show_stats_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Stats"
+            />
+
+        <Button
+            android:layout_marginStart="10dp"
             android:id="@+id/join_conference_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join Conference"
             android:onClick="joinConference"
             />
+
+
     </LinearLayout>
 
     <FrameLayout
