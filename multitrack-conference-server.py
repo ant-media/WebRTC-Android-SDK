@@ -1,3 +1,4 @@
+import os
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -15,6 +16,8 @@ from selenium.webdriver.chrome.service import Service
 
 class Browser:
   def init(self, is_headless):
+    chrome_path = os.getenv('CHROME_PATH')
+    chromedriver_path = os.getenv('CHROMEDRIVER_PATH')
     browser_options = Options()
     browser_options.add_experimental_option("detach", True)
     browser_options.add_argument("--use-fake-ui-for-media-stream") 
@@ -25,13 +28,14 @@ class Browser:
     browser_options.add_argument('--disable-gpu')
     browser_options.add_argument('--disable-dev-shm-usage')
     browser_options.add_argument('--disable-setuid-sandbox')
+    browser_options.binary_location = chrome_path
     if is_headless:
       browser_options.add_argument("--headless")
     
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
 
-    service = Service(executable_path='/home/ubuntu/chromedriver')  
+    service = Service(executable_path=chromedriver_path) 
     #service = Service(executable_path='C:/WebDriver/chromedriver.exe') 
 
     self.driver = webdriver.Chrome(service=service, options=browser_options)
