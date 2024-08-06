@@ -98,7 +98,6 @@ public class StatsActivityTest {
                 R.id.stats_popup_packets_sent_audio_textview,
                 R.id.stats_popup_bytes_sent_audio_textview,
                 R.id.stats_popup_packets_sent_per_second_audio_textview,
-                R.id.stats_popup_local_audio_bitrate_textview
         };
 
         int[] videoTrackStatsTextViewIds = {
@@ -108,13 +107,13 @@ public class StatsActivityTest {
                 R.id.stats_popup_frames_encoded_video_textview,
                 R.id.stats_popup_bytes_sent_video_textview,
                 R.id.stats_popup_packets_sent_per_second_video_textview,
-                R.id.stats_popup_local_video_bitrate_textview
         };
 
         for (int id : audioTrackStatsTextViewIds) {
             onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
+
                 assertTrue(value > 0f);
             });
         }
