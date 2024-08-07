@@ -1331,11 +1331,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if (streamStoppedByUser) {
                 release(true);
-                streamStoppedByUser = false;
-                return;
-            }
-
-            if(streamId.equals(roomId)){
                 return;
             }
 
@@ -1346,7 +1341,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if(isConference()){
                 releaseRemoteRenderers();
             }
-
 
         });
     }
