@@ -76,12 +76,7 @@ public class PlayActivity extends TestableActivity {
                 .build();
 
         startStreamingButton = findViewById(R.id.start_streaming_button);
-        startStreamingButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startStopStream();
-            }
-        });
+        startStreamingButton.setOnClickListener(v -> startStopStream());
 
     }
 
@@ -203,7 +198,6 @@ public class PlayActivity extends TestableActivity {
         }
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -223,5 +217,4 @@ public class PlayActivity extends TestableActivity {
             }
         }
     }
-
 }

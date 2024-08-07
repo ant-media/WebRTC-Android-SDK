@@ -130,7 +130,26 @@ public interface AntMediaSignallingEvents {
 
     /**
      * It's called when broadcast object is received
-     * @param streamId
+     * @param broadcast
      */
     void onBroadcastObject(Broadcast broadcast);
+
+    /**
+     * It's called when streams/subtracks resolution changes.
+     * @param streamId Stream id of the stream/subtrack whose resolution changed
+     * @param resolution New resolution height(720,360,240...)
+     */
+    void onResolutionChange(String streamId, int resolution);
+
+    /**
+     * It's called when peer joins peer to peer room.
+     * @param streamId Peer to peer room name/id.
+     */
+    void onJoined(String streamId);
+
+    /**
+     * It's called when peer left peer to peer room.
+     * @param streamId Peer to peer room name/id.
+     */
+    void onLeft(String streamId);
 }

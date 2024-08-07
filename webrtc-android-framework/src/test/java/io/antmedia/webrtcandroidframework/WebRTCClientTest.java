@@ -283,11 +283,11 @@ public class WebRTCClientTest {
 
         webRTCClient.stop(streamId);
 
-        verify(wsHandler, times(1)).stop(streamId);
+        verify(wsHandler, times(1)).leaveFromP2P(streamId);
         verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
         json = new JSONObject();
         try {
-            json.put(WebSocketConstants.COMMAND, WebSocketConstants.STOP_COMMAND);
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_COMMAND);
             json.put(WebSocketConstants.STREAM_ID, streamId);
         } catch (JSONException e) {
             e.printStackTrace();

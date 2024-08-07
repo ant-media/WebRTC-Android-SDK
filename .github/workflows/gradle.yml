@@ -134,7 +134,7 @@ jobs:
 
       - name: Run ffmpeg
         #send test stream to the server to play test
-        run: ffmpeg -re -stream_loop 10 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
+        run: ffmpeg -re -stream_loop 20 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
       
       - uses: browser-actions/setup-chrome@v1
         id: setup-chrome
