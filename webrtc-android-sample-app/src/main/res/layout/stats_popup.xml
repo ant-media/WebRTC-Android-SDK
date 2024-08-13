@@ -8,7 +8,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="10dp"
         android:textSize="18sp"
-        android:text="Stats"
+        android:text="Publish Stats"
         android:id="@+id/stats_popup_title_textview"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
