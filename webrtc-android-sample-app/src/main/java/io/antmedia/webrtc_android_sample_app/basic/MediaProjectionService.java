@@ -24,7 +24,7 @@ public class MediaProjectionService extends Service {
     private static MediaProjectionServiceListener listener;
 
     public interface MediaProjectionServiceListener{
-        void mediaProjectionOnSuccess(MediaProjection mediaProjection);
+        void onMediaProjectionServiceStarted();
     }
 
     public static void setListener(MediaProjectionServiceListener listener) {
@@ -36,8 +36,6 @@ public class MediaProjectionService extends Service {
     public static final String ACTION_STOP = "STOP";
     public static final String EXTRA_MEDIA_PROJECTION_DATA = "mediaProjectionData";
 
-    private MediaProjectionManager mediaProjectionManager;
-    public MediaProjection mediaProjection;
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -63,11 +61,7 @@ public class MediaProjectionService extends Service {
                 return START_NOT_STICKY;
             }
 
-            Intent data = intent.getParcelableExtra(EXTRA_MEDIA_PROJECTION_DATA);
-            mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(MEDIA_PROJECTION_SERVICE);
-            mediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, data);
-
-            listener.mediaProjectionOnSuccess(mediaProjection);
+            listener.onMediaProjectionServiceStarted();
         }
         return START_STICKY;
     }

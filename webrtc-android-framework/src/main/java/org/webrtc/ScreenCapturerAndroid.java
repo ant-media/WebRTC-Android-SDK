@@ -10,72 +10,87 @@
 
 package org.webrtc;
 
-import android.app.Activity;
+
+
+import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.CapturerObserver;
+import org.webrtc.ThreadUtils;
+import org.webrtc.VideoCapturer;
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoSink;
+
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.display.DisplayManager;
-import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
-import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
-
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
+import android.app.Activity;
+import android.hardware.display.DisplayManager;
+import android.hardware.display.VirtualDisplay;
+import android.media.projection.MediaProjectionManager;
+import android.os.Looper;
+import android.os.Handler;
 
 /**
- * An implementation of VideoCapturer to capture the screen content as a video stream.
- * Capturing is done by {@code MediaProjection} on a {@code SurfaceTexture}. We interact with this
- * {@code SurfaceTexture} using a {@code SurfaceTextureHelper}.
- * The {@code SurfaceTextureHelper} is created by the native code and passed to this capturer in
- * {@code VideoCapturer.initialize()}. On receiving a new frame, this capturer passes it
- * as a texture to the native code via {@code CapturerObserver.onFrameCaptured()}. This takes
- * place on the HandlerThread of the given {@code SurfaceTextureHelper}. When done with each frame,
- * the native code returns the buffer to the  {@code SurfaceTextureHelper} to be used for new
- * frames. At any time, at most one frame is being processed.
+ * An copy of ScreenCapturerAndroid to capture the screen content while being aware of device orientation
  */
+@TargetApi(21)
 public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private static final int DISPLAY_FLAGS =
           DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
-  public static final int VIRTUAL_DISPLAY_DPI = 400;
-
+  private static final int VIRTUAL_DISPLAY_DPI = 400;
   private final Intent mediaProjectionPermissionResultData;
   private final MediaProjection.Callback mediaProjectionCallback;
-
   private int width;
   private int height;
-  @Nullable private VirtualDisplay virtualDisplay;
-  @Nullable private SurfaceTextureHelper surfaceTextureHelper;
-  @Nullable private CapturerObserver capturerObserver;
-  private long numCapturedFrames;
-  @Nullable private MediaProjection mediaProjection;
-  private boolean isDisposed;
+  private int oldWidth;
+  private int oldHeight;
+  private VirtualDisplay virtualDisplay;
+  private SurfaceTextureHelper surfaceTextureHelper;
+  private CapturerObserver capturerObserver;
+  private long numCapturedFrames = 0;
+  private MediaProjection mediaProjection;
+  private boolean isDisposed = false;
+  private MediaProjectionManager mediaProjectionManager;
   private WindowManager windowManager;
-  public int deviceRotation = 0;
-  private static final String TAG =  ScreenCapturerAndroid.class.getSimpleName();
-
-  @Nullable private MediaProjectionManager mediaProjectionManager;
+  private boolean isPortrait;
 
   /**
    * Constructs a new Screen Capturer.
    *
    * @param mediaProjectionPermissionResultData the result data of MediaProjection permission
-   *     activity; the calling app must validate that result code is Activity.RESULT_OK before
-   *     calling this method.
-   * @param mediaProjectionCallback MediaProjection callback to implement application specific
-   *     logic in events such as when the user revokes a previously granted capture permission.
-  **/
+   *                                            activity; the calling app must validate that result code is Activity.RESULT_OK before
+   *                                            calling this method.
+   * @param mediaProjectionCallback             MediaProjection callback to implement application specific
+   *                                            logic in events such as when the user revokes a previously granted capture permission.
+   **/
   public ScreenCapturerAndroid(Intent mediaProjectionPermissionResultData,
-      MediaProjection.Callback mediaProjectionCallback) {
+                                        MediaProjection.Callback mediaProjectionCallback) {
     this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
     this.mediaProjectionCallback = mediaProjectionCallback;
   }
 
-  public boolean isDisposed() {
-    return isDisposed;
+  public void onFrame(VideoFrame frame) {
+    checkNotDisposed();
+    this.isPortrait = isDeviceOrientationPortrait();
+    final int max = Math.max(this.height, this.width);
+    final int min = Math.min(this.height, this.width);
+    if (this.isPortrait) {
+      changeCaptureFormat(min, max, 15);
+    } else {
+      changeCaptureFormat(max, min, 15);
+    }
+    capturerObserver.onFrameCaptured(frame);
   }
+
+  private boolean isDeviceOrientationPortrait() {
+    final int surfaceRotation = windowManager.getDefaultDisplay().getRotation();
+
+    return surfaceRotation != Surface.ROTATION_90 && surfaceRotation != Surface.ROTATION_270;
+  }
+
 
   private void checkNotDisposed() {
     if (isDisposed) {
@@ -83,62 +98,50 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     }
   }
 
-  @Nullable
-  public MediaProjection getMediaProjection() {
-    return mediaProjection;
-  }
-
-  @Override
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void initialize(final SurfaceTextureHelper surfaceTextureHelper,
-      final Context applicationContext, final CapturerObserver capturerObserver) {
+                                      final Context applicationContext, final CapturerObserver capturerObserver) {
     checkNotDisposed();
-
     if (capturerObserver == null) {
       throw new RuntimeException("capturerObserver not set.");
     }
     this.capturerObserver = capturerObserver;
-
     if (surfaceTextureHelper == null) {
       throw new RuntimeException("surfaceTextureHelper not set.");
     }
     this.surfaceTextureHelper = surfaceTextureHelper;
 
-    mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
-        Context.MEDIA_PROJECTION_SERVICE);
-
-    windowManager = (WindowManager)applicationContext.getSystemService(Context.WINDOW_SERVICE);
-  }
-
-  public void setMediaProjection(@Nullable MediaProjection mediaProjection) {
-    this.mediaProjection = mediaProjection;
+    this.windowManager = (WindowManager) applicationContext.getSystemService(
+            Context.WINDOW_SERVICE);
+    this.mediaProjectionManager = (MediaProjectionManager) applicationContext.getSystemService(
+            Context.MEDIA_PROJECTION_SERVICE);
   }
 
   @Override
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void startCapture(
-      final int width, final int height, final int ignoredFramerate) {
-    checkNotDisposed();
+          final int width, final int height, final int ignoredFramerate) {
+    //checkNotDisposed();
 
-    this.width = width;
-    this.height = height;
+    this.isPortrait = isDeviceOrientationPortrait();
+    if (this.isPortrait) {
+      this.width = width;
+      this.height = height;
+    } else {
+      this.height = width;
+      this.width = height;
+    }
 
     mediaProjection = mediaProjectionManager.getMediaProjection(
-        Activity.RESULT_OK, mediaProjectionPermissionResultData);
+            Activity.RESULT_OK, mediaProjectionPermissionResultData);
 
     // Let MediaProjection callback use the SurfaceTextureHelper thread.
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());
 
     createVirtualDisplay();
     capturerObserver.onCapturerStarted(true);
-    surfaceTextureHelper.startListening(ScreenCapturerAndroid.this);
+    surfaceTextureHelper.startListening(this);
   }
 
   @Override
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void stopCapture() {
     checkNotDisposed();
     ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
@@ -146,12 +149,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
       public void run() {
         surfaceTextureHelper.stopListening();
         capturerObserver.onCapturerStopped();
-
         if (virtualDisplay != null) {
           virtualDisplay.release();
           virtualDisplay = null;
         }
-
         if (mediaProjection != null) {
           // Unregister the callback before stopping, otherwise the callback recursively
           // calls this method.
@@ -164,10 +165,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   }
 
   @Override
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void dispose() {
-    Log.i(TAG, "ScreenCapturer is disposed");
     isDisposed = true;
   }
 
@@ -175,66 +173,58 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
    * Changes output video format. This method can be used to scale the output
    * video, or to change orientation when the captured screen is rotated for example.
    *
-   * @param width new output video width
-   * @param height new output video height
+   * @param width            new output video width
+   * @param height           new output video height
    * @param ignoredFramerate ignored
    */
   @Override
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
   public synchronized void changeCaptureFormat(
-      final int width, final int height, final int ignoredFramerate) {
+          final int width, final int height, final int ignoredFramerate) {
     checkNotDisposed();
+    if (this.oldWidth != width || this.oldHeight != height) {
+      this.oldWidth = width;
+      this.oldHeight = height;
 
-    this.width = width;
-    this.height = height;
-
-    if (virtualDisplay == null) {
-      // Capturer is stopped, the virtual display will be created in startCapture().
-      return;
-    }
-
-    // Create a new virtual display on the surfaceTextureHelper thread to avoid interference
-    // with frame processing, which happens on the same thread (we serialize events by running
-    // them on the same thread).
-    ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
-      @Override
-      public void run() {
-        virtualDisplay.release();
-        createVirtualDisplay();
+      if (oldHeight > oldWidth) {
+        ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
+          @Override
+          public void run() {
+            if (virtualDisplay != null && surfaceTextureHelper != null) {
+              virtualDisplay.setSurface(new Surface(surfaceTextureHelper.getSurfaceTexture()));
+              surfaceTextureHelper.setTextureSize(oldWidth, oldHeight);
+              virtualDisplay.resize(oldWidth, oldHeight, VIRTUAL_DISPLAY_DPI);
+            }
+          }
+        });
       }
-    });
+
+      if (oldWidth > oldHeight) {
+        surfaceTextureHelper.setTextureSize(oldWidth, oldHeight);
+        virtualDisplay.setSurface(new Surface(surfaceTextureHelper.getSurfaceTexture()));
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+          @Override
+          public void run() {
+            ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
+              @Override
+              public void run() {
+                if (virtualDisplay != null && surfaceTextureHelper != null) {
+                  virtualDisplay.resize(oldWidth, oldHeight, VIRTUAL_DISPLAY_DPI);
+                }
+              }
+            });
+          }
+        }, 700);
+      }
+    }
   }
+
   private void createVirtualDisplay() {
     surfaceTextureHelper.setTextureSize(width, height);
+    surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
             VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
             null /* callback */, null /* callback handler */);
-  }
-
-  public void rotateScreen(int rotation) {
-    if (deviceRotation != rotation) {
-      Log.w("Rotation", "onFrame: " + rotation);
-      deviceRotation = rotation;
-
-      if (deviceRotation == 0) {
-        virtualDisplay.resize(width, height, VIRTUAL_DISPLAY_DPI);
-        surfaceTextureHelper.setTextureSize(width, height);
-      } else if (deviceRotation == 180) {
-        // 180 degree is not supported by MediaProjection
-      } else {
-        virtualDisplay.resize(height, width, VIRTUAL_DISPLAY_DPI);
-        surfaceTextureHelper.setTextureSize(height, width);
-      }
-    }
-  }
-
-  // This is called on the internal looper thread of {@Code SurfaceTextureHelper}.
-  @Override
-  public void onFrame(VideoFrame frame) {
-    numCapturedFrames++;
-    Log.v(TAG, "Frame received " + numCapturedFrames);
-    capturerObserver.onFrameCaptured(frame);
   }
 
   @Override
@@ -244,37 +234,5 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   public long getNumCapturedFrames() {
     return numCapturedFrames;
-  }
-
-  public void setWindowManager(WindowManager windowManager) {
-    this.windowManager = windowManager;
-  }
-
-  public void setVirtualDisplay(VirtualDisplay virtualDisplay) {
-    this.virtualDisplay = virtualDisplay;
-  }
-
-  public void setSurfaceTextureHelper(SurfaceTextureHelper surfaceTextureHelper) {
-    this.surfaceTextureHelper = surfaceTextureHelper;
-  }
-
-  public void setCapturerObserver(CapturerObserver capturerObserver) {
-    this.capturerObserver = capturerObserver;
-  }
-
-  public void setWidth(int width) {
-    this.width = width;
-  }
-
-  public void setHeight(int height) {
-    this.height = height;
-  }
-
-  public MediaProjection.Callback getMediaProjectionCallback() {
-    return mediaProjectionCallback;
-  }
-
-  public void setMediaProjectionManager(MediaProjectionManager mediaProjectionManager) {
-    this.mediaProjectionManager = mediaProjectionManager;
   }
 }
