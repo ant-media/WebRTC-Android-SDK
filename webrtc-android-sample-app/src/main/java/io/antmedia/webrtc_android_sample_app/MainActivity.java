@@ -22,6 +22,7 @@ import androidx.core.content.res.ResourcesCompat;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
 import io.antmedia.webrtc_android_sample_app.advanced.notification.CallNotificationActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithSpeakerIndicator;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(PublishActivity.class, "Publish");
         addActivity(PlayActivity.class, "Play");
         addActivity(PeerActivity.class, "Peer");
-        addActivity(ConferenceActivity.class, "Conference");
+        addActivity(ConferenceActivityWithDifferentVideoSources.class, "Conference");
         addActivity(ScreenCaptureActivity.class, "Screen Share");
         addActivity(DataChannelOnlyActivity.class, "DC Only");
         addActivity(MP3PublishActivity.class, "mp3");

@@ -405,15 +405,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void joinToConferenceRoom(String roomId, String streamId) {
 
-        this.roomId = roomId;
+   //    this.roomId = roomId;
 
         //we will call play after publish started event
-        publish(streamId, "",
+       /*publish(streamId, null,
                 true, true,
-                "",
-                "",
-                "",
-                roomId);
+                null,
+                null,
+                "asdasdsasadsdfsf",
+                roomId);*/
+
+        publish(streamId, null, true, true,
+                null, null, streamId, roomId);
+
+
     }
 
     public void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName) {
@@ -961,7 +966,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId) {
         publish(streamId, null, true, true,
-                null, null, streamId, null);
+                null, null, streamId, "qdadsas");
     }
 
 
@@ -1191,19 +1196,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void changeVideoSource(StreamSource newSource) {
-        if (!config.videoSource.equals(newSource)) {
-            if (newSource.equals(StreamSource.SCREEN) && adm != null) {
-                adm.setMediaProjection(config.mediaProjection);
+            if (!config.videoSource.equals(newSource)) {
+                if (newSource.equals(StreamSource.SCREEN) && adm != null) {
+                    adm.setMediaProjection(config.mediaProjection);
+                }
+
+                VideoCapturer newVideoCapturer = createVideoCapturer(newSource);
+
+                /* When user try to change video source after stopped the publishing
+                 * peerConnectionClient will null, until start another broadcast
+                 */
+                changeVideoCapturer(newVideoCapturer);
+                config.videoSource = newSource;
             }
 
-            VideoCapturer newVideoCapturer = createVideoCapturer(newSource);
-
-            /* When user try to change video source after stopped the publishing
-             * peerConnectionClient will null, until start another broadcast
-             */
-            changeVideoCapturer(newVideoCapturer);
-            config.videoSource = newSource;
-        }
     }
 
     public @Nullable VideoCapturer createVideoCapturer(StreamSource source) {
@@ -1312,9 +1318,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.handler.post(() -> {
             Log.d(TAG, "ICE disconnected");
 
-            if (config.webRTCListener != null) {
+           if (config.webRTCListener != null) {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
+
             if (streamStoppedByUser) {
                 release(true);
                 return;
@@ -1488,7 +1495,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onPlayStarted(String streamId) {
         Log.d(TAG, "Play started.");
-        streamStoppedByUser = false;
+
+   /*     streamStoppedByUser = false;
         reconnectionInProgress = false;
         waitingForPlay = false;
 
@@ -1496,7 +1504,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onPlayStarted(streamId);
             }
-        });
+        });*/
     }
 
     @Override
@@ -1751,10 +1759,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         try {
             if (videoCapturer != null) {
                 videoCapturer.stopCapture();
+
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
         videoCapturerStopped = true;
         videoCapturer = newVideoCapturer;
         localVideoTrack = null;
@@ -1763,6 +1773,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (localVideoSender != null) {
             localVideoSender.setTrack(newTrack, true);
         }
+
     }
 
     /**

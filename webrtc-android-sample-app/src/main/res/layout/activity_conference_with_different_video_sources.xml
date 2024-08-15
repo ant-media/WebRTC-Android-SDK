@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".basic.ConferenceActivity">
+
+
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/local_participant_renderer"
+        android:layout_width="144dp"
+        android:layout_height="144dp"
+
+        android:layout_gravity="center" />
+
+    <TextView
+        android:layout_marginTop="80dp"
+        android:id="@+id/broadcasting_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:visibility="visible"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_gravity="center" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="120dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/rear_camera_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:text="Rear Camera"
+             />
+
+        <Button
+            android:id="@+id/front_camera_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Front Camera"
+            android:layout_marginHorizontal="10dp"
+            />
+        <Button
+            android:id="@+id/screen_share_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Screen Share"
+            android:layout_marginHorizontal="10dp"
+            />
+
+    </LinearLayout>
+
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/remote_participant_1_renderer"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp" />
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/remote_participant_2_renderer"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"/>
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/remote_participant_3_renderer"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="16dp"/>
+    <org.webrtc.SurfaceViewRenderer
+        android:id="@+id/remote_participant_4_renderer"
+        android:layout_height="144dp"
+        android:layout_width="144dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:gravity="center">
+        <Button
+            android:id="@+id/join_conference_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Join Conference"
+            android:onClick="joinConference"
+            />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/call_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+    </FrameLayout>
+
+
+</FrameLayout>

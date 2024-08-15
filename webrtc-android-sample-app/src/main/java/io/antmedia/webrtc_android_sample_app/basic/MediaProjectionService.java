@@ -24,7 +24,7 @@ public class MediaProjectionService extends Service {
     private static MediaProjectionServiceListener listener;
 
     public interface MediaProjectionServiceListener{
-        void mediaProjectionOnSuccess(MediaProjection mediaProjection);
+        void mediaProjectionOnSuccess();
     }
 
     public static void setListener(MediaProjectionServiceListener listener) {
@@ -64,10 +64,10 @@ public class MediaProjectionService extends Service {
             }
 
             Intent data = intent.getParcelableExtra(EXTRA_MEDIA_PROJECTION_DATA);
-            mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(MEDIA_PROJECTION_SERVICE);
-            mediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, data);
-
-            listener.mediaProjectionOnSuccess(mediaProjection);
+          //  mediaProjectionManager = (MediaProjectionManager) getApplicationContext().getSystemService(MEDIA_PROJECTION_SERVICE);
+          //  mediaProjection = mediaProjectionManager.getMediaProjection(Activity.RESULT_OK, data);
+            listener.mediaProjectionOnSuccess();
+           // listener.mediaProjectionOnSuccess();
         }
         return START_STICKY;
     }

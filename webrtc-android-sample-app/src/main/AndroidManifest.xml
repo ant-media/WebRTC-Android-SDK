@@ -25,7 +25,8 @@
     <uses-feature android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -82,6 +83,14 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+
+        <activity android:name=".advanced.ConferenceActivityWithDifferentVideoSources"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+
+
+
         <activity android:name=".advanced.MP4PublishWithSurfaceActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
