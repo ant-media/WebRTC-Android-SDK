@@ -9,11 +9,6 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 
-import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
-import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
-import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
-import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
-import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 
 public class WebRTCClientConfig {
 
@@ -183,4 +178,9 @@ public class WebRTCClientConfig {
      * Flag indicating whether AGC (automatic gain contol) and HPF (high pass filter) is disabled in audio processing
      */
     public boolean disableWebRtcAGCAndHPF = false;
+
+    /*
+     * Flag for connecting bluetooth headphones.
+     */
+    public boolean bluetoothEnabled = false;
 }

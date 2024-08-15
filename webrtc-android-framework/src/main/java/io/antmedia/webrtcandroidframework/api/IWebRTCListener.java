@@ -112,6 +112,7 @@ public interface IWebRTCListener {
   * It's called when a new video track is added.
   *
   * @param track
+  * @param trackId
   * @return
   */
  void onNewVideoTrack(VideoTrack track);
@@ -192,7 +193,7 @@ public interface IWebRTCListener {
      */
     void onSatatusUpdateFor(String streamId, boolean micStatus, boolean cameraStatus);
 
-    /*
+    /**
      * It's called in WebRTCClient constructor to set
      */
     void setWebRTCClient(IWebRTCClient webRTCClient);
@@ -209,5 +210,45 @@ public interface IWebRTCListener {
      */
     void onBroadcastObject(Broadcast broadcast);
 
+    void onPeerConnectionClosed();
 
+    /**
+     * It's called when all peer connection states are CONNECTED after reconnection.
+     */
+    void onReconnectionSuccess();
+
+    /**
+     * It's called when user attempts to publish a stream.
+     */
+    void onPublishAttempt(String streamId);
+
+   /**
+    * It's called when streams/subtracks resolution changes.
+    */
+    void onResolutionChange(String streamId, int resolution);
+
+    /**
+    * It's called when webrtc client releases all resources and shutdowns.
+    */
+    void onShutdown();
+
+    /**
+     * It's called when user attempts to play a stream.
+     */
+    void onPlayAttempt(String streamId);
+
+    /**
+     * It's called when user attempts to join peer to peer.
+     */
+    void onJoinAttempt(String streamId);
+
+    /**
+     * It's called when user joins to a P2P room.
+     */
+    void onJoined(String streamId);
+
+    /**
+     * It's called when user left P2P room.
+     */
+    void onLeft(String streamId);
 }

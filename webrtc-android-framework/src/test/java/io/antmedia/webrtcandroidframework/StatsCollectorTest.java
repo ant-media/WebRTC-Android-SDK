@@ -10,8 +10,15 @@ import org.webrtc.RTCStatsReport;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 import io.antmedia.webrtcandroidframework.core.StatsCollector;
+import io.antmedia.webrtcandroidframework.core.model.PlayStats;
+import io.antmedia.webrtcandroidframework.core.model.PublishStats;
+import io.antmedia.webrtcandroidframework.core.model.TrackStats;
+
 import static org.junit.Assert.assertEquals;
 
 public class StatsCollectorTest {
@@ -25,89 +32,121 @@ public class StatsCollectorTest {
     }
 
     @Test
-    public void testOnStatsReportAudio() {
-        // Create a StatsCollector instance
+    public void testOnStatsReportPublish(){
+
         StatsCollector statsCollector = new StatsCollector();
-        // Mock the RTCStatsReport
         Map<String, RTCStats> statsMap = new HashMap<>();
         RTCStats rtcStats = mock(RTCStats.class);
-        statsMap.put("ARDAMSastream1", rtcStats);
 
         when(report.getStatsMap()).thenReturn(statsMap);
         when(rtcStats.getType()).thenReturn(StatsCollector.OUTBOUND_RTP);
         when(rtcStats.getTimestampUs()).thenReturn(1000.0);
-        when(rtcStats.getMembers()).thenReturn(createMembersMap("audio"));
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.AUDIO, StatsCollector.OUTBOUND_RTP));
+        statsMap.put("", rtcStats);
 
-        // Call the onStatsReport method with the publish mode
         statsCollector.onStatsReport(report);
 
-        StatsCollector.TrackStats audioTrackStat1 = statsCollector.getAudioTrackStatsMap().get(64L);
+        PublishStats publishStats = statsCollector.getPublishStats();
 
-        assertEquals(1000, audioTrackStat1.getBytesSent().intValue());
-        assertEquals(1000, audioTrackStat1.getBytesSentDiff().intValue());
-        assertEquals(10, audioTrackStat1.getPacketsSentDifference());
-        assertEquals(0, audioTrackStat1.getFramesEncodedPerSecond());
+        TrackStats audioTrackStats = publishStats.getAudioTrackStats();
+        TrackStats videoTrackStats = publishStats.getVideoTrackStats();
+
+        assertEquals(10, audioTrackStats.getPacketsSent());
+        assertEquals(BigInteger.valueOf(1000), audioTrackStats.getBytesSent());
+        assertEquals(1000.0, audioTrackStats.getTargetBitrate(), 0);
+        assertEquals(100.0, audioTrackStats.getTotalPacketSendDelay(), 0);
+        assertEquals(publishStats.getLastKnownAudioBytesSent(), audioTrackStats.getBytesSent().longValue());
+        assertEquals(publishStats.getAudioBitrate(), 0);
 
 
-        assertEquals(10, audioTrackStat1.getPacketsSent());
-        assertEquals(1.0, audioTrackStat1.getTimeMs(), 0.0);
-        assertEquals("stream1", audioTrackStat1.getTrackId());
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.VIDEO, StatsCollector.OUTBOUND_RTP));
 
-        assertEquals(8000L, statsCollector.getLocalAudioBitrate());
-        assertEquals(1000L, statsCollector.getLastKnownAudioBytesSent());
+        statsCollector.onStatsReport(report);
 
+        assertEquals(10, videoTrackStats.getPacketsSent());
+        assertEquals(BigInteger.valueOf(1000), videoTrackStats.getBytesSent());
+        assertEquals(1000L, videoTrackStats.getFirCount());
+        assertEquals(1000L, videoTrackStats.getPliCount());
+        assertEquals(1000L, videoTrackStats.getNackCount());
+        assertEquals(1000L, videoTrackStats.getFramesEncoded());
+        assertEquals(1000L, videoTrackStats.getFramesSent());
+        assertEquals(1000.0, videoTrackStats.getTargetBitrate(), 0);
+        assertEquals(0.3, videoTrackStats.getTotalPacketSendDelay(), 0);
 
         when(rtcStats.getType()).thenReturn(StatsCollector.REMOTE_INBOUND_RTP);
 
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.AUDIO, StatsCollector.REMOTE_INBOUND_RTP));
+
         statsCollector.onStatsReport(report);
 
-        StatsCollector.TrackStats audioTrackStat2 = statsCollector.getAudioTrackStatsMap().get(64L);
+        assertEquals(10, audioTrackStats.getPacketsLost());
+        assertEquals(10.0, audioTrackStats.getJitter(),0);
+        assertEquals(0.3, audioTrackStats.getRoundTripTime(),0);
 
-        assertEquals(10.0, audioTrackStat2.getRoundTripTime(), 0.0);
-        assertEquals(10.0, audioTrackStat2.getJitter(), 0.0);
-        assertEquals(10, audioTrackStat2.getPacketsLost());
-        assertEquals(10, audioTrackStat2.getPacketsLostDifference());
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.VIDEO, StatsCollector.REMOTE_INBOUND_RTP));
+        statsCollector.onStatsReport(report);
+
+        assertEquals(10, videoTrackStats.getPacketsLost());
+        assertEquals(10.0, videoTrackStats.getJitter(),0);
+        assertEquals(0.3, videoTrackStats.getRoundTripTime(),0);
+
+
+        //publish stats so trackId is null.
+        assertNull(videoTrackStats.getTrackId());
+        assertNull(audioTrackStats.getTrackId());
+
 
     }
 
     @Test
-    public void testOnStatsReportVideo() {
-        // Create a StatsCollector instance
-        StatsCollector statsCollector = new StatsCollector();
+    public void testOnStatsReportPlay(){
 
-        // Mock the RTCStatsReport
+        StatsCollector statsCollector = new StatsCollector();
         Map<String, RTCStats> statsMap = new HashMap<>();
         RTCStats rtcStats = mock(RTCStats.class);
-        statsMap.put("ARDAMSvstream1", rtcStats);
+
         when(report.getStatsMap()).thenReturn(statsMap);
-        when(rtcStats.getType()).thenReturn(StatsCollector.OUTBOUND_RTP);
+        when(rtcStats.getType()).thenReturn(StatsCollector.INBOUND_RTP);
         when(rtcStats.getTimestampUs()).thenReturn(1000.0);
-        when(rtcStats.getMembers()).thenReturn(createMembersMap("video"));
-
-        // Call the onStatsReport method with the play mode
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.AUDIO, StatsCollector.INBOUND_RTP));
+        statsMap.put("", rtcStats);
         statsCollector.onStatsReport(report);
 
-        assertEquals(8000, statsCollector.getLocalVideoBitrate());
-        assertEquals(6, statsCollector.getLastKnownVideoBytesSent());
+        PlayStats playStats = statsCollector.getPlayStats();
 
-        when(rtcStats.getType()).thenReturn(StatsCollector.REMOTE_INBOUND_RTP);
+        Map<String, TrackStats> audioTrackStatsMap = playStats.getAudioTrackStatsMap();
+
+
+        TrackStats audioTrackStats = audioTrackStatsMap.get("audioTrack1");
+        assertNotNull(audioTrackStats);
+
+        assertEquals(10, audioTrackStats.getPacketsLost());
+        assertEquals(0.3, audioTrackStats.getJitter(),0);
+        assertEquals(0.3, audioTrackStats.getRoundTripTime(),0);
+        assertEquals(BigInteger.valueOf(3), audioTrackStats.getConcealmentEvents());
+
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.VIDEO, StatsCollector.INBOUND_RTP));
 
         statsCollector.onStatsReport(report);
 
-        StatsCollector.TrackStats videoTrackStat = statsCollector.getVideoTrackStatsMap().get(64L);
+        Map<String, TrackStats> videoTrackStatsMap = playStats.getVideoTrackStatsMap();
+        TrackStats videoTrackStats = videoTrackStatsMap.get("videoTrack1");
+        assertNotNull(videoTrackStats);
 
-        assertEquals(10.0, videoTrackStat.getRoundTripTime(), 0.0);
-        assertEquals(10.0, videoTrackStat.getJitter(), 0.0);
-        assertEquals(10, videoTrackStat.getPacketsLost());
-        assertEquals(1000L, videoTrackStat.getFirCount());
-        assertEquals(1000L, videoTrackStat.getPliCount());
-        assertEquals(1000L, videoTrackStat.getNackCount());
-        assertEquals(1000L, videoTrackStat.getFramesEncoded());
-        assertEquals(10000L, videoTrackStat.getPacketsSentPerSecond());
-        assertEquals(1000000, videoTrackStat.getBytesSentPerSecond().intValue());
-        assertEquals(0, videoTrackStat.getFramesEncodedDifference());
 
-        assertEquals("stream1", videoTrackStat.getTrackId());
+        assertEquals(1000L, videoTrackStats.getFirCount());
+        assertEquals(1000L, videoTrackStats.getPliCount());
+        assertEquals(1000L, videoTrackStats.getNackCount());
+        assertEquals(0.3, videoTrackStats.getJitter(), 0);
+        assertEquals(10, videoTrackStats.getPacketsLost());
+        assertEquals(10, videoTrackStats.getPacketsReceived());
+        assertEquals(BigInteger.valueOf(1000), videoTrackStats.getBytesReceived());
+        assertEquals(1000L, videoTrackStats.getFramesEncoded());
+        assertEquals(1000L, videoTrackStats.getFramesDecoded());
+        assertEquals(1000L, videoTrackStats.getFramesReceived());
+        assertEquals(1000L, videoTrackStats.getFramesDropped());
+        assertEquals(0.3, videoTrackStats.getTotalFreezesDuration(), 0);
+
 
     }
 
@@ -116,42 +155,96 @@ public class StatsCollectorTest {
         StatsCollector statsCollector = new StatsCollector();
         Map<String, RTCStats> statsMap = new HashMap<>();
         RTCStats rtcStats = mock(RTCStats.class);
-        statsMap.put("ARDAMSastream1", rtcStats);
+        statsMap.put("", rtcStats);
         when(report.getStatsMap()).thenReturn(statsMap);
-        when(rtcStats.getType()).thenReturn("media-source");
-        when(rtcStats.getMembers()).thenReturn(createMembersMap("audio"));
+        when(rtcStats.getType()).thenReturn(StatsCollector.MEDIA_SOURCE);
+        when(rtcStats.getMembers()).thenReturn(createMembersMap(StatsCollector.AUDIO, StatsCollector.MEDIA_SOURCE));
         statsCollector.onStatsReport(report);
         assertEquals(100.0, statsCollector.getLocalAudioLevel(), 0.0);
+
+        PublishStats publishStats = statsCollector.getPublishStats();
+        double localAudioLevel = publishStats.getLocalAudioLevel();
+        assertEquals(100.0, localAudioLevel, 0.0);
     }
 
     // Helper method to create a members map
-    private Map<String, Object> createMembersMap(String mediaType) {
+    private Map<String, Object> createMembersMap(String mediaType, String statType) {
         Map<String, Object> membersMap = new HashMap<>();
-        membersMap.put("mediaType", mediaType);
-        membersMap.put("packetsSent", 10L);
-        membersMap.put(StatsCollector.FIR_COUNT, 1000L);
-        membersMap.put(StatsCollector.PLI_COUNT, 1000L);
-        membersMap.put(StatsCollector.NACK_COUNT, 1000L);
-        membersMap.put(StatsCollector.FRAME_ENCODED, 1000L);
-        membersMap.put(StatsCollector.JITTER, 10.0);
-        membersMap.put(StatsCollector.ROUND_TRIP_TIME,10.0);
-        membersMap.put(StatsCollector.PACKETS_LOST, 10);
+        membersMap.put(StatsCollector.KIND, mediaType);
+        if(StatsCollector.OUTBOUND_RTP.equals(statType)){
+            membersMap.put(StatsCollector.SSRC, 1000L);
 
-        if(mediaType.equals("audio")){
-            membersMap.put(StatsCollector.TRACK_ID, "ARDAMSastream1");
-            membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSastream1");
+            if(StatsCollector.AUDIO.equals(mediaType)){
 
-            membersMap.put(StatsCollector.KIND, "audio");
-            membersMap.put("audioLevel", 100.0);
+                membersMap.put(StatsCollector.PACKETS_SENT, BigInteger.valueOf(10));
+                membersMap.put(StatsCollector.BYTES_SENT, new BigInteger("1000"));
+                membersMap.put(StatsCollector.TARGET_BITRATE, 1000.0);
+                membersMap.put(StatsCollector.TOTAL_PACKET_SEND_DELAY, 100.0);
 
-        }else if(mediaType.equals("video")){
-            membersMap.put(StatsCollector.TRACK_ID, "ARDAMSvstream1");
-            membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSvstream1");
+            }else if(StatsCollector.VIDEO.equals(mediaType)){
 
-            membersMap.put(StatsCollector.KIND, "video");
+                membersMap.put(StatsCollector.PACKETS_SENT, BigInteger.valueOf(10));
+                membersMap.put(StatsCollector.FIR_COUNT, 1000L);
+                membersMap.put(StatsCollector.PLI_COUNT, 1000L);
+                membersMap.put(StatsCollector.NACK_COUNT, 1000L);
+                membersMap.put(StatsCollector.BYTES_SENT, new BigInteger("1000"));
+                membersMap.put(StatsCollector.FRAMES_ENCODED, 1000L);
+                membersMap.put(StatsCollector.FRAMES_SENT, 1000L);
+                membersMap.put(StatsCollector.TARGET_BITRATE, 1000.0);
+                membersMap.put(StatsCollector.TOTAL_PACKET_SEND_DELAY, 0.3);
+
+            }
+
+        }else if(StatsCollector.REMOTE_INBOUND_RTP.equals(statType)){
+            membersMap.put(StatsCollector.SSRC, 1000L);
+
+            if(StatsCollector.AUDIO.equals(mediaType)){
+
+                membersMap.put(StatsCollector.PACKETS_LOST, 10);
+                membersMap.put(StatsCollector.JITTER, 10.0);
+                membersMap.put(StatsCollector.ROUND_TRIP_TIME, 0.3);
+
+
+            }else if(StatsCollector.VIDEO.equals(mediaType)){
+
+                membersMap.put(StatsCollector.PACKETS_LOST, 10);
+                membersMap.put(StatsCollector.JITTER, 10.0);
+                membersMap.put(StatsCollector.ROUND_TRIP_TIME, 0.3);
+
+            }
+
+        }else if(StatsCollector.INBOUND_RTP.equals(statType)){
+
+            membersMap.put(StatsCollector.SSRC, 1000L);
+
+            if(StatsCollector.AUDIO.equals(mediaType)){
+
+                membersMap.put(StatsCollector.JITTER, 0.3);
+                membersMap.put(StatsCollector.PACKETS_LOST, 10);
+                membersMap.put(StatsCollector.ROUND_TRIP_TIME, 0.3);
+                membersMap.put(StatsCollector.CONCEALMENT_EVENTS, new BigInteger("3"));
+                membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSaaudioTrack1");
+
+            }else if(StatsCollector.VIDEO.equals(mediaType)){
+                membersMap.put(StatsCollector.JITTER, 0.3);
+                membersMap.put(StatsCollector.PACKETS_LOST, 10);
+                membersMap.put(StatsCollector.PACKETS_RECEIVED, 10L);
+                membersMap.put(StatsCollector.BYTES_RECEIVED, BigInteger.valueOf(1000));
+                membersMap.put(StatsCollector.FRAMES_ENCODED, 1000L);
+                membersMap.put(StatsCollector.FRAMES_DECODED, 1000L);
+                membersMap.put(StatsCollector.FRAMES_RECEIVED, 1000L);
+                membersMap.put(StatsCollector.FRAMES_DROPPED, 1000L);
+                membersMap.put(StatsCollector.TOTAL_FREEZES_DURATION, 0.3);
+
+                membersMap.put(StatsCollector.FIR_COUNT, 1000L);
+                membersMap.put(StatsCollector.PLI_COUNT, 1000L);
+                membersMap.put(StatsCollector.NACK_COUNT, 1000L);
+                membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSvvideoTrack1");
+            }
+        }else if(StatsCollector.MEDIA_SOURCE.equals(statType)){
+            membersMap.put(StatsCollector.AUDIO_LEVEL, 100.0);
+            membersMap.put(StatsCollector.TRACK_IDENTIFIER, "ARDAMSaaudioTrack1");
         }
-        membersMap.put(StatsCollector.SSRC, 64L);
-        membersMap.put("bytesSent", new BigInteger("1000"));
         return membersMap;
     }
 }

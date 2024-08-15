@@ -3,6 +3,7 @@ package io.antmedia.webrtc_android_sample_app;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.clearText;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -29,7 +30,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
-import io.antmedia.webrtcandroidframework.core.PermissionsHandler;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -44,9 +44,7 @@ public class SettingsActivityTest {
 
     private IdlingResource mIdlingResource;
 
-    @Rule
-    public GrantPermissionRule permissionRule
-            = GrantPermissionRule.grant(PermissionsHandler.REQUIRED_EXTENDED_PERMISSIONS);
+
 
     @Before
     public void before() {
@@ -60,50 +58,33 @@ public class SettingsActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-   @Test
+    @Test
     public void testSettingsActivity() {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), SettingsActivity.class);
         ActivityScenario<SettingsActivity> scenario = ActivityScenario.launch(intent);
 
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<SettingsActivity>() {
-
-            @Override
-            public void perform(SettingsActivity activity) {
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
-        });
-
-        UiDevice device = UiDevice.getInstance(getInstrumentation());
+        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
 
         //if default value has changed, it fails.
         onView(withId(R.id.server_address)).check(matches(withText(DEFAULT_WEBSOCKET_URL)));
 
         String websocketURL = "ws://example.com/WebRTCAppEE/websocket";
         onView(withId(R.id.server_address)).perform(clearText());
-        onView(withId(R.id.server_address)).perform(typeText(websocketURL));
+        onView(withId(R.id.server_address)).perform(replaceText(websocketURL));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.save_button)).perform(click());
 
+        scenario.onActivity(activity -> {
+            SharedPreferences sharedPreferences =
+                    android.preference.PreferenceManager.getDefaultSharedPreferences(activity /* Activity context */);
+            String url = sharedPreferences.getString(activity.getString(R.string.serverAddress), DEFAULT_WEBSOCKET_URL);
+            assertEquals(websocketURL, url);
 
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<SettingsActivity>() {
-
-            @Override
-            public void perform(SettingsActivity activity) {
-                SharedPreferences sharedPreferences =
-                        android.preference.PreferenceManager.getDefaultSharedPreferences(activity /* Activity context */);
-                String url = sharedPreferences.getString(activity.getString(R.string.serverAddress), DEFAULT_WEBSOCKET_URL);
-                assertEquals(websocketURL, url);
-
-            }
         });
 
         onView(withId(R.id.server_address)).perform(clearText());
-        onView(withId(R.id.server_address)).perform(typeText(DEFAULT_WEBSOCKET_URL));
+        onView(withId(R.id.server_address)).perform(replaceText(DEFAULT_WEBSOCKET_URL));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.save_button)).perform(click());
-
-
     }
 }

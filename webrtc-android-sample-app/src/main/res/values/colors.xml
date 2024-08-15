@@ -5,4 +5,8 @@
     <color name="colorAccent">#FF4081</color>
     <color name="receivedMessage">#FFFFFF00</color>
     <color name="textColor">#FFFFFFFF</color>
+    <color name="red">#FF0000</color>
+    <color name="green">#AAFF00</color>
+    <color name="blue">#0000FF</color>
+
 </resources>

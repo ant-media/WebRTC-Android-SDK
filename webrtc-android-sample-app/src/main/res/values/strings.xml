@@ -13,5 +13,10 @@
     <string name="playing">Playing</string>
     <string name="data_channel_not_available">"Data channel is not available. Enable data channel in both Android and Server side and then restart Streaming</string>
     <string name="speaking">Speaking</string>
+    <string name="live">Live</string>
+    <string name="reconnecting">Reconnecting</string>
+    <string name="connecting">Connecting</string>
+    <string name="disconnected">Disconnected</string>
+
 
 </resources>

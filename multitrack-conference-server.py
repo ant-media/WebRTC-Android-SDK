@@ -1,3 +1,4 @@
+import os 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
@@ -11,10 +12,10 @@ from flask import Flask, request
 from selenium.webdriver.chrome.service import Service
 
 
-
-
 class Browser:
   def init(self, is_headless):
+    chrome_path = os.getenv('CHROME_PATH')
+    chromedriver_path = os.getenv('CHROMEDRIVER_PATH')
     browser_options = Options()
     browser_options.add_experimental_option("detach", True)
     browser_options.add_argument("--use-fake-ui-for-media-stream") 
@@ -25,14 +26,15 @@ class Browser:
     browser_options.add_argument('--disable-gpu')
     browser_options.add_argument('--disable-dev-shm-usage')
     browser_options.add_argument('--disable-setuid-sandbox')
+    browser_options.binary_location = chrome_path
     if is_headless:
       browser_options.add_argument("--headless")
     
     dc = DesiredCapabilities.CHROME.copy()
     dc['goog:loggingPrefs'] = { 'browser':'ALL' }
 
-    service = Service(executable_path='/home/ubuntu/chromedriver')  
-    #service = Service(executable_path='C:/WebDriver/chromedriver.exe') 
+    service = Service(executable_path=chromedriver_path) 
+    #service = Service(executable_path='C:/Users/yunus/Desktop/antmedia/chromedriver-win64/chromedriver.exe')
 
     self.driver = webdriver.Chrome(service=service, options=browser_options)
 
@@ -72,55 +74,108 @@ class Browser:
       self.driver.switch_to.window(handle)
       self.driver.close()
 
+serverUrl="https://test.antmedia.io:5443/"
+appName="LiveApp/"
 
-url="https://test.antmedia.io:5443/LiveApp/conference.html"
 #url="www.google.com"
 app = Flask(__name__)
 chrome = Browser()
 chrome.init(True)
 
 
-@app.route('/create', methods=['GET'])
-def create():
+@app.route('/createConference', methods=['GET'])
+def createConference():
+    print("create conference request came")
+    url = serverUrl + appName + "conference.html"
     room = request.args.get('room')
     test = request.args.get('test')
     participant = request.args.get('participant')
-    print("\n create for room:"+room+":"+participant+" in "+test) 
+    print("\n create for room:"+room+":"+participant+" in "+test)
     chrome.open_in_new_tab(url+"?roomId="+room+"&streamId="+participant, participant)
     return f'Room created', 200
 
-@app.route('/join', methods=['GET'])
-def join():
+@app.route('/joinConference', methods=['GET'])
+def joinConference():
+    print("join conference request came")
     room = request.args.get('room')
     test = request.args.get('test')
     participant = request.args.get('participant')
     print("\n join for room:"+room+":"+participant+" in "+test)
-    chrome.switch_to_tab(participant) 
+    chrome.switch_to_tab(participant)
     join_button = chrome.get_element_by_id("join_publish_button")
     join_button.click()
     return f'Joined the room', 200
 
-@app.route('/leave', methods=['GET'])
-def leave():
+@app.route('/leaveConference', methods=['GET'])
+def leaveConference():
+    print("leave request came")
     room = request.args.get('room')
     test = request.args.get('test')
     participant = request.args.get('participant')
-    print("\n leave for room:"+room+":"+participant+" in "+test) 
-    chrome.switch_to_tab(participant) 
+    print("\n leave for room:"+room+":"+participant+" in "+test)
+    chrome.switch_to_tab(participant)
     leave_button = chrome.get_element_by_id("stop_publish_button")
     leave_button.click()
     return f'Left the room', 200
 
-@app.route('/delete', methods=['GET'])
-def delete():
+@app.route('/deleteConference', methods=['GET'])
+def deleteConference():
+    print("delete conference request came")
     room = request.args.get('room')
     test = request.args.get('test')
     participant = request.args.get('participant')
-    print("\n delete for room:"+room+":"+participant+" in "+test) 
-    chrome.switch_to_tab(participant) 
+    print("\n delete for room:"+room+":"+participant+" in "+test)
+    chrome.switch_to_tab(participant)
     chrome.close()
     return f'Tab closed', 200
-   
+
+@app.route('/createP2P', methods=['GET'])
+def createP2P():
+    print("create p2p request came")
+    url = serverUrl + appName + "peer.html"
+    streamName = request.args.get('streamName')
+    test = request.args.get('test')
+    print("\n create p2p for streamName:"+streamName+" in "+test)
+    chrome.open_in_new_tab(url, streamName)
+    streamNameInput = chrome.get_element_by_id('streamName')
+    streamNameInput.clear()
+    streamNameInput.send_keys(streamName)
+
+    return f'P2P created', 200
+
+@app.route('/joinP2P', methods=['GET'])
+def joinP2P():
+    print("join p2p request came")
+    streamName = request.args.get('streamName')
+    test = request.args.get('test')
+    print("\n join P2P for stream name:"+streamName+" in "+test)
+    chrome.switch_to_tab(streamName)
+    join_button = chrome.get_element_by_id("join_button")
+    join_button.click()
+    return f'Joined P2P', 200
+
+@app.route('/leaveP2P', methods=['GET'])
+def leaveP2P():
+    print("leave p2p request came")
+    streamName = request.args.get('streamName')
+    test = request.args.get('test')
+    print("\n leave P2P for stream name:"+streamName+" in "+test)
+    chrome.switch_to_tab(streamName)
+    leave_button = chrome.get_element_by_id("leave_button")
+    leave_button.click()
+    return f'Left P2P room', 200
+
+@app.route('/deleteP2P', methods=['GET'])
+def deleteP2P():
+    print("delete p2p request came")
+    streamName = request.args.get('streamName')
+    test = request.args.get('test')
+    streamName = request.args.get('streamName')
+    print("\n delete P2P for stream name:"+streamName+" in "+test)
+    chrome.switch_to_tab(streamName)
+    chrome.close()
+    return f'P2P Tab closed', 200
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3030)

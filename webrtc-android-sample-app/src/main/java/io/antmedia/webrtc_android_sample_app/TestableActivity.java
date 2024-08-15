@@ -14,6 +14,8 @@ import androidx.test.espresso.idling.CountingIdlingResource;
 public abstract class TestableActivity extends Activity {
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     protected SharedPreferences sharedPreferences;
+    public static String CONFERENCE_ROOM_ID_FOR_TEST = "room_12877";
+    public static String PEER_ROOM_ID_FOR_TEST = "p2pRoom_12877";
 
     public void  incrementIdle() {
         idlingResource.increment();
