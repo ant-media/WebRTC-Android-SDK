@@ -70,6 +70,8 @@ public class WebSocketConstants {
 
     public static final String PUBLISH_COMMAND = "publish";
 
+    public static final String RESOLUTION_CHANGE_INFO_COMMAND = "resolutionChangeInfo";
+
     public static final String PUBLISH_STARTED = "publish_started";
 
     public static final String PUBLISH_FINISHED = "publish_finished";

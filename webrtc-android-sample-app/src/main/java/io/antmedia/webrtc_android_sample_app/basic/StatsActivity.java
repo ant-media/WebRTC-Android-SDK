@@ -34,6 +34,7 @@ import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.core.StatsCollector;
+import io.antmedia.webrtcandroidframework.core.model.TrackStats;
 
 public class StatsActivity extends TestableActivity {
     private TextView statusIndicatorTextView;
@@ -80,6 +81,7 @@ public class StatsActivity extends TestableActivity {
                 startStopStream(v);
             }
         });
+
         Button showStatsButton = findViewById(R.id.show_stats_button);
         showStatsButton.setOnClickListener(v -> {
             if(publishStarted){
@@ -267,44 +269,41 @@ public class StatsActivity extends TestableActivity {
             statCollectorFuture = statCollectorExecutor.scheduleWithFixedDelay(() -> {
                 runOnUiThread(() -> {
                     try{
-                        for (Map.Entry<Long, StatsCollector.TrackStats> entry : webRTCClient.getStatsCollector().getAudioTrackStatsMap().entrySet()) {
-                            StatsCollector.TrackStats value = entry.getValue();
-                            packetsLostAudio.setText(String.valueOf(value.getPacketsLost()));
-                            jitterAudio.setText(String.valueOf(value.getJitter()));
-                            rttAudio.setText(String.valueOf(value.getRoundTripTime()));
-                            packetLostRatioAudio.setText(String.valueOf(value.getPacketLostRatio()));
-                            firCountAudio.setText(String.valueOf(value.getFirCount()));
-                            pliCountAudio.setText(String.valueOf(value.getPliCount()));
-                            nackCountAudio.setText(String.valueOf(value.getNackCount()));
-                            packetsSentAudio.setText(String.valueOf(value.getPacketsSent()));
-                            framesEncodedAudio.setText(String.valueOf(value.getFramesEncoded()));
-                            bytesSentAudio.setText(String.valueOf(value.getBytesSent()));
-                            packetsSentPerSecondAudio.setText(String.valueOf(value.getPacketsSentPerSecond()));
-                            packetsSentAudio.setText(String.valueOf(value.getPacketsSent()));
 
-                        }
+                        TrackStats audioTrackStats = webRTCClient.getStatsCollector().getPublishStats().getAudioTrackStats();
+                        packetsLostAudio.setText(String.valueOf(audioTrackStats.getPacketsLost()));
+                        jitterAudio.setText(String.valueOf(audioTrackStats.getJitter()));
+                        rttAudio.setText(String.valueOf(audioTrackStats.getRoundTripTime()));
+                        packetLostRatioAudio.setText(String.valueOf(audioTrackStats.getPacketLostRatio()));
+                        firCountAudio.setText(String.valueOf(audioTrackStats.getFirCount()));
+                        pliCountAudio.setText(String.valueOf(audioTrackStats.getPliCount()));
+                        nackCountAudio.setText(String.valueOf(audioTrackStats.getNackCount()));
+                        packetsSentAudio.setText(String.valueOf(audioTrackStats.getPacketsSent()));
+                        framesEncodedAudio.setText(String.valueOf(audioTrackStats.getFramesEncoded()));
+                        bytesSentAudio.setText(String.valueOf(audioTrackStats.getBytesSent()));
+                        packetsSentPerSecondAudio.setText(String.valueOf(audioTrackStats.getPacketsSentPerSecond()));
+                        packetsSentAudio.setText(String.valueOf(audioTrackStats.getPacketsSent()));
 
-                        for (Map.Entry<Long, StatsCollector.TrackStats> entry : webRTCClient.getStatsCollector().getVideoTrackStatsMap().entrySet()) {
-                            StatsCollector.TrackStats value = entry.getValue();
-                            packetsLostVideo.setText(String.valueOf(value.getPacketsLost()));
-                            jitterVideo.setText(String.valueOf(value.getJitter()));
-                            rttVideo.setText(String.valueOf(value.getRoundTripTime()));
-                            packetLostRatioVideo.setText(String.valueOf(value.getPacketLostRatio()));
-                            firCountVideo.setText(String.valueOf(value.getFirCount()));
-                            pliCountVideo.setText(String.valueOf(value.getPliCount()));
-                            nackCountVideo.setText(String.valueOf(value.getNackCount()));
-                            packetsSentVideo.setText(String.valueOf(value.getPacketsSent()));
-                            framesEncodedVideo.setText(String.valueOf(value.getFramesEncoded()));
-                            bytesSentVideo.setText(String.valueOf(value.getBytesSent()));
-                            packetsSentPerSecondVideo.setText(String.valueOf(value.getPacketsSentPerSecond()));
-                            packetsSentVideo.setText(String.valueOf(value.getPacketsSent()));
 
-                        }
+                        TrackStats videoTrackStats = webRTCClient.getStatsCollector().getPublishStats().getVideoTrackStats();
+                        packetsLostVideo.setText(String.valueOf(videoTrackStats.getPacketsLost()));
+                        jitterVideo.setText(String.valueOf(videoTrackStats.getJitter()));
+                        rttVideo.setText(String.valueOf(videoTrackStats.getRoundTripTime()));
+                        packetLostRatioVideo.setText(String.valueOf(videoTrackStats.getPacketLostRatio()));
+                        firCountVideo.setText(String.valueOf(videoTrackStats.getFirCount()));
+                        pliCountVideo.setText(String.valueOf(videoTrackStats.getPliCount()));
+                        nackCountVideo.setText(String.valueOf(videoTrackStats.getNackCount()));
+                        packetsSentVideo.setText(String.valueOf(videoTrackStats.getPacketsSent()));
+                        framesEncodedVideo.setText(String.valueOf(videoTrackStats.getFramesEncoded()));
+                        bytesSentVideo.setText(String.valueOf(videoTrackStats.getBytesSent()));
+                        packetsSentPerSecondVideo.setText(String.valueOf(videoTrackStats.getPacketsSentPerSecond()));
+                        packetsSentVideo.setText(String.valueOf(videoTrackStats.getPacketsSent()));
 
-                        localAudioBitrate.setText(String.valueOf(webRTCClient.getStatsCollector().getLocalAudioBitrate()));
-                        localAudioLevel.setText(String.valueOf(webRTCClient.getStatsCollector().getLocalAudioLevel()));
 
-                        localVideoBitrate.setText(String.valueOf(webRTCClient.getStatsCollector().getLocalVideoBitrate()));
+                        localAudioBitrate.setText(String.valueOf(webRTCClient.getStatsCollector().getPublishStats().getAudioBitrate()));
+                        localAudioLevel.setText(String.valueOf(webRTCClient.getStatsCollector().getPublishStats().getLocalAudioLevel()));
+
+                        localVideoBitrate.setText(String.valueOf(webRTCClient.getStatsCollector().getPublishStats().getVideoBitrate()));
 
                     }
                     catch (Exception e) {
@@ -323,7 +322,6 @@ public class StatsActivity extends TestableActivity {
             }
         });
         statsPopup.show();
-
     }
 
     public IWebRTCClient getWebRTCClient() {

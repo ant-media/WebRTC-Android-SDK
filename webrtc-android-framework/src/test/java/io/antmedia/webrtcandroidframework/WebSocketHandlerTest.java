@@ -388,13 +388,14 @@ public class WebSocketHandlerTest {
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
 
-        webSocketHandler.forceStreamQuality(streamId, height);
+        webSocketHandler.forceStreamQuality(streamId, "", height);
 
         verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
 
         JSONObject expectedJson = new JSONObject();
         expectedJson.put(WebSocketConstants.COMMAND, WebSocketConstants.FORCE_STREAM_QUALITY);
         expectedJson.put(WebSocketConstants.STREAM_ID, streamId);
+        expectedJson.put(WebSocketConstants.TRACK_ID, "");
         expectedJson.put(WebSocketConstants.STREAM_HEIGHT, height);
 
         assertEquals(expectedJson.toString(), jsonCaptor.getValue());
