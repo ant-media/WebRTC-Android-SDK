@@ -240,9 +240,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public static final long PEER_RECONNECTION_DELAY_MS = 3000;
     public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
 
-    boolean released = false;
+    private boolean released = false;
 
-    String roomId;
+    private String roomId;
 
     public void createReconnectorRunnables() {
         //only used in conference.
@@ -2169,7 +2169,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public StatsCollector getStatsCollector() {
         return statsCollector;
-
     }
 
     public void enableStatsEvents(String streamId, boolean enable, int periodMs) {
@@ -2227,7 +2226,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 initDataChannel(streamId);
                 MediaConstraints sdpMediaConstraintsLocal;
                 if (peerInfo.restartIce) {
-                    Log.d(TAG, "RESTART ICE IS TRUE, WILL CREATE OFFER");
+                    Log.d(TAG, "Peer info restart ice is true. Will create offer.");
                     sdpMediaConstraintsLocal = new MediaConstraints();
                     sdpMediaConstraintsLocal.mandatory.add(
                             new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
@@ -2736,4 +2735,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void setPeerReconnectionHandler(Handler peerReconnectionHandler) {
         this.peerReconnectionHandler = peerReconnectionHandler;
     }
+
+    @Override
+    public boolean isShutdown() {
+        return released;
+    }
+
 }

@@ -19,21 +19,18 @@
             android:layout_gravity="top" />
     </FrameLayout>
 
-    <Spinner
-        android:id="@+id/stream_info_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_margin="3dp"/>
+
 
         <RadioGroup
+            android:layout_margin="20dp"
             android:id="@+id/rbGroup"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_alignParentTop="true"
             >
-            <RadioButton android:id="@+id/rbScreen"
+            <RadioButton
+                android:id="@+id/rbScreen"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorPrimary"
