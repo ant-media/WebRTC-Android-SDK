@@ -25,8 +25,8 @@
     <uses-feature android:name="android.hardware.usb.host" />
     <uses-permission android:name="android.permission.USB_PERMISSION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

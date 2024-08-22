@@ -10,13 +10,6 @@
 
 package org.webrtc;
 
-import org.webrtc.SurfaceTextureHelper;
-import org.webrtc.CapturerObserver;
-import org.webrtc.ThreadUtils;
-import org.webrtc.VideoCapturer;
-import org.webrtc.VideoFrame;
-import org.webrtc.VideoSink;
-
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
@@ -30,8 +23,6 @@ import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjectionManager;
 import android.os.Looper;
 import android.os.Handler;
-import android.os.Build;
-import android.view.Display;
 
 /**
  * An copy of ScreenCapturerAndroid to capture the screen content while being aware of device orientation
@@ -41,7 +32,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private static final int DISPLAY_FLAGS =
           DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
-  private static final int VIRTUAL_DISPLAY_DPI = 400;
+  public static final int VIRTUAL_DISPLAY_DPI = 400;
   private final Intent mediaProjectionPermissionResultData;
   private final MediaProjection.Callback mediaProjectionCallback;
   private int width;
@@ -53,8 +44,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private CapturerObserver capturerObserver;
   private long numCapturedFrames = 0;
   private MediaProjection mediaProjection;
+  public int deviceRotation = 0;
   private boolean isDisposed = false;
   private MediaProjectionManager mediaProjectionManager;
+
   private WindowManager windowManager;
   private boolean isPortrait;
 
@@ -68,7 +61,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
    *                                            logic in events such as when the user revokes a previously granted capture permission.
    **/
   public ScreenCapturerAndroid(Intent mediaProjectionPermissionResultData,
-                                        MediaProjection.Callback mediaProjectionCallback) {
+                               MediaProjection.Callback mediaProjectionCallback) {
     this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
     this.mediaProjectionCallback = mediaProjectionCallback;
   }
@@ -86,7 +79,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     capturerObserver.onFrameCaptured(frame);
   }
 
-  private boolean isDeviceOrientationPortrait() {
+  public boolean isDeviceOrientationPortrait() {
     final int surfaceRotation = windowManager.getDefaultDisplay().getRotation();
 
     return surfaceRotation != Surface.ROTATION_90 && surfaceRotation != Surface.ROTATION_270;
@@ -220,8 +213,24 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     }
   }
 
+  public void rotateScreen(int rotation) {
+    if (deviceRotation != rotation) {
+      Log.w("Rotation", "onFrame: " + rotation);
+      deviceRotation = rotation;
+
+      if (deviceRotation == 0) {
+        virtualDisplay.resize(width, height, VIRTUAL_DISPLAY_DPI);
+        surfaceTextureHelper.setTextureSize(width, height);
+      } else if (deviceRotation == 180) {
+        // 180 degree is not supported by MediaProjection
+      } else {
+        virtualDisplay.resize(height, width, VIRTUAL_DISPLAY_DPI);
+        surfaceTextureHelper.setTextureSize(height, width);
+      }
+    }
+  }
+
   private void createVirtualDisplay() {
-    Log.i("yunus","create virtual display!");
     surfaceTextureHelper.setTextureSize(width, height);
     surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
@@ -237,4 +246,113 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   public long getNumCapturedFrames() {
     return numCapturedFrames;
   }
+
+  public MediaProjection getMediaProjection() {
+    return mediaProjection;
+  }
+
+  public void setMediaProjection(MediaProjection mediaProjection) {
+    this.mediaProjection = mediaProjection;
+  }
+
+  public MediaProjectionManager getMediaProjectionManager() {
+    return mediaProjectionManager;
+  }
+
+  public void setMediaProjectionManager(MediaProjectionManager mediaProjectionManager) {
+    this.mediaProjectionManager = mediaProjectionManager;
+  }
+
+  public MediaProjection.Callback getMediaProjectionCallback() {
+    return mediaProjectionCallback;
+  }
+
+  public void setWindowManager(WindowManager windowManager) {
+    this.windowManager = windowManager;
+  }
+
+  public boolean isDisposed() {
+    return isDisposed;
+  }
+
+  public boolean isPortrait() {
+    return isPortrait;
+  }
+
+  public void setPortrait(boolean portrait) {
+    isPortrait = portrait;
+  }
+
+  public WindowManager getWindowManager() {
+    return windowManager;
+  }
+
+  public void setDisposed(boolean disposed) {
+    isDisposed = disposed;
+  }
+
+  public void setNumCapturedFrames(long numCapturedFrames) {
+    this.numCapturedFrames = numCapturedFrames;
+  }
+
+  public CapturerObserver getCapturerObserver() {
+    return capturerObserver;
+  }
+
+  public void setCapturerObserver(CapturerObserver capturerObserver) {
+    this.capturerObserver = capturerObserver;
+  }
+
+  public SurfaceTextureHelper getSurfaceTextureHelper() {
+    return surfaceTextureHelper;
+  }
+
+  public void setSurfaceTextureHelper(SurfaceTextureHelper surfaceTextureHelper) {
+    this.surfaceTextureHelper = surfaceTextureHelper;
+  }
+
+  public VirtualDisplay getVirtualDisplay() {
+    return virtualDisplay;
+  }
+
+  public void setVirtualDisplay(VirtualDisplay virtualDisplay) {
+    this.virtualDisplay = virtualDisplay;
+  }
+
+  public int getOldHeight() {
+    return oldHeight;
+  }
+
+  public void setOldHeight(int oldHeight) {
+    this.oldHeight = oldHeight;
+  }
+
+  public int getOldWidth() {
+    return oldWidth;
+  }
+
+  public void setOldWidth(int oldWidth) {
+    this.oldWidth = oldWidth;
+  }
+
+  public int getHeight() {
+    return height;
+  }
+
+  public void setHeight(int height) {
+    this.height = height;
+  }
+
+  public int getWidth() {
+    return width;
+  }
+
+  public void setWidth(int width) {
+    this.width = width;
+  }
+
+  public Intent getMediaProjectionPermissionResultData() {
+    return mediaProjectionPermissionResultData;
+  }
+
 }

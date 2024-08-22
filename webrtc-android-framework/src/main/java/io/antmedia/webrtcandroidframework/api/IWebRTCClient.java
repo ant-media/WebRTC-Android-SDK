@@ -160,12 +160,12 @@ public interface IWebRTCClient {
     void changeVideoSource(StreamSource newSource);
 
     /**
-     * This is used to play the specified resolution
-     *
-     * @param streamId: id for the stream
-     * @param height:   desired height to play
+     * Sets quality of a stream/subtrack to certain resolution.
+     * @param mainTrackStreamId : If its a single stream pass its streamId as mainTrackId. If you want to change resolution of a subtrack, pass mainTrack stream Id and subtrack stream Id.
+     * @param subTrackStreamId : If you want to change resolution of sub track, pass its subTrack stream Id. If you dont want to change subtrack resolution pass null or empty str.
+     * @param resolutionHeight: The height to be forced. If you set the height to zero, it will become auto. example: For 720p pass 720 as resolution.
      */
-    void forceStreamQuality(String streamId, int height);
+    void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int resolutionHeight);
 
     /**
      * enable/disable video stream
@@ -286,7 +286,7 @@ public interface IWebRTCClient {
     CustomWebRtcAudioRecord getAudioInput();
 
     /**
-     * Called to requesr the subtracks for a main track from server
+     * Called to request the subtracks for a main track from server
      */
     void getTrackList(String streamId, String token);
 
@@ -307,6 +307,8 @@ public interface IWebRTCClient {
     /**
      * Toggle audio for all participants in a call.
      * If 'enabled' is true, unmutes all participants; otherwise, mutes all participants.
+     * This method will only work for current participants. If a new participant joins, he wont be muted.
+     * If you want to keep all participants muted all the time, call this method every time a participant joins.
      */
     void toggleAudioOfAllParticipants(boolean enabled);
 
@@ -320,6 +322,13 @@ public interface IWebRTCClient {
      */
     void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray subscriberIdsToNotify);
 
+    /**
+     * Get stats collector object. StatsCollector holds data of stream quality such as RTT, Jitter, Bytes sent/received.
+     */
     StatsCollector getStatsCollector();
 
+    /**
+     * Returns true if SDK resources are released and its shutdown, false otherwise.
+     */
+    boolean isShutdown();
 }

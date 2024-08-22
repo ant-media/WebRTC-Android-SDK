@@ -3,18 +3,22 @@ package io.antmedia.webrtc_android_sample_app;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.RootMatchers.withDecorView;
 import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
+import android.widget.TextView;
 
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.assertion.ViewAssertions;
@@ -42,10 +46,11 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 @RunWith(AndroidJUnit4.class)
 public class ScreenCaptureActivityTest {
 
-    //match
-    private static final String START_NOW_TEXT = "Start now";
+    private final String SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT ="Start now";
 
     private IdlingResource mIdlingResource;
+
+    private float videoBytesSent = 0;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -63,72 +68,101 @@ public class ScreenCaptureActivityTest {
         assertEquals("io.antmedia.webrtc_android_sample_app", appContext.getPackageName());
     }
 
-
-    /**
-     * This test should be in another method but cannot get the full logcat so it's moved here
-     */
     @Test
-    public void testPublishScreen() {
+    public void testScreenCapture() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), ScreenCaptureActivity.class);
         ActivityScenario<ScreenCaptureActivity> scenario = ActivityScenario.launch(intent);
 
-
-        scenario.onActivity(new ActivityScenario.ActivityAction<ScreenCaptureActivity>() {
-
-            @Override
-            public void perform(ScreenCaptureActivity activity) {
-                mIdlingResource = activity.getIdlingResource();
-                IdlingRegistry.getInstance().register(mIdlingResource);
-                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-            }
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
         UiDevice device = UiDevice.getInstance(getInstrumentation());
 
         onView(withId(R.id.rbScreen)).perform(click());
-        UiObject2 button = device.wait(Until.findObject(By.text("Start now")), 100000);
+
+        UiObject2 button = device.wait(Until.findObject(By.text(SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT)), 100000);
         assertNotNull(button);
         button.click();
 
-        //this switch operation causes to crash so that it's added here as test
+        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
+        Espresso.closeSoftKeyboard();
+        onView(withId(R.id.start_streaming_button)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(3000);
+        onView(withId(R.id.stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+            videoBytesSent = value;
+        });
+
+        onView(withId(R.id.stats_popup_close_button)).perform(click());
+
+        Thread.sleep(3000);
+
         onView(withId(R.id.rbFront)).perform(click());
-        onView(withId(R.id.rbScreen)).perform(click());
 
-        button = device.wait(Until.findObject(By.text("Start now")), 100000);
-        assertNotNull(button);
-        button.click();
+        Thread.sleep(3000);
 
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
-        //Espresso.closeSoftKeyboard();
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue( value > 0);
+            assertTrue( value != videoBytesSent);
+            videoBytesSent = value;
+
+        });
+
+        onView(withId(R.id.stats_popup_close_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.rbRear)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        //after source switch video sending should continue.
+        onView(withId(R.id.stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue( value > 0);
+            assertTrue( value != videoBytesSent);
+        });
+
+        onView(withId(R.id.stats_popup_close_button)).perform(click());
+
+        Thread.sleep(3000);
+
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
+        Thread.sleep(5000);
 
-        //2. stop stream and check that it's stopped
-        onView(withId(R.id.start_streaming_button)).perform(click());
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
-
-
-        //Publish again without because it was failing
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
-
-        //FIXME: without this sleep, it's failing because onFinish event received but resources are not closed yet
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        //Check it's publishing again
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)));
-
-        //Stop publishing
-        onView(withId(R.id.start_streaming_button)).perform(click());
-        onView(withId(R.id.broadcasting_text_view)).check(ViewAssertions.matches(withEffectiveVisibility(ViewMatchers.Visibility.GONE)));
-
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
