@@ -58,7 +58,8 @@ jobs:
       id: set-server-id
       run: |
         REPO=$(echo "$REPO" | cut -d'/' -f2)
-        SERVER_ID="ci-$REPO"
+        BRANCH_NAME=$(echo "$GITHUB_REF" | sed 's|refs/heads/||')
+        SERVER_ID="ci-$REPO-$BRANCH_NAME"
         echo "server_id=$SERVER_ID" >> $GITHUB_OUTPUT
         
     - name: Configure OpenStack CLI and Create Instance
