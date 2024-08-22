@@ -113,7 +113,6 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
         screenShareButton = findViewById(R.id.screen_share_button);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        serverUrl = "wss://test.antmedia.io:5443/LiveApp/websocket";
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
