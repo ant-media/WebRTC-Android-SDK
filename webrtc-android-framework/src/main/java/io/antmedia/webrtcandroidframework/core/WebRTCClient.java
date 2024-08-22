@@ -1203,13 +1203,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     adm.setMediaProjection(config.mediaProjection);
                 }
 
+                Log.i(TAG, "Change video source started!");
                 VideoCapturer newVideoCapturer = createVideoCapturer(newSource);
-
                 /* When user try to change video source after stopped the publishing
                  * peerConnectionClient will null, until start another broadcast
                  */
                 changeVideoCapturer(newVideoCapturer);
                 config.videoSource = newSource;
+                Log.i(TAG, "Change video source done!");
             }
 
     }
@@ -1792,7 +1793,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         try {
             if (videoCapturer != null) {
                 videoCapturer.stopCapture();
-
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -2118,6 +2118,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (videoCapturer != null && !videoCapturerStopped) {
             try {
                 videoCapturer.stopCapture();
+                videoCapturer.dispose();
+                videoCapturer = null;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }

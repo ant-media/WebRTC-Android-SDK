@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(PublishActivity.class, "Publish");
         addActivity(PlayActivity.class, "Play");
         addActivity(PeerActivity.class, "Peer");
-        addActivity(ConferenceActivityWithDifferentVideoSources.class, "Conference");
+        addActivity(ConferenceActivity.class, "Conference");
         addActivity(ScreenCaptureActivity.class, "Screen Share");
         addActivity(DataChannelOnlyActivity.class, "DC Only");
         addActivity(MP3PublishActivity.class, "mp3");
@@ -73,9 +73,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(USBCameraActivity.class, "USB Camera");
         addActivity(MultiTrackPlayActivity.class, "Multi Track");
         addActivity(CallNotificationActivity.class, "Call Notification");
-        addActivity(PublishActivityWithAreYouSpeaking.class, "Are you talking?");
         addActivity(SettingsActivity.class, "Settings");
         addActivity(ConferenceActivityWithSpeakerIndicator.class,"Conference with Speaking Indicator");
+        addActivity(ConferenceActivityWithDifferentVideoSources.class,"Conference with Stream Source Switch");
         addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
         addActivity(StatsActivity.class, "Stats");
 

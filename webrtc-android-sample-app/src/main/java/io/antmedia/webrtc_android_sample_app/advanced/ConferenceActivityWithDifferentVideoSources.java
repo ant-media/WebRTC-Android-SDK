@@ -3,6 +3,7 @@ package io.antmedia.webrtc_android_sample_app.advanced;
 
 import static io.antmedia.webrtc_android_sample_app.basic.MediaProjectionService.EXTRA_MEDIA_PROJECTION_DATA;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.projection.MediaProjection;
@@ -10,28 +11,53 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.webrtc.SurfaceViewRenderer;
 
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
+import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.MediaProjectionService;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
+import io.antmedia.webrtc_android_sample_app.basic.stats.TrackStatsAdapter;
 import io.antmedia.webrtcandroidframework.api.DefaultConferenceWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
+import io.antmedia.webrtcandroidframework.core.model.PlayStats;
+import io.antmedia.webrtcandroidframework.core.model.TrackStats;
+
+/*
+ * This sample demonstrates how to switch different stream sources on call or off call.
+ * Users can switch in between rear camera, front camera, screen share while in
+ * conference or before joining the conference.
+ * Critical point of such implementation is always asking for screen share permission if source is
+ * selected as SCREEN before publishing. If webrtc client is released(shutdown) and user tries to change video source,
+ * be sure to re-create webrtc client.
+ */
 
 public class ConferenceActivityWithDifferentVideoSources extends TestableActivity {
     public static final int SCREEN_CAPTURE_PERMISSION_CODE = 1234;
+    private final static long UPDATE_STATS_INTERVAL_MS = 500L;
 
     private TextView statusIndicatorTextView;
     private Button joinButton;
@@ -44,6 +70,9 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
     private Button screenShareButton;
     boolean bluetoothEnabled = false;
     boolean initBeforeStream = false;
+    boolean joinWithScreenShareRequested = false;
+    boolean publishStarted = false;
+
 
     private SurfaceViewRenderer localParticipantRenderer;
     private SurfaceViewRenderer remoteParticipant1Renderer;
@@ -52,6 +81,17 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
     private SurfaceViewRenderer remoteParticipant4Renderer;
 
     private MediaProjectionManager mediaProjectionManager;
+
+    private AlertDialog statsPopup;
+    private ScheduledFuture statCollectorFuture;
+    private ScheduledExecutorService statCollectorExecutor;
+
+    private ArrayList<TrackStats> audioTrackStatItems = new ArrayList<>();
+    private ArrayList<TrackStats> videoTrackStatItems = new ArrayList<>();
+
+    private TrackStatsAdapter audioTrackStatsAdapter;
+    private TrackStatsAdapter videoTrackStatsAdapter;
+
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -77,7 +117,6 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
 
-
         if(initBeforeStream){
             if(PermissionHandler.checkCameraPermissions(this)){
                 createWebRTCClient();
@@ -88,7 +127,152 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
             createWebRTCClient();
         }
 
+        Button showStatsButton = findViewById(R.id.show_stats_button);
+        showStatsButton.setOnClickListener(v -> {
+
+            if(publishStarted){
+                showStatsPopup();
+            }else{
+                runOnUiThread(() -> {
+                    Toast.makeText(ConferenceActivityWithDifferentVideoSources.this,"Start publishing first.", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+
     }
+
+    private void showStatsPopup() {
+        LayoutInflater li = LayoutInflater.from(this);
+
+        View promptsView = li.inflate(R.layout.multitrack_stats_popup, null);
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+        alertDialogBuilder.setView(promptsView);
+
+        alertDialogBuilder.setCancelable(true);
+        statsPopup = alertDialogBuilder.create();
+
+
+        TextView packetsLostAudio = promptsView.findViewById(R.id.multitrack_stats_popup_packets_lost_audio_textview);
+        TextView jitterAudio = promptsView.findViewById(R.id.multitrack_stats_popup_jitter_audio_textview);
+        TextView rttAudio = promptsView.findViewById(R.id.multitrack_stats_popup_rtt_audio_textview);
+        TextView packetLostRatioAudio = promptsView.findViewById(R.id.multitrack_stats_popup_packet_lost_ratio_audio_textview);
+        TextView firCountAudio = promptsView.findViewById(R.id.multitrack_stats_popup_fir_count_audio_textview);
+        TextView pliCountAudio = promptsView.findViewById(R.id.multitrack_stats_popup_pli_count_audio_textview);
+        TextView nackCountAudio = promptsView.findViewById(R.id.multitrack_stats_popup_nack_count_audio_textview);
+        TextView packetsSentAudio = promptsView.findViewById(R.id.multitrack_stats_popup_packets_sent_audio_textview);
+        TextView framesEncodedAudio = promptsView.findViewById(R.id.multitrack_stats_popup_frames_encoded_audio_textview);
+        TextView bytesSentAudio = promptsView.findViewById(R.id.multitrack_stats_popup_bytes_sent_audio_textview);
+        TextView packetsSentPerSecondAudio = promptsView.findViewById(R.id.multitrack_stats_popup_packets_sent_per_second_audio_textview);
+        TextView localAudioBitrate = promptsView.findViewById(R.id.multitrack_stats_popup_local_audio_bitrate_textview);
+        TextView localAudioLevel = promptsView.findViewById(R.id.multitrack_stats_popup_local_audio_level_textview);
+
+        TextView packetsLostVideo = promptsView.findViewById(R.id.multitrack_stats_popup_packets_lost_video_textview);
+        TextView jitterVideo = promptsView.findViewById(R.id.multitrack_stats_popup_jitter_video_textview);
+        TextView rttVideo = promptsView.findViewById(R.id.multitrack_stats_popup_rtt_video_textview);
+        TextView packetLostRatioVideo = promptsView.findViewById(R.id.multitrack_stats_popup_packet_lost_ratio_video_textview);
+        TextView firCountVideo = promptsView.findViewById(R.id.multitrack_stats_popup_fir_count_video_textview);
+        TextView pliCountVideo = promptsView.findViewById(R.id.multitrack_stats_popup_pli_count_video_textview);
+        TextView nackCountVideo = promptsView.findViewById(R.id.multitrack_stats_popup_nack_count_video_textview);
+        TextView packetsSentVideo = promptsView.findViewById(R.id.multitrack_stats_popup_packets_sent_video_textview);
+        TextView framesEncodedVideo = promptsView.findViewById(R.id.multitrack_stats_popup_frames_encoded_video_textview);
+        TextView bytesSentVideo = promptsView.findViewById(R.id.multitrack_stats_popup_bytes_sent_video_textview);
+        TextView packetsSentPerSecondVideo = promptsView.findViewById(R.id.multitrack_stats_popup_packets_sent_per_second_video_textview);
+        TextView localVideoBitrate = promptsView.findViewById(R.id.multitrack_stats_popup_local_video_bitrate_textview);
+
+        audioTrackStatsAdapter = new TrackStatsAdapter(audioTrackStatItems, this);
+        videoTrackStatsAdapter = new TrackStatsAdapter(videoTrackStatItems, this);
+
+        RecyclerView playStatsAudioTrackRecyclerview = promptsView.findViewById(R.id.multitrack_stats_popup_play_stats_audio_track_recyclerview);
+        RecyclerView playStatsVideoTrackRecyclerview = promptsView.findViewById(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview);
+
+        LinearLayoutManager linearLayoutManager1 = new LinearLayoutManager(this);
+        LinearLayoutManager linearLayoutManager2 = new LinearLayoutManager(this);
+
+        playStatsAudioTrackRecyclerview.setLayoutManager(linearLayoutManager1);
+        playStatsVideoTrackRecyclerview.setLayoutManager(linearLayoutManager2);
+
+
+        playStatsAudioTrackRecyclerview.setAdapter(audioTrackStatsAdapter);
+        playStatsVideoTrackRecyclerview.setAdapter(videoTrackStatsAdapter);
+
+        Button closeButton = promptsView.findViewById(R.id.multitrack_stats_popup_close_button);
+
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                statsPopup.dismiss();
+            }
+        });
+
+        statCollectorExecutor = Executors.newScheduledThreadPool(1);
+        statCollectorFuture = statCollectorExecutor.scheduleWithFixedDelay(() -> {
+            runOnUiThread(() -> {
+                try {
+                    TrackStats audioTrackStats = webRTCClient.getStatsCollector().getPublishStats().getAudioTrackStats();
+                    packetsLostAudio.setText(String.valueOf(audioTrackStats.getPacketsLost()));
+                    jitterAudio.setText(String.valueOf(audioTrackStats.getJitter()));
+                    rttAudio.setText(String.valueOf(audioTrackStats.getRoundTripTime()));
+                    packetLostRatioAudio.setText(String.valueOf(audioTrackStats.getPacketLostRatio()));
+                    firCountAudio.setText(String.valueOf(audioTrackStats.getFirCount()));
+                    pliCountAudio.setText(String.valueOf(audioTrackStats.getPliCount()));
+                    nackCountAudio.setText(String.valueOf(audioTrackStats.getNackCount()));
+                    packetsSentAudio.setText(String.valueOf(audioTrackStats.getPacketsSent()));
+                    framesEncodedAudio.setText(String.valueOf(audioTrackStats.getFramesEncoded()));
+                    bytesSentAudio.setText(String.valueOf(audioTrackStats.getBytesSent()));
+                    packetsSentPerSecondAudio.setText(String.valueOf(audioTrackStats.getPacketsSentPerSecond()));
+                    packetsSentAudio.setText(String.valueOf(audioTrackStats.getPacketsSent()));
+
+                    TrackStats videoTrackStats = webRTCClient.getStatsCollector().getPublishStats().getVideoTrackStats();
+                    packetsLostVideo.setText(String.valueOf(videoTrackStats.getPacketsLost()));
+                    jitterVideo.setText(String.valueOf(videoTrackStats.getJitter()));
+                    rttVideo.setText(String.valueOf(videoTrackStats.getRoundTripTime()));
+                    packetLostRatioVideo.setText(String.valueOf(videoTrackStats.getPacketLostRatio()));
+                    firCountVideo.setText(String.valueOf(videoTrackStats.getFirCount()));
+                    pliCountVideo.setText(String.valueOf(videoTrackStats.getPliCount()));
+                    nackCountVideo.setText(String.valueOf(videoTrackStats.getNackCount()));
+                    packetsSentVideo.setText(String.valueOf(videoTrackStats.getPacketsSent()));
+                    framesEncodedVideo.setText(String.valueOf(videoTrackStats.getFramesEncoded()));
+                    bytesSentVideo.setText(String.valueOf(videoTrackStats.getBytesSent()));
+                    packetsSentPerSecondVideo.setText(String.valueOf(videoTrackStats.getPacketsSentPerSecond()));
+                    packetsSentVideo.setText(String.valueOf(videoTrackStats.getPacketsSent()));
+
+                    localAudioBitrate.setText(String.valueOf(webRTCClient.getStatsCollector().getPublishStats().getAudioBitrate()));
+                    localAudioLevel.setText(String.valueOf(webRTCClient.getStatsCollector().getPublishStats().getLocalAudioLevel()));
+                    localVideoBitrate.setText(String.valueOf(webRTCClient.getStatsCollector().getPublishStats().getVideoBitrate()));
+
+
+                    PlayStats playStats = webRTCClient.getStatsCollector().getPlayStats();
+                    audioTrackStatItems.clear();
+                    audioTrackStatItems.addAll(playStats.getAudioTrackStatsMap().values());
+
+                    videoTrackStatItems.clear();
+                    videoTrackStatItems.addAll(playStats.getVideoTrackStatsMap().values());
+
+                    audioTrackStatsAdapter.notifyDataSetChanged();
+                    videoTrackStatsAdapter.notifyDataSetChanged();
+
+                } catch (Exception e) {
+                    Log.e("ConferenceActivity", "Exception in task execution: " + e.getMessage());
+                }
+            });
+
+        }, 0, UPDATE_STATS_INTERVAL_MS, TimeUnit.MILLISECONDS);
+
+
+        statsPopup.setOnDismissListener(dialog -> {
+            if (statCollectorFuture != null && !statCollectorFuture.isCancelled()) {
+                statCollectorFuture.cancel(true);
+            }
+            if (statCollectorExecutor != null && !statCollectorExecutor.isShutdown()) {
+                statCollectorExecutor.shutdown();
+            }
+        });
+
+        statsPopup.show();
+    }
+
 
     public void createWebRTCClient(){
         webRTCClient = IWebRTCClient.builder()
@@ -105,22 +289,38 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
 
         joinButton = findViewById(R.id.join_conference_button);
         joinButton.setOnClickListener(v -> {
-            joinLeaveRoom();
+                joinLeaveRoom();
         });
 
         rearCameraButton.setOnClickListener(v -> {
-            //webRTCClient.switchCamera(); // this works
-           webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.REAR_CAMERA);
+            changeVideoSource(IWebRTCClient.StreamSource.REAR_CAMERA);
+
         });
 
         frontCameraButton.setOnClickListener(v -> {
-            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.FRONT_CAMERA);
+            changeVideoSource(IWebRTCClient.StreamSource.FRONT_CAMERA);
         });
 
         screenShareButton.setOnClickListener(v -> {
-            requestScreenCapture();
+            if(webRTCClient.isStreaming(streamId)){
+                requestScreenCapture();
+            }else{
+                webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.SCREEN;
+            }
         });
 
+    }
+
+    public void changeVideoSource(IWebRTCClient.StreamSource streamSource){
+        if(webRTCClient.getConfig().videoSource != streamSource){
+
+            if(!webRTCClient.isShutdown()){
+                webRTCClient.changeVideoSource(streamSource);
+            }else{
+                createWebRTCClient();
+                webRTCClient.changeVideoSource(streamSource);
+            }
+        }
     }
 
     public void requestScreenCapture() {
@@ -145,8 +345,12 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
             joinButton.setText("Leave");
             Log.i(getClass().getSimpleName(), "Calling join");
 
-            webRTCClient.joinToConferenceRoom(roomId, streamId);
-
+            if(webRTCClient.getConfig().videoSource == IWebRTCClient.StreamSource.SCREEN){
+                joinWithScreenShareRequested = true;
+                requestScreenCapture();
+            }else{
+                webRTCClient.joinToConferenceRoom(roomId, streamId);
+            }
         }
         else {
             joinButton.setText("Join");
@@ -171,6 +375,8 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
             @Override
             public void onPublishStarted(String streamId) {
                 super.onPublishStarted(streamId);
+                publishStarted = true;
+
                 decrementIdle();
             }
 
@@ -214,6 +420,11 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
             }
 
             @Override
+            public void onShutdown() {
+                super.onShutdown();
+            }
+
+            @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
                 decrementIdle();
@@ -234,6 +445,10 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
 
             MediaProjectionService.setListener(() -> {
                 startScreenCapturer();
+                if(joinWithScreenShareRequested){
+                    webRTCClient.joinToConferenceRoom(roomId, streamId);
+                    joinWithScreenShareRequested = false;
+                }
             });
 
             Intent serviceIntent = new Intent(this, MediaProjectionService.class);
@@ -242,6 +457,10 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
 
         } else {
             startScreenCapturer();
+            if(joinWithScreenShareRequested){
+                webRTCClient.joinToConferenceRoom(roomId, streamId);
+                joinWithScreenShareRequested = false;
+            }
         }
 
     }
@@ -287,7 +506,7 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
     }
 
     private void startScreenCapturer() {
-        webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
+        changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
         decrementIdle();
     }
 }
