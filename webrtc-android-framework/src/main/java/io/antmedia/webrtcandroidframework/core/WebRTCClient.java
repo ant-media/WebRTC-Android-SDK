@@ -404,21 +404,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void joinToConferenceRoom(String roomId, String streamId) {
-
-   //    this.roomId = roomId;
-
-        //we will call play after publish started event
-       /*publish(streamId, null,
-                true, true,
-                null,
-                null,
-                "asdasdsasadsdfsf",
-                roomId);*/
+        this.roomId = roomId;
 
         publish(streamId, null, true, true,
                 null, null, streamId, roomId);
-
-
     }
 
     public void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName) {
@@ -1496,7 +1485,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onPlayStarted(String streamId) {
         Log.d(TAG, "Play started.");
 
-   /*     streamStoppedByUser = false;
+        streamStoppedByUser = false;
         reconnectionInProgress = false;
         waitingForPlay = false;
 
@@ -1504,7 +1493,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onPlayStarted(streamId);
             }
-        });*/
+        });
     }
 
     @Override
@@ -1949,8 +1938,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
         Log.d(TAG, "Create peer connection.");
 
-        // queuedRemoteCandidates = new ArrayList<>();
-
         PeerConnection.RTCConfiguration rtcConfig =
                 new PeerConnection.RTCConfiguration(iceServers);
         // TCP candidates are only useful when connecting to a server that supports
@@ -1979,21 +1966,25 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             setWebRTCLogLevel();
 
-            List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
-            try{
-                if (config.videoCallEnabled) {
-                    peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
+            if(!streamId.equals(roomId)){ //if it is not room play case
+
+                List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
+                try{
+                    if (config.videoCallEnabled) {
+                        peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
+                    }
+                    peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+
+                }catch (IllegalStateException e){
+                    Log.e(TAG,"Could not add track to PC. Is it in closed state? Peer connection state " + peerConnection.connectionState().name()+" Error message: "+e.getMessage());
+                    return;
                 }
-                peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
 
-            }catch (IllegalStateException e){
-                Log.e(TAG,"Could not add track to PC. Is it in closed state? Peer connection state " + peerConnection.connectionState().name()+" Error message: "+e.getMessage());
-                return;
+                if (config.videoCallEnabled) {
+                    findVideoSender(streamId);
+                }
             }
 
-            if (config.videoCallEnabled) {
-                findVideoSender(streamId);
-            }
             config.webRTCListener.onPeerConnectionCreated(streamId);
             Log.d(TAG, "Peer connection created.");
         } else {

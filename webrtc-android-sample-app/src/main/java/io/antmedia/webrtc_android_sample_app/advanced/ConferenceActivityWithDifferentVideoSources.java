@@ -73,10 +73,9 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
         screenShareButton = findViewById(R.id.screen_share_button);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        serverUrl = "wss://ovh36.antmedia.io:5443/LiveApp/websocket";
+        serverUrl = "wss://test.antmedia.io:5443/LiveApp/websocket";
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
-
 
 
         if(initBeforeStream){
@@ -102,10 +101,6 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
                 .setWebRTCListener(createWebRTCListener(roomId, streamId))
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
-
-
-
-
 
 
         joinButton = findViewById(R.id.join_conference_button);
@@ -212,11 +207,10 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
 
             @Override
             public void onPlayStarted(String streamId) {
-               /* super.onPlayStarted(streamId);
+                super.onPlayStarted(streamId);
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
-                decrementIdle();*/
-
+                decrementIdle();
             }
 
             @Override
@@ -236,8 +230,6 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
         WebRTCClientConfig config = webRTCClient.getConfig();
         config.mediaProjectionIntent = data;
 
-        // If the device version is v29 or higher, screen sharing will work service due to media projection policy.
-        // Otherwise media projection will work without service
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
             MediaProjectionService.setListener(() -> {
@@ -249,7 +241,6 @@ public class ConferenceActivityWithDifferentVideoSources extends TestableActivit
             startForegroundService(serviceIntent);
 
         } else {
-            // MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(resultCode, data);
             startScreenCapturer();
         }
 
