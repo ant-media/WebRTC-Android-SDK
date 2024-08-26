@@ -2191,8 +2191,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void setAudioEnabled(final boolean enable) {
-        config.audioCallEnabled = enable;
-
         executor.execute(() -> {
             if (localAudioTrack != null) {
                 localAudioTrack.setEnabled(enable);
@@ -2200,8 +2198,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    public void setVideoEnabled(final boolean enable) {
-        config.videoCallEnabled = enable;
+    public void setVideoEnabled(boolean enable) {
         executor.execute(() -> {
             renderVideo = enable;
             if (localVideoTrack != null) {
@@ -2684,6 +2681,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 }
             }
         }
+    }
+
+    public boolean isLocalVideoTrackEnabled(){
+        if(localVideoTrack == null){
+            return false;
+        }
+        return localVideoTrack.enabled();
+    }
+
+    public boolean isLocalAudioTrackEnabled(){
+        if(localAudioTrack == null){
+            return false;
+        }
+        return localAudioTrack.enabled();
     }
 
     public void setHandler(Handler handler) {

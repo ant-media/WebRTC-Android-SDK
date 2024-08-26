@@ -168,14 +168,14 @@ public interface IWebRTCClient {
     void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int resolutionHeight);
 
     /**
-     * enable/disable video stream
+     * enable/disable video stream in call
      *
      * @param enabled true for enable, false for disable
      */
     void setVideoEnabled(boolean enabled);
 
     /**
-     * enable/disable audio stream
+     * enable/disable audio stream in call
      *
      * @param enabled true for enable, false for disable
      */
@@ -185,10 +185,10 @@ public interface IWebRTCClient {
      * enable/disable played track stream from the server
      *
      * @param streamId       id for the main track
-     * @param selecetedTrack id for the subtrack
+     * @param selectedTrack id for the subtrack
      * @param enabled        true for enable, false for disable
      */
-    void enableTrack(String streamId, String selecetedTrack, boolean enabled);
+    void enableTrack(String streamId, String selectedTrack, boolean enabled);
 
     /**
      * Called to set the renderer for a video track
@@ -327,4 +327,13 @@ public interface IWebRTCClient {
      */
     StatsCollector getStatsCollector();
 
+    /**
+     * Use this to get localVideoTrack status. Eg if camera is off it will return false. If camera is on it will return true.
+     */
+    boolean isLocalVideoTrackEnabled();
+
+    /**
+     * Use this to get localAudioTrack status. Eg if microphone is off it will return false. If microphone is on it will return true.
+     */
+    boolean isLocalAudioTrackEnabled();
 }
