@@ -55,7 +55,6 @@ public class PublishActivity extends TestableActivity {
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        serverUrl = "wss://c2c872e80da6.ngrok.app/LiveApp/websocket";
 
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
