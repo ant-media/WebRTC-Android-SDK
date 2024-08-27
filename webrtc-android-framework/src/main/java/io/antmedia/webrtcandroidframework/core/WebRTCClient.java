@@ -244,6 +244,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     String roomId;
 
+    private BlackFrameSender blackFrameSender;
+
     public void createReconnectorRunnables() {
         //only used in conference.
         publishReconnectorRunnable = () -> {
@@ -2203,11 +2205,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             renderVideo = enable;
             if (localVideoTrack != null) {
                 if (enable) {
-                    startVideoSourceInternal();
+                    if(blackFrameSender != null && blackFrameSender.isRunning()){
+                        blackFrameSender.stop();
+                        blackFrameSender = null;
+                    }
+                    changeVideoSource(StreamSource.FRONT_CAMERA);
+
+                    //startVideoSourceInternal();
                 } else {
-                    stopVideoSourceInternal();
+                    //stopVideoSourceInternal();
+                    changeVideoSource(StreamSource.CUSTOM);
+                    blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
+                    blackFrameSender.start();
+
                 }
-                localVideoTrack.setEnabled(renderVideo);
             }
         });
     }
