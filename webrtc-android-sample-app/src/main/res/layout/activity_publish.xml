@@ -44,6 +44,27 @@
         android:padding="5dp"
         android:background="?android:attr/colorBackground"
         android:layout_above="@id/start_streaming_button"/>
+    <LinearLayout
+        android:layout_above="@id/stream_id_edittext"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rear Camera"
+            android:id="@+id/rear_camera_button"
+
+            android:layout_margin="3dp"
+            />
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Front Camera"
+            android:id="@+id/front_camera_button"
+
+            android:layout_margin="3dp"
+            />
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"

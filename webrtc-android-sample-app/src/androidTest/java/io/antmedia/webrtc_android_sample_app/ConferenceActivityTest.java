@@ -10,6 +10,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import static io.antmedia.webrtc_android_sample_app.TestableActivity.CONFERENCE_ROOM_ID_FOR_TEST;
@@ -21,13 +22,17 @@ import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
+import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
+import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.Until;
 
 
 import org.junit.After;
@@ -40,6 +45,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
@@ -52,6 +58,8 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
 
+    private float videoBytesSent = 0;
+
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -59,7 +67,7 @@ public class ConferenceActivityTest {
     private IdlingResource mIdlingResource;
 
     @Rule
-    public ActivityScenarioRule<ConferenceActivity> activityScenarioRule = new ActivityScenarioRule<>(ConferenceActivity.class);
+    public ActivityScenarioRule<ConferenceActivity> conferenceActivityScenarioRule = new ActivityScenarioRule<>(ConferenceActivity.class);
 
     private String runningTest;
     private String roomName;
@@ -111,7 +119,7 @@ public class ConferenceActivityTest {
 
     @Test
     public void testJoinMultitrackRoom() {
-        activityScenarioRule.getScenario().onActivity(activity -> {
+        conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
             IdlingRegistry.getInstance().register(mIdlingResource);
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -150,7 +158,7 @@ public class ConferenceActivityTest {
 
     @Test
     public void testJoinWithExternalParticipant() throws InterruptedException {
-        activityScenarioRule.getScenario().onActivity(activity -> {
+        conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
             IdlingRegistry.getInstance().register(mIdlingResource);
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -211,7 +219,7 @@ public class ConferenceActivityTest {
 
     //@Test TODO FIX THIS FUNCTIONALITY LATER.
     public void testJoinWithoutVideo() throws InterruptedException {
-        activityScenarioRule.getScenario().onActivity(activity -> {
+        conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
             IdlingRegistry.getInstance().register(mIdlingResource);
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
@@ -253,7 +261,7 @@ public class ConferenceActivityTest {
 
     //@Test TODO FIX
     public void testJoinPlayOnlyAsFirstPerson() throws InterruptedException {
-        activityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
+        conferenceActivityScenarioRule.getScenario().onActivity(new ActivityScenario.ActivityAction<ConferenceActivity>() {
             @Override
             public void perform(ConferenceActivity activity) {
                 mIdlingResource = activity.getIdlingResource();
@@ -309,7 +317,7 @@ public class ConferenceActivityTest {
 
     @Test
     public void testConferenceReconnect() throws IOException, InterruptedException {
-        activityScenarioRule.getScenario().onActivity(activity -> {
+        conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
             IdlingRegistry.getInstance().register(mIdlingResource);
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));

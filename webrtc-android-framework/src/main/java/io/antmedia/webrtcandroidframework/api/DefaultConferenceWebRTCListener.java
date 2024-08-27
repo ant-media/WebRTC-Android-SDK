@@ -58,9 +58,9 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
 
     @Override
     public void onPlayStarted(String streamId) {
-        super.onPlayStarted(streamId);
-        webRTCClient.getBroadcastObject(roomId);
-        playStarted = true;
+       super.onPlayStarted(streamId);
+       webRTCClient.getBroadcastObject(roomId);
+       playStarted = true;
     }
 
     @Override

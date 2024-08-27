@@ -55,6 +55,7 @@ public class PublishActivity extends TestableActivity {
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
@@ -70,6 +71,8 @@ public class PublishActivity extends TestableActivity {
         }else{
             createWebRTCClient();
         }
+
+
 
     }
 
@@ -88,6 +91,16 @@ public class PublishActivity extends TestableActivity {
         startStreamingButton.setOnClickListener(v -> {
             streamId = streamIdEditText.getText().toString();
             startStopStream();
+        });
+
+        Button frontCameraButton = findViewById(R.id.front_camera_button);
+        Button rearCameraButton = findViewById(R.id.rear_camera_button);
+
+        rearCameraButton.setOnClickListener(v -> {
+            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.REAR_CAMERA);
+        });
+        frontCameraButton.setOnClickListener(v -> {
+            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.FRONT_CAMERA);
         });
     }
 
@@ -135,6 +148,7 @@ public class PublishActivity extends TestableActivity {
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 decrementIdle();
+                webRTCClient.switchCamera();
             }
 
             @Override

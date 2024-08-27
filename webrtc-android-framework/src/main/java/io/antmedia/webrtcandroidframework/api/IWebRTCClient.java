@@ -327,13 +327,9 @@ public interface IWebRTCClient {
      */
     StatsCollector getStatsCollector();
 
-    /**
-     * Use this to get localVideoTrack status. Eg if camera is off it will return false. If camera is on it will return true.
+     /**
+     * Returns true if SDK resources are released and its shutdown, false otherwise.
      */
-    boolean isLocalVideoTrackEnabled();
+    boolean isShutdown();
 
-    /**
-     * Use this to get localAudioTrack status. Eg if microphone is off it will return false. If microphone is on it will return true.
-     */
-    boolean isLocalAudioTrackEnabled();
 }
