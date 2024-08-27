@@ -46,12 +46,8 @@ public class ConferenceActivity extends TestableActivity {
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
     private TextView statusIndicatorTextView;
     private Button joinButton;
-    private Button toggleAudioBeforeCallButton;
-    private Button toggleVideoBeforeCallButton;
-    private Button toggleAudioInCallButton;
-    private Button toggleVideoInCallButton;
-    private LinearLayout toggleAudioVideoBeforeCallContainer;
-    private LinearLayout toggleAudioVideoInCallContainer;
+    private Button toggleSendAudioButton;
+    private Button toggleSendVideoButton;
 
     private String streamId;
     private String serverUrl;
@@ -119,16 +115,10 @@ public class ConferenceActivity extends TestableActivity {
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         joinButton = findViewById(R.id.join_conference_button);
 
-        toggleAudioBeforeCallButton = findViewById(R.id.toggle_audio_before_call_button);
-        toggleVideoBeforeCallButton = findViewById(R.id.toggle_video_before_call_button);
-        toggleAudioInCallButton = findViewById(R.id.toggle_audio_in_call_button);
-        toggleVideoInCallButton = findViewById(R.id.toggle_video_in_call_button);
-
-        toggleAudioVideoBeforeCallContainer = findViewById(R.id.toggle_audio_video_before_call_container);
-        toggleAudioVideoInCallContainer = findViewById(R.id.toggle_audio_video_in_call_container);
+        toggleSendAudioButton = findViewById(R.id.toggle_send_audio_button);
+        toggleSendVideoButton = findViewById(R.id.toggle_send_video_button);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-        serverUrl = "wss://1f7b0afab690.ngrok.app/LiveApp/websocket";
 
         //roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
@@ -150,20 +140,12 @@ public class ConferenceActivity extends TestableActivity {
             createWebRTCClient();
         }
 
-        toggleVideoBeforeCallButton.setOnClickListener(v->{
-            toggleVideoBeforeCall();
+        toggleSendVideoButton.setOnClickListener(v->{
+            toggleSendVideo();
         });
 
-        toggleAudioBeforeCallButton.setOnClickListener(v->{
-            toggleAudioBeforeCall();
-        });
-
-        toggleVideoInCallButton.setOnClickListener(v->{
-            toggleVideoInCall();
-        });
-
-        toggleAudioInCallButton.setOnClickListener(v->{
-            toggleAudioInCall();
+        toggleSendAudioButton.setOnClickListener(v->{
+            toggleSendAudio();
         });
 
     }
@@ -278,8 +260,6 @@ public class ConferenceActivity extends TestableActivity {
                 super.onPublishStarted(streamId);
                 decrementIdle();
                 publishStarted = true;
-                toggleAudioVideoBeforeCallContainer.setVisibility(View.GONE);
-                toggleAudioVideoInCallContainer.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -287,8 +267,6 @@ public class ConferenceActivity extends TestableActivity {
                 super.onShutdown();
                 videoTrackList.clear();
                 streamIdVideoTrackMap.clear();
-                toggleAudioVideoBeforeCallContainer.setVisibility(View.VISIBLE);
-                toggleAudioVideoInCallContainer.setVisibility(View.GONE);
             }
 
             @Override
@@ -348,64 +326,39 @@ public class ConferenceActivity extends TestableActivity {
         };
     }
 
-    public void toggleAudioBeforeCall() {
-        if (webRTCClient.getConfig().audioCallEnabled) {
-            audioCallEnabled = false;
-            webRTCClient.getConfig().audioCallEnabled = false;
-            toggleAudioBeforeCallButton.setText("Enable Audio");
-        } else {
-            audioCallEnabled = true;
-            webRTCClient.getConfig().audioCallEnabled = true;
-            toggleAudioBeforeCallButton.setText("Disable Audio");
+    public void toggleSendVideo() {
+        if(webRTCClient.isShutdown()){
+            Toast.makeText(this, "Webrtc client is shutdown. Recreate it.", Toast.LENGTH_LONG).show();
+            return;
         }
-        createWebRTCClient();
-    }
 
-    //If you set this before call, it cannot change during call.
-    // For example if you start with videoCallEnabled false, you cannot turn on camera.
-    public void toggleVideoBeforeCall() {
-        if (webRTCClient.getConfig().videoCallEnabled) {
-            videoCallEnabled = false;
-            webRTCClient.getConfig().videoCallEnabled = false;
-            toggleVideoBeforeCallButton.setText("Enable Video");
-        } else {
-            videoCallEnabled = true;
-            webRTCClient.getConfig().videoCallEnabled = true;
-            toggleVideoBeforeCallButton.setText("Disable Video");
-        }
-        createWebRTCClient();
-
-    }
-
-    public void toggleVideoInCall() {
         if(webRTCClient.getConfig().videoCallEnabled){
-            if(webRTCClient.isLocalVideoTrackEnabled()){
-                webRTCClient.setVideoEnabled(false);
-                toggleVideoInCallButton.setText("Enable Video");
+            if(webRTCClient.isSendVideoEnabled()){
+                webRTCClient.setSendVideoEnabled(false);
+                toggleSendVideoButton.setText("Enable Send Video");
 
             }else{
-                webRTCClient.setVideoEnabled(true);
-                toggleVideoInCallButton.setText("Disable Video");
-
+                webRTCClient.setSendVideoEnabled(true);
+                toggleSendVideoButton.setText("Disable Send Video");
             }
         }else{
-            Toast.makeText(this, "Cannot toggle video because its disabled before call start", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Cannot toggle send video because its disabled in config", Toast.LENGTH_LONG).show();
         }
     }
 
-    public void toggleAudioInCall() {
+    public void toggleSendAudio() {
         if(webRTCClient.getConfig().audioCallEnabled){
-            if(webRTCClient.isLocalAudioTrackEnabled()){
-                webRTCClient.setAudioEnabled(false);
-                toggleAudioInCallButton.setText("Enable Audio");
+            if(webRTCClient.isSendAudioEnabled()){
+                webRTCClient.setSendAudioEnabled(false);
+                toggleSendAudioButton.setText("Enable Send Audio");
 
             }else{
-                webRTCClient.setAudioEnabled(true);
-                toggleAudioInCallButton.setText("Disable Audio");
+                webRTCClient.setSendAudioEnabled(true);
+                toggleSendAudioButton.setText("Disable Send Audio");
 
             }
         }else{
-            Toast.makeText(this, "Cannot toggle audio because its disabled before call start", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Cannot toggle send audio because its disabled in config", Toast.LENGTH_LONG).show();
         }
     }
 

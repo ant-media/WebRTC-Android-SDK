@@ -58,8 +58,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
 
-    private float videoBytesSent = 0;
-
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -74,7 +72,6 @@ public class ConferenceActivityTest {
 
     @Before
     public void before() throws IOException {
-        //try before method to make @Rule run properly
         System.out.println("before test");
         connectInternet();
 
@@ -217,7 +214,7 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
-    //@Test TODO FIX THIS FUNCTIONALITY LATER.
+    @Test
     public void testJoinWithoutVideo() throws InterruptedException {
         conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
@@ -225,31 +222,90 @@ public class ConferenceActivityTest {
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
-        onView(withId(R.id.control_audio_button)).check(matches(withText("Disable Audio")));
-        onView(withId(R.id.control_audio_button)).perform(click());
+        onView(withId(R.id.toggle_send_audio_button)).check(matches(withText("Disable Send Audio")));
+        onView(withId(R.id.toggle_send_audio_button)).perform(click());
 
-        onView(withId(R.id.control_video_button)).check(matches(withText("Disable Video")));
-        onView(withId(R.id.control_video_button)).perform(click());
+        onView(withId(R.id.toggle_send_video_button)).check(matches(withText("Disable Send Video")));
+        onView(withId(R.id.toggle_send_video_button)).perform(click());
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
         onView(withId(R.id.join_conference_button)).perform(click());
 
         RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
-        onView(withId(R.id.control_audio_button)).check(matches(withText("Enable Audio")));
-        onView(withId(R.id.control_audio_button)).perform(click());
-
-        onView(withId(R.id.control_video_button)).check(matches(withText("Enable Video")));
-        onView(withId(R.id.control_video_button)).perform(click());
-
-        onView(withId(R.id.join_conference_button)).check(matches(withText("Leave")));
+        Thread.sleep(10000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
+        //black frame sender should be working.
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+
+        });
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .check((view, noViewFoundException) -> {
+                    if (noViewFoundException != null) {
+                        throw noViewFoundException;
+                    }
+                    RecyclerView recyclerView = (RecyclerView) view;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    int bytesReceived = Integer.parseInt(( textView1).getText().toString());
+                    assertTrue(bytesReceived > 0);
+                });
+
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.toggle_send_video_button)).check(matches(withText("Enable Send Video")));
+        onView(withId(R.id.toggle_send_video_button)).perform(click());
+
+        Thread.sleep(10000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+
+        });
+
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+
+        Thread.sleep(3000);
+
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        Thread.sleep(5000);
+        Thread.sleep(3000);
+
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
@@ -355,7 +411,6 @@ public class ConferenceActivityTest {
 
         Thread.sleep(5000);
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
-
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {

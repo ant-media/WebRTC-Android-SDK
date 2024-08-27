@@ -246,6 +246,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private BlackFrameSender blackFrameSender;
 
+    private boolean sendVideoEnabled = true;
+
+    private boolean sendAudioEnabled = true;
+
     public void createReconnectorRunnables() {
         //only used in conference.
         publishReconnectorRunnable = () -> {
@@ -388,6 +392,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         mainHandler = new Handler(config.activity.getMainLooper());
         iceServers.add(PeerConnection.IceServer.builder(config.stunServerUri)
                 .createIceServer());
+        sendAudioEnabled = config.audioCallEnabled;
+        sendVideoEnabled = config.videoCallEnabled;
 
         if (config.initiateBeforeStream) {
             init();
@@ -2150,12 +2156,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             eglBase.release();
             eglBase = null;
         }
+        if(blackFrameSender != null){
+            blackFrameSender.stop();
+            blackFrameSender = null;
+        }
 
         localVideoSink.setTarget(null);
 
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
-
 
         clearStatsCollector();
         reconnectionInProgress = false;
@@ -2199,6 +2208,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void setAudioEnabled(final boolean enable) {
+        config.audioCallEnabled = enable;
+
         executor.execute(() -> {
             if (localAudioTrack != null) {
                 localAudioTrack.setEnabled(enable);
@@ -2206,10 +2217,37 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    public void setVideoEnabled(boolean enable) {
+    public void setVideoEnabled(final boolean enable) {
+        config.videoCallEnabled = enable;
         executor.execute(() -> {
             renderVideo = enable;
             if (localVideoTrack != null) {
+                if (enable) {
+                    startVideoSourceInternal();
+                } else {
+                    stopVideoSourceInternal();
+                }
+                localVideoTrack.setEnabled(renderVideo);
+            }
+        });
+    }
+
+    public void setSendAudioEnabled(boolean enable) {
+        executor.execute(() -> {
+            sendAudioEnabled = enable;
+            if (localAudioTrack != null) {
+                localAudioTrack.setEnabled(enable);
+            }
+        });
+    }
+
+    public void setSendVideoEnabled(boolean enable) {
+        if(!config.videoCallEnabled){
+            Log.i(TAG, "Cannot change send video because video call is disabled.");
+            return;
+        }
+        executor.execute(() -> {
+            sendVideoEnabled = enable;
                 if (enable) {
                     if(blackFrameSender != null && blackFrameSender.isRunning()){
                         blackFrameSender.stop();
@@ -2223,9 +2261,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     changeVideoSource(StreamSource.CUSTOM);
                     blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
                     blackFrameSender.start();
-
                 }
-            }
         });
     }
 
@@ -2768,6 +2804,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public boolean isShutdown() {
         return released;
+    }
+
+    @Override
+    public boolean isSendVideoEnabled() {
+        return sendVideoEnabled;
+    }
+
+    @Override
+    public boolean isSendAudioEnabled() {
+        return sendAudioEnabled;
     }
 
 }

@@ -39,7 +39,6 @@
         android:layout_gravity="center" />
 
     <LinearLayout
-        android:id="@+id/toggle_audio_video_before_call_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -47,46 +46,20 @@
         android:gravity="center">
 
         <Button
-            android:id="@+id/toggle_audio_before_call_button"
+            android:id="@+id/toggle_send_audio_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="10dp"
-            android:text="Disable Audio"
+            android:text="Disable Send Audio"
             />
 
         <Button
-            android:id="@+id/toggle_video_before_call_button"
+            android:id="@+id/toggle_send_video_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Disable Video"
+            android:text="Disable Send Video"
             android:layout_marginHorizontal="10dp"
              />
-
-    </LinearLayout>
-    <LinearLayout
-        android:visibility="gone"
-        android:id="@+id/toggle_audio_video_in_call_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="120dp"
-        android:gravity="center">
-
-        <Button
-            android:id="@+id/toggle_audio_in_call_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:text="Disable Audio"
-            />
-
-        <Button
-            android:id="@+id/toggle_video_in_call_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Disable Video"
-            android:layout_marginHorizontal="10dp"
-            />
 
     </LinearLayout>
 
