@@ -134,7 +134,6 @@ public class PublishActivity extends TestableActivity {
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 decrementIdle();
-                webRTCClient.switchCamera();
             }
 
             @Override
