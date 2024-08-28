@@ -2248,20 +2248,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
         executor.execute(() -> {
             sendVideoEnabled = enable;
-                if (enable) {
-                    if(blackFrameSender != null && blackFrameSender.isRunning()){
-                        blackFrameSender.stop();
-                        blackFrameSender = null;
-                    }
-                    changeVideoSource(StreamSource.FRONT_CAMERA);
-
-                    //startVideoSourceInternal();
-                } else {
-                    //stopVideoSourceInternal();
-                    changeVideoSource(StreamSource.CUSTOM);
-                    blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
-                    blackFrameSender.start();
+            if (enable) {
+                if(blackFrameSender != null && blackFrameSender.isRunning()){
+                    blackFrameSender.stop();
+                    blackFrameSender = null;
                 }
+                changeVideoSource(StreamSource.FRONT_CAMERA);
+            } else {
+                changeVideoSource(StreamSource.CUSTOM);
+                blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
+                blackFrameSender.start();
+            }
         });
     }
 
@@ -2773,6 +2770,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return videoCapturer;
     }
 
+    public void setVideoCapturer(VideoCapturer videoCapturer){
+        this.videoCapturer = videoCapturer;
+    }
+
     public void setRemoveVideoRotationExtension(boolean removeVideoRotationExtension) {
         this.removeVideoRotationExtension = removeVideoRotationExtension;
     }
@@ -2814,6 +2815,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public boolean isSendAudioEnabled() {
         return sendAudioEnabled;
+    }
+
+    public BlackFrameSender getBlackFrameSender() {
+        return blackFrameSender;
+    }
+
+    @androidx.annotation.Nullable
+    public AudioTrack getLocalAudioTrack() {
+        return localAudioTrack;
+    }
+
+    public void setLocalAudioTrack(@androidx.annotation.Nullable AudioTrack localAudioTrack) {
+        this.localAudioTrack = localAudioTrack;
     }
 
 }

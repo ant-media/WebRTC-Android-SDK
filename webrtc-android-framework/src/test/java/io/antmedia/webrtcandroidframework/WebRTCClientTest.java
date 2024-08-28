@@ -1,8 +1,10 @@
 package io.antmedia.webrtcandroidframework;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -15,11 +17,15 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.app.Activity;
 import android.media.projection.MediaProjection;
@@ -71,6 +77,8 @@ import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
+import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
+import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
@@ -996,7 +1004,7 @@ public class WebRTCClientTest {
         List<IceCandidate> iceCandidatesQ = new ArrayList<>();
         peerInfo.setQueuedRemoteCandidates(iceCandidatesQ);
         webRTCClient.addRemoteIceCandidate(streamId, iceCandidate);
-        Awaitility.await().until(() -> iceCandidatesQ.size() == 1);
+        await().until(() -> iceCandidatesQ.size() == 1);
         assertEquals(iceCandidate, iceCandidatesQ.get(0));
 
         IceCandidate[] iceCandidatesTorRemove = new IceCandidate[1];
@@ -1265,5 +1273,68 @@ public class WebRTCClientTest {
         verify(renderer).clearImage();
         verify(renderer).release();
         verify(renderer).setTag(null);
+    }
+
+    @Test
+    public void testToggleSendAudioVideo() {
+        CustomVideoCapturer customVideoCapturerMock = mock(CustomVideoCapturer.class);
+
+        doNothing().when(customVideoCapturerMock).writeFrame(any());
+        webRTCClient.setVideoCapturer(customVideoCapturerMock);
+        when(webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.CUSTOM)).thenReturn(customVideoCapturerMock);
+
+        webRTCClient.setSendVideoEnabled(false);
+
+        await()
+                .atMost(2, SECONDS) // Set a maximum time to wait
+                .pollInterval(500, MILLISECONDS) // Set how frequently to check the condition
+                .until(() -> {
+                    BlackFrameSender sender = webRTCClient.getBlackFrameSender();
+                    return sender != null && sender.isRunning();
+                });
+
+        BlackFrameSender sender = webRTCClient.getBlackFrameSender();
+        assertNotNull(sender);
+        assertTrue(sender.isRunning());
+        assertTrue(webRTCClient.getConfig().videoSource == IWebRTCClient.StreamSource.CUSTOM);
+        assertTrue("Expected instance of video capturer", webRTCClient.getVideoCapturer() instanceof CustomVideoCapturer);
+
+        VideoCapturer videoCapturerMock = mock(VideoCapturer.class);
+
+        doReturn(videoCapturerMock)
+                .when(webRTCClient)
+                .createVideoCapturer(IWebRTCClient.StreamSource.FRONT_CAMERA);
+
+        webRTCClient.setSendVideoEnabled(true);
+
+        await()
+                .atMost(2, SECONDS) // Set a maximum time to wait
+                .pollInterval(500, MILLISECONDS) // Set how frequently to check the condition
+                .until(() -> webRTCClient.getBlackFrameSender() == null);
+
+        assertNull(webRTCClient.getBlackFrameSender());
+        assertTrue(webRTCClient.getConfig().videoSource == IWebRTCClient.StreamSource.FRONT_CAMERA);
+
+        AudioTrack localAudioTrackMock = mock(AudioTrack.class);
+        webRTCClient.setLocalAudioTrack(localAudioTrackMock);
+
+        webRTCClient.setSendAudioEnabled(false);
+
+        await()
+                .atMost(2, SECONDS) // Maximum time to wait
+                .pollInterval(500, MILLISECONDS) // Check every 500 milliseconds
+                .untilAsserted(() -> {
+                    verify(localAudioTrackMock, times(1)).setEnabled(false);
+                });
+
+        webRTCClient.setSendAudioEnabled(true);
+
+        await()
+                .atMost(2, SECONDS) // Maximum time to wait
+                .pollInterval(500, MILLISECONDS) // Check every 500 milliseconds
+                .untilAsserted(() -> {
+                    // Verify that setEnabled(true) was called
+                    verify(localAudioTrackMock, times(1)).setEnabled(true);
+                });
     }
 }
