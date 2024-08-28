@@ -111,9 +111,8 @@ public class ConferenceActivity extends TestableActivity {
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
-        //roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
+        roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
-        roomId = CONFERENCE_ROOM_ID_FOR_TEST;
 
         Switch playOnlySwitch = findViewById(R.id.play_only_switch);
         playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {

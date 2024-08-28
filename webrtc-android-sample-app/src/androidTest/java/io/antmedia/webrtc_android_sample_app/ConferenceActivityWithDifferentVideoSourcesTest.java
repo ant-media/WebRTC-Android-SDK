@@ -16,12 +16,16 @@ import static org.junit.Assert.assertTrue;
 import static io.antmedia.webrtc_android_sample_app.TestableActivity.CONFERENCE_ROOM_ID_FOR_TEST;
 
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.TextView;
 
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
@@ -50,6 +54,7 @@ import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
+import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
 
@@ -81,7 +86,9 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         //try before method to make @Rule run properly
         getInstrumentation().waitForIdleSync();
 
-        roomName = CONFERENCE_ROOM_ID_FOR_TEST;
+        Context context = ApplicationProvider.getApplicationContext();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        roomName = sharedPreferences.getString(context.getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
     }
 
     @After

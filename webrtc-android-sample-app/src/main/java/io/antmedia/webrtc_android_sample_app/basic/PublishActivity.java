@@ -33,19 +33,16 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 public class PublishActivity extends TestableActivity {
 
     private TextView statusIndicatorTextView;
-
     private String streamId;
-
     private IWebRTCClient webRTCClient;
-    Button startStreamingButton;
-    String serverUrl;
-    TextView streamIdEditText;
-    SurfaceViewRenderer fullScreenRenderer;
+    private Button startStreamingButton;
+    private String serverUrl;
+    private TextView streamIdEditText;
+    private SurfaceViewRenderer fullScreenRenderer;
 
-    boolean bluetoothEnabled = false;
-    boolean initBeforeStream = false;
+    private boolean bluetoothEnabled = false;
+    private boolean initBeforeStream = false;
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,8 +69,6 @@ public class PublishActivity extends TestableActivity {
             createWebRTCClient();
         }
 
-
-
     }
 
     public void createWebRTCClient(){
@@ -93,15 +88,6 @@ public class PublishActivity extends TestableActivity {
             startStopStream();
         });
 
-        Button frontCameraButton = findViewById(R.id.front_camera_button);
-        Button rearCameraButton = findViewById(R.id.rear_camera_button);
-
-        rearCameraButton.setOnClickListener(v -> {
-            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.REAR_CAMERA);
-        });
-        frontCameraButton.setOnClickListener(v -> {
-            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.FRONT_CAMERA);
-        });
     }
 
     public void startStopStream() {
@@ -148,7 +134,6 @@ public class PublishActivity extends TestableActivity {
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 decrementIdle();
-                webRTCClient.switchCamera();
             }
 
             @Override
