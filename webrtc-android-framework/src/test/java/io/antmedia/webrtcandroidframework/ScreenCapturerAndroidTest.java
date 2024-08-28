@@ -2,23 +2,23 @@ package io.antmedia.webrtcandroidframework;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.webrtc.ScreenCapturerAndroid.VIRTUAL_DISPLAY_DPI;
 
-import android.app.Activity;
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.util.Log;
 import android.view.Display;
-import android.view.Surface;
 import android.view.WindowManager;
 
-import androidx.annotation.Nullable;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,6 +53,7 @@ public class ScreenCapturerAndroidTest {
             Log.i("TestWatcher", "*** "+description + " finished!\n******\n");
         }
     };
+
     @Test
     public void testRotateScreen() {
 
@@ -93,6 +94,8 @@ public class ScreenCapturerAndroidTest {
         Mockito.verify(surfaceTextureHelper).setTextureSize(width,height);
 
         VideoFrame frame = mock(VideoFrame.class);
+
+        doNothing().when(screenCapturerAndroid).changeCaptureFormat(width , height, 15);
         screenCapturerAndroid.onFrame(frame);
 
         Mockito.verify(capturerObserver).onFrameCaptured(frame);
@@ -110,6 +113,8 @@ public class ScreenCapturerAndroidTest {
     public void testCapturer() {
         ScreenCapturerAndroid screenCapturerAndroid = spy(new ScreenCapturerAndroid(null, null));
         SurfaceTextureHelper surfaceTextureHelper = mock(SurfaceTextureHelper.class);
+        SurfaceTexture surfaceTexture = mock(SurfaceTexture.class);
+        when(surfaceTextureHelper.getSurfaceTexture()).thenReturn(surfaceTexture);
         Context appContext = mock(Context.class);
         screenCapturerAndroid.initialize(surfaceTextureHelper, appContext, mock(CapturerObserver.class));
 
@@ -120,6 +125,7 @@ public class ScreenCapturerAndroidTest {
         screenCapturerAndroid.setMediaProjectionManager(mediaProjectionManager);
         MediaProjection mediaProjection = mock(MediaProjection.class);
         when(mediaProjectionManager.getMediaProjection(Mockito.anyInt(), Mockito.any())).thenReturn(mediaProjection);
+        doReturn(true).when(screenCapturerAndroid).isDeviceOrientationPortrait();
 
         screenCapturerAndroid.startCapture(460, 360, 30);
         verify(mediaProjectionManager).getMediaProjection(
@@ -127,8 +133,5 @@ public class ScreenCapturerAndroidTest {
 
         verify(mediaProjection).createVirtualDisplay(Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.anyInt(),
                 Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
-
-
-
     }
 }

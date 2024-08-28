@@ -33,19 +33,16 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 public class PublishActivity extends TestableActivity {
 
     private TextView statusIndicatorTextView;
-
     private String streamId;
-
     private IWebRTCClient webRTCClient;
-    Button startStreamingButton;
-    String serverUrl;
-    TextView streamIdEditText;
-    SurfaceViewRenderer fullScreenRenderer;
+    private Button startStreamingButton;
+    private String serverUrl;
+    private TextView streamIdEditText;
+    private SurfaceViewRenderer fullScreenRenderer;
 
-    boolean bluetoothEnabled = false;
-    boolean initBeforeStream = false;
+    private boolean bluetoothEnabled = false;
+    private boolean initBeforeStream = false;
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +52,7 @@ public class PublishActivity extends TestableActivity {
         streamIdEditText = findViewById(R.id.stream_id_edittext);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
+
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
 
@@ -89,6 +87,7 @@ public class PublishActivity extends TestableActivity {
             streamId = streamIdEditText.getText().toString();
             startStopStream();
         });
+
     }
 
     public void startStopStream() {

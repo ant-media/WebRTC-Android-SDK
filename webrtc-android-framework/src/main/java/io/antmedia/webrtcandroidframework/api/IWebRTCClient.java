@@ -327,4 +327,8 @@ public interface IWebRTCClient {
      */
     StatsCollector getStatsCollector();
 
+    /**
+     * Returns true if SDK resources are released and its shutdown, false otherwise.
+     */
+    boolean isShutdown();
 }

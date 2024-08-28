@@ -240,9 +240,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public static final long PEER_RECONNECTION_DELAY_MS = 3000;
     public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
 
-    boolean released = false;
+    private boolean released = false;
 
-    String roomId;
+    private String roomId;
 
     public void createReconnectorRunnables() {
         //only used in conference.
@@ -402,10 +402,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void joinToConferenceRoom(String roomId, String streamId) {
-
         this.roomId = roomId;
 
-        //we will call play after publish started event
         publish(streamId, "",
                 true, true,
                 "",
@@ -968,7 +966,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId) {
         publish(streamId, null, true, true,
-                null, null, streamId, null);
+                null, null, streamId, "qdadsas");
     }
 
 
@@ -1204,19 +1202,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void changeVideoSource(StreamSource newSource) {
-        if (!config.videoSource.equals(newSource)) {
-            if (newSource.equals(StreamSource.SCREEN) && adm != null) {
-                adm.setMediaProjection(config.mediaProjection);
+            if (!config.videoSource.equals(newSource)) {
+                if (newSource.equals(StreamSource.SCREEN) && adm != null) {
+                    adm.setMediaProjection(config.mediaProjection);
+                }
+
+                Log.i(TAG, "Change video source started!");
+                VideoCapturer newVideoCapturer = createVideoCapturer(newSource);
+                /* When user try to change video source after stopped the publishing
+                 * peerConnectionClient will null, until start another broadcast
+                 */
+                changeVideoCapturer(newVideoCapturer);
+                config.videoSource = newSource;
+                Log.i(TAG, "Change video source done!");
             }
 
-            VideoCapturer newVideoCapturer = createVideoCapturer(newSource);
-
-            /* When user try to change video source after stopped the publishing
-             * peerConnectionClient will null, until start another broadcast
-             */
-            changeVideoCapturer(newVideoCapturer);
-            config.videoSource = newSource;
-        }
     }
 
     public @Nullable VideoCapturer createVideoCapturer(StreamSource source) {
@@ -1325,7 +1325,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.handler.post(() -> {
             Log.d(TAG, "ICE disconnected");
 
-            if (config.webRTCListener != null) {
+           if (config.webRTCListener != null) {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
 
@@ -1454,7 +1454,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (sdp.type == SessionDescription.Type.OFFER) {
                 PeerConnection pc = getPeerConnectionFor(streamId);
                 if (pc == null) {
-                    createPeerConnection(streamId);
+                    createPeerConnection(streamId, false);
                 }
 
                 setRemoteDescription(streamId, sdp);
@@ -1501,6 +1501,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onPlayStarted(String streamId) {
         Log.d(TAG, "Play started.");
+
         streamStoppedByUser = false;
         reconnectionInProgress = false;
         waitingForPlay = false;
@@ -1516,7 +1517,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onStartStreaming(String streamId) {
         this.handler.post(() -> {
 
-            createPeerConnection(streamId);
+            createPeerConnection(streamId, true);
             PeerInfo peerInfo = getPeerInfoFor(streamId);
             if(peerInfo != null && peerInfo.mode == Mode.P2P){
                 createOffer(streamId);
@@ -1800,6 +1801,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
         videoCapturerStopped = true;
         videoCapturer = newVideoCapturer;
         localVideoTrack = null;
@@ -1808,6 +1810,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (localVideoSender != null) {
             localVideoSender.setTrack(newTrack, true);
         }
+
     }
 
     /**
@@ -1820,11 +1823,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         executor.execute(() -> createPeerConnectionFactoryInternal(options));
     }
 
-    public void createPeerConnection(String streamId) {
+    public void createPeerConnection(String streamId, boolean createLocalTrack) {
         executor.execute(() -> {
             try {
                 createMediaConstraintsInternal();
-                createPeerConnectionInternal(streamId);
+                createPeerConnectionInternal(streamId, createLocalTrack);
             } catch (Exception e) {
                 reportError(streamId, "Failed to create peer connection: " + e.getMessage());
                 throw e;
@@ -1976,14 +1979,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 "OfferToReceiveVideo", Boolean.toString(config.videoCallEnabled)));
     }
 
-    public void createPeerConnectionInternal(String streamId) {
+    public void createPeerConnectionInternal(String streamId, boolean createLocalTrack) {
         if (factory == null) {
             Log.e(TAG, "Peer connection factory is not created");
             return;
         }
         Log.d(TAG, "Create peer connection.");
-
-        // queuedRemoteCandidates = new ArrayList<>();
 
         PeerConnection.RTCConfiguration rtcConfig =
                 new PeerConnection.RTCConfiguration(iceServers);
@@ -2013,21 +2014,25 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             setWebRTCLogLevel();
 
-            List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
-            try{
-                if (config.videoCallEnabled) {
-                    peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
+            if(createLocalTrack){
+
+                List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
+                try{
+                    if (config.videoCallEnabled) {
+                        peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
+                    }
+                    peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+
+                }catch (IllegalStateException e){
+                    Log.e(TAG,"Could not add track to PC. Is it in closed state? Peer connection state " + peerConnection.connectionState().name()+" Error message: "+e.getMessage());
+                    return;
                 }
-                peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
 
-            }catch (IllegalStateException e){
-                Log.e(TAG,"Could not add track to PC. Is it in closed state? Peer connection state " + peerConnection.connectionState().name()+" Error message: "+e.getMessage());
-                return;
+                if (config.videoCallEnabled) {
+                    findVideoSender(streamId);
+                }
             }
 
-            if (config.videoCallEnabled) {
-                findVideoSender(streamId);
-            }
             config.webRTCListener.onPeerConnectionCreated(streamId);
             Log.d(TAG, "Peer connection created.");
         } else {
@@ -2117,6 +2122,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (videoCapturer != null && !videoCapturerStopped) {
             try {
                 videoCapturer.stopCapture();
+                videoCapturer.dispose();
+                videoCapturer = null;
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -2169,7 +2176,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public StatsCollector getStatsCollector() {
         return statsCollector;
-
     }
 
     public void enableStatsEvents(String streamId, boolean enable, int periodMs) {
@@ -2227,7 +2233,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 initDataChannel(streamId);
                 MediaConstraints sdpMediaConstraintsLocal;
                 if (peerInfo.restartIce) {
-                    Log.d(TAG, "RESTART ICE IS TRUE, WILL CREATE OFFER");
+                    Log.d(TAG, "Peer info restart ice is true. Will create offer.");
                     sdpMediaConstraintsLocal = new MediaConstraints();
                     sdpMediaConstraintsLocal.mandatory.add(
                             new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
@@ -2736,4 +2742,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void setPeerReconnectionHandler(Handler peerReconnectionHandler) {
         this.peerReconnectionHandler = peerReconnectionHandler;
     }
+
+    @Override
+    public boolean isShutdown() {
+        return released;
+    }
+
 }
