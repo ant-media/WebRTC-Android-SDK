@@ -752,10 +752,10 @@ public class WebRTCClientTest {
     @Test
     public void testOnStartStreaming() {
         String streamId = "stream1";
-        doNothing().when(webRTCClient).createPeerConnection(streamId);
+        doNothing().when(webRTCClient).createPeerConnection(streamId, true);
         webRTCClient.onStartStreaming(streamId);
 
-        verify(webRTCClient, timeout(1000)).createPeerConnection(streamId);
+        verify(webRTCClient, timeout(1000)).createPeerConnection(streamId, true);
     }
 
     @Test
@@ -764,7 +764,7 @@ public class WebRTCClientTest {
 
         SessionDescription sdp = new SessionDescription(SessionDescription.Type.OFFER, "sdp");
 
-        doNothing().when(webRTCClient).createPeerConnection(streamId);
+        doNothing().when(webRTCClient).createPeerConnection(streamId, false);
         doNothing().when(webRTCClient).setRemoteDescription(streamId, sdp);
         doNothing().when(webRTCClient).createAnswer(streamId);
 
@@ -772,14 +772,14 @@ public class WebRTCClientTest {
 
         webRTCClient.onTakeConfiguration(streamId, sdp);
 
-        verify(webRTCClient).createPeerConnection(streamId);
+        verify(webRTCClient).createPeerConnection(streamId, false);
         verify(webRTCClient).setRemoteDescription(streamId, sdp);
         verify(webRTCClient).createAnswer(streamId);
 
         SessionDescription sdpAnswer = new SessionDescription(SessionDescription.Type.ANSWER, "sdp");
         webRTCClient.onTakeConfiguration(streamId, sdpAnswer);
 
-        verify(webRTCClient, times(1)).createPeerConnection(streamId);
+        verify(webRTCClient, times(1)).createPeerConnection(streamId, false);
         verify(webRTCClient, times(1)).setRemoteDescription(streamId, sdpAnswer);
         verify(webRTCClient, times(1)).createAnswer(streamId);
     }
@@ -829,10 +829,10 @@ public class WebRTCClientTest {
         String streamId = "stream1";
 
         doNothing().when(webRTCClient).createMediaConstraintsInternal();
-        doNothing().when(webRTCClient).createPeerConnectionInternal(streamId);
+        doNothing().when(webRTCClient).createPeerConnectionInternal(streamId, true);
         doNothing().when(webRTCClient).reportError(anyString(), anyString());
 
-        webRTCClient.createPeerConnection(streamId);
+        webRTCClient.createPeerConnection(streamId, true);
 
         verify(webRTCClient, never()).reportError(eq(streamId), anyString());
 
@@ -842,7 +842,7 @@ public class WebRTCClientTest {
             throw new RuntimeException(e);
         }
         doThrow(new NullPointerException()).when(webRTCClient).createMediaConstraintsInternal();
-        webRTCClient.createPeerConnection(streamId);
+        webRTCClient.createPeerConnection(streamId, true);
         verify(webRTCClient, timeout(10000)).reportError(eq(streamId), anyString());
 
     }
@@ -921,7 +921,7 @@ public class WebRTCClientTest {
         doReturn(mock(AudioTrack.class)).when(webRTCClient).createAudioTrack();
 
         //no factory so nothing happens, return immediately
-        webRTCClient.createPeerConnectionInternal(streamId);
+        webRTCClient.createPeerConnectionInternal(streamId, true);
 
         PeerConnectionFactory factory = mock(PeerConnectionFactory.class);
         webRTCClient.setFactory(factory);
@@ -933,7 +933,7 @@ public class WebRTCClientTest {
         WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
         webRTCClient.getPeersForTest().put(streamId, peerInfo);
 
-        webRTCClient.createPeerConnectionInternal(streamId);
+        webRTCClient.createPeerConnectionInternal(streamId, true);
         verify(factory).createPeerConnection(any(PeerConnection.RTCConfiguration.class), any(PeerConnection.Observer.class));
     }
 

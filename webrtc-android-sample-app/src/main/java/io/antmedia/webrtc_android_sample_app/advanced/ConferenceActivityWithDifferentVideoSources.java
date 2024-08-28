@@ -1,28 +1,30 @@
-package io.antmedia.webrtc_android_sample_app.basic;
+package io.antmedia.webrtc_android_sample_app.advanced;
+
+
+import static io.antmedia.webrtc_android_sample_app.basic.MediaProjectionService.EXTRA_MEDIA_PROJECTION_DATA;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.projection.MediaProjection;
+import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -30,36 +32,55 @@ import java.util.concurrent.TimeUnit;
 
 import io.antmedia.webrtc_android_sample_app.R;
 import io.antmedia.webrtc_android_sample_app.TestableActivity;
+import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
+import io.antmedia.webrtc_android_sample_app.basic.MediaProjectionService;
+import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtc_android_sample_app.basic.stats.TrackStatsAdapter;
 import io.antmedia.webrtcandroidframework.api.DefaultConferenceWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
-import io.antmedia.webrtcandroidframework.core.DataChannelConstants;
+import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
+import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 import io.antmedia.webrtcandroidframework.core.model.PlayStats;
 import io.antmedia.webrtcandroidframework.core.model.TrackStats;
-import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
-public class ConferenceActivity extends TestableActivity {
+/*
+ * This sample demonstrates how to switch different stream sources on call or off call.
+ * Users can switch in between rear camera, front camera, screen share while in
+ * conference or before joining the conference.
+ * Critical point of such implementation is always asking for screen share permission if source is
+ * selected as SCREEN before publishing. If webrtc client is released(shutdown) and user tries to change video source,
+ * be sure to re-create webrtc client.
+ */
 
+public class ConferenceActivityWithDifferentVideoSources extends TestableActivity {
+    public static final int SCREEN_CAPTURE_PERMISSION_CODE = 1234;
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
+
     private TextView statusIndicatorTextView;
     private Button joinButton;
     private String streamId;
     private String serverUrl;
     private IWebRTCClient webRTCClient;
     private String roomId;
-    private Button audioButton;
-    private Button videoButton;
-    private boolean playOnly;
+    private Button rearCameraButton;
+    private Button frontCameraButton;
+    private Button screenShareButton;
     boolean bluetoothEnabled = false;
     boolean initBeforeStream = false;
+    boolean joinWithScreenShareRequested = false;
+    boolean publishStarted = false;
+
 
     private SurfaceViewRenderer localParticipantRenderer;
     private SurfaceViewRenderer remoteParticipant1Renderer;
     private SurfaceViewRenderer remoteParticipant2Renderer;
     private SurfaceViewRenderer remoteParticipant3Renderer;
     private SurfaceViewRenderer remoteParticipant4Renderer;
+
+    private MediaProjectionManager mediaProjectionManager;
 
     private AlertDialog statsPopup;
     private ScheduledFuture statCollectorFuture;
@@ -71,31 +92,12 @@ public class ConferenceActivity extends TestableActivity {
     private TrackStatsAdapter audioTrackStatsAdapter;
     private TrackStatsAdapter videoTrackStatsAdapter;
 
-    private boolean publishStarted = false;
 
-    /*
-     * We will receive videoTrack objects from the server through the onNewVideoTrack callback of the webrtc client listener.
-     * These videoTracks are not yet assigned to a streamId. We store them inside videoTrackList.
-     */
-    private ArrayList<VideoTrack> videoTrackList = new ArrayList<>();
-
-    /*
-     * Store track assignments received through the data channel from the server.
-     */
-    private JSONArray trackAssignments;
-
-    /*
-     * A data channel message will arrive containing the eventType VIDEO_TRACK_ASSIGNMENT_LIST.
-     * This message includes a videoLabel (trackId) and trackId (actual streamId).
-     * Upon receiving this message, we will match our videoTrack objects with the streamIds and store them in the map below.
-     * This allows us to determine which video track belongs to which stream id.
-     */
-    private HashMap<String,VideoTrack> streamIdVideoTrackMap = new HashMap<>();
-
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_conference);
+        setContentView(R.layout.activity_conference_with_different_video_sources);
 
         localParticipantRenderer = findViewById(R.id.local_participant_renderer);
         remoteParticipant1Renderer = findViewById(R.id.remote_participant_1_renderer);
@@ -106,19 +108,13 @@ public class ConferenceActivity extends TestableActivity {
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         joinButton = findViewById(R.id.join_conference_button);
 
-        audioButton = findViewById(R.id.control_audio_button);
-        videoButton = findViewById(R.id.control_video_button);
+        rearCameraButton = findViewById(R.id.rear_camera_button);
+        frontCameraButton = findViewById(R.id.front_camera_button);
+        screenShareButton = findViewById(R.id.screen_share_button);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
-
         roomId = sharedPreferences.getString(getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
         streamId = "streamId" + (int)(Math.random()*9999);
-
-        Switch playOnlySwitch = findViewById(R.id.play_only_switch);
-        playOnlySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            playOnly = b;
-            localParticipantRenderer.setVisibility(b ? View.GONE : View.VISIBLE);
-        });
 
         if(initBeforeStream){
             if(PermissionHandler.checkCameraPermissions(this)){
@@ -130,25 +126,6 @@ public class ConferenceActivity extends TestableActivity {
             createWebRTCClient();
         }
 
-    }
-
-    public void createWebRTCClient(){
-        webRTCClient = IWebRTCClient.builder()
-                .addRemoteVideoRenderer(remoteParticipant1Renderer, remoteParticipant2Renderer, remoteParticipant3Renderer, remoteParticipant4Renderer)
-                .setLocalVideoRenderer(localParticipantRenderer)
-                .setServerUrl(serverUrl)
-                .setActivity(this)
-                .setInitiateBeforeStream(initBeforeStream)
-                .setBluetoothEnabled(bluetoothEnabled)
-                .setWebRTCListener(createWebRTCListener(roomId, streamId))
-                .setDataChannelObserver(createDatachannelObserver())
-                .build();
-
-        joinButton = findViewById(R.id.join_conference_button);
-        joinButton.setOnClickListener(v -> {
-            joinLeaveRoom();
-        });
-
         Button showStatsButton = findViewById(R.id.show_stats_button);
         showStatsButton.setOnClickListener(v -> {
 
@@ -156,173 +133,11 @@ public class ConferenceActivity extends TestableActivity {
                 showStatsPopup();
             }else{
                 runOnUiThread(() -> {
-                    Toast.makeText(ConferenceActivity.this,"Start publishing first.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ConferenceActivityWithDifferentVideoSources.this,"Start publishing first.", Toast.LENGTH_SHORT).show();
                 });
             }
         });
 
-    }
-
-
-    public void joinLeaveRoom() {
-        if(!initBeforeStream) {
-            if (!PermissionHandler.checkCameraPermissions(this)) {
-                PermissionHandler.requestCameraPermissions(this);
-                return;
-            }else if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
-                PermissionHandler.requestPublishPermissions(this, bluetoothEnabled);
-                return;
-            }
-        }
-
-        if (!webRTCClient.isStreaming(streamId)) {
-            joinButton.setText("Leave");
-            Log.i(getClass().getSimpleName(), "Calling join");
-
-            if(playOnly) {
-                webRTCClient.joinToConferenceRoom(roomId);
-            }
-            else {
-                webRTCClient.joinToConferenceRoom(roomId, streamId);
-            }
-        }
-        else {
-            joinButton.setText("Join");
-            Log.i(getClass().getSimpleName(), "Calling leave");
-
-            webRTCClient.leaveFromConference(roomId);
-        }
-    }
-
-    private IDataChannelObserver createDatachannelObserver() {
-        return new DefaultDataChannelObserver() {
-            @Override
-            public void textMessageReceived(String messageText) {
-                super.textMessageReceived(messageText);
-                try{
-                    JSONObject msgJsonObj = new JSONObject(messageText);
-                    if(msgJsonObj.has(DataChannelConstants.EVENT_TYPE) && msgJsonObj.getString(DataChannelConstants.EVENT_TYPE).equals(DataChannelConstants.VIDEO_TRACK_ASSIGNMENT_LIST)){
-                        trackAssignments = msgJsonObj.getJSONArray(DataChannelConstants.PAYLOAD);
-                        matchStreamIdAndVideoTrack();
-                    }
-                }catch (Exception e){
-                    Log.e(getClass().getSimpleName(),"Cant parse data channel message to JSON object. "+e.getMessage());
-                }
-            }
-        };
-    }
-
-    private void matchStreamIdAndVideoTrack(){
-        try{
-            for(int i=0;i<trackAssignments.length();i++){
-                // inside this object videoLabel is actually trackId(it is like videoTrack0) and trackId is our actual streamId
-                JSONObject videoLabelTrackIdObj = trackAssignments.getJSONObject(i);
-                for(int k=0;k<videoTrackList.size();k++){
-                    VideoTrack videoTrack = videoTrackList.get(k);
-                    String videoTrackId = videoTrack.id().substring(DataChannelConstants.TRACK_ID_PREFIX.length());
-                    if(videoLabelTrackIdObj.getString(DataChannelConstants.VIDEO_LABEL).equals(videoTrackId)){
-                        streamIdVideoTrackMap.put(videoLabelTrackIdObj.getString(DataChannelConstants.TRACK_ID), videoTrack);
-                    }
-                }
-            }
-
-        }catch (JSONException e){
-            Log.e(getClass().getSimpleName(), "Cant parse JSON on matchStreamIdAndVideoTrack method. "+ e.getMessage());
-        }
-    }
-
-    private DefaultConferenceWebRTCListener createWebRTCListener(String roomId, String streamId) {
-        return new DefaultConferenceWebRTCListener(roomId, streamId) {
-
-            @Override
-            public void onPublishStarted(String streamId) {
-                super.onPublishStarted(streamId);
-                decrementIdle();
-                publishStarted = true;
-            }
-
-            @Override
-            public void onShutdown() {
-                super.onShutdown();
-                videoTrackList.clear();
-                streamIdVideoTrackMap.clear();
-            }
-
-            @Override
-            public void onReconnectionSuccess() {
-                super.onReconnectionSuccess();
-                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
-                statusIndicatorTextView.setText(getResources().getString(R.string.live));
-            }
-
-            @Override
-            public void onIceDisconnected(String streamId) {
-                super.onIceDisconnected(streamId);
-
-                if(webRTCClient.isReconnectionInProgress()){
-                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
-                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
-                }else{
-                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
-                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
-                }
-            }
-
-            @Override
-            public void onPublishAttempt(String streamId) {
-                super.onPublishAttempt(streamId);
-                if(webRTCClient.isReconnectionInProgress()){
-                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
-                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
-                }else{
-                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
-                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
-                }
-            }
-
-            @Override
-            public void onPlayStarted(String streamId) {
-                super.onPlayStarted(streamId);
-                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
-                statusIndicatorTextView.setText(getResources().getString(R.string.live));
-                decrementIdle();
-            }
-
-            @Override
-            public void onNewVideoTrack(VideoTrack track, String trackId) {
-                super.onNewVideoTrack(track, trackId);
-                videoTrackList.add(track);
-                if(trackAssignments != null){
-                    matchStreamIdAndVideoTrack();
-                }
-            }
-
-            @Override
-            public void onPublishFinished(String streamId) {
-                super.onPublishFinished(streamId);
-                decrementIdle();
-            }
-        };
-    }
-
-    public void controlAudio(View view) {
-        if (webRTCClient.getConfig().audioCallEnabled) {
-            webRTCClient.setAudioEnabled(false);
-            audioButton.setText("Enable Audio");
-        } else {
-            webRTCClient.setAudioEnabled(true);
-            audioButton.setText("Disable Audio");
-        }
-    }
-
-    public void controlVideo(View view) {
-        if (webRTCClient.getConfig().videoCallEnabled) {
-            webRTCClient.setVideoEnabled(false);
-            videoButton.setText("Enable Video");
-        } else {
-            webRTCClient.setVideoEnabled(true);
-            videoButton.setText("Disable Video");
-        }
     }
 
     private void showStatsPopup() {
@@ -457,6 +272,198 @@ public class ConferenceActivity extends TestableActivity {
         statsPopup.show();
     }
 
+
+    public void createWebRTCClient(){
+        webRTCClient = IWebRTCClient.builder()
+                .addRemoteVideoRenderer(remoteParticipant1Renderer, remoteParticipant2Renderer, remoteParticipant3Renderer, remoteParticipant4Renderer)
+                .setLocalVideoRenderer(localParticipantRenderer)
+                .setServerUrl(serverUrl)
+                .setActivity(this)
+                .setInitiateBeforeStream(initBeforeStream)
+                .setBluetoothEnabled(bluetoothEnabled)
+                .setWebRTCListener(createWebRTCListener(roomId, streamId))
+                .setDataChannelObserver(createDatachannelObserver())
+                .build();
+
+
+        joinButton = findViewById(R.id.join_conference_button);
+        joinButton.setOnClickListener(v -> {
+                joinLeaveRoom();
+        });
+
+        rearCameraButton.setOnClickListener(v -> {
+            changeVideoSource(IWebRTCClient.StreamSource.REAR_CAMERA);
+
+        });
+
+        frontCameraButton.setOnClickListener(v -> {
+            changeVideoSource(IWebRTCClient.StreamSource.FRONT_CAMERA);
+        });
+
+        screenShareButton.setOnClickListener(v -> {
+            if(webRTCClient.isStreaming(streamId)){
+                requestScreenCapture();
+            }else{
+                webRTCClient.getConfig().videoSource = IWebRTCClient.StreamSource.SCREEN;
+            }
+        });
+
+    }
+
+    public void changeVideoSource(IWebRTCClient.StreamSource streamSource){
+        if(webRTCClient.getConfig().videoSource != streamSource){
+
+            if(!webRTCClient.isShutdown()){
+                webRTCClient.changeVideoSource(streamSource);
+            }else{
+                createWebRTCClient();
+                webRTCClient.changeVideoSource(streamSource);
+            }
+        }
+    }
+
+    public void requestScreenCapture() {
+        mediaProjectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+        startActivityForResult(mediaProjectionManager.createScreenCaptureIntent(), SCREEN_CAPTURE_PERMISSION_CODE);
+    }
+
+    public void joinLeaveRoom() {
+        incrementIdle();
+
+        if(!initBeforeStream) {
+            if (!PermissionHandler.checkCameraPermissions(this)) {
+                PermissionHandler.requestCameraPermissions(this);
+                return;
+            }else if(!PermissionHandler.checkPublishPermissions(this, bluetoothEnabled)){
+                PermissionHandler.requestPublishPermissions(this, bluetoothEnabled);
+                return;
+            }
+        }
+
+        if (!webRTCClient.isStreaming(streamId)) {
+            joinButton.setText("Leave");
+            Log.i(getClass().getSimpleName(), "Calling join");
+
+            if(webRTCClient.getConfig().videoSource == IWebRTCClient.StreamSource.SCREEN){
+                joinWithScreenShareRequested = true;
+                requestScreenCapture();
+            }else{
+                webRTCClient.joinToConferenceRoom(roomId, streamId);
+            }
+        }
+        else {
+            joinButton.setText("Join");
+            Log.i(getClass().getSimpleName(), "Calling leave");
+
+            webRTCClient.leaveFromConference(roomId);
+        }
+    }
+
+    private IDataChannelObserver createDatachannelObserver() {
+        return new DefaultDataChannelObserver() {
+            @Override
+            public void textMessageReceived(String messageText) {
+                super.textMessageReceived(messageText);
+            }
+        };
+    }
+
+    private DefaultConferenceWebRTCListener createWebRTCListener(String roomId, String streamId) {
+        return new DefaultConferenceWebRTCListener(roomId, streamId) {
+
+            @Override
+            public void onPublishStarted(String streamId) {
+                super.onPublishStarted(streamId);
+                publishStarted = true;
+
+                decrementIdle();
+            }
+
+            @Override
+            public void onReconnectionSuccess() {
+                super.onReconnectionSuccess();
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+            }
+
+            @Override
+            public void onIceDisconnected(String streamId) {
+                super.onIceDisconnected(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
+            }
+
+            @Override
+            public void onPublishAttempt(String streamId) {
+                super.onPublishAttempt(streamId);
+                if(webRTCClient.isReconnectionInProgress()){
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
+                }else{
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.connecting));
+                }
+            }
+
+            @Override
+            public void onPlayStarted(String streamId) {
+                super.onPlayStarted(streamId);
+                statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                statusIndicatorTextView.setText(getResources().getString(R.string.live));
+                decrementIdle();
+            }
+
+            @Override
+            public void onShutdown() {
+                super.onShutdown();
+            }
+
+            @Override
+            public void onPublishFinished(String streamId) {
+                super.onPublishFinished(streamId);
+                decrementIdle();
+            }
+        };
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != SCREEN_CAPTURE_PERMISSION_CODE)
+            return;
+
+        WebRTCClientConfig config = webRTCClient.getConfig();
+        config.mediaProjectionIntent = data;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+            MediaProjectionService.setListener(() -> {
+                startScreenCapturer();
+                if(joinWithScreenShareRequested){
+                    webRTCClient.joinToConferenceRoom(roomId, streamId);
+                    joinWithScreenShareRequested = false;
+                }
+            });
+
+            Intent serviceIntent = new Intent(this, MediaProjectionService.class);
+            serviceIntent.putExtra(EXTRA_MEDIA_PROJECTION_DATA, data);
+            startForegroundService(serviceIntent);
+
+        } else {
+            startScreenCapturer();
+            if(joinWithScreenShareRequested){
+                webRTCClient.joinToConferenceRoom(roomId, streamId);
+                joinWithScreenShareRequested = false;
+            }
+        }
+
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -496,4 +503,10 @@ public class ConferenceActivity extends TestableActivity {
             }
         }
     }
+
+    private void startScreenCapturer() {
+        changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
+        decrementIdle();
+    }
 }
+

@@ -58,7 +58,9 @@ jobs:
       id: set-server-id
       run: |
         REPO=$(echo "$REPO" | cut -d'/' -f2)
-        SERVER_ID="ci-$REPO"
+        BRANCH_NAME="${{ github.head_ref }}"
+        SERVER_ID="ci-$REPO-$BRANCH_NAME"
+        echo $SERVER_ID
         echo "server_id=$SERVER_ID" >> $GITHUB_OUTPUT
         
     - name: Configure OpenStack CLI and Create Instance
@@ -89,6 +91,10 @@ jobs:
     - name: Check runner status and wait if offline
       id: check_status
       run: |
+        MAX_WAIT=300
+        WAIT_INTERVAL=10
+        ELAPSED_TIME=0
+    
         RUNNER_STATUS=$(curl -s -L \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer $GITHUB_TOKEN" \
@@ -96,9 +102,10 @@ jobs:
           https://api.github.com/repos/$REPO/actions/runners | jq -r '.runners[0].status')
         echo "Initial Runner status is: $RUNNER_STATUS"
     
-        while [[ "$RUNNER_STATUS" != "online" ]]; do
-          echo "Runner is $RUNNER_STATUS. Waiting for 10 seconds..."
-          sleep 10
+        while [[ "$RUNNER_STATUS" != "online" && "$ELAPSED_TIME" -lt "$MAX_WAIT" ]]; do
+          echo "Runner is $RUNNER_STATUS. Waiting for $WAIT_INTERVAL seconds..."
+          sleep $WAIT_INTERVAL
+          ELAPSED_TIME=$((ELAPSED_TIME + WAIT_INTERVAL))
           RUNNER_STATUS=$(curl -s -L \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \

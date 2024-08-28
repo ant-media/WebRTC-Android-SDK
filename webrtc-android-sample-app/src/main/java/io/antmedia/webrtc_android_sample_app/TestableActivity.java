@@ -7,11 +7,12 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
-public abstract class TestableActivity extends Activity {
+public abstract class TestableActivity extends AppCompatActivity {
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     protected SharedPreferences sharedPreferences;
     public static String CONFERENCE_ROOM_ID_FOR_TEST = "room_12877";
