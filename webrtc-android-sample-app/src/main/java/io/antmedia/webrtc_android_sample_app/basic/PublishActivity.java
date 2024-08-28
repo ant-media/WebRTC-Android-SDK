@@ -3,7 +3,6 @@ package io.antmedia.webrtc_android_sample_app.basic;
 import android.app.AlertDialog;
 
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,7 +12,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
@@ -33,19 +31,16 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 public class PublishActivity extends TestableActivity {
 
     private TextView statusIndicatorTextView;
-
     private String streamId;
-
     private IWebRTCClient webRTCClient;
-    Button startStreamingButton;
-    String serverUrl;
-    TextView streamIdEditText;
-    SurfaceViewRenderer fullScreenRenderer;
+    private Button startStreamingButton;
+    private String serverUrl;
+    private TextView streamIdEditText;
+    private SurfaceViewRenderer fullScreenRenderer;
 
-    boolean bluetoothEnabled = false;
-    boolean initBeforeStream = false;
+    private boolean bluetoothEnabled = false;
+    private boolean initBeforeStream = false;
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,15 +88,6 @@ public class PublishActivity extends TestableActivity {
             startStopStream();
         });
 
-        Button frontCameraButton = findViewById(R.id.front_camera_button);
-        Button rearCameraButton = findViewById(R.id.rear_camera_button);
-
-        rearCameraButton.setOnClickListener(v -> {
-            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.REAR_CAMERA);
-        });
-        frontCameraButton.setOnClickListener(v -> {
-            webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.FRONT_CAMERA);
-        });
     }
 
     public void startStopStream() {

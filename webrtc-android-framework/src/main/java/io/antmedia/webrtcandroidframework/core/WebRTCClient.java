@@ -250,6 +250,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private boolean sendAudioEnabled = true;
 
+
     public void createReconnectorRunnables() {
         //only used in conference.
         publishReconnectorRunnable = () -> {
@@ -1462,7 +1463,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (sdp.type == SessionDescription.Type.OFFER) {
                 PeerConnection pc = getPeerConnectionFor(streamId);
                 if (pc == null) {
-                    createPeerConnection(streamId);
+                    createPeerConnection(streamId, false);
                 }
 
                 setRemoteDescription(streamId, sdp);
@@ -1525,7 +1526,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onStartStreaming(String streamId) {
         this.handler.post(() -> {
 
-            createPeerConnection(streamId);
+            createPeerConnection(streamId, true);
             PeerInfo peerInfo = getPeerInfoFor(streamId);
             if(peerInfo != null && peerInfo.mode == Mode.P2P){
                 createOffer(streamId);
@@ -1831,11 +1832,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         executor.execute(() -> createPeerConnectionFactoryInternal(options));
     }
 
-    public void createPeerConnection(String streamId) {
+    public void createPeerConnection(String streamId, boolean createLocalTrack) {
         executor.execute(() -> {
             try {
                 createMediaConstraintsInternal();
-                createPeerConnectionInternal(streamId);
+                createPeerConnectionInternal(streamId, createLocalTrack);
             } catch (Exception e) {
                 reportError(streamId, "Failed to create peer connection: " + e.getMessage());
                 throw e;
@@ -1987,7 +1988,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 "OfferToReceiveVideo", Boolean.toString(config.videoCallEnabled)));
     }
 
-    public void createPeerConnectionInternal(String streamId) {
+    public void createPeerConnectionInternal(String streamId, boolean createLocalTrack) {
         if (factory == null) {
             Log.e(TAG, "Peer connection factory is not created");
             return;
@@ -2022,7 +2023,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             setWebRTCLogLevel();
 
-            if(!streamId.equals(roomId)){ //if it is not room play case
+            if(createLocalTrack){
 
                 List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
                 try{
