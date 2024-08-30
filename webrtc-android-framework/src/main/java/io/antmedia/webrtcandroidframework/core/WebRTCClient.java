@@ -975,7 +975,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId) {
         publish(streamId, null, true, true,
-                null, null, streamId, "qdadsas");
+                null, null, streamId, null);
     }
 
 
