@@ -119,6 +119,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private VideoTrack localVideoTrack;
     private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
+
     private final ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
     private final StatsCollector statsCollector = new StatsCollector();
 
@@ -386,6 +387,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         mainHandler = new Handler(config.activity.getMainLooper());
         iceServers.add(PeerConnection.IceServer.builder(config.stunServerUri)
                 .createIceServer());
+
+        if(config.turnServerUri != null) {
+            iceServers.add(PeerConnection.IceServer.builder(config.turnServerUri)
+                            .setUsername(config.turnServerUserName)
+                            .setPassword(config.turnServerPassword)
+                    .createIceServer());
+        }
 
         if (config.initiateBeforeStream) {
             init();
@@ -2743,6 +2751,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.peerReconnectionHandler = peerReconnectionHandler;
     }
 
+    public ArrayList<PeerConnection.IceServer> getIceServers() {
+        return iceServers;
+    }
     @Override
     public boolean isShutdown() {
         return released;

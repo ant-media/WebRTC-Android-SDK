@@ -70,6 +70,7 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
@@ -1265,5 +1266,26 @@ public class WebRTCClientTest {
         verify(renderer).clearImage();
         verify(renderer).release();
         verify(renderer).setTag(null);
+    }
+
+    @Test
+    public void testTurnServer(){
+        String turnServerUri = "turn:example.antmedia.io";
+        String turnServerUsername = "testUserName";
+        String turnServerPassword = "testPassword";
+
+        WebRTCClient webRTCClientReal = IWebRTCClient.builder()
+                .setActivity(context)
+                .setTurnServer(turnServerUri, turnServerUsername, turnServerPassword)
+                .setWebRTCListener(listener)
+                .build();
+
+       ArrayList<PeerConnection.IceServer> iceServers =  webRTCClientReal.getIceServers();
+        boolean containsTurnServer = iceServers.stream().anyMatch(iceServer ->
+                iceServer.urls.contains(turnServerUri)
+                        && turnServerUsername.equals(iceServer.username)
+                        && turnServerPassword.equals(iceServer.password)
+        );
+        assertTrue(containsTurnServer);
     }
 }
