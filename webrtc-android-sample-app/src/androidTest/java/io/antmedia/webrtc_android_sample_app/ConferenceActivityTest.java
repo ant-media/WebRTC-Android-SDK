@@ -246,7 +246,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
+        Thread.sleep(6000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
@@ -288,7 +288,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
+        Thread.sleep(6000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
