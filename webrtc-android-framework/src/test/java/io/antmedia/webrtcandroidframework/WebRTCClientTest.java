@@ -76,6 +76,7 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
@@ -268,11 +269,13 @@ public class WebRTCClientTest {
 
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
+        doNothing().when(webRTCClient).initializeAudioManager();
         doReturn(true).when(wsHandler).isConnected();
 
 
         webRTCClient.join(streamId, token);
 
+        verify(webRTCClient, times(1)).initializeAudioManager();
         verify(wsHandler, times(1)).joinToPeer(streamId, token);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
@@ -418,6 +421,14 @@ public class WebRTCClientTest {
 
         // Verify that the audio device is selected using the AudioManager
         Mockito.verify(audioManager).selectAudioDevice(device);
+
+        availableDevices.clear();
+
+        availableDevices.add(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+        AppRTCAudioManager.AudioDevice speakerDevice = AppRTCAudioManager.AudioDevice.SPEAKER_PHONE;
+
+        webRTCClient.onAudioManagerDevicesChanged(speakerDevice, availableDevices);
+        Mockito.verify(audioManager).selectAudioDevice(speakerDevice);
     }
 
     @Test
@@ -1336,5 +1347,26 @@ public class WebRTCClientTest {
                     // Verify that setEnabled(true) was called
                     verify(localAudioTrackMock, times(1)).setEnabled(true);
                 });
+    }
+
+    @Test
+    public void testTurnServer(){
+        String turnServerUri = "turn:example.antmedia.io";
+        String turnServerUsername = "testUserName";
+        String turnServerPassword = "testPassword";
+
+        WebRTCClient webRTCClientReal = IWebRTCClient.builder()
+                .setActivity(context)
+                .setTurnServer(turnServerUri, turnServerUsername, turnServerPassword)
+                .setWebRTCListener(listener)
+                .build();
+
+       ArrayList<PeerConnection.IceServer> iceServers =  webRTCClientReal.getIceServers();
+        boolean containsTurnServer = iceServers.stream().anyMatch(iceServer ->
+                iceServer.urls.contains(turnServerUri)
+                        && turnServerUsername.equals(iceServer.username)
+                        && turnServerPassword.equals(iceServer.password)
+        );
+        assertTrue(containsTurnServer);
     }
 }

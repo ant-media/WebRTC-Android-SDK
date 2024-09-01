@@ -119,6 +119,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private VideoTrack localVideoTrack;
     private Handler handler = new Handler();
     private WebSocketHandler wsHandler;
+
     private final ArrayList<PeerConnection.IceServer> iceServers = new ArrayList<>();
     private final StatsCollector statsCollector = new StatsCollector();
 
@@ -395,6 +396,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 .createIceServer());
         sendAudioEnabled = config.audioCallEnabled;
         sendVideoEnabled = config.videoCallEnabled;
+
+        if(config.turnServerUri != null) {
+            iceServers.add(PeerConnection.IceServer.builder(config.turnServerUri)
+                            .setUsername(config.turnServerUserName)
+                            .setPassword(config.turnServerPassword)
+                    .createIceServer());
+        }
 
         if (config.initiateBeforeStream) {
             init();
@@ -1090,6 +1098,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peers.put(streamId, peerInfo);
 
         init();
+
+        initializeAudioManager();
+
+
         wsHandler.joinToPeer(streamId, token);
     }
 
@@ -1110,16 +1122,31 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         enableStatsEvents(streamId, true, STAT_CALLBACK_PERIOD);
     }
 
-    // This method is called when the audio manager reports audio device change,
-    // e.g. from wired headset to speakerphone.
+    /**
+     * Handles changes in audio devices reported by the audio manager, such as
+     * switching from a wired headset to a speakerphone.
+     *
+     * @param device The currently selected audio device.
+     * @param availableDevices A set of available audio devices.
+     */
     public void onAudioManagerDevicesChanged(
             final AppRTCAudioManager.AudioDevice device, final Set<AppRTCAudioManager.AudioDevice> availableDevices) {
-        Log.d(TAG, "onAudioManagerDevicesChanged: " + availableDevices + ", "
-                + "selected: " + device);
-        // TODO(henrika): add callback handler.
-        if (audioManager != null) {
-            audioManager.selectAudioDevice(device);
+        if(audioManager == null){
+            return;
         }
+        Log.i(TAG, "Audio devices changed. Available: " + availableDevices + ", Selected: " + device);
+
+        // Prioritize Bluetooth if available
+        if (availableDevices.contains(AppRTCAudioManager.AudioDevice.BLUETOOTH)) {
+            Log.i(TAG, "Bluetooth device found, switching to Bluetooth.");
+            audioManager.selectAudioDevice(AppRTCAudioManager.AudioDevice.BLUETOOTH);
+            return;
+        }
+
+        // Fallback to the current selected device
+        Log.i(TAG, "Switching to the selected device: " + device);
+        audioManager.selectAudioDevice(device);
+
     }
 
     // Disconnect from remote resources, dispose of local resources, and exit.
@@ -2803,6 +2830,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.peerReconnectionHandler = peerReconnectionHandler;
     }
 
+    public ArrayList<PeerConnection.IceServer> getIceServers() {
+        return iceServers;
+    }
     @Override
     public boolean isShutdown() {
         return released;

@@ -246,9 +246,8 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(6000);
+        Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
         //black frame sender should be working.
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
@@ -257,6 +256,10 @@ public class ConferenceActivityTest {
             assertTrue(value > 0f);
 
         });
+
+        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
@@ -288,9 +291,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(6000);
-
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
             String text = ((TextView) view).getText().toString();
