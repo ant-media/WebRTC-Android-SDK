@@ -261,11 +261,13 @@ public class WebRTCClientTest {
 
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
+        doNothing().when(webRTCClient).initializeAudioManager();
         doReturn(true).when(wsHandler).isConnected();
 
 
         webRTCClient.join(streamId, token);
 
+        verify(webRTCClient, times(1)).initializeAudioManager();
         verify(wsHandler, times(1)).joinToPeer(streamId, token);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
@@ -411,6 +413,14 @@ public class WebRTCClientTest {
 
         // Verify that the audio device is selected using the AudioManager
         Mockito.verify(audioManager).selectAudioDevice(device);
+
+        availableDevices.clear();
+
+        availableDevices.add(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+        AppRTCAudioManager.AudioDevice speakerDevice = AppRTCAudioManager.AudioDevice.SPEAKER_PHONE;
+
+        webRTCClient.onAudioManagerDevicesChanged(speakerDevice, availableDevices);
+        Mockito.verify(audioManager).selectAudioDevice(speakerDevice);
     }
 
     @Test
