@@ -172,7 +172,7 @@ public interface IWebRTCClient {
     /**
      * enable/disable video stream of call. Use this before call start.
      * Eg if you call this method before call start with false, you wont be able to turn on video stream during call.
-     * For in call video sending toggle use setSendVideoEnabled
+     * For in call video sending toggle use toggleSendVideo
      *
      * @param enabled true for enable, false for disable
      */
@@ -181,7 +181,7 @@ public interface IWebRTCClient {
     /**
      * enable/disable audio stream of call.
      * Use this before call start.
-     * For in call audio sending(for example muting microphone) toggle use setSendAudioEnabled
+     * For in call audio sending(for example muting microphone) toggle use toggleSendAudio
      *
      * @param enabled true for enable, false for disable
      */
@@ -348,13 +348,13 @@ public interface IWebRTCClient {
      * Use this to toggle sending video during a call.
      * E.g., turn the camera on or off during a call.
      */
-    void setSendVideoEnabled(boolean enabled);
+    void toggleSendVideo(boolean enableVideo);
 
     /**
      * Use this to toggle sending audio during a call.
      * E.g., call this with false to mute the microphone during a call.
      */
-    void setSendAudioEnabled(boolean enabled);
+    void toggleSendAudio(boolean enableAudio);
 
     /**
      * Get the audio sending status.

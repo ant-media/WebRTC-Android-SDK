@@ -15,6 +15,7 @@ public class BlackFrameSender {
     private CustomVideoCapturer videoCapturer;
     private ScheduledExecutorService executorService;
     private boolean running;
+    private JavaI420Buffer blackFrameBuffer;
 
     public BlackFrameSender(CustomVideoCapturer videoCapturer) {
         this.videoCapturer = videoCapturer;
@@ -26,8 +27,10 @@ public class BlackFrameSender {
             executorService.scheduleWithFixedDelay(() -> {
 
                 try{
-                    VideoFrame blackFrame = createBlackFrame();
-                    videoCapturer.writeFrame(blackFrame);
+                    if(blackFrameBuffer == null){
+                        blackFrameBuffer = createBlackFrameBuffer();
+                    }
+                    videoCapturer.writeFrame(createBlackFrame());
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -42,6 +45,7 @@ public class BlackFrameSender {
         if(executorService != null){
             executorService.shutdown();
             executorService = null;
+            blackFrameBuffer = null;
             running = false;
         }
     }
@@ -50,7 +54,13 @@ public class BlackFrameSender {
         return running;
     }
 
+    //capture time needs to be incremented. Otherwise server does not ingest the stream.
     public VideoFrame createBlackFrame() {
+        long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
+        return new VideoFrame(blackFrameBuffer, 0, captureTimeNs);
+    }
+
+    public JavaI420Buffer createBlackFrameBuffer(){
         int width = 240;
         int height = 426;
 
@@ -75,10 +85,8 @@ public class BlackFrameSender {
         yBuffer.flip();
         uBuffer.flip();
         vBuffer.flip();
+        return JavaI420Buffer.wrap(width, height, yBuffer, width, uBuffer, uvWidth, vBuffer, uvWidth, null);
 
-        long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
-
-        return new VideoFrame(JavaI420Buffer.wrap(width, height, yBuffer, width, uBuffer, uvWidth, vBuffer, uvWidth, null), 0, captureTimeNs);
     }
 
 

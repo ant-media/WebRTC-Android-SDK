@@ -7,7 +7,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -333,11 +332,11 @@ public class ConferenceActivity extends TestableActivity {
 
         if(webRTCClient.getConfig().videoCallEnabled){
             if(webRTCClient.isSendVideoEnabled()){
-                webRTCClient.setSendVideoEnabled(false);
+                webRTCClient.toggleSendVideo(false);
                 toggleSendVideoButton.setText("Enable Send Video");
 
             }else{
-                webRTCClient.setSendVideoEnabled(true);
+                webRTCClient.toggleSendVideo(true);
                 toggleSendVideoButton.setText("Disable Send Video");
             }
         }else{
@@ -348,11 +347,11 @@ public class ConferenceActivity extends TestableActivity {
     public void toggleSendAudio() {
         if(webRTCClient.getConfig().audioCallEnabled){
             if(webRTCClient.isSendAudioEnabled()){
-                webRTCClient.setSendAudioEnabled(false);
+                webRTCClient.toggleSendAudio(false);
                 toggleSendAudioButton.setText("Enable Send Audio");
 
             }else{
-                webRTCClient.setSendAudioEnabled(true);
+                webRTCClient.toggleSendAudio(true);
                 toggleSendAudioButton.setText("Disable Send Audio");
 
             }

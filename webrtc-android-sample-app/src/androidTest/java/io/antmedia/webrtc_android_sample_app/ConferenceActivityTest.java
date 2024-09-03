@@ -60,8 +60,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
 
-    private float videoBytesSent = 0;
-
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -186,7 +184,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
 
-        Thread.sleep(5000);
+       // Thread.sleep(5000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
@@ -202,7 +200,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+     //   Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -210,7 +208,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        Thread.sleep(5000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
@@ -246,7 +244,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
 
 
         //black frame sender should be working.
@@ -259,7 +257,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
@@ -275,11 +273,11 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.toggle_send_video_button)).check(matches(withText("Enable Send Video")));
         onView(withId(R.id.toggle_send_video_button)).perform(click());
@@ -291,7 +289,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
             String text = ((TextView) view).getText().toString();
@@ -302,15 +300,15 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(3000);
+      //  Thread.sleep(3000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
@@ -415,7 +413,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(5000);
+        //Thread.sleep(5000);
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
@@ -433,11 +431,11 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(5000);
+        //Thread.sleep(5000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -467,7 +465,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 

@@ -17,7 +17,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -33,7 +32,6 @@ import android.os.Handler;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
-import org.awaitility.Awaitility;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -76,7 +74,6 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
@@ -1294,7 +1291,7 @@ public class WebRTCClientTest {
         webRTCClient.setVideoCapturer(customVideoCapturerMock);
         when(webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.CUSTOM)).thenReturn(customVideoCapturerMock);
 
-        webRTCClient.setSendVideoEnabled(false);
+        webRTCClient.toggleSendVideo(false);
 
         await()
                 .atMost(2, SECONDS) // Set a maximum time to wait
@@ -1316,7 +1313,7 @@ public class WebRTCClientTest {
                 .when(webRTCClient)
                 .createVideoCapturer(IWebRTCClient.StreamSource.FRONT_CAMERA);
 
-        webRTCClient.setSendVideoEnabled(true);
+        webRTCClient.toggleSendVideo(true);
 
         await()
                 .atMost(2, SECONDS) // Set a maximum time to wait
@@ -1329,7 +1326,7 @@ public class WebRTCClientTest {
         AudioTrack localAudioTrackMock = mock(AudioTrack.class);
         webRTCClient.setLocalAudioTrack(localAudioTrackMock);
 
-        webRTCClient.setSendAudioEnabled(false);
+        webRTCClient.toggleSendAudio(false);
 
         await()
                 .atMost(2, SECONDS) // Maximum time to wait
@@ -1338,7 +1335,7 @@ public class WebRTCClientTest {
                     verify(localAudioTrackMock, times(1)).setEnabled(false);
                 });
 
-        webRTCClient.setSendAudioEnabled(true);
+        webRTCClient.toggleSendAudio(true);
 
         await()
                 .atMost(2, SECONDS) // Maximum time to wait

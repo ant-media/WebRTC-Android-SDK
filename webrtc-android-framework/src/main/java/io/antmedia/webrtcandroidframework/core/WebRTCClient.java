@@ -2260,23 +2260,23 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    public void setSendAudioEnabled(boolean enable) {
+    public void toggleSendAudio(boolean enableAudio) {
         executor.execute(() -> {
-            sendAudioEnabled = enable;
+            sendAudioEnabled = enableAudio;
             if (localAudioTrack != null) {
-                localAudioTrack.setEnabled(enable);
+                localAudioTrack.setEnabled(enableAudio);
             }
         });
     }
 
-    public void setSendVideoEnabled(boolean enable) {
+    public void toggleSendVideo(boolean enableVideo) {
         if(!config.videoCallEnabled){
             Log.i(TAG, "Cannot change send video because video call is disabled.");
             return;
         }
         executor.execute(() -> {
-            sendVideoEnabled = enable;
-            if (enable) {
+            sendVideoEnabled = enableVideo;
+            if (enableVideo) {
                 if(blackFrameSender != null && blackFrameSender.isRunning()){
                     blackFrameSender.stop();
                     blackFrameSender = null;
