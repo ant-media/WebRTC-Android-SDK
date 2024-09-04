@@ -15,7 +15,7 @@ public class BlackFrameSender {
     private CustomVideoCapturer videoCapturer;
     private ScheduledExecutorService executorService;
     private boolean running;
-    private JavaI420Buffer blackFrameBuffer;
+    //private JavaI420Buffer blackFrameBuffer;
 
     public BlackFrameSender(CustomVideoCapturer videoCapturer) {
         this.videoCapturer = videoCapturer;
@@ -27,12 +27,12 @@ public class BlackFrameSender {
             executorService.scheduleWithFixedDelay(() -> {
 
                 try{
-                    if(blackFrameBuffer == null){
-                        blackFrameBuffer = createBlackFrameBuffer();
-                    }
-                    if(videoCapturer != null){
+                //    if(blackFrameBuffer == null){
+               //         blackFrameBuffer = createBlackFrameBuffer();
+                  //  }
+                 //   if(videoCapturer != null){
                         videoCapturer.writeFrame(createBlackFrame());
-                    }
+                 //   }
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -59,7 +59,7 @@ public class BlackFrameSender {
     //capture time needs to be incremented. Otherwise server does not ingest the stream.
     public VideoFrame createBlackFrame() {
         long captureTimeNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
-        return new VideoFrame(blackFrameBuffer, 0, captureTimeNs);
+        return new VideoFrame(createBlackFrameBuffer(), 0, captureTimeNs);
     }
 
     public JavaI420Buffer createBlackFrameBuffer(){

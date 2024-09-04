@@ -31,9 +31,6 @@ public class CustomVideoCapturer implements VideoCapturer {
 
 
   public void writeFrame(VideoFrame videoFrame) {
-    if(capturerObserver == null){
-      return;
-    }
     capturerObserver.onFrameCaptured(videoFrame);
     videoFrame.release();
   }
