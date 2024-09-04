@@ -30,7 +30,9 @@ public class BlackFrameSender {
                     if(blackFrameBuffer == null){
                         blackFrameBuffer = createBlackFrameBuffer();
                     }
-                    videoCapturer.writeFrame(createBlackFrame());
+                    if(videoCapturer != null){
+                        videoCapturer.writeFrame(createBlackFrame());
+                    }
                 }catch (Exception e){
                     e.printStackTrace();
                 }
