@@ -67,6 +67,7 @@ public class WebRtcAudioRecord {
   // but the wait times out afther this amount of time.
   static final long AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS = 2000;
 
+
   public static final int DEFAULT_AUDIO_SOURCE = AudioSource.VOICE_COMMUNICATION;
 
   // Default audio data format is PCM 16 bit per sample.
@@ -370,6 +371,12 @@ public class WebRtcAudioRecord {
 
 
   protected boolean startRecording() {
+    try {
+      Thread.sleep(8000);
+    }catch (Exception e){
+
+    }
+
     Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
     assertTrue(audioThread == null);
@@ -536,7 +543,7 @@ public class WebRtcAudioRecord {
     try {
       if(mediaProjection != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
         audioRecord = createAudioRecordOnQOrHigher(
-                audioSource, this.sampleRate, channelConfig, audioFormat, this.bufferSizeInBytes,mediaProjection);
+                audioSource, this.sampleRate, channelConfig, audioFormat, this.bufferSizeInBytes, mediaProjection);
       }
       else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         // Use the AudioRecord.Builder class on Android M (23) and above.

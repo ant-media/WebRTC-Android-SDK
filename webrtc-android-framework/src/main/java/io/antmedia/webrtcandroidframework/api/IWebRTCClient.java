@@ -331,4 +331,16 @@ public interface IWebRTCClient {
      * Returns true if SDK resources are released and its shutdown, false otherwise.
      */
     boolean isShutdown();
+
+    void switchToSystemAudioRecording();
+
+    void switchToMicrophoneAudioRecording();
+
+    void stopAdmRecording();
+
+    void restartAdmRecording();
+
+    void createAudioRecord();
+
+    void startAudioRecording();
 }

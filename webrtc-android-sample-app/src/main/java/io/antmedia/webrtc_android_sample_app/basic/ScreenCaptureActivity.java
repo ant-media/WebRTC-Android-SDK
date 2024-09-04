@@ -243,14 +243,23 @@ public class ScreenCaptureActivity extends TestableActivity {
 
             IWebRTCClient.StreamSource newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
             if(checkedId == R.id.rbScreen) {
+                if(streamId != null && webRTCClient.isStreaming(streamId)){
+                    webRTCClient.stopAdmRecording();
+                }
                 requestScreenCapture();
                 return;
             }
             else if(checkedId == R.id.rbFront) {
                 newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
+                if(streamId != null && webRTCClient.isStreaming(streamId)){
+                    webRTCClient.restartAdmRecording();
+                }
             }
             else if(checkedId == R.id.rbRear) {
                 newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
+                if(streamId != null && webRTCClient.isStreaming(streamId)){
+                    webRTCClient.restartAdmRecording();
+                }
             }
             // idlingResource.increment();
             webRTCClient.changeVideoSource(newSource);
@@ -406,7 +415,15 @@ public class ScreenCaptureActivity extends TestableActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
             MediaProjectionService.setListener(() -> {
+
                 startScreenCapturer();
+                if(streamId != null && webRTCClient.isStreaming(streamId)){
+                    //create audio record with media projection(system audio)
+                    webRTCClient.createAudioRecord();
+                    //start getting system audio
+                    webRTCClient.startAudioRecording();
+                }
+
             });
 
             Intent serviceIntent = new Intent(this, MediaProjectionService.class);
@@ -422,4 +439,5 @@ public class ScreenCaptureActivity extends TestableActivity {
         webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
         decrementIdle();
     }
+
 }
