@@ -47,7 +47,7 @@ public class BlackFrameSender {
         if(executorService != null){
             executorService.shutdown();
             executorService = null;
-            blackFrameBuffer = null;
+          //  blackFrameBuffer = null;
             running = false;
         }
     }
