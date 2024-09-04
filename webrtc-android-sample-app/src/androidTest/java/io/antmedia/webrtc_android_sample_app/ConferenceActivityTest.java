@@ -244,7 +244,8 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-       // Thread.sleep(3000);
+        //wait to collect some stats
+        Thread.sleep(5000);
 
 
         //black frame sender should be working.
@@ -271,7 +272,6 @@ public class ConferenceActivityTest {
                     assertTrue(bytesReceived > 0);
                 });
 
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
        // Thread.sleep(3000);
 

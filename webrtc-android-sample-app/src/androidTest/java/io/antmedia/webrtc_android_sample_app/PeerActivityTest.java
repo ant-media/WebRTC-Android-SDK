@@ -130,7 +130,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+       // Thread.sleep(3000);
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
@@ -147,7 +147,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -194,7 +194,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
@@ -212,7 +212,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -236,7 +236,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
@@ -254,7 +254,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
