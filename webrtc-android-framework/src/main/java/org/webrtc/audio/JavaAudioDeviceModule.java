@@ -23,6 +23,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import org.webrtc.AudioSource;
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
+import android.media.AudioRecord;
+import android.media.projection.MediaProjection;
 
 /**
  * AudioDeviceModule implemented using android.media.AudioRecord as input and
@@ -55,6 +57,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     private AudioAttributes audioAttributes;
     private boolean useLowLatency;
     private boolean enableVolumeLogger;
+    private boolean isCustomAudioFeed;
 
     private Builder(Context context) {
       this.context = context;
@@ -229,7 +232,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      * Construct an AudioDeviceModule based on the supplied arguments. The caller takes ownership
      * and is responsible for calling release().
      */
-    public JavaAudioDeviceModule createAudioDeviceModule() {
+    public AudioDeviceModule createAudioDeviceModule() {
       Logging.d(TAG, "createAudioDeviceModule");
       if (useHardwareNoiseSuppressor) {
         Logging.d(TAG, "HW NS will be used.");
@@ -257,14 +260,27 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
       if (executor == null) {
         executor = WebRtcAudioRecord.newDefaultScheduler();
       }
-      final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, executor, audioManager,
-          audioSource, audioFormat, audioRecordErrorCallback, audioRecordStateCallback,
-          samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
+      final WebRtcAudioRecord audioInput;
+      if(isCustomAudioFeed) {
+        audioInput = new CustomWebRtcAudioRecord(context, executor, audioManager,
+                audioSource, audioFormat, audioRecordErrorCallback, audioRecordStateCallback,
+                samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
+      }
+      else {
+        audioInput = new WebRtcAudioRecord(context, executor, audioManager,
+                audioSource, audioFormat, audioRecordErrorCallback, audioRecordStateCallback,
+                samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
+      }
       final WebRtcAudioTrack audioOutput =
           new WebRtcAudioTrack(context, audioManager, audioAttributes, audioTrackErrorCallback,
               audioTrackStateCallback, useLowLatency, enableVolumeLogger);
       return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput,
           inputSampleRate, outputSampleRate, useStereoInput, useStereoOutput);
+    }
+
+    public Builder setCustomAudioFeed(boolean isCustomAudioFeed) {
+      this.isCustomAudioFeed = isCustomAudioFeed;
+      return this;
     }
   }
 
@@ -387,6 +403,10 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     this.outputSampleRate = outputSampleRate;
     this.useStereoInput = useStereoInput;
     this.useStereoOutput = useStereoOutput;
+  }
+
+  public CustomWebRtcAudioRecord getAudioInput() {
+    return (CustomWebRtcAudioRecord)audioInput;
   }
 
   @Override

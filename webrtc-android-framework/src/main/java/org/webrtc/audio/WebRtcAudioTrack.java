@@ -69,7 +69,7 @@ class WebRtcAudioTrack {
 
   // Samples to be played are replaced by zeros if `speakerMute` is set to true.
   // Can be used to ensure that the speaker is fully muted.
-  private volatile boolean speakerMute;
+  private static volatile boolean speakerMute;
   private byte[] emptyBytes;
   private boolean useLowLatency;
   private int initialBufferSizeInFrames;
@@ -531,7 +531,7 @@ class WebRtcAudioTrack {
 
   // Sets all samples to be played out to zero if `mute` is true, i.e.,
   // ensures that the speaker is muted.
-  public void setSpeakerMute(boolean mute) {
+  public static void setSpeakerMute(boolean mute) {
     Logging.w(TAG, "setSpeakerMute(" + mute + ")");
     speakerMute = mute;
   }

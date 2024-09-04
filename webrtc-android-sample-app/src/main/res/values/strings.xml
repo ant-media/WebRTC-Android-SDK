@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">And Media WebRTC Sample App</string>
+    <string name="app_name">Ant Media WebRTC Sample App</string>
     <string name="start">Start</string>
     <string name="write_something">Write a Message!</string>
     <string name="title_activity_settings">Settings</string>
@@ -12,4 +12,11 @@
     <string name="send_image_button_name">Send Image</string>
     <string name="playing">Playing</string>
     <string name="data_channel_not_available">"Data channel is not available. Enable data channel in both Android and Server side and then restart Streaming</string>
+    <string name="speaking">Speaking</string>
+    <string name="live">Live</string>
+    <string name="reconnecting">Reconnecting</string>
+    <string name="connecting">Connecting</string>
+    <string name="disconnected">Disconnected</string>
+
+
 </resources>

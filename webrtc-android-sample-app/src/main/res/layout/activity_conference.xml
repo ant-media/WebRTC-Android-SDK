@@ -3,11 +3,25 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ConferenceActivity">
+    tools:context=".basic.ConferenceActivity">
 
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="-120dp"
+        android:gravity="center">
+
+        <Switch
+            android:id="@+id/play_only_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Play Only" />
+    </LinearLayout>
 
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/publish_view_renderer"
+        android:id="@+id/local_participant_renderer"
         android:layout_width="144dp"
         android:layout_height="144dp"
 
@@ -19,10 +33,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="10dp"
-        android:text="Broadcasting"
-        android:visibility="gone"
-        android:textColor="@android:color/holo_red_dark"
-        android:textSize="11sp"
+        android:visibility="visible"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:layout_gravity="center" />
 
@@ -52,25 +64,25 @@
     </LinearLayout>
 
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer1"
+        android:id="@+id/remote_participant_1_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="top|start"
         android:layout_margin="16dp" />
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer2"
+        android:id="@+id/remote_participant_2_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="top|end"
         android:layout_margin="16dp"/>
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer3"
+        android:id="@+id/remote_participant_3_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="bottom|start"
         android:layout_margin="16dp"/>
     <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/play_view_renderer4"
+        android:id="@+id/remote_participant_4_renderer"
         android:layout_height="144dp"
         android:layout_width="144dp"
         android:layout_gravity="bottom|end"
@@ -81,19 +93,32 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:gravity="center">
+
         <Button
+            android:id="@+id/show_stats_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Stats"
+            />
+
+        <Button
+            android:layout_marginStart="10dp"
             android:id="@+id/join_conference_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Join Conference"
             android:onClick="joinConference"
             />
+
+
     </LinearLayout>
 
     <FrameLayout
         android:id="@+id/call_fragment_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent" >
+
+    </FrameLayout>
 
 
 </FrameLayout>

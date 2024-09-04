@@ -12,9 +12,6 @@ package org.webrtc.audio;
 
 import android.media.projection.MediaProjection;
 
-import org.webrtc.voiceengine.WebRtcAudioRecord;
-import org.webrtc.voiceengine.WebRtcAudioTrack;
-
 /**
  * This class represents the legacy AudioDeviceModule that is currently hardcoded into C++ WebRTC.
  * It will return a null native AudioDeviceModule pointer, leading to an internal object being

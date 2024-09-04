@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
 
-    tools:context=".MainActivity">
+    tools:context=".basic.ScreenCaptureActivity">
     <FrameLayout
         android:id="@+id/publisher_container"
         android:layout_width="match_parent"
@@ -13,47 +13,24 @@
         android:layout_alignParentStart="true">
 
         <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/camera_view_renderer"
+            android:id="@+id/full_screen_renderer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="top" />
-
-        <org.webrtc.SurfaceViewRenderer
-            android:id="@+id/pip_view_renderer"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:layout_gravity="bottom|right"
-            android:layout_margin="5dp"
-            android:paddingHorizontal="5dp"
-            android:paddingVertical="4dp" />
     </FrameLayout>
 
-    <Spinner
-        android:id="@+id/stream_info_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_margin="3dp"/>
-
-
-    <ImageButton
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@android:drawable/sym_action_chat"
-        android:layout_alignParentLeft="true"
-        android:layout_margin="3dp"
-        android:onClick="showSendDataChannelMessageDialog"
-        android:layout_centerVertical="true"/>
 
 
         <RadioGroup
+            android:layout_margin="20dp"
             android:id="@+id/rbGroup"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_alignParentTop="true"
             >
-            <RadioButton android:id="@+id/rbScreen"
+            <RadioButton
+                android:id="@+id/rbScreen"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorPrimary"
@@ -76,28 +53,45 @@
         android:id="@+id/stream_id_edittext"
         android:padding="5dp"
         android:background="?android:attr/colorBackground"
-        android:layout_above="@id/start_streaming_button"/>
+        android:layout_above="@id/activity_screen_share_button_container"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start Streaming"
-        android:id="@+id/start_streaming_button"
-        android:onClick="startStreaming"
+    <LinearLayout
+        android:layout_marginBottom="5dp"
+        android:id="@+id/activity_screen_share_button_container"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_margin="3dp"
-        />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show Stats"
+            android:id="@+id/show_stats_button"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start"
+            android:id="@+id/start_streaming_button"
+            android:onClick="startStreaming"
+
+            android:layout_marginStart="5dp"
+            />
+    </LinearLayout>
+
 
     <TextView
         android:id="@+id/broadcasting_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="10dp"
-        android:text="Broadcasting"
+        android:text=""
         android:textColor="@android:color/holo_red_dark"
-        android:textSize="11sp"
-        android:visibility="gone"
+        android:textSize="14sp"
+        android:visibility="visible"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:textStyle="bold"/>

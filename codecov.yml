@@ -3,4 +3,6 @@ coverage:
     patch:
       default:
         target: 75.0
+ignore:
+  - "webrtc-android-sample-app"
 

@@ -2,17 +2,17 @@ apply plugin: 'com.android.library'
 apply plugin: 'jacoco'
 ext {
     PUBLISH_GROUP_ID = 'io.antmedia'
-    PUBLISH_VERSION = '1.0.0-SNAPSHOT'
+    PUBLISH_VERSION = '2.10.0'
     PUBLISH_ARTIFACT_ID = 'webrtc-android-framework'
 }
 apply from: 'publish-remote.gradle'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 34
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -81,6 +81,8 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:1.10.19'
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
     testImplementation 'org.awaitility:awaitility:4.2.0'
+    testImplementation 'org.json:json:20210307'
+    implementation 'com.google.code.gson:gson:2.10.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
