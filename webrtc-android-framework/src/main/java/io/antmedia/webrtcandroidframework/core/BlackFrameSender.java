@@ -11,14 +11,19 @@ import java.util.concurrent.TimeUnit;
 
 
 public class BlackFrameSender {
-    public static int BLACK_FRAME_SENDING_FREQUENCY = 3000;
+    public static int BLACK_FRAME_SENDING_FREQUENCY_MS = 3000;
     private CustomVideoCapturer videoCapturer;
     private ScheduledExecutorService executorService;
     private boolean running;
-    //private JavaI420Buffer blackFrameBuffer;
+    private int frameWidth = 240;
+    private int frameHeight = 426;
+    private ByteBuffer yBuffer;
+    private ByteBuffer uBuffer;
+    private ByteBuffer vBuffer;
 
     public BlackFrameSender(CustomVideoCapturer videoCapturer) {
         this.videoCapturer = videoCapturer;
+        allocateBlackFrameBuffers();
     }
 
     public void start(){
@@ -27,17 +32,12 @@ public class BlackFrameSender {
             executorService.scheduleWithFixedDelay(() -> {
 
                 try{
-                //    if(blackFrameBuffer == null){
-               //         blackFrameBuffer = createBlackFrameBuffer();
-                  //  }
-                 //   if(videoCapturer != null){
-                        videoCapturer.writeFrame(createBlackFrame());
-                 //   }
+                    videoCapturer.writeFrame(createBlackFrame());
                 }catch (Exception e){
                     e.printStackTrace();
                 }
 
-            }, 0, BLACK_FRAME_SENDING_FREQUENCY, TimeUnit.MILLISECONDS);
+            }, 0, BLACK_FRAME_SENDING_FREQUENCY_MS, TimeUnit.MILLISECONDS);
             running = true;
         }
 
@@ -47,8 +47,23 @@ public class BlackFrameSender {
         if(executorService != null){
             executorService.shutdown();
             executorService = null;
-          //  blackFrameBuffer = null;
             running = false;
+            releaseByteBuffers();
+        }
+    }
+
+    public void releaseByteBuffers(){
+        if (yBuffer != null) {
+            yBuffer.clear();
+            yBuffer = null;
+        }
+        if (uBuffer != null) {
+            uBuffer.clear();
+            uBuffer = null;
+        }
+        if (vBuffer != null) {
+            vBuffer.clear();
+            vBuffer = null;
         }
     }
 
@@ -62,18 +77,16 @@ public class BlackFrameSender {
         return new VideoFrame(createBlackFrameBuffer(), 0, captureTimeNs);
     }
 
-    public JavaI420Buffer createBlackFrameBuffer(){
-        int width = 240;
-        int height = 426;
+    public void allocateBlackFrameBuffers(){
 
-        int ySize = width * height;
-        int uvWidth = width / 2;
-        int uvHeight = height / 2;
+        int ySize = frameWidth * frameHeight;
+        int uvWidth = frameWidth / 2;
+        int uvHeight = frameHeight / 2;
         int uvSize = uvWidth * uvHeight;
 
-        ByteBuffer yBuffer = ByteBuffer.allocateDirect(ySize);
-        ByteBuffer uBuffer = ByteBuffer.allocateDirect(uvSize);
-        ByteBuffer vBuffer = ByteBuffer.allocateDirect(uvSize);
+         yBuffer = ByteBuffer.allocateDirect(ySize);
+         uBuffer = ByteBuffer.allocateDirect(uvSize);
+         vBuffer = ByteBuffer.allocateDirect(uvSize);
 
         for (int i = 0; i < ySize; i++) {
             yBuffer.put((byte) 0);
@@ -87,9 +100,12 @@ public class BlackFrameSender {
         yBuffer.flip();
         uBuffer.flip();
         vBuffer.flip();
-        return JavaI420Buffer.wrap(width, height, yBuffer, width, uBuffer, uvWidth, vBuffer, uvWidth, null);
 
     }
 
+    public JavaI420Buffer createBlackFrameBuffer(){
+        int uvWidth = frameWidth / 2;
+        return JavaI420Buffer.wrap(frameWidth, frameHeight, yBuffer, frameWidth, uBuffer, uvWidth, vBuffer, uvWidth, null);
+    }
 
 }
