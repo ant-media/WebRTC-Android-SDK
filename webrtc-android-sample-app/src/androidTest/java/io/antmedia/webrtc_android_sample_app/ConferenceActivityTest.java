@@ -308,7 +308,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
-       // Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
