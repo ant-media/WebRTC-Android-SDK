@@ -2799,7 +2799,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    public void switchToSystemAudioRecordingDuringCall(){
+    public void switchToSystemAudioRecordingOnScreenShareDuringCall(){
         if(config.mediaProjection == null){
             Log.i(TAG,"Config media projection is null. Cannot switch system audio on screen share.");
             return;
@@ -2814,7 +2814,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         startRecording();
     }
 
-    public void switchToMicrophoneAudioRecordingDuringCall(){
+    public void switchToMicrophoneAudioRecordingOnScreenShareDuringCall(){
         if(adm == null){
             return;
         }

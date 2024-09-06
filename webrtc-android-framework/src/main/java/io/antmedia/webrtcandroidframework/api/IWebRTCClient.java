@@ -337,12 +337,12 @@ public interface IWebRTCClient {
     /**
      * Send system audio on screen share during call.
      */
-    void switchToSystemAudioRecordingDuringCall();
+    void switchToSystemAudioRecordingOnScreenShareDuringCall();
 
     /**
      * Send microphone audio on screen share during call.
      */
-    void switchToMicrophoneAudioRecordingDuringCall();
+    void switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
 
     /**
      * Set audio device module media projection.

@@ -252,14 +252,14 @@ public class ScreenCaptureActivity extends TestableActivity {
                 screenShareAudioSourceContainer.setVisibility(View.GONE);
                 newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
                 if(streamId != null && webRTCClient.isStreaming(streamId)){
-                    webRTCClient.switchToMicrophoneAudioRecordingDuringCall();
+                    webRTCClient.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
                 }
             }
             else if(checkedId == R.id.rbRear) {
                 screenShareAudioSourceContainer.setVisibility(View.GONE);
                 newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
                 if(streamId != null && webRTCClient.isStreaming(streamId)){
-                    webRTCClient.switchToMicrophoneAudioRecordingDuringCall();
+                    webRTCClient.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
                 }
             }
             webRTCClient.changeVideoSource(newSource);
@@ -287,7 +287,7 @@ public class ScreenCaptureActivity extends TestableActivity {
                 if(streamId != null && webRTCClient.isStreaming(streamId) && config.screenShareAudioSource == ScreenShareAudioSource.SYSTEM && config.videoSource == IWebRTCClient.StreamSource.SCREEN){
                     screenShareAudioSource = ScreenShareAudioSource.MICROPHONE;
                     config.screenShareAudioSource = screenShareAudioSource;
-                    webRTCClient.switchToMicrophoneAudioRecordingDuringCall();
+                    webRTCClient.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
                 }
             }
             else if(checkedId == R.id.screen_share_audio_source_system) {
@@ -300,7 +300,7 @@ public class ScreenCaptureActivity extends TestableActivity {
                 if(streamId != null && webRTCClient.isStreaming(streamId) && config.screenShareAudioSource == ScreenShareAudioSource.MICROPHONE && config.videoSource == IWebRTCClient.StreamSource.SCREEN){
                     screenShareAudioSource = ScreenShareAudioSource.SYSTEM;
                     config.screenShareAudioSource = screenShareAudioSource;
-                    webRTCClient.switchToSystemAudioRecordingDuringCall();
+                    webRTCClient.switchToSystemAudioRecordingOnScreenShareDuringCall();
                 }
 
             }
