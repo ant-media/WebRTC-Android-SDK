@@ -9,6 +9,8 @@ import org.webrtc.SurfaceViewRenderer;
 
 import java.util.ArrayList;
 
+import io.antmedia.webrtcandroidframework.core.model.ScreenShareAudioSource;
+
 
 public class WebRTCClientConfig {
 
@@ -183,4 +185,10 @@ public class WebRTCClientConfig {
      * Flag for connecting bluetooth headphones.
      */
     public boolean bluetoothEnabled = false;
+
+    /*
+     * Audio source during screen share. Possible values are MICROPHONE or SYSTEM
+     * MICROPHONE by default.
+     */
+    public ScreenShareAudioSource screenShareAudioSource = ScreenShareAudioSource.MICROPHONE;
 }

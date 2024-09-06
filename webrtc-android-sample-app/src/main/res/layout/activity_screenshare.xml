@@ -47,6 +47,50 @@
                 android:text="Rear"/>
         </RadioGroup>
 
+
+    <LinearLayout
+        android:id="@+id/screen_share_audio_source_container"
+        android:visibility="gone"
+        android:orientation="vertical"
+        android:layout_below="@+id/rbGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <TextView
+            android:textSize="14sp"
+            android:text="Screen Share Audio Source:"
+            android:textColor="#fff"
+
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+        </TextView>
+
+        <RadioGroup
+            android:layout_margin="20dp"
+            android:id="@+id/screen_share_audio_source_radio_group"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+
+            >
+            <RadioButton
+                android:id="@+id/screen_share_audio_source_microphone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorPrimary"
+                android:text="Microphone"/>
+            <RadioButton android:id="@+id/screen_share_audio_source_system"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorPrimary"
+                android:text="System Audio"/>
+
+        </RadioGroup>
+    </LinearLayout>
+
+
+
+
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

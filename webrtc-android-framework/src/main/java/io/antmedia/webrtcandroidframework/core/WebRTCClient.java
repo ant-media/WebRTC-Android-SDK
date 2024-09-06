@@ -17,13 +17,14 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.webrtc.AddIceObserver;
 import org.webrtc.AudioSource;
+import io.antmedia.webrtcandroidframework.core.model.ScreenShareAudioSource;
+
 import org.webrtc.AudioTrack;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -840,7 +841,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             @Override
             public void onMediaProjection(MediaProjection mediaProjection) {
                 config.mediaProjection = mediaProjection;
-                if(adm != null){
+                if(adm != null && config.screenShareAudioSource == ScreenShareAudioSource.SYSTEM){
                     adm.setMediaProjection(mediaProjection);
                 }
             }
@@ -1238,7 +1239,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void changeVideoSource(StreamSource newSource) {
             if (!config.videoSource.equals(newSource)) {
-                if (newSource.equals(StreamSource.SCREEN) && adm != null) {
+                if (newSource.equals(StreamSource.SCREEN) && adm != null && config.screenShareAudioSource == ScreenShareAudioSource.SYSTEM) {
                     adm.setMediaProjection(config.mediaProjection);
                 }
 
@@ -2791,14 +2792,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return adm;
     }
 
-    public void restartAdmRecording(){
-        stopAdmRecording();
-        //if media projection is null, microphone will be used to record audio.
-        setMediaProjection(null);
-        //media projection is set to null thus it will capture microphone.
-        createAudioRecord();
-        startRecording();
-    }
 
     public void createAudioRecord(){
         if(adm != null){
@@ -2806,26 +2799,29 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    @Override
-    public void startAudioRecording() {
-        startRecording();
-    }
-
-    public void switchToSystemAudioRecording(){
+    public void switchToSystemAudioRecordingDuringCall(){
         if(config.mediaProjection == null){
+            Log.i(TAG,"Config media projection is null. Cannot switch system audio on screen share.");
             return;
         }
-        if(adm != null){
-            stopAdmRecording();
+        if(adm == null){
+            return;
         }
+
+        stopAdmRecording();
+        adm.setMediaProjection(config.mediaProjection);
         createAudioRecord();
         startRecording();
     }
 
-    public void switchToMicrophoneAudioRecording(){
+    public void switchToMicrophoneAudioRecordingDuringCall(){
+        if(adm == null){
+            return;
+        }
+
         stopAdmRecording();
         //if media projection is null, microphone will be used to record audio.
-        setMediaProjection(null);
+        adm.setMediaProjection(null);
         //media projection is set to null thus it will capture microphone.
         createAudioRecord();
         startRecording();
@@ -2843,8 +2839,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    public void setMediaProjection(MediaProjection mediaProjection){
-        adm.setMediaProjection(mediaProjection);
+    public void setAudioDeviceModuleMediaProjection(MediaProjection mediaProjection){
+        if(adm != null){
+            adm.setMediaProjection(mediaProjection);
+        }
     }
 
 }

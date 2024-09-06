@@ -25,6 +25,7 @@ import android.media.MediaRecorder.AudioSource;
 import android.media.projection.MediaProjection;
 import android.os.Build;
 import android.os.Process;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -51,6 +52,8 @@ import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
 
 public class WebRtcAudioRecord {
   private static final String TAG = "WebRtcAudioRecordExternal";
+
+  private static final int DELAY_BEFORE_AUDIO_START_MS = 6000;
 
   // Requested size of each recorded buffer provided to the client.
   static final int CALLBACK_BUFFER_SIZE_MS = 10;
@@ -369,33 +372,47 @@ public class WebRtcAudioRecord {
     }
   }
 
-
-  protected boolean startRecording() {
-    try {
-      Thread.sleep(8000);
-    }catch (Exception e){
-
-    }
-
-    Logging.d(TAG, "startRecording");
-    assertTrue(audioRecord != null);
-    assertTrue(audioThread == null);
+  private boolean attemptStartRecording() {
     try {
       audioRecord.startRecording();
     } catch (IllegalStateException e) {
-      reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_EXCEPTION,
-          "AudioRecord.startRecording failed: " + e.getMessage());
+      reportWebRtcAudioRecordStartError(
+              AudioRecordStartErrorCode.AUDIO_RECORD_START_EXCEPTION,
+              "AudioRecord.startRecording failed: " + e.getMessage()
+      );
       return false;
     }
+
     if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
-      reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH,
-          "AudioRecord.startRecording failed - incorrect state: "
-              + audioRecord.getRecordingState());
+      reportWebRtcAudioRecordStartError(
+              AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH,
+              "AudioRecord.startRecording failed - incorrect state: "
+                      + audioRecord.getRecordingState()
+      );
       return false;
     }
+
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
     scheduleLogRecordingConfigurationsTask(audioRecord);
+    return true;
+  }
+
+  protected boolean startRecording() {
+    Logging.d(TAG, "startRecording");
+    assertTrue(audioRecord != null);
+    assertTrue(audioThread == null);
+
+    // If mediaProjection is not null here, it means record system audio on screen share.
+    // Wait asynchronously for a few seconds before starting the recording.
+    // This requirement of waiting might be related to device(?)
+    if (mediaProjection != null) {
+      executor.schedule(this::attemptStartRecording, DELAY_BEFORE_AUDIO_START_MS, TimeUnit.MILLISECONDS);
+    } else {
+      // If no mediaProjection, attempt to start immediately. Will record microphone.
+      return attemptStartRecording();
+    }
+
     return true;
   }
 
@@ -425,6 +442,7 @@ public class WebRtcAudioRecord {
   private AudioRecord createAudioRecordOnQOrHigher(
           int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes, MediaProjection mediaProjection) {
     Logging.d(TAG, "createAudioRecordOnQOrHigher");
+
     AudioPlaybackCaptureConfiguration audioConfig =
             new AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
                     .addMatchingUsage(AudioAttributes.USAGE_MEDIA)

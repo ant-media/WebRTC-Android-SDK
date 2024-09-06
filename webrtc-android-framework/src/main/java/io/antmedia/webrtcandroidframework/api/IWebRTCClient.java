@@ -1,5 +1,7 @@
 package io.antmedia.webrtcandroidframework.api;
 
+import android.media.projection.MediaProjection;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -332,15 +334,19 @@ public interface IWebRTCClient {
      */
     boolean isShutdown();
 
-    void switchToSystemAudioRecording();
+    /**
+     * Send system audio on screen share during call.
+     */
+    void switchToSystemAudioRecordingDuringCall();
 
-    void switchToMicrophoneAudioRecording();
+    /**
+     * Send microphone audio on screen share during call.
+     */
+    void switchToMicrophoneAudioRecordingDuringCall();
 
-    void stopAdmRecording();
-
-    void restartAdmRecording();
-
-    void createAudioRecord();
-
-    void startAudioRecording();
+    /**
+     * Set audio device module media projection.
+     * If null passed, audio device module will use microphone audio on screen share.
+     */
+    void setAudioDeviceModuleMediaProjection(MediaProjection mediaProjection);
 }
