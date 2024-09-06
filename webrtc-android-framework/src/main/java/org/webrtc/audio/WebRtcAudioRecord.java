@@ -602,6 +602,9 @@ public class WebRtcAudioRecord {
     this.mediaProjection = mediaProjection;
   }
 
+  public MediaProjection getMediaProjection(){
+    return mediaProjection;
+  }
 
   public void reportWebRtcAudioRecordInitError(String errorMessage) {
     Logging.e(TAG, "Init recording error: " + errorMessage);

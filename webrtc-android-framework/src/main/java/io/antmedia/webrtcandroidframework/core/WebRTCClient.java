@@ -2845,4 +2845,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
+    public void setAdm(JavaAudioDeviceModule adm){
+        this.adm = adm;
+    }
+
 }

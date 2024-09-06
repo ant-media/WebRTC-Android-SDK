@@ -409,6 +409,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     return (CustomWebRtcAudioRecord)audioInput;
   }
 
+
   @Override
   public long getNativeAudioDeviceModulePointer() {
     synchronized (nativeLock) {
