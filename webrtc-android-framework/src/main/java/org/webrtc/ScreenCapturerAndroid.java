@@ -129,7 +129,9 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     mediaProjection = mediaProjectionManager.getMediaProjection(
             Activity.RESULT_OK, mediaProjectionPermissionResultData);
 
-    ((CustomMediaProjectionCallback) mediaProjectionCallback).onMediaProjection(mediaProjection);
+    if(mediaProjectionCallback != null){
+      ((CustomMediaProjectionCallback) mediaProjectionCallback).onMediaProjection(mediaProjection);
+    }
 
     // Let MediaProjection callback use the SurfaceTextureHelper thread.
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());
