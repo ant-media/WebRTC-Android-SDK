@@ -52,6 +52,9 @@ public class ScreenCaptureActivityTest {
 
     private float videoBytesSent = 0;
 
+    private float audioBytesSent = 0;
+
+
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -87,6 +90,9 @@ public class ScreenCaptureActivityTest {
         assertNotNull(button);
         button.click();
 
+        onView(withId(R.id.screen_share_audio_source_system)).perform(click());
+
+
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
@@ -104,6 +110,35 @@ public class ScreenCaptureActivityTest {
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
             videoBytesSent = value;
+        });
+
+        onView(withId(R.id.stats_popup_bytes_sent_audio_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+            audioBytesSent = value;
+        });
+
+        onView(withId(R.id.stats_popup_close_button)).perform(click());
+
+        Thread.sleep(3000);
+
+        onView(withId(R.id.screen_share_audio_source_microphone)).perform(click());
+
+        Thread.sleep(5000);
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
+
+        onView(withId(R.id.show_stats_button)).perform(click());
+
+        onView(withId(R.id.stats_popup_bytes_sent_audio_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+            assertTrue( value != audioBytesSent);
+
+            audioBytesSent = value;
         });
 
         onView(withId(R.id.stats_popup_close_button)).perform(click());

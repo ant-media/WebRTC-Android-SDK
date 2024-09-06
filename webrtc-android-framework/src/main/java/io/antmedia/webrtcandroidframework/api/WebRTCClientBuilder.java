@@ -8,6 +8,7 @@ import org.webrtc.SurfaceViewRenderer;
 import java.util.Arrays;
 
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
+import io.antmedia.webrtcandroidframework.core.model.ScreenShareAudioSource;
 
 public class WebRTCClientBuilder {
 
@@ -154,6 +155,11 @@ public class WebRTCClientBuilder {
 
     public WebRTCClientBuilder setBluetoothEnabled(boolean bluetoothEnabled) {
         webRTCClientConfig.bluetoothEnabled = bluetoothEnabled;
+        return this;
+    }
+
+    public WebRTCClientBuilder setScreenShareAudioSource(ScreenShareAudioSource screenShareAudioSource) {
+        webRTCClientConfig.screenShareAudioSource = screenShareAudioSource;
         return this;
     }
 }

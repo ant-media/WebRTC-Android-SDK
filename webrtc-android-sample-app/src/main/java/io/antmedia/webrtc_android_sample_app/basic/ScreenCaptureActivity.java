@@ -2,7 +2,6 @@ package io.antmedia.webrtc_android_sample_app.basic;
 
 import static io.antmedia.webrtc_android_sample_app.basic.MediaProjectionService.EXTRA_MEDIA_PROJECTION_DATA;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,14 +12,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
-import org.w3c.dom.Text;
 import org.webrtc.SurfaceViewRenderer;
 
 import io.antmedia.webrtc_android_sample_app.R;
@@ -32,19 +30,18 @@ import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
-import io.antmedia.webrtcandroidframework.core.StatsCollector;
+import io.antmedia.webrtcandroidframework.core.model.ScreenShareAudioSource;
 import io.antmedia.webrtcandroidframework.core.model.TrackStats;
 
-import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class ScreenCaptureActivity extends TestableActivity {
+    private LinearLayout screenShareAudioSourceContainer;
     private TextView statusIndicatorTextView;
     private SurfaceViewRenderer fullScreenRenderer;
     private EditText streamIdEditText;
@@ -55,6 +52,7 @@ public class ScreenCaptureActivity extends TestableActivity {
     private boolean bluetoothEnabled = false;
     private IWebRTCClient webRTCClient;
     private RadioGroup bg;
+    private RadioGroup screenShareAudioSourceRadioGroup;
     public static final int CAPTURE_PERMISSION_REQUEST_CODE = 1234;
     public MediaProjectionManager mediaProjectionManager;
     private  final static long UPDATE_STATS_INTERVAL_MS = 500L;
@@ -65,6 +63,9 @@ public class ScreenCaptureActivity extends TestableActivity {
     private boolean publishStarted = false;
     private int lastCheckedId = 0;
 
+    private ScreenShareAudioSource screenShareAudioSource = ScreenShareAudioSource.MICROPHONE;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,7 +73,7 @@ public class ScreenCaptureActivity extends TestableActivity {
 
         fullScreenRenderer = findViewById(R.id.full_screen_renderer);
         streamIdEditText = findViewById(R.id.stream_id_edittext);
-
+        screenShareAudioSourceContainer = findViewById(R.id.screen_share_audio_source_container);
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         TextView streamIdEditText = findViewById(R.id.stream_id_edittext);
@@ -217,6 +218,7 @@ public class ScreenCaptureActivity extends TestableActivity {
         webRTCClient = IWebRTCClient.builder()
                 .setLocalVideoRenderer(fullScreenRenderer)
                 .setServerUrl(serverUrl)
+                .setScreenShareAudioSource(screenShareAudioSource)
                 .setActivity(this)
                 .setInitiateBeforeStream(initBeforeStream)
                 .setBluetoothEnabled(bluetoothEnabled)
@@ -247,21 +249,67 @@ public class ScreenCaptureActivity extends TestableActivity {
                 return;
             }
             else if(checkedId == R.id.rbFront) {
+                screenShareAudioSourceContainer.setVisibility(View.GONE);
                 newSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
+                if(streamId != null && webRTCClient.isStreaming(streamId)){
+                    webRTCClient.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
+                }
             }
             else if(checkedId == R.id.rbRear) {
+                screenShareAudioSourceContainer.setVisibility(View.GONE);
                 newSource = IWebRTCClient.StreamSource.REAR_CAMERA;
+                if(streamId != null && webRTCClient.isStreaming(streamId)){
+                    webRTCClient.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
+                }
             }
-            // idlingResource.increment();
             webRTCClient.changeVideoSource(newSource);
-            //    decrementIdle();
+        });
+
+        screenShareAudioSourceRadioGroup = findViewById(R.id.screen_share_audio_source_radio_group);
+        if(screenShareAudioSource == ScreenShareAudioSource.MICROPHONE){
+            screenShareAudioSourceRadioGroup.check(R.id.screen_share_audio_source_microphone);
+        }else if(screenShareAudioSource == ScreenShareAudioSource.SYSTEM){
+            screenShareAudioSourceRadioGroup.check(R.id.screen_share_audio_source_system);
+        }
+
+        screenShareAudioSourceRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            WebRTCClientConfig config = webRTCClient.getConfig();
+
+            if(checkedId == R.id.screen_share_audio_source_microphone) {
+
+                if(streamId == null || !webRTCClient.isStreaming(streamId)){
+                    screenShareAudioSource = ScreenShareAudioSource.MICROPHONE;
+                    config.screenShareAudioSource = screenShareAudioSource;
+                    webRTCClient.setAudioDeviceModuleMediaProjection(null);
+                    return;
+                }
+
+                if(streamId != null && webRTCClient.isStreaming(streamId) && config.screenShareAudioSource == ScreenShareAudioSource.SYSTEM && config.videoSource == IWebRTCClient.StreamSource.SCREEN){
+                    screenShareAudioSource = ScreenShareAudioSource.MICROPHONE;
+                    config.screenShareAudioSource = screenShareAudioSource;
+                    webRTCClient.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
+                }
+            }
+            else if(checkedId == R.id.screen_share_audio_source_system) {
+                if(streamId == null || !webRTCClient.isStreaming(streamId)){
+                    screenShareAudioSource = ScreenShareAudioSource.SYSTEM;
+                    config.screenShareAudioSource = screenShareAudioSource;
+                    return;
+                }
+
+                if(streamId != null && webRTCClient.isStreaming(streamId) && config.screenShareAudioSource == ScreenShareAudioSource.MICROPHONE && config.videoSource == IWebRTCClient.StreamSource.SCREEN){
+                    screenShareAudioSource = ScreenShareAudioSource.SYSTEM;
+                    config.screenShareAudioSource = screenShareAudioSource;
+                    webRTCClient.switchToSystemAudioRecordingOnScreenShareDuringCall();
+                }
+
+            }
+
         });
 
     }
 
     public void startStopStream() {
-        // incrementIdle();
-
         if (!PermissionHandler.checkCameraPermissions(this)) {
             PermissionHandler.requestCameraPermissions(this);
             return;
@@ -302,7 +350,6 @@ public class ScreenCaptureActivity extends TestableActivity {
                 publishStarted = true;
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
-                // decrementIdle();
             }
 
             @Override
@@ -322,7 +369,6 @@ public class ScreenCaptureActivity extends TestableActivity {
                 super.onReconnectionSuccess();
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
-                //   decrementIdle();
             }
 
             @Override
@@ -342,7 +388,6 @@ public class ScreenCaptureActivity extends TestableActivity {
                 super.onPublishFinished(streamId);
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
                 statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
-                //  decrementIdle();
             }
         };
     }
@@ -406,6 +451,7 @@ public class ScreenCaptureActivity extends TestableActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
             MediaProjectionService.setListener(() -> {
+                screenShareAudioSourceContainer.setVisibility(View.VISIBLE);
                 startScreenCapturer();
             });
 
@@ -416,10 +462,12 @@ public class ScreenCaptureActivity extends TestableActivity {
         } else {
             startScreenCapturer();
         }
+
     }
 
     private void startScreenCapturer() {
         webRTCClient.changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
         decrementIdle();
     }
+
 }

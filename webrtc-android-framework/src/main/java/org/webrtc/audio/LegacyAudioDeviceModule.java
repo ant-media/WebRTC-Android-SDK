@@ -47,4 +47,19 @@ public class LegacyAudioDeviceModule implements AudioDeviceModule {
   public void setMediaProjection(MediaProjection mediaProjection) {
 
   }
+
+  @Override
+  public void createAudioRecord() {
+
+  }
+
+  @Override
+  public void startRecording() {
+
+  }
+
+  @Override
+  public void stopRecording() {
+
+  }
 }

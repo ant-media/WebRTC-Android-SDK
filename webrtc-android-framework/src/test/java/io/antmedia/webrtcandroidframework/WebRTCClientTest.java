@@ -3,6 +3,7 @@ package io.antmedia.webrtcandroidframework;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -56,6 +57,7 @@ import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.CustomWebRtcAudioRecord;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.lang.reflect.Field;
@@ -70,11 +72,11 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
-import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
+import io.antmedia.webrtcandroidframework.core.model.ScreenShareAudioSource;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
@@ -1297,5 +1299,49 @@ public class WebRTCClientTest {
                         && turnServerPassword.equals(iceServer.password)
         );
         assertTrue(containsTurnServer);
+    }
+
+    @Test
+    public void testSwitchAudioSourceOnScreenShare(){
+
+        MediaProjection mediaProjection = mock(MediaProjection.class);
+        CustomWebRtcAudioRecord audioRecord = mock(CustomWebRtcAudioRecord.class);
+
+        JavaAudioDeviceModule adm = mock(JavaAudioDeviceModule.class);
+        doReturn(audioRecord).when(adm).getAudioInput();
+
+        WebRTCClient webRTCClientReal = IWebRTCClient.builder()
+                .setActivity(context)
+                .setScreenShareAudioSource(ScreenShareAudioSource.SYSTEM)
+                .setWebRTCListener(listener)
+                .build();
+
+        webRTCClientReal.setAdm(adm);
+
+        webRTCClientReal.getConfig().mediaProjection = mediaProjection;
+
+        webRTCClientReal.changeVideoSource(IWebRTCClient.StreamSource.SCREEN);
+
+        verify(adm, times(1)).setMediaProjection(mediaProjection);
+
+        webRTCClientReal.switchToMicrophoneAudioRecordingOnScreenShareDuringCall();
+        verify(adm, times(1)).stopRecording();
+        verify(adm, times(1)).createAudioRecord();
+        verify(adm, times(1)).startRecording();
+
+        assertNull(adm.getAudioInput().mediaProjection);
+
+        webRTCClientReal.getConfig().screenShareAudioSource = ScreenShareAudioSource.SYSTEM;
+
+        webRTCClientReal.switchToSystemAudioRecordingOnScreenShareDuringCall();
+
+        verify(adm, times(2)).stopRecording();
+        verify(adm, times(2)).createAudioRecord();
+        verify(adm, times(2)).startRecording();
+
+        doReturn(mediaProjection).when(audioRecord).getMediaProjection();
+
+        assertNotNull(adm.getAudioInput().getMediaProjection());
+
     }
 }

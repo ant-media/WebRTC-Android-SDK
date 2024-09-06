@@ -24,6 +24,8 @@ import android.media.projection.MediaProjectionManager;
 import android.os.Looper;
 import android.os.Handler;
 
+import io.antmedia.webrtcandroidframework.core.CustomMediaProjectionCallback;
+
 /**
  * An copy of ScreenCapturerAndroid to capture the screen content while being aware of device orientation
  */
@@ -126,6 +128,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
     mediaProjection = mediaProjectionManager.getMediaProjection(
             Activity.RESULT_OK, mediaProjectionPermissionResultData);
+
+    if(mediaProjectionCallback != null){
+      ((CustomMediaProjectionCallback) mediaProjectionCallback).onMediaProjection(mediaProjection);
+    }
 
     // Let MediaProjection callback use the SurfaceTextureHelper thread.
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());
@@ -249,10 +255,6 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
 
   public MediaProjection getMediaProjection() {
     return mediaProjection;
-  }
-
-  public void setMediaProjection(MediaProjection mediaProjection) {
-    this.mediaProjection = mediaProjection;
   }
 
   public MediaProjectionManager getMediaProjectionManager() {
