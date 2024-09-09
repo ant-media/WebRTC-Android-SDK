@@ -106,6 +106,8 @@ public class PublishActivityTest {
         Espresso.closeSoftKeyboard();
         onView(withId(R.id.start_streaming_button)).perform(click());
 
+        Thread.sleep(10000);
+
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
@@ -122,8 +124,6 @@ public class PublishActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
-
-        Thread.sleep(3000);
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
@@ -152,8 +152,6 @@ public class PublishActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
-
-        Thread.sleep(3000);
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 

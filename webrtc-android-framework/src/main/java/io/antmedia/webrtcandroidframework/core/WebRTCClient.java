@@ -245,6 +245,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private String roomId;
 
+    private BlackFrameSender blackFrameSender;
+
+    private boolean sendVideoEnabled = true;
+
+    private boolean sendAudioEnabled = true;
+
+
     public void createReconnectorRunnables() {
         //only used in conference.
         publishReconnectorRunnable = () -> {
@@ -387,6 +394,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         mainHandler = new Handler(config.activity.getMainLooper());
         iceServers.add(PeerConnection.IceServer.builder(config.stunServerUri)
                 .createIceServer());
+        sendAudioEnabled = config.audioCallEnabled;
+        sendVideoEnabled = config.videoCallEnabled;
 
         if(config.turnServerUri != null) {
             iceServers.add(PeerConnection.IceServer.builder(config.turnServerUri)
@@ -974,7 +983,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId) {
         publish(streamId, null, true, true,
-                null, null, streamId, "qdadsas");
+                null, null, streamId, null);
     }
 
 
@@ -2175,12 +2184,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             eglBase.release();
             eglBase = null;
         }
+        if(blackFrameSender != null){
+            blackFrameSender.stop();
+            blackFrameSender = null;
+        }
 
         localVideoSink.setTarget(null);
 
         Log.d(TAG, "Closing peer connection done.");
         onPeerConnectionClosed();
-
 
         clearStatsCollector();
         reconnectionInProgress = false;
@@ -2244,6 +2256,36 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     stopVideoSourceInternal();
                 }
                 localVideoTrack.setEnabled(renderVideo);
+            }
+        });
+    }
+
+    public void toggleSendAudio(boolean enableAudio) {
+        executor.execute(() -> {
+            sendAudioEnabled = enableAudio;
+            if (localAudioTrack != null) {
+                localAudioTrack.setEnabled(enableAudio);
+            }
+        });
+    }
+
+    public void toggleSendVideo(boolean enableVideo) {
+        if(!config.videoCallEnabled){
+            Log.i(TAG, "Cannot change send video because video call is disabled.");
+            return;
+        }
+        executor.execute(() -> {
+            sendVideoEnabled = enableVideo;
+            if (enableVideo) {
+                if(blackFrameSender != null && blackFrameSender.isRunning()){
+                    blackFrameSender.stop();
+                    blackFrameSender = null;
+                }
+                changeVideoSource(StreamSource.FRONT_CAMERA);
+            } else {
+                changeVideoSource(StreamSource.CUSTOM);
+                blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
+                blackFrameSender.start();
             }
         });
     }
@@ -2719,6 +2761,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
+    public boolean isLocalVideoTrackEnabled(){
+        if(localVideoTrack == null){
+            return false;
+        }
+        return localVideoTrack.enabled();
+    }
+
+    public boolean isLocalAudioTrackEnabled(){
+        if(localAudioTrack == null){
+            return false;
+        }
+        return localAudioTrack.enabled();
+    }
+
     public void setHandler(Handler handler) {
         this.handler = handler;
     }
@@ -2740,6 +2796,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public VideoCapturer getVideoCapturer() {
         return videoCapturer;
+    }
+
+    public void setVideoCapturer(VideoCapturer videoCapturer){
+        this.videoCapturer = videoCapturer;
     }
 
     public void setRemoveVideoRotationExtension(boolean removeVideoRotationExtension) {
@@ -2776,6 +2836,29 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public boolean isShutdown() {
         return released;
+    }
+
+    @Override
+    public boolean isSendVideoEnabled() {
+        return sendVideoEnabled;
+    }
+
+    @Override
+    public boolean isSendAudioEnabled() {
+        return sendAudioEnabled;
+    }
+
+    public BlackFrameSender getBlackFrameSender() {
+        return blackFrameSender;
+    }
+
+    @androidx.annotation.Nullable
+    public AudioTrack getLocalAudioTrack() {
+        return localAudioTrack;
+    }
+
+    public void setLocalAudioTrack(@androidx.annotation.Nullable AudioTrack localAudioTrack) {
+        this.localAudioTrack = localAudioTrack;
     }
 
 }

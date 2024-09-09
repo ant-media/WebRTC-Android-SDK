@@ -45,6 +45,7 @@
         android:background="?android:attr/colorBackground"
         android:layout_above="@id/start_streaming_button"/>
 
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

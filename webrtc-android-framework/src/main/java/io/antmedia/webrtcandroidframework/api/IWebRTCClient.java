@@ -103,14 +103,15 @@ public interface IWebRTCClient {
 
     /**
      * This is used to join a conference room
-     * @param roomId: id for the conference room
-     * @param streamId: id for the participant
+     *
+     * @param roomId:           id for the conference room
+     * @param streamId:         id for the participant
      * @param videoCallEnabled: true if it's a video call
      * @param audioCallEnabled: true if it's an audio call
-     * @param token: token to authenticate
-     * @param subscriberId: id of the subscriber
-     * @param subscriberCode: code of the subscriber
-     * @param streamName: name of the stream
+     * @param token:            token to authenticate
+     * @param subscriberId:     id of the subscriber
+     * @param subscriberCode:   code of the subscriber
+     * @param streamName:       name of the stream
      */
     void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName);
 
@@ -161,21 +162,26 @@ public interface IWebRTCClient {
 
     /**
      * Sets quality of a stream/subtrack to certain resolution.
+     *
      * @param mainTrackStreamId : If its a single stream pass its streamId as mainTrackId. If you want to change resolution of a subtrack, pass mainTrack stream Id and subtrack stream Id.
-     * @param subTrackStreamId : If you want to change resolution of sub track, pass its subTrack stream Id. If you dont want to change subtrack resolution pass null or empty str.
+     * @param subTrackStreamId  : If you want to change resolution of sub track, pass its subTrack stream Id. If you dont want to change subtrack resolution pass null or empty str.
      * @param resolutionHeight: The height to be forced. If you set the height to zero, it will become auto. example: For 720p pass 720 as resolution.
      */
     void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int resolutionHeight);
 
     /**
-     * enable/disable video stream
+     * enable/disable video stream of call. Use this before call start.
+     * Eg if you call this method before call start with false, you wont be able to turn on video stream during call.
+     * For in call video sending toggle use toggleSendVideo
      *
      * @param enabled true for enable, false for disable
      */
     void setVideoEnabled(boolean enabled);
 
     /**
-     * enable/disable audio stream
+     * enable/disable audio stream of call.
+     * Use this before call start.
+     * For in call audio sending(for example muting microphone) toggle use toggleSendAudio
      *
      * @param enabled true for enable, false for disable
      */
@@ -184,11 +190,11 @@ public interface IWebRTCClient {
     /**
      * enable/disable played track stream from the server
      *
-     * @param streamId       id for the main track
-     * @param selecetedTrack id for the subtrack
-     * @param enabled        true for enable, false for disable
+     * @param streamId      id for the main track
+     * @param selectedTrack id for the subtrack
+     * @param enabled       true for enable, false for disable
      */
-    void enableTrack(String streamId, String selecetedTrack, boolean enabled);
+    void enableTrack(String streamId, String selectedTrack, boolean enabled);
 
     /**
      * Called to set the renderer for a video track
@@ -331,4 +337,35 @@ public interface IWebRTCClient {
      * Returns true if SDK resources are released and its shutdown, false otherwise.
      */
     boolean isShutdown();
+
+    /**
+     * Use this to get the local audio track status.
+     * E.g., if the microphone is off, it will return false. If the microphone is on, it will return true.
+     */
+    boolean isLocalAudioTrackEnabled();
+
+    /**
+     * Use this to toggle sending video during a call.
+     * E.g., turn the camera on or off during a call.
+     */
+    void toggleSendVideo(boolean enableVideo);
+
+    /**
+     * Use this to toggle sending audio during a call.
+     * E.g., call this with false to mute the microphone during a call.
+     */
+    void toggleSendAudio(boolean enableAudio);
+
+    /**
+     * Get the audio sending status.
+     * E.g., if the microphone is muted, it will return false; otherwise, it will return true.
+     */
+    boolean isSendAudioEnabled();
+
+    /**
+     * Get the video sending status.
+     * E.g., if the camera is turned off, it will return false; otherwise, it will return true.
+     */
+    boolean isSendVideoEnabled();
+
 }

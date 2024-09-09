@@ -4,29 +4,24 @@ import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.swipeUp;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.RootMatchers.isDialog;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import static io.antmedia.webrtc_android_sample_app.TestableActivity.CONFERENCE_ROOM_ID_FOR_TEST;
 
-
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.TextView;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
+
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.test.core.app.ActivityScenario;
+
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.espresso.Espresso;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 
@@ -35,10 +30,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObject2;
-import androidx.test.uiautomator.UiObjectNotFoundException;
-import androidx.test.uiautomator.UiSelector;
 import androidx.test.uiautomator.Until;
 
 
@@ -50,10 +42,9 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
-import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
+
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 
@@ -85,7 +76,6 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
     public void before() {
         //try before method to make @Rule run properly
         getInstrumentation().waitForIdleSync();
-
         Context context = ApplicationProvider.getApplicationContext();
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         roomName = sharedPreferences.getString(context.getString(R.string.roomId), SettingsActivity.DEFAULT_ROOM_NAME);
@@ -126,7 +116,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
     };
 
     @Test
-    public void testConferenceSwitchStreamSource() throws InterruptedException, UiObjectNotFoundException {
+    public void testConferenceSwitchStreamSource() throws InterruptedException {
         conferenceActivityWithDifferentVideoSourcesScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
             IdlingRegistry.getInstance().register(mIdlingResource);
@@ -155,11 +145,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.screen_share_button)).perform(click());
 
@@ -185,11 +175,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
 
         onView(withId(R.id.front_camera_button)).perform(click());
@@ -214,11 +204,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.rear_camera_button)).perform(click());
 
@@ -241,11 +231,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -263,11 +253,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         //after source switch video sending should continue.
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
@@ -279,7 +269,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 

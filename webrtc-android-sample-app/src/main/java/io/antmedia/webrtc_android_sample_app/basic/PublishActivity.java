@@ -3,7 +3,6 @@ package io.antmedia.webrtc_android_sample_app.basic;
 import android.app.AlertDialog;
 
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -13,7 +12,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 import org.webrtc.DataChannel;
 import org.webrtc.SurfaceViewRenderer;
@@ -68,6 +66,8 @@ public class PublishActivity extends TestableActivity {
         }else{
             createWebRTCClient();
         }
+
+
 
     }
 

@@ -46,20 +46,20 @@
         android:gravity="center">
 
         <Button
-            android:id="@+id/control_audio_button"
+            android:id="@+id/toggle_send_audio_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="10dp"
-            android:text="Disable Audio"
-            android:onClick="controlAudio" />
+            android:text="Disable Send Audio"
+            />
 
         <Button
-            android:id="@+id/control_video_button"
+            android:id="@+id/toggle_send_video_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Disable Video"
+            android:text="Disable Send Video"
             android:layout_marginHorizontal="10dp"
-            android:onClick="controlVideo" />
+             />
 
     </LinearLayout>
 

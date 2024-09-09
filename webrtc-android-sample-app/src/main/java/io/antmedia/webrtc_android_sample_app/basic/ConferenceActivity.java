@@ -45,15 +45,23 @@ public class ConferenceActivity extends TestableActivity {
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
     private TextView statusIndicatorTextView;
     private Button joinButton;
+    private Button toggleSendAudioButton;
+    private Button toggleSendVideoButton;
+
     private String streamId;
     private String serverUrl;
     private IWebRTCClient webRTCClient;
     private String roomId;
-    private Button audioButton;
-    private Button videoButton;
     private boolean playOnly;
-    boolean bluetoothEnabled = false;
-    boolean initBeforeStream = false;
+    private boolean bluetoothEnabled = false;
+    private boolean initBeforeStream = false;
+
+    /**
+     * These settings are passed to the WebRTC client builder and the WebRTC client publish method.
+     * If videoCallEnabled is set to false when starting the call, video cannot be enabled during the call.
+     */
+    private boolean videoCallEnabled = true;
+    private boolean audioCallEnabled = true;
 
     private SurfaceViewRenderer localParticipantRenderer;
     private SurfaceViewRenderer remoteParticipant1Renderer;
@@ -106,8 +114,8 @@ public class ConferenceActivity extends TestableActivity {
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
         joinButton = findViewById(R.id.join_conference_button);
 
-        audioButton = findViewById(R.id.control_audio_button);
-        videoButton = findViewById(R.id.control_video_button);
+        toggleSendAudioButton = findViewById(R.id.toggle_send_audio_button);
+        toggleSendVideoButton = findViewById(R.id.toggle_send_video_button);
 
         serverUrl = sharedPreferences.getString(getString(R.string.serverAddress), SettingsActivity.DEFAULT_WEBSOCKET_URL);
 
@@ -130,6 +138,14 @@ public class ConferenceActivity extends TestableActivity {
             createWebRTCClient();
         }
 
+        toggleSendVideoButton.setOnClickListener(v->{
+            toggleSendVideo();
+        });
+
+        toggleSendAudioButton.setOnClickListener(v->{
+            toggleSendAudio();
+        });
+
     }
 
     public void createWebRTCClient(){
@@ -138,6 +154,8 @@ public class ConferenceActivity extends TestableActivity {
                 .setLocalVideoRenderer(localParticipantRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
+                .setVideoCallEnabled(videoCallEnabled)
+                .setAudioCallEnabled(audioCallEnabled)
                 .setInitiateBeforeStream(initBeforeStream)
                 .setBluetoothEnabled(bluetoothEnabled)
                 .setWebRTCListener(createWebRTCListener(roomId, streamId))
@@ -183,8 +201,9 @@ public class ConferenceActivity extends TestableActivity {
                 webRTCClient.joinToConferenceRoom(roomId);
             }
             else {
-                webRTCClient.joinToConferenceRoom(roomId, streamId);
+                webRTCClient.joinToConferenceRoom(roomId, streamId, videoCallEnabled, audioCallEnabled, "", "", "", "");
             }
+
         }
         else {
             joinButton.setText("Join");
@@ -305,23 +324,39 @@ public class ConferenceActivity extends TestableActivity {
         };
     }
 
-    public void controlAudio(View view) {
-        if (webRTCClient.getConfig().audioCallEnabled) {
-            webRTCClient.setAudioEnabled(false);
-            audioButton.setText("Enable Audio");
-        } else {
-            webRTCClient.setAudioEnabled(true);
-            audioButton.setText("Disable Audio");
+    public void toggleSendVideo() {
+        if(webRTCClient.isShutdown()){
+            Toast.makeText(this, "Webrtc client is shutdown. Recreate it.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if(webRTCClient.getConfig().videoCallEnabled){
+            if(webRTCClient.isSendVideoEnabled()){
+                webRTCClient.toggleSendVideo(false);
+                toggleSendVideoButton.setText("Enable Send Video");
+
+            }else{
+                webRTCClient.toggleSendVideo(true);
+                toggleSendVideoButton.setText("Disable Send Video");
+            }
+        }else{
+            Toast.makeText(this, "Cannot toggle send video because its disabled in config", Toast.LENGTH_LONG).show();
         }
     }
 
-    public void controlVideo(View view) {
-        if (webRTCClient.getConfig().videoCallEnabled) {
-            webRTCClient.setVideoEnabled(false);
-            videoButton.setText("Enable Video");
-        } else {
-            webRTCClient.setVideoEnabled(true);
-            videoButton.setText("Disable Video");
+    public void toggleSendAudio() {
+        if(webRTCClient.getConfig().audioCallEnabled){
+            if(webRTCClient.isSendAudioEnabled()){
+                webRTCClient.toggleSendAudio(false);
+                toggleSendAudioButton.setText("Enable Send Audio");
+
+            }else{
+                webRTCClient.toggleSendAudio(true);
+                toggleSendAudioButton.setText("Disable Send Audio");
+
+            }
+        }else{
+            Toast.makeText(this, "Cannot toggle send audio because its disabled in config", Toast.LENGTH_LONG).show();
         }
     }
 
