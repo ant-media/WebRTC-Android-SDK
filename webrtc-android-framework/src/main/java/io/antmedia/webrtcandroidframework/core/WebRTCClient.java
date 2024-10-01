@@ -1463,6 +1463,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 }
             });
         }
+        streamStoppedByUser = false;
     }
 
     public void onPeerConnectionClosed() {
@@ -2050,7 +2051,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             setWebRTCLogLevel();
 
-            if(createLocalTrack){
+            if(createLocalTrack || peer.mode == Mode.P2P){
 
                 List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
                 try{
