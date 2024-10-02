@@ -1,6 +1,5 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.Window;
@@ -12,11 +11,12 @@ import androidx.preference.PreferenceManager;
 import androidx.test.espresso.IdlingResource;
 import androidx.test.espresso.idling.CountingIdlingResource;
 
+import org.apache.commons.lang3.RandomStringUtils;
+
 public abstract class TestableActivity extends AppCompatActivity {
     public CountingIdlingResource idlingResource = new CountingIdlingResource("Load", true);
     protected SharedPreferences sharedPreferences;
-    public static String CONFERENCE_ROOM_ID_FOR_TEST = "room_12877";
-    public static String PEER_ROOM_ID_FOR_TEST = "p2pRoom_12877";
+    public static String PEER_ROOM_ID_FOR_TEST = "p2p"+ RandomStringUtils.randomAlphanumeric(3);
 
     public void  incrementIdle() {
         idlingResource.increment();

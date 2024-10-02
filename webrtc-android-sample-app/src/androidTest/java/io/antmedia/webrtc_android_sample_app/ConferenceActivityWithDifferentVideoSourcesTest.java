@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Intent;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import android.content.Context;
@@ -25,6 +26,9 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
 
+import androidx.test.espresso.UiController;
+import androidx.test.espresso.ViewAction;
+import androidx.test.espresso.matcher.ViewMatchers;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
@@ -34,6 +38,7 @@ import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 
 
+import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -231,7 +236,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        //Thread.sleep(3000);
+        onView(withId(R.id.stats_popup_container)).perform(waitFor(2000));
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -279,6 +284,25 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
+    }
+
+    public static ViewAction waitFor(long millis) {
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return ViewMatchers.isDisplayed(); // No constraints, can be used on any view
+            }
+
+            @Override
+            public String getDescription() {
+                return "Wait for " + millis + " milliseconds.";
+            }
+
+            @Override
+            public void perform(UiController uiController, View view) {
+                uiController.loopMainThreadForAtLeast(millis);
+            }
+        };
     }
 
 }
