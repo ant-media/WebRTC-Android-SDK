@@ -32,6 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,6 +55,8 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 public class PeerActivityTest {
     private IdlingResource mIdlingResource;
     private String runningTest;
+    private float videoBytesSent = 0;
+    private float videoBytesReceived = 0;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -111,7 +114,8 @@ public class PeerActivityTest {
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Join")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.stream_id_edittext)).perform(replaceText(PeerActivity.PEER_ROOM_ID_FOR_TEST));
+        String randomPeerRoomId = "p2p"+ RandomStringUtils.randomAlphanumeric(6);
+        onView(withId(R.id.stream_id_edittext)).perform(replaceText(randomPeerRoomId));
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
@@ -119,8 +123,7 @@ public class PeerActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
-
-        RemoteP2PParticipant remoteP2PParticipant = RemoteP2PParticipant.addP2PParticipant(PeerActivity.PEER_ROOM_ID_FOR_TEST, runningTest);
+        RemoteP2PParticipant remoteP2PParticipant = RemoteP2PParticipant.addP2PParticipant(randomPeerRoomId, runningTest);
 
         Thread.sleep(10000);
 
@@ -172,10 +175,11 @@ public class PeerActivityTest {
             IdlingRegistry.getInstance().register(mIdlingResource);
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
+        String randomPeerRoomId = "p2p"+ RandomStringUtils.randomAlphanumeric(6);
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Join")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.stream_id_edittext)).perform(replaceText(PeerActivity.PEER_ROOM_ID_FOR_TEST));
+        onView(withId(R.id.stream_id_edittext)).perform(replaceText(randomPeerRoomId));
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
@@ -184,7 +188,7 @@ public class PeerActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
 
-        RemoteP2PParticipant remoteP2PParticipant = RemoteP2PParticipant.addP2PParticipant(PeerActivity.PEER_ROOM_ID_FOR_TEST, runningTest);
+        RemoteP2PParticipant remoteP2PParticipant = RemoteP2PParticipant.addP2PParticipant(randomPeerRoomId, runningTest);
 
         Thread.sleep(10000);
 
@@ -198,6 +202,15 @@ public class PeerActivityTest {
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
+
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+            videoBytesSent = value;
+        });
+
+
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
@@ -206,8 +219,11 @@ public class PeerActivityTest {
                     RecyclerView recyclerView = (RecyclerView) view;
                     RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
                     TextView bytesReceivedText = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+
                     int bytesReceived = Integer.parseInt(( bytesReceivedText).getText().toString());
+
                     assertTrue(bytesReceived > 0);
+                    videoBytesReceived = bytesReceived;
                 });
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
@@ -240,6 +256,16 @@ public class PeerActivityTest {
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
+
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
+            float value = Float.parseFloat(text);
+            assertTrue(value > 0f);
+            assertTrue(value > videoBytesSent);
+            videoBytesSent = value;
+        });
+
+
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
@@ -248,8 +274,11 @@ public class PeerActivityTest {
                     RecyclerView recyclerView = (RecyclerView) view;
                     RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
                     TextView bytesReceivedText = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+
                     int bytesReceived = Integer.parseInt(( bytesReceivedText).getText().toString());
+
                     assertTrue(bytesReceived > 0);
+                    assertTrue(bytesReceived > videoBytesReceived);
                 });
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());

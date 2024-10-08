@@ -1463,6 +1463,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 }
             });
         }
+        streamStoppedByUser = false;
     }
 
     public void onPeerConnectionClosed() {
@@ -1488,9 +1489,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onTakeConfiguration(String streamId, SessionDescription sdp) {
         this.handler.post(() -> {
             if (sdp.type == SessionDescription.Type.OFFER) {
-                PeerConnection pc = getPeerConnectionFor(streamId);
-                if (pc == null) {
-                    createPeerConnection(streamId, false);
+                PeerInfo peerInfo = getPeerInfoFor(streamId);
+                if(peerInfo != null){
+                    PeerConnection pc = peerInfo.peerConnection;
+                    if (pc == null) {
+                        boolean createLocalTrack = peerInfo.mode == Mode.P2P;
+                        createPeerConnection(streamId, createLocalTrack);
+                    }
                 }
 
                 setRemoteDescription(streamId, sdp);
