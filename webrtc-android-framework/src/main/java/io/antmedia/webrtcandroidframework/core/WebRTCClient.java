@@ -1489,9 +1489,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onTakeConfiguration(String streamId, SessionDescription sdp) {
         this.handler.post(() -> {
             if (sdp.type == SessionDescription.Type.OFFER) {
-                PeerConnection pc = getPeerConnectionFor(streamId);
+                PeerInfo peerInfo = getPeerInfoFor(streamId);
+                PeerConnection pc = peerInfo.peerConnection;
                 if (pc == null) {
-                    createPeerConnection(streamId, false);
+                    boolean createLocalTrack = peerInfo.mode == Mode.P2P;
+                    createPeerConnection(streamId, createLocalTrack);
                 }
 
                 setRemoteDescription(streamId, sdp);
@@ -2051,7 +2053,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             setWebRTCLogLevel();
 
-            if(createLocalTrack || peer.mode == Mode.P2P){
+            if(createLocalTrack){
 
                 List<String> mediaStreamLabels = Collections.singletonList("ARDAMS");
                 try{
