@@ -1490,10 +1490,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.handler.post(() -> {
             if (sdp.type == SessionDescription.Type.OFFER) {
                 PeerInfo peerInfo = getPeerInfoFor(streamId);
-                PeerConnection pc = peerInfo.peerConnection;
-                if (pc == null) {
-                    boolean createLocalTrack = peerInfo.mode == Mode.P2P;
-                    createPeerConnection(streamId, createLocalTrack);
+                if(peerInfo != null){
+                    PeerConnection pc = peerInfo.peerConnection;
+                    if (pc == null) {
+                        boolean createLocalTrack = peerInfo.mode == Mode.P2P;
+                        createPeerConnection(streamId, createLocalTrack);
+                    }
                 }
 
                 setRemoteDescription(streamId, sdp);
