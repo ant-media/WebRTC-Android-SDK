@@ -39,6 +39,7 @@ import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtc_android_sample_app.basic.StatsActivity;
+import io.antmedia.webrtc_android_sample_app.basic.WebviewActivity;
 import io.antmedia.webrtc_android_sample_app.minimal.SimplePublishActivity;
 
 import com.google.firebase.FirebaseApp;
@@ -80,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(ConferenceActivityWithDifferentVideoSources.class,"Conference with Stream Source Switch");
         addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
         addActivity(StatsActivity.class, "Stats");
+        addActivity(WebviewActivity.class, "Webview");
 
     }
 
