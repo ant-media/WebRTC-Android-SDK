@@ -267,6 +267,8 @@ public class WebRTCClientTest {
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
         doNothing().when(webRTCClient).initializeAudioManager();
+        doNothing().when(webRTCClient).release(true);
+
         doReturn(true).when(wsHandler).isConnected();
 
 
