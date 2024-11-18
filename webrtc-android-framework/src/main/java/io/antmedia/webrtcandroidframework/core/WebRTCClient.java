@@ -923,6 +923,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             PeerInfo peerInfo = getPeerInfoFor(streamId);
             if(peerInfo != null && peerInfo.mode == Mode.P2P){
                 wsHandler.leaveFromP2P(streamId);
+                release(byUser); // releasing SDK here might not be practical for all P2P users.
                 return;
             }
 
