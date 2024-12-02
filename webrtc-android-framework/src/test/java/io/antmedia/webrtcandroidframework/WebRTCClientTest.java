@@ -267,6 +267,8 @@ public class WebRTCClientTest {
         when(context.getString(anyInt(), Matchers.<Object>anyVararg())).thenReturn("asas");
         doNothing().when(webRTCClient).init();
         doNothing().when(webRTCClient).initializeAudioManager();
+        doNothing().when(webRTCClient).release(true);
+
         doReturn(true).when(wsHandler).isConnected();
 
 
@@ -1366,4 +1368,36 @@ public class WebRTCClientTest {
         );
         assertTrue(containsTurnServer);
     }
+
+    @Test
+    public void testLeaveP2P() {
+        String streamId = "stream" + RandomStringUtils.randomAlphanumeric(5);
+
+        doNothing().when(webRTCClient).init();
+        doNothing().when(webRTCClient).release(true);
+        doNothing().when(webRTCClient).initializeAudioManager();
+        doReturn(true).when(wsHandler).isConnected();
+
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.P2P);
+
+        webRTCClient.getPeersForTest().put(streamId, peerInfo);
+
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+
+        webRTCClient.stop(streamId);
+        verify(wsHandler, times(1)).leaveFromP2P(streamId);
+        verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.LEAVE_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals(json.toString(), jsonCaptor.getValue());
+
+        Mockito.verify(webRTCClient, times(1)).release(true);
+    }
+
 }
