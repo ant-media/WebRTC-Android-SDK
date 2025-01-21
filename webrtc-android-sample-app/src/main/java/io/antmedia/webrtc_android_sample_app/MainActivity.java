@@ -33,6 +33,7 @@ import io.antmedia.webrtc_android_sample_app.advanced.PublishActivityWithAreYouS
 import io.antmedia.webrtc_android_sample_app.advanced.USBCameraActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.DataChannelOnlyActivity;
+import io.antmedia.webrtc_android_sample_app.basic.DynamicConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PeerActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
@@ -40,7 +41,6 @@ import io.antmedia.webrtc_android_sample_app.basic.ScreenCaptureActivity;
 import io.antmedia.webrtc_android_sample_app.basic.SettingsActivity;
 import io.antmedia.webrtc_android_sample_app.basic.StatsActivity;
 import io.antmedia.webrtc_android_sample_app.basic.WebviewActivity;
-import io.antmedia.webrtc_android_sample_app.minimal.SimplePublishActivity;
 
 import com.google.firebase.FirebaseApp;
 
@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(PublishActivity.class, "Publish");
         addActivity(PlayActivity.class, "Play");
         addActivity(PeerActivity.class, "Peer");
+        addActivity(DynamicConferenceActivity.class, "Dynamic Conference");
         addActivity(ConferenceActivity.class, "Conference");
         addActivity(ScreenCaptureActivity.class, "Screen Share");
         addActivity(DataChannelOnlyActivity.class, "DC Only");
