@@ -19,7 +19,7 @@ public class WebRTCClientConfig {
      */
     public SurfaceViewRenderer localVideoRenderer;
 
-    public boolean useDynamicRenderers = true;
+    public boolean useDynamicRenderers = false;
     /*
      * Renderers for remote video
      */

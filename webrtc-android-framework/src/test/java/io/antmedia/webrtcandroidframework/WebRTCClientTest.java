@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.waitAtMost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1274,6 +1275,8 @@ public class WebRTCClientTest {
         Field field = WebRTCClient.class.getDeclaredField("mainHandler");
         field.setAccessible(true);
         field.set(webRTCClient, getMockHandler());
+        webRTCClient.getConfig().useDynamicRenderers = true;
+        doNothing().when(webRTCClient).removeSurfaceViewRenderer(any());
 
         webRTCClient.releaseRenderer(renderer);
         try {
@@ -1286,6 +1289,8 @@ public class WebRTCClientTest {
         verify(renderer).clearImage();
         verify(renderer).release();
         verify(renderer).setTag(null);
+        verify(webRTCClient).removeSurfaceViewRenderer(any());
+
     }
 
     @Test
@@ -1403,16 +1408,22 @@ public class WebRTCClientTest {
         Mockito.verify(webRTCClient, times(1)).release(true);
     }
     @Test
-    public void dynamicAddRemoveRendererTest(){
-        WebRTCClientConfig config = mock(WebRTCClientConfig.class);
-        config.remoteParticipantsGridLayout = mock(GridLayout.class);
-        config.activity = mock(Activity.class);
+    public void dynamicAddRemoveRendererTest() throws InterruptedException {
+        webRTCClient.getConfig().remoteParticipantsGridLayout = mock(GridLayout.class);
+        SurfaceViewRenderer renderer = Mockito.mock(SurfaceViewRenderer.class);
+        doReturn(renderer).when(webRTCClient).createSurfaceViewRender();
 
-        webRTCClient.setConfig(config);
         webRTCClient.addSurfaceViewRenderer();
-        assertEquals(config.remoteVideoRenderers.size(),1);
-        Mockito.verify(config.remoteParticipantsGridLayout).addView(any());
 
+        Thread.sleep(1000);
+
+        assertEquals(webRTCClient.getConfig().remoteVideoRenderers.size(),1);
+        Mockito.verify(webRTCClient.getConfig().remoteParticipantsGridLayout).addView(any());
+
+        webRTCClient.removeSurfaceViewRenderer(renderer);
+        Thread.sleep(1000);
+
+        Mockito.verify(webRTCClient.getConfig().remoteParticipantsGridLayout).removeView(any());
     }
 
 }
