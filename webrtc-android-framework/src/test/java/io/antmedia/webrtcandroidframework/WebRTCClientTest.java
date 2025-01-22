@@ -801,7 +801,7 @@ public class WebRTCClientTest {
         verify(webRTCClient, times(1)).createAnswer(streamId);
     }
     @Test
-    public void audioOnlyTest(){
+    public void audioOnlyTest() throws InterruptedException{
 
         PeerConnection pc = mock(PeerConnection.class);
         webRTCClient.addPeerConnection("test",pc);
@@ -832,6 +832,7 @@ public class WebRTCClientTest {
         doReturn(transceivers).when(pc).getTransceivers();
 
         webRTCClient.createAnswer("test");
+        Thread.sleep(3000);
 
         verify(videoTransceiver1).setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
         verify(videoTransceiver2).setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
