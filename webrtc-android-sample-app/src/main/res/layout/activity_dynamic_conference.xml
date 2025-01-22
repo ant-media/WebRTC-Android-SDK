@@ -83,7 +83,7 @@
             android:background="@drawable/rounded_button_background"
             android:contentDescription="Microphone"
             android:padding="12dp"
-            android:src="@drawable/ic_mic_off" />
+            android:src="@drawable/ic_mic_on" />
 
         <!-- Video Button -->
         <ImageButton

@@ -371,11 +371,11 @@ public class DynamicConferenceActivity extends TestableActivity {
         if(webRTCClient.getConfig().audioCallEnabled){
             if(webRTCClient.isSendAudioEnabled()){
                 webRTCClient.toggleSendAudio(false);
-                toggleSendAudioButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_mic_on));
+                toggleSendAudioButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_mic_off));
 
             }else{
                 webRTCClient.toggleSendAudio(true);
-                toggleSendAudioButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_mic_off));
+                toggleSendAudioButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_mic_on));
             }
         }else{
             Toast.makeText(this, "Cannot toggle send audio because its disabled in config", Toast.LENGTH_LONG).show();
