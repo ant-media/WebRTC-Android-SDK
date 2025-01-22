@@ -152,6 +152,12 @@ public class WebRTCClientBuilder {
         return this;
     }
 
+    public WebRTCClientBuilder audioOnly() {
+        webRTCClientConfig.audioOnly = true;
+        webRTCClientConfig.videoCallEnabled = false; // do not send video
+        return this;
+    }
+
     public WebRTCClientBuilder setBluetoothEnabled(boolean bluetoothEnabled) {
         webRTCClientConfig.bluetoothEnabled = bluetoothEnabled;
         return this;

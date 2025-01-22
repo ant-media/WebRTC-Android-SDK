@@ -45,6 +45,7 @@ import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
@@ -2332,6 +2333,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (pc != null) {
                 Log.d(TAG, "PC create ANSWER");
                 isInitiator = false;
+                if(config.audioOnly){
+                    for (RtpTransceiver trans:pc.getTransceivers()) {
+                        if(trans.getMediaType() == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO){
+                            trans.setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
+                        }
+                    }
+                }
                 pc.createAnswer(getSdpObserver(streamId), sdpMediaConstraints);
             }
         });
