@@ -416,6 +416,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return config;
     }
 
+    public void setConfig(WebRTCClientConfig config) {
+        this.config = config;
+    }
+
     public SDPObserver getSdpObserver(String streamId) {
         return new SDPObserver(streamId);
     }
@@ -1209,6 +1213,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             mainHandler.post(() -> {
                 renderer.release();
                 renderer.setTag(null);
+                if(config.useDynamicRenderers)
+                    removeSurfaceViewRenderer(renderer);
             });
         });
     }
@@ -2869,7 +2875,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void setLocalAudioTrack(@androidx.annotation.Nullable AudioTrack localAudioTrack) {
         this.localAudioTrack = localAudioTrack;
     }
-    public SurfaceViewRenderer addSurfaceViewRenderer(String id) {
+    public SurfaceViewRenderer addSurfaceViewRenderer() {
         SurfaceViewRenderer surfaceViewRenderer = new SurfaceViewRenderer(config.activity);
 
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
@@ -2884,8 +2890,5 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
     public void removeSurfaceViewRenderer(SurfaceViewRenderer renderer){
         config.remoteParticipantsGridLayout.removeView(renderer);
-    }
-    private void removeSurfaceViewRenderer(String id){
-
     }
 }

@@ -5,13 +5,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".basic.ConferenceActivity">
+
+   <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+       android:id="@+id/container_scroll_view"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent" >
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="match_parent"
+           android:orientation="vertical"
+           android:weightSum="10" >
     <GridLayout
+        android:id="@+id/remote_participant_renderer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/remote_participant_renderer"
-        android:columnCount="3"
-        >
-    </GridLayout>
+        android:layout_marginBottom="132dp"
+        android:columnCount="2"
+       ></GridLayout>
+       </LinearLayout>
+
+   </ScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,8 +40,8 @@
 
             <TextView
                 android:id="@+id/broadcasting_text_view"
-                android:layout_width="131dp"
-                android:layout_height="27dp"
+                android:layout_width="129dp"
+                android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -39,6 +52,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Play Only" />
+
 
         </LinearLayout>
 
@@ -51,44 +65,57 @@
 
     </LinearLayout>
 
-    <GridLayout
-        android:layout_width="wrap_content"
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|start"
-        android:gravity="center">
+        android:layout_gravity="bottom"
+        android:background="#1C1C1C"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="16dp">
 
-        <Button
-            android:id="@+id/show_stats_button"
-            android:layout_width="159dp"
-            android:layout_height="wrap_content"
-            android:text="Show Stats" />
-
-        <Button
-            android:id="@+id/join_conference_button"
-            android:layout_width="159dp"
-            android:layout_row="0"
-            android:layout_column="1"
-            android:onClick="joinConference"
-            android:text="Join Conference" />
-
-        <Button
-            android:id="@+id/toggle_send_video_button"
-
-            android:layout_width="159dp"
-            android:layout_row="1"
-            android:layout_column="1"
-            android:layout_marginHorizontal="10dp"
-            android:text="Disable Send Video" />
-
-        <Button
+        <!-- Microphone Button -->
+        <ImageButton
             android:id="@+id/toggle_send_audio_button"
-            android:layout_width="159dp"
-            android:layout_row="1"
-            android:layout_column="0"
-            android:layout_marginHorizontal="10dp"
-            android:text="Disable Send Audio" />
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="Microphone"
+            android:padding="12dp"
+            android:src="@drawable/ic_mic_off" />
 
-    </GridLayout>
+        <!-- Video Button -->
+        <ImageButton
+            android:id="@+id/toggle_send_video_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="Video"
+            android:padding="12dp"
+            android:src="@drawable/ic_camera_on" />
+
+        <ImageButton
+            android:id="@+id/show_stats_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="stats"
+            android:padding="12dp"
+            android:src="@drawable/ic_query_stats" />
+
+        <ImageButton
+            android:id="@+id/join_conference_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="End Call"
+            android:padding="12dp"
+            android:src="@drawable/ic_join_call" />
+    </LinearLayout>
 
 
 </FrameLayout>

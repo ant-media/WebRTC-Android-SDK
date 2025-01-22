@@ -29,6 +29,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.app.Activity;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
+import android.widget.GridLayout;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -74,6 +75,7 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
@@ -83,6 +85,7 @@ import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
+import kotlin.jvm.internal.unsafe.MonitorKt;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -1398,6 +1401,18 @@ public class WebRTCClientTest {
         assertEquals(json.toString(), jsonCaptor.getValue());
 
         Mockito.verify(webRTCClient, times(1)).release(true);
+    }
+    @Test
+    public void dynamicAddRemoveRendererTest(){
+        WebRTCClientConfig config = mock(WebRTCClientConfig.class);
+        config.remoteParticipantsGridLayout = mock(GridLayout.class);
+        config.activity = mock(Activity.class);
+
+        webRTCClient.setConfig(config);
+        webRTCClient.addSurfaceViewRenderer();
+        assertEquals(config.remoteVideoRenderers.size(),1);
+        Mockito.verify(config.remoteParticipantsGridLayout).addView(any());
+
     }
 
 }

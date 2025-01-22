@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
 import android.widget.GridLayout;
+import android.widget.GridView;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;

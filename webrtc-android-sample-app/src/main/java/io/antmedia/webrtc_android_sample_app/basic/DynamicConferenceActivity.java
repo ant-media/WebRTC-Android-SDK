@@ -9,11 +9,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -46,9 +49,9 @@ public class DynamicConferenceActivity extends TestableActivity {
 
     private final static long UPDATE_STATS_INTERVAL_MS = 500L;
     private TextView statusIndicatorTextView;
-    private Button joinButton;
-    private Button toggleSendAudioButton;
-    private Button toggleSendVideoButton;
+    private ImageButton joinButton;
+    private ImageButton toggleSendAudioButton;
+    private ImageButton toggleSendVideoButton;
 
     private String streamId;
     private String serverUrl;
@@ -163,7 +166,7 @@ public class DynamicConferenceActivity extends TestableActivity {
             joinLeaveRoom();
         });
 
-        Button showStatsButton = findViewById(R.id.show_stats_button);
+        ImageButton showStatsButton = findViewById(R.id.show_stats_button);
         showStatsButton.setOnClickListener(v -> {
 
             if(publishStarted){
@@ -190,7 +193,7 @@ public class DynamicConferenceActivity extends TestableActivity {
         }
 
         if (!webRTCClient.isStreaming(streamId)) {
-            joinButton.setText("Leave");
+            joinButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_end_call));
             Log.i(getClass().getSimpleName(), "Calling join");
 
             if(playOnly) {
@@ -202,7 +205,7 @@ public class DynamicConferenceActivity extends TestableActivity {
 
         }
         else {
-            joinButton.setText("Join");
+            joinButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_join_call));
             Log.i(getClass().getSimpleName(), "Calling leave");
 
             webRTCClient.leaveFromConference(roomId);
@@ -310,7 +313,6 @@ public class DynamicConferenceActivity extends TestableActivity {
                     VideoTrack videoTrack = (VideoTrack) r.getTag();
                     if (videoTrack !=null && videoTrack.id().equals(track.id())) {
                         webRTCClient.releaseRenderer(r);
-
                         runOnUiThread(() -> {
                             webRTCClient.removeSurfaceViewRenderer(r);
                         });
@@ -324,7 +326,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 callbackCalled(messageText);
 
                 runOnUiThread(() -> {
-                    SurfaceViewRenderer r = webRTCClient.addSurfaceViewRenderer(trackId);
+                    SurfaceViewRenderer r = webRTCClient.addSurfaceViewRenderer();
                     if (r.getTag() == null) {
                         r.setTag(track);
                         webRTCClient.setRendererForVideoTrack(r, track);
@@ -354,11 +356,11 @@ public class DynamicConferenceActivity extends TestableActivity {
         if(webRTCClient.getConfig().videoCallEnabled){
             if(webRTCClient.isSendVideoEnabled()){
                 webRTCClient.toggleSendVideo(false);
-                toggleSendVideoButton.setText("Enable Send Video");
+                toggleSendVideoButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_camera_off));
 
             }else{
                 webRTCClient.toggleSendVideo(true);
-                toggleSendVideoButton.setText("Disable Send Video");
+                toggleSendVideoButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_camera_on));
             }
         }else{
             Toast.makeText(this, "Cannot toggle send video because its disabled in config", Toast.LENGTH_LONG).show();
@@ -369,12 +371,11 @@ public class DynamicConferenceActivity extends TestableActivity {
         if(webRTCClient.getConfig().audioCallEnabled){
             if(webRTCClient.isSendAudioEnabled()){
                 webRTCClient.toggleSendAudio(false);
-                toggleSendAudioButton.setText("Enable Send Audio");
+                toggleSendAudioButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_mic_on));
 
             }else{
                 webRTCClient.toggleSendAudio(true);
-                toggleSendAudioButton.setText("Disable Send Audio");
-
+                toggleSendAudioButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_mic_off));
             }
         }else{
             Toast.makeText(this, "Cannot toggle send audio because its disabled in config", Toast.LENGTH_LONG).show();
