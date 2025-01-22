@@ -406,7 +406,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     .createIceServer());
         }
 
-        if (config.initiateBeforeStream = true) {
+        if (config.initiateBeforeStream) {
             init();
         }
     }
