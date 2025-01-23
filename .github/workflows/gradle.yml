@@ -52,6 +52,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
+        sudo apt-get remove --purge python3-typing-extensions
         sudo pip3 install python-openstackclient
 
     - name: server-id
@@ -239,6 +240,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
+        sudo apt-get remove --purge python3-typing-extensions
         sudo pip3 install python-openstackclient
     - name: Delete CI Instance
       if: ${{ always() }}
