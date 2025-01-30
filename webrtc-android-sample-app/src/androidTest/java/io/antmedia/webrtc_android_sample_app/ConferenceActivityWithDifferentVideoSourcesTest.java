@@ -150,7 +150,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -180,7 +180,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -209,7 +209,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
