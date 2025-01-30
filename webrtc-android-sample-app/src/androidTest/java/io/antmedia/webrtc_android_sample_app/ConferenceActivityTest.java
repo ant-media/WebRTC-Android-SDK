@@ -273,7 +273,7 @@ public class ConferenceActivityTest {
                 });
 
 
-       // Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
@@ -289,7 +289,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-       // Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
             String text = ((TextView) view).getText().toString();
