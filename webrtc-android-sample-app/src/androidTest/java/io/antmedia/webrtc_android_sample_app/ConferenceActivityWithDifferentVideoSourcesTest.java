@@ -184,7 +184,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
 
         onView(withId(R.id.front_camera_button)).perform(click());
@@ -213,7 +213,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.rear_camera_button)).perform(click());
 
@@ -236,11 +236,13 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
+        Thread.sleep(3000);
+
         onView(withId(R.id.stats_popup_container)).perform(waitFor(2000));
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -258,11 +260,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         //after source switch video sending should continue.
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
@@ -274,7 +276,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
