@@ -118,6 +118,11 @@ public class ConferenceActivityTest {
     };
 
     @Test
+    public void testDynamicRenderer(){
+
+    }
+
+    @Test
     public void testJoinMultitrackRoom() {
         conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();

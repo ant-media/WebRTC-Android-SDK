@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".basic.ConferenceActivity">
+
+   <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+       android:id="@+id/container_scroll_view"
+       android:layout_width="match_parent"
+       android:layout_height="match_parent" >
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="match_parent"
+           android:orientation="vertical"
+           android:weightSum="10" >
+    <GridLayout
+        android:id="@+id/remote_participant_renderer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="132dp"
+        android:columnCount="2"
+       ></GridLayout>
+       </LinearLayout>
+
+   </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginTop="-120dp"
+        android:gravity="center">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/broadcasting_text_view"
+                android:layout_width="129dp"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:visibility="visible" />
+
+            <Switch
+                android:id="@+id/play_only_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Play Only" />
+
+
+        </LinearLayout>
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/local_participant_renderer"
+            android:layout_width="142dp"
+            android:layout_height="142dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginBottom="142dp" />
+
+    </LinearLayout>
+
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="#1C1C1C"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Microphone Button -->
+        <ImageButton
+            android:id="@+id/toggle_send_audio_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="Microphone"
+            android:padding="12dp"
+            android:src="@drawable/ic_mic_on" />
+
+        <!-- Video Button -->
+        <ImageButton
+            android:id="@+id/toggle_send_video_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="Video"
+            android:padding="12dp"
+            android:src="@drawable/ic_camera_on" />
+
+        <ImageButton
+            android:id="@+id/show_stats_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="stats"
+            android:padding="12dp"
+            android:src="@drawable/ic_query_stats" />
+
+        <ImageButton
+            android:id="@+id/join_conference_button"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/rounded_button_background"
+            android:contentDescription="End Call"
+            android:padding="12dp"
+            android:src="@drawable/ic_join_call" />
+    </LinearLayout>
+
+
+</FrameLayout>

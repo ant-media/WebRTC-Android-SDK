@@ -67,6 +67,10 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <activity android:name=".basic.DynamicConferenceActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
         <activity android:name=".basic.ConferenceActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"

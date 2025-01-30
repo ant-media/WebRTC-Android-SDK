@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.waitAtMost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -29,6 +30,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.app.Activity;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
+import android.widget.GridLayout;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
@@ -74,6 +76,7 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
@@ -83,6 +86,7 @@ import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
+import kotlin.jvm.internal.unsafe.MonitorKt;
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -1271,6 +1275,8 @@ public class WebRTCClientTest {
         Field field = WebRTCClient.class.getDeclaredField("mainHandler");
         field.setAccessible(true);
         field.set(webRTCClient, getMockHandler());
+        webRTCClient.getConfig().useDynamicRenderers = true;
+        doNothing().when(webRTCClient).removeSurfaceViewRenderer(any());
 
         webRTCClient.releaseRenderer(renderer);
         try {
@@ -1283,6 +1289,8 @@ public class WebRTCClientTest {
         verify(renderer).clearImage();
         verify(renderer).release();
         verify(renderer).setTag(null);
+        verify(webRTCClient).removeSurfaceViewRenderer(any());
+
     }
 
     @Test
@@ -1398,6 +1406,24 @@ public class WebRTCClientTest {
         assertEquals(json.toString(), jsonCaptor.getValue());
 
         Mockito.verify(webRTCClient, times(1)).release(true);
+    }
+    @Test
+    public void dynamicAddRemoveRendererTest() throws InterruptedException {
+        webRTCClient.getConfig().remoteParticipantsGridLayout = mock(GridLayout.class);
+        SurfaceViewRenderer renderer = Mockito.mock(SurfaceViewRenderer.class);
+        doReturn(renderer).when(webRTCClient).createSurfaceViewRender();
+
+        webRTCClient.addSurfaceViewRenderer();
+
+        Thread.sleep(1000);
+
+        assertEquals(webRTCClient.getConfig().remoteVideoRenderers.size(),1);
+        Mockito.verify(webRTCClient.getConfig().remoteParticipantsGridLayout).addView(any());
+
+        webRTCClient.removeSurfaceViewRenderer(renderer);
+        Thread.sleep(1000);
+
+        Mockito.verify(webRTCClient.getConfig().remoteParticipantsGridLayout).removeView(any());
     }
 
 }

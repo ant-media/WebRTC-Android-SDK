@@ -368,4 +368,12 @@ public interface IWebRTCClient {
      */
     boolean isSendVideoEnabled();
 
+    /**
+     * add new surfaceViewRenderer
+     *
+     */
+    public SurfaceViewRenderer addSurfaceViewRenderer();
+
+    public void removeSurfaceViewRenderer(SurfaceViewRenderer surfaceViewRenderer);
 }
+
