@@ -53,6 +53,7 @@ jobs:
         sudo apt-get remove python3-typing-extensions
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
+        sudo apt-get remove --purge python3-typing-extensions
         sudo pip3 install python-openstackclient
 
     - name: server-id
@@ -142,7 +143,7 @@ jobs:
 
       - name: Run ffmpeg
         #send test stream to the server to play test
-        run: ffmpeg -re -stream_loop 20 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
+        run: ffmpeg -re -stream_loop -1 -i ./webrtc-android-sample-app/src/androidTest/resources/test.flv -codec copy -f flv rtmp://test.antmedia.io/LiveApp/stream556677i4d 2>&1 < /dev/null &
       
       - uses: browser-actions/setup-chrome@v1
         id: setup-chrome
@@ -240,6 +241,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
+        sudo apt-get remove --purge python3-typing-extensions
         sudo pip3 install python-openstackclient
     - name: Delete CI Instance
       if: ${{ always() }}
