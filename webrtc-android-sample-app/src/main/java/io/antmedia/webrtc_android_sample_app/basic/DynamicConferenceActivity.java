@@ -6,10 +6,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.GridLayout;
-import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -69,8 +67,10 @@ public class DynamicConferenceActivity extends TestableActivity {
     private boolean audioCallEnabled = true;
 
     private SurfaceViewRenderer localParticipantRenderer;
-    public GridLayout remoteParticipatesGrid;
-
+    public GridLayout remoteParticipantsGridLayout;
+    /*
+     * Renderers for remote video
+     */
     private AlertDialog statsPopup;
     private ScheduledFuture statCollectorFuture;
     private ScheduledExecutorService statCollectorExecutor;
@@ -107,7 +107,7 @@ public class DynamicConferenceActivity extends TestableActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dynamic_conference);
-        remoteParticipatesGrid = findViewById(R.id.remote_participant_renderer);
+        remoteParticipantsGridLayout = findViewById(R.id.remote_participant_renderer);
         localParticipantRenderer = findViewById(R.id.local_participant_renderer);
 
         statusIndicatorTextView = findViewById(R.id.broadcasting_text_view);
@@ -149,7 +149,6 @@ public class DynamicConferenceActivity extends TestableActivity {
 
     public void createWebRTCClient(){
         webRTCClient = IWebRTCClient.builder()
-                .useDynamicRenders(remoteParticipatesGrid,10)
                 .setLocalVideoRenderer(localParticipantRenderer)
                 .setServerUrl(serverUrl)
                 .setActivity(this)
@@ -162,6 +161,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 .build();
 
         joinButton = findViewById(R.id.join_conference_button);
+
         joinButton.setOnClickListener(v -> {
             joinLeaveRoom();
         });
@@ -193,6 +193,7 @@ public class DynamicConferenceActivity extends TestableActivity {
         }
 
         if (!webRTCClient.isStreaming(streamId)) {
+            joinButton.setEnabled(false);
             joinButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_end_call));
             Log.i(getClass().getSimpleName(), "Calling join");
 
@@ -205,10 +206,12 @@ public class DynamicConferenceActivity extends TestableActivity {
 
         }
         else {
+            joinButton.setEnabled(false);
             joinButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_join_call));
             Log.i(getClass().getSimpleName(), "Calling leave");
 
             webRTCClient.leaveFromConference(roomId);
+            removeAllRenderers();
         }
     }
 
@@ -257,6 +260,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 super.onPublishStarted(streamId);
                 decrementIdle();
                 publishStarted = true;
+                joinButton.setEnabled(true);
             }
 
             @Override
@@ -283,6 +287,9 @@ public class DynamicConferenceActivity extends TestableActivity {
                 }else{
                     statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
                     statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                    removeAllRenderers();
+                    joinButton.setEnabled(true);
+                    joinButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_join_call));
                 }
             }
 
@@ -304,6 +311,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
                 statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 decrementIdle();
+                joinButton.setEnabled(true);
             }
             @Override
             public void onVideoTrackEnded(VideoTrack track) {
@@ -314,7 +322,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                     if (videoTrack !=null && videoTrack.id().equals(track.id())) {
                         webRTCClient.releaseRenderer(r);
                         runOnUiThread(() -> {
-                            webRTCClient.removeSurfaceViewRenderer(r);
+                            removeSurfaceViewRenderer(r);
                         });
                         return;
                     }
@@ -326,7 +334,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 callbackCalled(messageText);
 
                 runOnUiThread(() -> {
-                    SurfaceViewRenderer r = webRTCClient.addSurfaceViewRenderer();
+                    SurfaceViewRenderer r = addSurfaceViewRenderer();
                     if (r.getTag() == null) {
                         r.setTag(track);
                         webRTCClient.setRendererForVideoTrack(r, track);
@@ -553,5 +561,37 @@ public class DynamicConferenceActivity extends TestableActivity {
             }
         }
     }
+    public SurfaceViewRenderer createSurfaceViewRender(){
+        SurfaceViewRenderer surfaceViewRenderer = new SurfaceViewRenderer(this);
 
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width = (500);
+        params.height = (500);
+        params.setMargins(8, 8, 8, 8);
+
+        surfaceViewRenderer.setLayoutParams(params);
+        return surfaceViewRenderer;
+    }
+    public SurfaceViewRenderer addSurfaceViewRenderer() {
+        SurfaceViewRenderer surfaceViewRenderer = createSurfaceViewRender();
+        remoteParticipantsGridLayout.addView(surfaceViewRenderer);
+        webRTCClient.getConfig().remoteVideoRenderers.add(surfaceViewRenderer);
+        return  surfaceViewRenderer;
+    }
+    public void removeSurfaceViewRenderer(SurfaceViewRenderer renderer){
+        if(renderer==null)
+            return;
+        remoteParticipantsGridLayout.removeView(renderer);
+        webRTCClient.getConfig().remoteVideoRenderers.remove(renderer);
+    }
+    public void removeAllRenderers(){
+        ArrayList<SurfaceViewRenderer> toRemove = new ArrayList<>(webRTCClient.getConfig().remoteVideoRenderers);
+        for (SurfaceViewRenderer r : toRemove) {
+            webRTCClient.releaseRenderer(r);
+            runOnUiThread(() -> {
+                remoteParticipantsGridLayout.removeView(r);
+                webRTCClient.getConfig().remoteVideoRenderers.remove(r);
+            });
+        }
+    }
 }

@@ -1,8 +1,6 @@
 package io.antmedia.webrtcandroidframework.api;
 
 import android.app.Activity;
-import android.widget.GridLayout;
-import android.widget.GridView;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
@@ -95,12 +93,6 @@ public class WebRTCClientBuilder {
 
     public WebRTCClientBuilder addRemoteVideoRenderer (SurfaceViewRenderer ... remoteVideoRenderers) {
         webRTCClientConfig.remoteVideoRenderers.addAll(Arrays.asList(remoteVideoRenderers));
-        return this;
-    }
-    public WebRTCClientBuilder useDynamicRenders(GridLayout remoteParticipatesGrid, int maxVideosInGrid) {
-        webRTCClientConfig.useDynamicRenderers = true;
-        webRTCClientConfig.remoteParticipantsGridLayout = remoteParticipatesGrid;
-        webRTCClientConfig.maxVideosInGrid = maxVideosInGrid;
         return this;
     }
 

@@ -3,8 +3,6 @@ package io.antmedia.webrtcandroidframework.api;
 import android.app.Activity;
 import android.content.Intent;
 import android.media.projection.MediaProjection;
-import android.widget.GridLayout;
-import android.widget.GridView;
 
 import org.webrtc.RendererCommon;
 import org.webrtc.SurfaceViewRenderer;
@@ -19,14 +17,10 @@ public class WebRTCClientConfig {
      */
     public SurfaceViewRenderer localVideoRenderer;
 
-    public boolean useDynamicRenderers = false;
     /*
      * Renderers for remote video
      */
     public ArrayList<SurfaceViewRenderer> remoteVideoRenderers = new ArrayList<>();
-    public GridLayout remoteParticipantsGridLayout;
-
-    public int maxVideosInGrid;
 
     /*
      * websocket connection url to Ant Media Server

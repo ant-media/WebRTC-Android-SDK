@@ -15,7 +15,6 @@ import android.media.projection.MediaProjection;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.GridLayout;
 import android.widget.Toast;
@@ -1212,8 +1211,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             renderer.release();
             renderer.setTag(null);
-            if(config.useDynamicRenderers)
-                removeSurfaceViewRenderer(renderer);
         });
     }
 
@@ -2873,24 +2870,5 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void setLocalAudioTrack(@androidx.annotation.Nullable AudioTrack localAudioTrack) {
         this.localAudioTrack = localAudioTrack;
     }
-    public SurfaceViewRenderer createSurfaceViewRender(){
-        SurfaceViewRenderer surfaceViewRenderer = new SurfaceViewRenderer(config.activity);
 
-        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = (500);
-        params.height = (500);
-        params.setMargins(8, 8, 8, 8);
-
-        surfaceViewRenderer.setLayoutParams(params);
-        return surfaceViewRenderer;
-    }
-    public SurfaceViewRenderer addSurfaceViewRenderer() {
-        SurfaceViewRenderer surfaceViewRenderer = createSurfaceViewRender();
-        config.remoteParticipantsGridLayout.addView(surfaceViewRenderer);
-        config.remoteVideoRenderers.add(surfaceViewRenderer);
-        return  surfaceViewRenderer;
-    }
-    public void removeSurfaceViewRenderer(SurfaceViewRenderer renderer){
-        config.remoteParticipantsGridLayout.removeView(renderer);
-    }
 }

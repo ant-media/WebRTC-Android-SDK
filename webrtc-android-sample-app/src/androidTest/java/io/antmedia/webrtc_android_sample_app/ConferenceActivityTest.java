@@ -118,11 +118,6 @@ public class ConferenceActivityTest {
     };
 
     @Test
-    public void testDynamicRenderer(){
-
-    }
-
-    @Test
     public void testJoinMultitrackRoom() {
         conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
@@ -440,7 +435,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        //Thread.sleep(5000);
+        Thread.sleep(5000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
