@@ -800,6 +800,47 @@ public class WebRTCClientTest {
         verify(webRTCClient, times(1)).setRemoteDescription(streamId, sdpAnswer);
         verify(webRTCClient, times(1)).createAnswer(streamId);
     }
+    @Test
+    public void audioOnlyTest() throws InterruptedException{
+
+        PeerConnection pc = mock(PeerConnection.class);
+        webRTCClient.addPeerConnection("test",pc);
+        webRTCClient.getConfig().audioOnly = true;
+
+        List<RtpTransceiver> transceivers = new ArrayList<>();
+
+        RtpTransceiver videoTransceiver1 = mock(RtpTransceiver.class);
+        doReturn(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).when(videoTransceiver1).getMediaType();
+        doReturn(true).when(videoTransceiver1).setDirection(any());
+        transceivers.add(videoTransceiver1);
+
+        RtpTransceiver videoTransceiver2 = mock(RtpTransceiver.class);
+        doReturn(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).when(videoTransceiver2).getMediaType();
+        doReturn(true).when(videoTransceiver2).setDirection(any());
+        transceivers.add(videoTransceiver2);
+
+        RtpTransceiver videoTransceiver3 = mock(RtpTransceiver.class);
+        doReturn(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO).when(videoTransceiver3).getMediaType();
+        doReturn(true).when(videoTransceiver3).setDirection(any());
+        transceivers.add(videoTransceiver3);
+
+        RtpTransceiver audioTransceiver = mock(RtpTransceiver.class);
+        doReturn(MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO).when(audioTransceiver).getMediaType();
+        doReturn(true).when(audioTransceiver).setDirection(any());
+        transceivers.add(audioTransceiver);
+
+        doReturn(transceivers).when(pc).getTransceivers();
+
+        webRTCClient.createAnswer("test");
+        Thread.sleep(3000);
+
+        verify(videoTransceiver1).setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
+        verify(videoTransceiver2).setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
+        verify(videoTransceiver3).setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
+
+        verify(audioTransceiver,times(0)).setDirection(RtpTransceiver.RtpTransceiverDirection.INACTIVE);
+
+    }
 
     @Test
     public void testDatachannel() {

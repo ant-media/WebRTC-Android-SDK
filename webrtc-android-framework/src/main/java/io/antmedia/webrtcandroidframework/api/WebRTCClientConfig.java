@@ -133,6 +133,10 @@ public class WebRTCClientConfig {
      */
     public IWebRTCClient.StreamSource videoSource = IWebRTCClient.StreamSource.FRONT_CAMERA;
 
+    /*
+     * no video will be sent or recieved
+     */
+    public boolean audioOnly = false;
 
     /*
      * Flag indicating whether initate WebRTCClient (renderers, websocket, capturers etc.)  before stream publish starts
