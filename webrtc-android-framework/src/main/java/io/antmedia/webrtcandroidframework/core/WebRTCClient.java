@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+import android.widget.GridLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -414,6 +415,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return config;
     }
 
+    public void setConfig(WebRTCClientConfig config) {
+        this.config = config;
+    }
+
     public SDPObserver getSdpObserver(String streamId) {
         return new SDPObserver(streamId);
     }
@@ -764,6 +769,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             config.localVideoRenderer.setEnableHardwareScaler(true /* enabled */);
             localVideoSink.setTarget(config.localVideoRenderer);
         }
+
     }
 
     public void initializePeerConnectionFactory() {
@@ -1203,10 +1209,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             renderer.clearAnimation();
             mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
-            mainHandler.post(() -> {
-                renderer.release();
-                renderer.setTag(null);
-            });
+            renderer.release();
+            renderer.setTag(null);
         });
     }
 

@@ -435,7 +435,7 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
 
-        //Thread.sleep(5000);
+        Thread.sleep(5000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
@@ -465,7 +465,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        //Thread.sleep(3000);
+        Thread.sleep(3000);
 
         onView(withId(R.id.join_conference_button)).perform(click());
 
