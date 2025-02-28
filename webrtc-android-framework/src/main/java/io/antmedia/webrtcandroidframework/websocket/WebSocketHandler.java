@@ -70,9 +70,13 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         ws = new WebSocketConnection();
         Thread connectorThread = new Thread(() -> {
             try {
-                ws.connect(new URI(wsUrl), this);
-            } catch (WebSocketException | URISyntaxException e) {
-                Log.e(TAG,"failed to connect WebSocket");
+                ws.connect(new URI(wsServerUrl), this);
+            } catch (WebSocketException e) {
+                e.printStackTrace();
+                disconnect(false);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+                disconnect(false);
             }
         });
         connectorThread.start();
