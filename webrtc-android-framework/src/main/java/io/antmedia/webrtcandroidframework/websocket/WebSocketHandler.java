@@ -62,12 +62,16 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         gson = builder.create();
     }
 
+    public WebSocketConnection creteWebSocket(){
+        return new WebSocketConnection();
+    }
     public void connect(final String wsUrl) {
         checkIfCalledOnValidThread();
         if(wsUrl==null || wsUrl.isBlank())
             return;
+        wsServerUrl = wsUrl;
 
-        ws = new WebSocketConnection();
+        ws = creteWebSocket();
         Thread connectorThread = new Thread(() -> {
             try {
                 ws.connect(new URI(wsServerUrl), this);

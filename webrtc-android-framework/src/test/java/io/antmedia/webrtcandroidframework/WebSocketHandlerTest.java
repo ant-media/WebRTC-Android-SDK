@@ -2,6 +2,7 @@ package io.antmedia.webrtcandroidframework;
 
 import android.os.Handler;
 
+import org.awaitility.Awaitility;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,16 +14,19 @@ import org.mockito.MockitoAnnotations;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
 import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 import com.google.gson.Gson;
@@ -450,6 +454,15 @@ public class WebSocketHandlerTest {
         assertEquals(broadcast.getStreamId(), broadcast2.getStreamId());
         assertEquals(broadcast.getName(), broadcast2.getName());
 
+    }
+
+    @Test
+    public void testWsConnect() throws InterruptedException, URISyntaxException, WebSocketException {
+        String url = "wss://test.antmedia.io:5443/LiveApp/websocket";
+        doReturn(ws).when(webSocketHandler).creteWebSocket();
+        webSocketHandler.connect(url);
+        Thread.sleep(3000);
+        verify(ws,times(1)).connect(new URI(url),webSocketHandler);
     }
 
     @Test
