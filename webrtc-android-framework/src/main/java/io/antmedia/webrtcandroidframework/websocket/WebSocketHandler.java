@@ -24,10 +24,11 @@ import io.antmedia.webrtcandroidframework.core.StreamInfo;
 
 import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.DEFINITION;
 import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.NOTIFICATION_COMMAND;
+import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.WEBSOCKET_CONNECTION_TIMEOUT;
+
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
     private static final String TAG = "WebSocketHandler";
     private static final int CLOSE_TIMEOUT = 1000;
@@ -63,18 +64,26 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     public void connect(final String wsUrl) {
         checkIfCalledOnValidThread();
-        wsServerUrl = wsUrl;
-        Log.d(TAG, "Connecting WebSocket to: " + wsUrl);
+        if(wsUrl==null || wsUrl.isBlank())
+            return;
+
         ws = new WebSocketConnection();
-        try {
-            ws.connect(new URI(wsServerUrl), this);
-        } catch (WebSocketException e) {
-            e.printStackTrace();
-            disconnect(false);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            disconnect(false);
-        }
+        Thread connectorThread = new Thread(() -> {
+            try {
+                ws.connect(new URI(wsUrl), this);
+            } catch (WebSocketException | URISyntaxException e) {
+                Log.e(TAG,"failed to connect WebSocket");
+            }
+        });
+        connectorThread.start();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                if (connectorThread.isAlive()) {
+                    connectorThread.interrupt();
+                    Log.e(TAG, "exception occurred while waiting for websocket");
+                }
+            }
+        },WEBSOCKET_CONNECTION_TIMEOUT);
     }
 
     public void sendTextMessage(String message) {
