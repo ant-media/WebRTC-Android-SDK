@@ -449,4 +449,6 @@ public class WebSocketConstants {
      */
     public static final String BROADCAST = "broadcast";
 
+    public static final int WEBSOCKET_CONNECTION_TIMEOUT = 10000; //10 sec
+
 }
