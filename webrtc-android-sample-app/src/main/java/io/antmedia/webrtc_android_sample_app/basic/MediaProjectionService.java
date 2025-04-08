@@ -94,9 +94,9 @@ public class MediaProjectionService extends Service {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             stopPendingIntent = PendingIntent.getForegroundService(this, 0, stopIntent, PendingIntent.FLAG_MUTABLE);
         } else {
-            stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT);
+            stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_MUTABLE);
         }
-        Icon stopIcon = Icon.createWithResource(this, io.antmedia.webrtcandroidframework.R.drawable.abc_vector_test);
+        Icon stopIcon = Icon.createWithResource(this, io.antmedia.webrtcandroidframework.R.drawable.disconnect);
         String stopString = "stop";
         Notification.Action.Builder actionBuilder = new Notification.Action.Builder(stopIcon, stopString, stopPendingIntent);
         return actionBuilder.build();
