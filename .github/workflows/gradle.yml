@@ -1,5 +1,11 @@
 name: Android SDK CI
-on: [pull_request]
+on:
+  push:
+    branches:
+      - master      # Runs after PR is merged (push to master)
+  pull_request:
+    branches:
+      - master      # Runs when a PR is opened/updated targeting master
 
 #   Important Information:
 #   -It's running in ci.antmedia.cloud and Linux hardware acceleration is enabled.
@@ -211,6 +217,17 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           fail_ci_if_error: true
+
+      - name: Deploy to Sonatype
+        #deploy only in master branches
+        if: github.ref == 'refs/heads/master'
+        run: ./gradlew publish
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
 
   clean:
     needs: [setup-runner, unit-tests]
