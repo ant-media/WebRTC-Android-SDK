@@ -1,4 +1,4 @@
-package io.antmedia.webrtcandroidframework.utility;
+package io.antmedia.webrtc_android_sample_app.utility;
 
 import android.Manifest;
 import android.app.Activity;
@@ -6,7 +6,9 @@ import android.content.pm.PackageManager;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+
 import androidx.core.app.ActivityCompat;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;

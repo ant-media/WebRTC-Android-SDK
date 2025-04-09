@@ -72,7 +72,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         wsServerUrl = wsUrl;
 
         ws = creteWebSocket();
-        Thread connectorThread = new Thread(() -> {
+        //Thread connectorThread = new Thread(() -> {
             try {
                 ws.connect(new URI(wsServerUrl), this);
             } catch (WebSocketException e) {
@@ -82,7 +82,8 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 e.printStackTrace();
                 disconnect(false);
             }
-        });
+        //});
+        /*
         connectorThread.start();
         handler.postDelayed(new Runnable() {
             public void run() {
@@ -92,6 +93,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }
             }
         },WEBSOCKET_CONNECTION_TIMEOUT);
+        */
     }
 
     public void sendTextMessage(String message) {
