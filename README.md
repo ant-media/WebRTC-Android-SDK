@@ -14,11 +14,11 @@ WebRTC play, Conference and Data Channel features are available in Ant Media Ser
 
 ## Integration 
 
-In order to integrate Android SDK to your project, please follow [this link](https://resources.antmedia.io/docs/android-sdk).
+In order to integrate Android SDK to your project, please follow [this link](https://antmedia.io/docs/category/android-sdk/).
 
 ## Support
 
-Have any questions about the Android SDK? Visit our [community platform](http://community.antmedia.io/).
+Have any questions about the Android SDK? Visit our [community platform](https://github.com/orgs/ant-media/discussions).
 
 ## Issues
 
