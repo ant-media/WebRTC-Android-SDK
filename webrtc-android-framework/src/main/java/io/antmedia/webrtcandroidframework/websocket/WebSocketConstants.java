@@ -451,4 +451,11 @@ public class WebSocketConstants {
 
     public static final int WEBSOCKET_CONNECTION_TIMEOUT = 10000; //10 sec
 
+    public static final String CAM_TURNED_OFF  = "CAM_TURNED_OFF";
+
+    public static final String CAM_TURNED_ON  = "CAM_TURNED_ON";
+
+    public static final String MIC_MUTED  = "MIC_MUTED";
+
+    public static final String MIC_UNMUTED  = "MIC_UNMUTED";
 }

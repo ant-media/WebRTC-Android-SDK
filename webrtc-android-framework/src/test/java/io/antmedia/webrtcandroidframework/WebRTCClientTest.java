@@ -1399,5 +1399,21 @@ public class WebRTCClientTest {
 
         Mockito.verify(webRTCClient, times(1)).release(true);
     }
+    @Test
+    public void handleNotification(){
+        IWebRTCListener listener1 = webRTCClient.getConfig().webRTCListener;
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"CAM_TURNED_OFF\"}");
+        verify(listener1).onCameraTurnOffFor("test");
+
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"CAM_TURNED_ON\"}");
+        verify(listener1).onCameraTurnOnFor("test");
+
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"MIC_UNMUTED\"}");
+        verify(listener1).onUnmutedFor("test");
+
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"MIC_MUTED\"}");
+        verify(listener1).onMutedFor("test");
+
+    }
 
 }

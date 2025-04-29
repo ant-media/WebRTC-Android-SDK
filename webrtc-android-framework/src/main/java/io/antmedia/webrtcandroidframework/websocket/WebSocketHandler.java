@@ -212,7 +212,6 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 signallingListener.onStreamInfoList(streamId, streamInfos);
             }
             else if (commandText.equals(NOTIFICATION_COMMAND)) {
-
                 String definition = json.getString(DEFINITION);
 
                 Log.d(TAG, "notification:   " + definition);
@@ -280,7 +279,6 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                 }else if(definition.equals(WebSocketConstants.RESOLUTION_CHANGE_INFO_COMMAND)){
                     int resolution = json.getInt(WebSocketConstants.STREAM_HEIGHT);
                     signallingListener.onResolutionChange(streamId, resolution);
-
                 }
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
