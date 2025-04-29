@@ -1419,11 +1419,26 @@ public class WebRTCClientTest {
 
     @Test
     public void testDataChannelOnMessage() throws InterruptedException {
+        IWebRTCListener listener1 = webRTCClient.getConfig().webRTCListener;
         WebRTCClient.DataChannelInternalObserver dataChannelObserver =  webRTCClient.getInternalDataChannelObserver(mock(DataChannel.class));
         ByteBuffer buf = ByteBuffer.wrap("hello".getBytes(StandardCharsets.UTF_8));
         DataChannel.Buffer buffer = new DataChannel.Buffer(buf, false);
         dataChannelObserver.onMessage(buffer);
         Thread.sleep(2000);
         verify(webRTCClient).handleNotification("hello");
+
+        buf = ByteBuffer.wrap("{\"streamId\":\"test\",\"noeventtyp\":\"MIC_MUTED\"}".getBytes(StandardCharsets.UTF_8));
+        buffer = new DataChannel.Buffer(buf, false);
+        dataChannelObserver.onMessage(buffer);
+
+        Thread.sleep(2000);
+        verify(listener1,times(0)).onMutedFor("test");
+
+        buf = ByteBuffer.wrap("{\"streamId\":\"test\",\"eventType\":\"MIC_MUTED\"}".getBytes(StandardCharsets.UTF_8));
+        buffer = new DataChannel.Buffer(buf, false);
+        dataChannelObserver.onMessage(buffer);
+
+        Thread.sleep(2000);
+        verify(listener1).onMutedFor("test");
     }
 }
