@@ -16,7 +16,6 @@ import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
-import android.widget.GridLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -64,6 +63,7 @@ import org.webrtc.audio.CustomWebRtcAudioRecord;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,6 +86,7 @@ import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
@@ -1576,6 +1577,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         config.webRTCListener.onJoinedTheRoom(streamId, streams);
     }
 
+
     @Override
     public void onRoomInformation(String[] streams) {
         config.webRTCListener.onRoomInformation(streams);
@@ -1747,7 +1749,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         wsHandler.forceStreamQuality(mainTrackStreamId, subTrackStreamId, height);
     }
 
-    class DataChannelInternalObserver implements DataChannel.Observer {
+    public class DataChannelInternalObserver implements DataChannel.Observer {
 
         private final DataChannel dataChannel;
 
@@ -1787,6 +1789,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 }
             });
         }
+        protected String toTextMessage(DataChannel.Buffer buffer) {
+            ByteBuffer data = buffer.data;
+            String messageText = new String(data.array(), StandardCharsets.UTF_8);
+            return messageText;
+        }
 
         @Override
         public void onMessage(final DataChannel.Buffer buffer) {
@@ -1799,11 +1806,43 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             handler.post(() -> {
                 if (config.dataChannelObserver == null || dataChannel == null) return;
                 try{
+                    handleNotification(toTextMessage(bufferCopy));
                     config.dataChannelObserver.onMessage(bufferCopy, dataChannel.label());
                 }catch (IllegalStateException e) {
                     Log.e(TAG, "Data channel related error:" + e.getMessage());
                 }
             });
+        }
+    }
+
+    public void handleNotification(String message) {
+        if (message == null || !message.contains("eventType"))
+            return;
+
+        JSONObject jsonMessage;
+        String streamId;
+        String eventTyp;
+
+        try {
+            jsonMessage = new JSONObject(message);
+            streamId = jsonMessage.getString(WebSocketConstants.STREAM_ID);
+            eventTyp = jsonMessage.getString("eventType");
+        } catch (Exception e) {
+           return;
+        }
+
+        switch (eventTyp) {
+            case WebSocketConstants.CAM_TURNED_OFF:
+                config.webRTCListener.onCameraTurnOffFor(streamId);
+                break;
+            case WebSocketConstants.CAM_TURNED_ON:
+                config.webRTCListener.onCameraTurnOnFor(streamId);
+                break;
+            case WebSocketConstants.MIC_MUTED:
+                config.webRTCListener.onMutedFor(streamId);
+                break;
+            case WebSocketConstants.MIC_UNMUTED:
+                config.webRTCListener.onUnmutedFor(streamId);
         }
     }
 
@@ -2097,6 +2136,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return new PCObserver(streamId);
     }
 
+    public DataChannelInternalObserver getInternalDataChannelObserver(DataChannel dataChannel){
+        return new DataChannelInternalObserver(dataChannel);
+    }
     public void initDataChannel(String streamId) {
         if (config.dataChannelEnabled) {
             DataChannel.Init init = new DataChannel.Init();

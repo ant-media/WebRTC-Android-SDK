@@ -64,6 +64,7 @@ import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -1399,5 +1400,45 @@ public class WebRTCClientTest {
 
         Mockito.verify(webRTCClient, times(1)).release(true);
     }
+    @Test
+    public void handleNotification(){
+        IWebRTCListener listener1 = webRTCClient.getConfig().webRTCListener;
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"CAM_TURNED_OFF\"}");
+        verify(listener1).onCameraTurnOffFor("test");
 
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"CAM_TURNED_ON\"}");
+        verify(listener1).onCameraTurnOnFor("test");
+
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"MIC_UNMUTED\"}");
+        verify(listener1).onUnmutedFor("test");
+
+        webRTCClient.handleNotification("{\"streamId\":\"test\",\"eventType\":\"MIC_MUTED\"}");
+        verify(listener1).onMutedFor("test");
+
+    }
+
+    @Test
+    public void testDataChannelOnMessage() throws InterruptedException {
+        IWebRTCListener listener1 = webRTCClient.getConfig().webRTCListener;
+        WebRTCClient.DataChannelInternalObserver dataChannelObserver =  webRTCClient.getInternalDataChannelObserver(mock(DataChannel.class));
+        ByteBuffer buf = ByteBuffer.wrap("hello".getBytes(StandardCharsets.UTF_8));
+        DataChannel.Buffer buffer = new DataChannel.Buffer(buf, false);
+        dataChannelObserver.onMessage(buffer);
+        Thread.sleep(2000);
+        verify(webRTCClient).handleNotification("hello");
+
+        buf = ByteBuffer.wrap("{\"streamId\":\"test\",\"noeventtyp\":\"MIC_MUTED\"}".getBytes(StandardCharsets.UTF_8));
+        buffer = new DataChannel.Buffer(buf, false);
+        dataChannelObserver.onMessage(buffer);
+
+        Thread.sleep(2000);
+        verify(listener1,times(0)).onMutedFor("test");
+
+        buf = ByteBuffer.wrap("{\"streamId\":\"test\",\"eventType\":\"MIC_MUTED\"}".getBytes(StandardCharsets.UTF_8));
+        buffer = new DataChannel.Buffer(buf, false);
+        dataChannelObserver.onMessage(buffer);
+
+        Thread.sleep(2000);
+        verify(listener1).onMutedFor("test");
+    }
 }
