@@ -1749,7 +1749,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         wsHandler.forceStreamQuality(mainTrackStreamId, subTrackStreamId, height);
     }
 
-    class DataChannelInternalObserver implements DataChannel.Observer {
+    public class DataChannelInternalObserver implements DataChannel.Observer {
 
         private final DataChannel dataChannel;
 
@@ -2136,6 +2136,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return new PCObserver(streamId);
     }
 
+    public DataChannelInternalObserver getInternalDataChannelObserver(DataChannel dataChannel){
+        return new DataChannelInternalObserver(dataChannel);
+    }
     public void initDataChannel(String streamId) {
         if (config.dataChannelEnabled) {
             DataChannel.Init init = new DataChannel.Init();

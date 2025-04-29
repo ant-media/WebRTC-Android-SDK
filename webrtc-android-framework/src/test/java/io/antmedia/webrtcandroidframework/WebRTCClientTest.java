@@ -64,6 +64,7 @@ import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -1416,4 +1417,13 @@ public class WebRTCClientTest {
 
     }
 
+    @Test
+    public void testDataChannelOnMessage() throws InterruptedException {
+        WebRTCClient.DataChannelInternalObserver dataChannelObserver =  webRTCClient.getInternalDataChannelObserver(mock(DataChannel.class));
+        ByteBuffer buf = ByteBuffer.wrap("hello".getBytes(StandardCharsets.UTF_8));
+        DataChannel.Buffer buffer = new DataChannel.Buffer(buf, false);
+        dataChannelObserver.onMessage(buffer);
+        Thread.sleep(2000);
+        verify(webRTCClient).handleNotification("hello");
+    }
 }
