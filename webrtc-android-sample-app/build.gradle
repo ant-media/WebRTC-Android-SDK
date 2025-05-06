@@ -94,7 +94,7 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','conne
 dependencies {
     api project(":webrtc-android-framework")
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation "live.100ms:android-sdk:2.7.3"
+    implementation "live.100ms:webrtc:m107-hms-1.5"
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'

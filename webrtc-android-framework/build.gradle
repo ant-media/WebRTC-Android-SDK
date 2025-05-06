@@ -76,7 +76,7 @@ dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'androidx.annotation:annotation:1.5.0'
-    implementation "live.100ms:android-sdk:2.7.3"
+    implementation "live.100ms:webrtc:m107-hms-1.5"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:1.10.19'
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
