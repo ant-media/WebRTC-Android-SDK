@@ -8,7 +8,7 @@
   - Make Android SDK compatible with New Conferencing Method https://github.com/ant-media/Ant-Media-Server/issues/2405
 
 - Aug 7, 2020
-  - MainActivity tries to reconnect after it is disconnected for some reason.
+  - MainActivity tries to reconnect after it is disconnected for some reason .
 
 - Aug 5, 2020
   - Make Android SDK DataChannel compatible with Web. MainActivity can be used to send text messages through data channel to web https://github.com/ant-media/Ant-Media-Server/issues/2354
