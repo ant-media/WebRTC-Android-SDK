@@ -78,7 +78,7 @@ public class StatsCollector {
 
 
     public void onStatsReport(RTCStatsReport report) {
-        parseStats(report);
+        //parseStats(report);
     }
 
     private void parseStats(RTCStatsReport report) {

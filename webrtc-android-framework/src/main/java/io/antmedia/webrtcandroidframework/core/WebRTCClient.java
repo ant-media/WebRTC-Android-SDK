@@ -60,7 +60,7 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
-import org.webrtc.audio.CustomWebRtcAudioRecord;
+//import org.webrtc.audio.CustomWebRtcAudioRecord;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.nio.ByteBuffer;
@@ -869,7 +869,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             for (String deviceName : deviceNames) {
                 if (enumerator.isFrontFacing(deviceName)) {
                     Logging.d(TAG, "Creating front facing camera capturer.");
-                    VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+                    VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null, null);
 
                     if (videoCapturer != null) {
                         return videoCapturer;
@@ -883,7 +883,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         for (String deviceName : deviceNames) {
             if (!enumerator.isFrontFacing(deviceName)) {
                 Logging.d(TAG, "Creating other camera capturer.");
-                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null, null);
 
                 if (videoCapturer != null) {
                     return videoCapturer;
@@ -896,7 +896,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         for (String deviceName : deviceNames) {
             if (enumerator.isFrontFacing(deviceName)) {
                 Logging.d(TAG, "Creating front facing camera capturer.");
-                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null, null);
 
                 if (videoCapturer != null) {
                     return videoCapturer;
@@ -1245,7 +1245,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void changeVideoSource(StreamSource newSource) {
             if (!config.videoSource.equals(newSource)) {
                 if (newSource.equals(StreamSource.SCREEN) && adm != null) {
-                    adm.setMediaProjection(config.mediaProjection);
+                    //FIXME adm.setMediaProjection(config.mediaProjection);
                 }
 
                 Log.i(TAG, "Change video source started!");
@@ -1988,7 +1988,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         JavaAudioDeviceModule.Builder admBuilder = getADMBuilder();
         return admBuilder
-                .setCustomAudioFeed(config.customAudioFeed)
+                //.setCustomAudioFeed(config.customAudioFeed)
                 .setUseHardwareAcousticEchoCanceler(true)
                 .setUseHardwareNoiseSuppressor(true)
                 .setAudioRecordErrorCallback(audioRecordErrorCallback)
@@ -2797,12 +2797,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return reconnectionInProgress;
     }
 
+    /*
     public CustomWebRtcAudioRecord getAudioInput() {
         if (adm != null) {
             return adm.getAudioInput();
         }
         return null;
     }
+    */
 
     public VideoCapturer getVideoCapturer() {
         return videoCapturer;

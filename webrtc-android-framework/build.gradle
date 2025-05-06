@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'jacoco'
 ext {
     PUBLISH_GROUP_ID = 'io.antmedia'
-    PUBLISH_VERSION = '3.0.0-SNAPSHOT'
+    PUBLISH_VERSION = '3.0.0-custom-SNAPSHOT'
     PUBLISH_ARTIFACT_ID = 'webrtc-android-framework'
 }
 apply from: 'publish-remote.gradle'
@@ -76,6 +76,7 @@ dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
     implementation 'androidx.annotation:annotation:1.5.0'
+    implementation "live.100ms:android-sdk:2.7.3"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:1.10.19'
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'

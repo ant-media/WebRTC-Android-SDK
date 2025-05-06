@@ -72,7 +72,7 @@ public class MP3PublishActivity extends TestableActivity {
     }
 
     private void onAudioData(byte[] data) {
-        webRTCClient.getAudioInput().pushAudio(data, data.length);
+        //webRTCClient.getAudioInput().pushAudio(data, data.length);
 
     }
 

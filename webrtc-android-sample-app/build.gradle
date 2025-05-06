@@ -94,6 +94,7 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','conne
 dependencies {
     api project(":webrtc-android-framework")
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "live.100ms:android-sdk:2.7.3"
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -115,7 +116,7 @@ dependencies {
     androidTestImplementation 'com.squareup.okhttp3:okhttp:4.9.3'
     androidTestImplementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
     androidTestImplementation 'com.google.code.gson:gson:2.8.9'
-    implementation(name: 'sdk_uvc_camera_v23092707_debug', ext: 'aar')
+    //implementation(name: 'sdk_uvc_camera_v23092707_debug', ext: 'aar')
     //implementation "io.github.crow-misia.libyuv:libyuv-android:0.25.0"
     implementation platform('com.google.firebase:firebase-bom:32.8.0')
     implementation 'com.google.firebase:firebase-analytics'

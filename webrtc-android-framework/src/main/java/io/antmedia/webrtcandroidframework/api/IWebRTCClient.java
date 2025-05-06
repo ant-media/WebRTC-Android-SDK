@@ -7,7 +7,7 @@ import org.webrtc.RtpParameters;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
-import org.webrtc.audio.CustomWebRtcAudioRecord;
+//import org.webrtc.audio.CustomWebRtcAudioRecord;
 
 import io.antmedia.webrtcandroidframework.core.StatsCollector;
 
@@ -289,7 +289,7 @@ public interface IWebRTCClient {
      *
      * @return current audio input
      */
-    CustomWebRtcAudioRecord getAudioInput();
+    //CustomWebRtcAudioRecord getAudioInput();
 
     /**
      * Called to request the subtracks for a main track from server

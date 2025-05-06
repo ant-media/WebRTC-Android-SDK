@@ -1,6 +1,6 @@
 package io.antmedia.webrtcandroidframework.core;
 
-import static org.webrtc.audio.WebRtcAudioRecord.BUFFERS_PER_SECOND;
+//import static org.webrtc.audio.WebRtcAudioRecord.BUFFERS_PER_SECOND;
 
 import android.content.res.Resources;
 import android.media.Image;
@@ -222,7 +222,7 @@ public class MediaFileReader {
         int bytesPerSample = 2; //WebRtcAudioRecord.getBytesPerSample(WebRtcAudioRecord.DEFAULT_AUDIO_FORMAT)
 
         int bytesPerFrame = channels * bytesPerSample;
-        int framesPerBuffer = 44100 / BUFFERS_PER_SECOND;
+        int framesPerBuffer = 44100 / 1000;
         int bufferLength = bytesPerFrame * framesPerBuffer;
         return bufferLength;
     }
