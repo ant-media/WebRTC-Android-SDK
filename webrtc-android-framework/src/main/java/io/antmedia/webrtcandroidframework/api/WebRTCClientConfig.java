@@ -76,7 +76,7 @@ public class WebRTCClientConfig {
     /*
      * Codec used for video encoding and decoding, default VP8
      */
-    public String videoCodec = "VP8";
+    public String videoCodec = "H264";
 
     /*
      * Flag for hardware codec acceleration

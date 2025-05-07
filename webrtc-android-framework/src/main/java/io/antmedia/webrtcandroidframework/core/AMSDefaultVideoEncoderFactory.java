@@ -38,8 +38,9 @@ public class AMSDefaultVideoEncoderFactory implements VideoEncoderFactory {
 
     public VideoCodecInfo[] getSupportedCodecs() {
         LinkedHashSet<VideoCodecInfo> supportedCodecInfos = new LinkedHashSet();
-        supportedCodecInfos.addAll(Arrays.asList(this.softwareVideoEncoderFactory.getSupportedCodecs()));
+        //supportedCodecInfos.addAll(Arrays.asList(this.softwareVideoEncoderFactory.getSupportedCodecs()));
         supportedCodecInfos.addAll(Arrays.asList(this.hardwareVideoEncoderFactory.getSupportedCodecs()));
         return (VideoCodecInfo[])supportedCodecInfos.toArray(new VideoCodecInfo[supportedCodecInfos.size()]);
     }
+
 }

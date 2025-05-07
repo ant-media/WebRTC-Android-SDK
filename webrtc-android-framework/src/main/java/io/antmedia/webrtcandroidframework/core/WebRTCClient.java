@@ -1897,8 +1897,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         final VideoDecoderFactory decoderFactory;
 
         if (config.hwCodecAcceleration) {
-            encoderFactory = new AMSDefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, enableH264HighProfile);
-            decoderFactory = new DefaultVideoDecoderFactory(eglBase.getEglBaseContext());
+            encoderFactory = new AMSDefaultVideoEncoderFactory(eglBase.getEglBaseContext(), false /* enableIntelVp8Encoder */, true);
+            decoderFactory = new AMSDefaultVideoDecoderFactory(eglBase.getEglBaseContext());
         } else {
             encoderFactory = new SoftwareVideoEncoderFactory();
             decoderFactory = new SoftwareVideoDecoderFactory();
