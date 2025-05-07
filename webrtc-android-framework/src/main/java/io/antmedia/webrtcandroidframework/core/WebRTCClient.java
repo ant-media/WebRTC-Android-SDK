@@ -16,7 +16,6 @@ import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
-import android.widget.GridLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -31,8 +30,6 @@ import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
-import org.webrtc.DefaultVideoDecoderFactory;
-import org.webrtc.DefaultVideoEncoderFactory;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.IceCandidateErrorEvent;
@@ -84,6 +81,8 @@ import javax.annotation.Nullable;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
+import org.webrtc.AMSDefaultVideoDecoderFactory;
+import org.webrtc.AMSDefaultVideoEncoderFactory;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
@@ -1897,7 +1896,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         final VideoDecoderFactory decoderFactory;
 
         if (config.hwCodecAcceleration) {
-            encoderFactory = new AMSDefaultVideoEncoderFactory(eglBase.getEglBaseContext(), false /* enableIntelVp8Encoder */, true);
+            encoderFactory = new AMSDefaultVideoEncoderFactory(eglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, enableH264HighProfile);
             decoderFactory = new AMSDefaultVideoDecoderFactory(eglBase.getEglBaseContext());
         } else {
             encoderFactory = new SoftwareVideoEncoderFactory();

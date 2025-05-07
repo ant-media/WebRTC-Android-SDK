@@ -1,14 +1,6 @@
-package io.antmedia.webrtcandroidframework.core;
+package org.webrtc;
 
 import androidx.annotation.Nullable;
-
-import org.webrtc.EglBase;
-import org.webrtc.HardwareVideoEncoderFactory;
-import org.webrtc.SoftwareVideoEncoderFactory;
-import org.webrtc.VideoCodecInfo;
-import org.webrtc.VideoEncoder;
-import org.webrtc.VideoEncoderFactory;
-import org.webrtc.VideoEncoderFallback;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
