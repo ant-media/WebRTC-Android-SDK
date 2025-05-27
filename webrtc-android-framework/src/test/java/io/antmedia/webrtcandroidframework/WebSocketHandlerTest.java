@@ -23,10 +23,13 @@ import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.google.gson.Gson;
@@ -493,5 +496,112 @@ public class WebSocketHandlerTest {
         verify(webSocketHandler, times(1)).connect(anyString());
 
     }
+
+    @Test
+    public void testGetSubscriberCount() throws JSONException {
+        String streamId = "stream123";
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+
+        webSocketHandler.getSubscriberCount(streamId);
+
+        verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+
+        JSONObject expectedJson = new JSONObject();
+        expectedJson.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_SUBSCRIBER_LIST_SIZE);
+        expectedJson.put(WebSocketConstants.STREAM_ID, streamId);
+
+        assertEquals(expectedJson.toString(), jsonCaptor.getValue());
+    }
+
+    @Test
+    public void testGetSubscriberList() throws JSONException {
+        String streamId = "stream123";
+        long offset = 0;
+        long size = 10;
+        ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
+
+        webSocketHandler.getSubscriberList(streamId, offset, size);
+
+        verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
+
+        JSONObject expectedJson = new JSONObject();
+        expectedJson.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_SUBSCRIBER_LIST);
+        expectedJson.put(WebSocketConstants.STREAM_ID, streamId);
+        expectedJson.put(WebSocketConstants.OFFSET, offset);
+        expectedJson.put(WebSocketConstants.SIZE, size);
+
+        assertEquals(expectedJson.toString(), jsonCaptor.getValue());
+    }
+
+    @Test
+    public void testOnTextMessageSubscriberCountNotification() throws JSONException {
+        doReturn(true).when(webSocketHandler).isConnected();
+
+        String streamId = "stream123";
+        int count = 7;
+
+        JSONObject json = new JSONObject();
+        json.put(WebSocketConstants.COMMAND, WebSocketConstants.NOTIFICATION_COMMAND);
+        json.put(WebSocketConstants.DEFINITION, WebSocketConstants.SUBSCRIBER_COUNT);
+        json.put(WebSocketConstants.STREAM_ID, streamId);
+        json.put(WebSocketConstants.COUNT, count);
+
+        webSocketHandler.onTextMessage(json.toString());
+
+        verify(signallingListener).onSubscriberCount(streamId, count);
+    }
+
+
+    @Test
+    public void testOnTextMessageSubscriberListNotification() throws JSONException {
+        doReturn(true).when(webSocketHandler).isConnected();
+
+        String streamId = "stream123";
+
+        JSONObject subscriber1 = new JSONObject();
+        subscriber1.put("subscriberId", "sub1");
+        subscriber1.put("streamId", streamId);
+        subscriber1.put("connected", true);
+        subscriber1.put("currentConcurrentConnections", 2);
+        subscriber1.put("concurrentConnectionsLimit", 5);
+
+        JSONObject subscriber2 = new JSONObject();
+        subscriber2.put("subscriberId", "sub2");
+        subscriber2.put("streamId", streamId);
+        subscriber2.put("connected", false);
+        subscriber2.put("currentConcurrentConnections", 1);
+        subscriber2.put("concurrentConnectionsLimit", 3);
+
+        JSONArray subscriberArray = new JSONArray();
+        subscriberArray.put(subscriber1.toString());
+        subscriberArray.put(subscriber2.toString());
+
+        JSONObject json = new JSONObject();
+        json.put(WebSocketConstants.COMMAND, WebSocketConstants.NOTIFICATION_COMMAND);
+        json.put(WebSocketConstants.DEFINITION, WebSocketConstants.SUBSCRIBER_LIST_NOTIFICATION);
+        json.put(WebSocketConstants.STREAM_ID, streamId);
+        json.put(WebSocketConstants.SUBCRIBER_LIST, subscriberArray);
+
+        webSocketHandler.onTextMessage(json.toString());
+
+        ArgumentCaptor<Subscriber[]> captor = ArgumentCaptor.forClass(Subscriber[].class);
+        verify(signallingListener).onSubscriberList(eq(streamId), captor.capture());
+
+        Subscriber[] result = captor.getValue();
+        assertEquals(2, result.length);
+
+        assertEquals("sub1", result[0].getSubscriberId());
+        assertEquals(streamId, result[0].getStreamId());
+        assertTrue(result[0].isConnected());
+        assertEquals(2, result[0].getCurrentConcurrentConnections());
+        assertEquals(5, result[0].getConcurrentConnectionsLimit());
+
+        assertEquals("sub2", result[1].getSubscriberId());
+        assertEquals(streamId, result[1].getStreamId());
+        assertFalse(result[1].isConnected());
+        assertEquals(1, result[1].getCurrentConcurrentConnections());
+        assertEquals(3, result[1].getConcurrentConnectionsLimit());
+    }
+
 
 }

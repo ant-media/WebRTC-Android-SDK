@@ -81,6 +81,7 @@ import io.antmedia.webrtcandroidframework.core.ProxyVideoSink;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
@@ -1400,4 +1401,25 @@ public class WebRTCClientTest {
         Mockito.verify(webRTCClient, times(1)).release(true);
     }
 
+    @Test
+    public void testSubscriberQueries() {
+        String streamId = "stream1";
+        webRTCClient.getSubscriberCount(streamId);
+        verify(wsHandler, times(1)).getSubscriberCount(streamId);
+
+        webRTCClient.getSubscriberList(streamId, 5, 15);
+        verify(wsHandler, times(1)).getSubscriberList(streamId, 5, 15);
+
+
+        webRTCClient.onSubscriberCount(streamId, 13);
+        verify(listener, times(1)).onSubscriberCount(streamId, 13);
+
+        Subscriber subscriber1 = mock(Subscriber.class);
+        Subscriber subscriber2 = mock(Subscriber.class);
+
+        Subscriber[] subscribers = {subscriber1, subscriber2};
+        webRTCClient.onSubscriberList(streamId, subscribers);
+
+        verify(listener, times(1)).onSubscriberList(streamId, subscribers);
+    }
 }

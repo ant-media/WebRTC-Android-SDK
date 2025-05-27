@@ -152,4 +152,18 @@ public interface AntMediaSignallingEvents {
      * @param streamId Peer to peer room name/id.
      */
     void onLeft(String streamId);
+
+    /**
+     * It's called when subscriber count received from server
+     * @param streamId Stream Id
+     * @param count Count
+     */
+    void onSubscriberCount(String streamId, int count);
+
+    /**
+     * It's called when subscriber list received from server
+     * @param streamId Stream Id
+     * @param subscribers subscriber array
+     */
+    void onSubscriberList(String streamId, Subscriber[] subscribers);
 }
