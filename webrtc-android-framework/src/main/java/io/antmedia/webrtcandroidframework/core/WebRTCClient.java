@@ -86,11 +86,29 @@ import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private static final String TAG = "WebRTCClient";
 
+    @Override
+    public void onSubscriberCount(String streamId, int count) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onSubscriberCount(streamId, count);
+            }
+        });
+    }
+
+    @Override
+    public void onSubscriberList(String streamId, Subscriber[] subscribers) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onSubscriberList(streamId, subscribers);
+            }
+        });
+    }
 
     public enum Mode {
         PUBLISH, PLAY, P2P, MULTI_TRACK_PLAY
@@ -2851,6 +2869,20 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public boolean isSendVideoEnabled() {
         return sendVideoEnabled;
+    }
+
+    @Override
+    public void getSubscriberCount(String streamId) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.getSubscriberCount(streamId);
+        }
+    }
+
+    @Override
+    public void getSubscriberList(String streamId, long offset, long size) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.getSubscriberList(streamId, offset, size);
+        }
     }
 
     @Override
