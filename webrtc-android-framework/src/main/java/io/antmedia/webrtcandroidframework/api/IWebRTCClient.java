@@ -368,4 +368,19 @@ public interface IWebRTCClient {
      */
     boolean isSendVideoEnabled();
 
+    /**
+     * Called to get the subscriber count for a broadcast
+     *
+     * @param streamId: id for the broadcast
+     */
+    void getSubscriberCount(String streamId);
+
+    /**
+     * Called to get the subscriber list for a broadcast
+     *
+     * @param streamId: id for the broadcast
+     * @param offset: offset of the list
+     * @param size: size of the list
+     */
+    void getSubscriberList(String streamId, long offset, long size);
 }
