@@ -96,7 +96,7 @@ public class StatsCollector {
                     if(value.getMembers().containsKey(SSRC)) {
                         TrackStats audioTrackStats = publishStats.getAudioTrackStats();
 
-                        long packetsSent = ((BigInteger) value.getMembers().get(PACKETS_SENT)).longValue();
+                        long packetsSent = ((Long) value.getMembers().get(PACKETS_SENT)).longValue();
                         audioTrackStats.setPacketsSent(packetsSent);
 
                         BigInteger bytesSent = ((BigInteger) value.getMembers().get(BYTES_SENT));
@@ -141,7 +141,7 @@ public class StatsCollector {
                         }
 
                         if (value.getMembers().containsKey(PACKETS_SENT)) {
-                            long packetsSent = ((BigInteger) value.getMembers().get(PACKETS_SENT)).longValue();
+                            long packetsSent = ((Long) value.getMembers().get(PACKETS_SENT)).longValue();
                             videoTrackStats.setPacketsSent(packetsSent);
                         }
 
