@@ -277,12 +277,16 @@ public class StatsCollector {
                         }
 
                         if (value.getMembers().containsKey(FRAMES_RECEIVED)) {
-                            long framesReceived = (long) value.getMembers().get(FRAMES_RECEIVED);
+                            Number framesReceivedNumber = (Number) value.getMembers().get(FRAMES_RECEIVED);
+                            long framesReceived = framesReceivedNumber.longValue();
+
                             videoTrackStats.setFramesReceived(framesReceived);
                         }
 
                         if (value.getMembers().containsKey(FRAMES_DROPPED)) {
-                            long framesDropped = (long) value.getMembers().get(FRAMES_DROPPED);
+                            Number framesDroppedNumber = (Number) value.getMembers().get(FRAMES_DROPPED);
+                            long framesDropped = framesDroppedNumber.longValue();
+
                             videoTrackStats.setFramesDropped(framesDropped);
                         }
 
