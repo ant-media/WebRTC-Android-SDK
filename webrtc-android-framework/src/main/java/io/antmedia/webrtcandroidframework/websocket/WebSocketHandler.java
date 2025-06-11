@@ -399,7 +399,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
-    public void startPlay(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo){
+    public void startPlay(String streamId, String token, String[] tracks, String subscriberId, String subscriberName, String subscriberCode, String viewerInfo, boolean disableTracksByDefault){
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
@@ -416,8 +416,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
             json.put(WebSocketConstants.TRACK_LIST, jsonArray);
             json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.SUBSCRIBER_NAME, subscriberName);
             json.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
             json.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
+            json.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, disableTracksByDefault);
 
             sendTextMessage(json.toString());
         } catch (JSONException e) {

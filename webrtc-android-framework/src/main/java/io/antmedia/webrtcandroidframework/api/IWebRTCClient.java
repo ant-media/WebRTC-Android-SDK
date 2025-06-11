@@ -87,6 +87,13 @@ public interface IWebRTCClient {
     void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo);
 
     /**
+     * This is used to play a WebRTC stream with a parameter object
+     *
+     * @param params the play parameters
+     */
+    void play(PlayParams params);
+
+    /**
      * This is used to join a peer to peer call
      *
      * @param streamId: id for the call
