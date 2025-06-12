@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     private void createList() {
+        /*
         addActivity(PublishActivity.class, "Publish");
         addActivity(PlayActivity.class, "Play");
         addActivity(PeerActivity.class, "Peer");
@@ -81,6 +82,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
         addActivity(StatsActivity.class, "Stats");
         addActivity(WebviewActivity.class, "Webview");
+        */
+        addActivity(TeacherActivity.class, "Teacher");
+        addActivity(StudentActivity.class, "Student");
+
 
     }
 

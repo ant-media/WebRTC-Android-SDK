@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".StudentActivity">
+
+    <LinearLayout
+        android:id="@+id/layout1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="1">
+
+        <LinearLayout
+            android:id="@+id/players"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.7"
+            android:orientation="vertical">
+
+        </LinearLayout>
+
+        <org.webrtc.SurfaceViewRenderer
+            android:id="@+id/student_renderer"
+            android:layout_width="142dp"
+            android:layout_height="142dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginBottom="142dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true">
+
+        <Button
+            android:id="@+id/start_streaming_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start" />
+
+        <Button
+            android:id="@+id/raise_hand_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Raise Hand" />
+
+    </LinearLayout>
+
+
+</RelativeLayout>
