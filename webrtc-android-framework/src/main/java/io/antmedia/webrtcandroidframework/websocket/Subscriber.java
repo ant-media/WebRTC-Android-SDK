@@ -4,7 +4,9 @@ package io.antmedia.webrtcandroidframework.websocket;
 public class Subscriber {
 
     private String subscriberId;
-    private String streamId;
+
+	private String subscriberName;
+	private String streamId;
     private boolean connected;
     private int currentConcurrentConnections = 0;
     private int concurrentConnectionsLimit = 1;
@@ -46,4 +48,12 @@ public class Subscriber {
 	public void setConcurrentConnectionsLimit(int concurrentConnectionsLimit) {
 		this.concurrentConnectionsLimit = concurrentConnectionsLimit;
 	}
+
+    public String getSubscriberName() {
+        return subscriberName;
+    }
+
+    public void setSubscriberName(String subscriberName) {
+        this.subscriberName = subscriberName;
+    }
 }
