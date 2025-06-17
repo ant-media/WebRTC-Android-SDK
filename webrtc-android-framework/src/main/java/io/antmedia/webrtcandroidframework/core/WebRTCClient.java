@@ -1011,7 +1011,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, "", subscriberCode, streamName, mainTrackId, null, false, Mode.PUBLISH);
         init();
 
-        if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled)){
+        if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled, videoCallEnabled || this.config.videoCallEnabled)){
             Toast.makeText(config.activity,"Publish permissions not granted. Cant publish.", Toast.LENGTH_LONG).show();
             Log.e(TAG,"Publish permissions not granted. Cant publish.");
             return;

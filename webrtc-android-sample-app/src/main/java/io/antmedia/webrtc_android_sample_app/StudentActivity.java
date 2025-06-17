@@ -54,6 +54,7 @@ public class StudentActivity extends AppCompatActivity {
                 .setServerUrl(serverUrl)
                 .setLocalVideoRenderer(studentRenderer)
                 .setActivity(this)
+                .setVideoCallEnabled(false)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
@@ -104,7 +105,7 @@ public class StudentActivity extends AppCompatActivity {
                     Log.i("","BECOME_ATTENDEE");
                     studentRenderer.setVisibility(VISIBLE);
                     webRTCClient.publish(streamId, null,
-                            true, true,
+                            false, true,
                             null, null,
                             "melik", roomId);
 

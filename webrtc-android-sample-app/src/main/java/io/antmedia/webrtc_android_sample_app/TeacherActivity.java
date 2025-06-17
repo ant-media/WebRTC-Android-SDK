@@ -99,12 +99,6 @@ public class TeacherActivity extends AppCompatActivity {
     private IWebRTCListener createWebRTCListener(String roomId, String streamId) {
         return new DefaultConferenceWebRTCListener(roomId, streamId) {
             @Override
-            public void onIceDisconnected(String streamId) {
-                super.onIceDisconnected(streamId);
-                Toast.makeText(TeacherActivity.this,"Disconnected.",Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
             public void onNewVideoTrack(VideoTrack videoTrack, String trackId) {
                 runOnUiThread(() -> {
                     SurfaceViewRenderer renderer = new SurfaceViewRenderer(getApplicationContext());
