@@ -728,4 +728,15 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         this.wsReconnectionHandler = wsReconnectionHandler;
     }
 
+    public void getDebugInfo(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_DEBUG_INFO_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

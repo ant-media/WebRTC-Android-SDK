@@ -37,7 +37,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
 
     @Override
     public void onDisconnected() {
-        String messageText = "Web Socket Disconnected";
+        String messageText = "On Disconnected";
         callbackCalled(messageText);
     }
 

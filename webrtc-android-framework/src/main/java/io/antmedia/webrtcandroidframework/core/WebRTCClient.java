@@ -2918,4 +2918,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             wsHandler.getSubscriberList(streamId, offset, size);
         }
     }
+
+    @Override
+    public void getDebugInfo(String streamId) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.getDebugInfo(streamId);
+        }
+    }
 }

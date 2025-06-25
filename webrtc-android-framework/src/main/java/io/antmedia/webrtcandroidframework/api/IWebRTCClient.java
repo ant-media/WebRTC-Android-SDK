@@ -390,4 +390,12 @@ public interface IWebRTCClient {
      * @param size: size of the list
      */
     void getSubscriberList(String streamId, long offset, long size);
+
+    /**
+     * Called to get the debug info for the viewer
+     *
+     * @param streamId: id for the broadcast
+     */
+    void getDebugInfo(String streamId);
 }
+
