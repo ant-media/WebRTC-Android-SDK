@@ -72,8 +72,8 @@ afterEvaluate {
         repositories {
             maven {
                 credentials {
-                    username ext["ossrhUsername"]
-                    password ext["ossrhPassword"]
+                    username System.getenv('CENTRAL_USERNAME')
+                    password System.getenv('CENTRAL_PASSWORD')
                 }
 
                 def releasesRepoUrl = 'https://central.sonatype.com/api/v1/publisher'
