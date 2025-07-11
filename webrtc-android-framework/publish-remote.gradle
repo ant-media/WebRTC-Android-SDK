@@ -1,4 +1,4 @@
-apply from: "scripts/deploy-variables.gradle"
+apply from: "${rootDir}/scripts/deploy-variables.gradle"
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
