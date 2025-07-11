@@ -302,9 +302,14 @@ public class StatsCollector {
                             trackIdentifier = trackIdentifier.substring(VIDEO_TRACK_ID.length());
                             videoTrackStats.setTrackId(trackIdentifier);
                             playStats.getVideoTrackStatsMap().put(trackIdentifier, videoTrackStats);
+                        } else if (value.getMembers().containsKey(TRACK_ID)) {
+                            String trackId = (String) value.getMembers().get(TRACK_ID);
+                            RTCStats track = report.getStatsMap().get(trackId);
+                            String trackIdentifier = (String) track.getMembers().get(TRACK_IDENTIFIER);
+                            trackIdentifier = trackIdentifier.substring(VIDEO_TRACK_ID.length());
+                            videoTrackStats.setTrackId(trackIdentifier);
+                            playStats.getVideoTrackStatsMap().put(trackIdentifier, videoTrackStats);
                         }
-
-
                     }
                 } else if (AUDIO.equals(value.getMembers().get(KIND))) {
                     if(value.getMembers().containsKey(SSRC)){
@@ -333,6 +338,14 @@ public class StatsCollector {
 
                         if (value.getMembers().containsKey(TRACK_IDENTIFIER)) { // must have track identifier.
                             String trackIdentifier = (String) value.getMembers().get(TRACK_IDENTIFIER);
+                            trackIdentifier = trackIdentifier.substring(AUDIO_TRACK_ID.length());
+                            audioTrackStat.setTrackId(trackIdentifier);
+                            playStats.getAudioTrackStatsMap().put(trackIdentifier, audioTrackStat);
+                        }
+                        else if (value.getMembers().containsKey(TRACK_ID)) {
+                            String trackId = (String) value.getMembers().get(TRACK_ID);
+                            RTCStats track = report.getStatsMap().get(trackId);
+                            String trackIdentifier = (String) track.getMembers().get(TRACK_IDENTIFIER);
                             trackIdentifier = trackIdentifier.substring(AUDIO_TRACK_ID.length());
                             audioTrackStat.setTrackId(trackIdentifier);
                             playStats.getAudioTrackStatsMap().put(trackIdentifier, audioTrackStat);
