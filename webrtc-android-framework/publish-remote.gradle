@@ -69,7 +69,7 @@ afterEvaluate {
             }
         }
         repositories {
-            maven {
+            sonatype {
                 credentials {
                     username ossrhUsername
                     password ossrhPassword
