@@ -73,14 +73,11 @@ afterEvaluate {
         }
         repositories {
             sonatype {
-                credentials {
-                    username ossrhUsername
-                    password ossrhPassword
-                }
+                username = ossrhUsername
+                password = ossrhPassword
 
-                def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/'
-                def snapshotsRepoUrl = '"https://s01.oss.sonatype.org/content/repositories/snapshots/'
-                url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+                snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
             }
         }
     }
