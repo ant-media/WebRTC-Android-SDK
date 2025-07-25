@@ -283,7 +283,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
                         Log.d(TAG, "Reconnect attempt for publish");
                         wsHandler.stop(peerInfo.id);
-                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
+                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId, peerInfo.metaData);
 
 
                     }
@@ -360,7 +360,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
                         Log.d(TAG, "Reconnect attempt for publish");
                         wsHandler.stop(peerInfo.id);
-                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
+                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId, peerInfo.metaData);
 
 
                     } else if (peerInfo.mode.equals(Mode.PLAY)) {
@@ -431,10 +431,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 "",
                 "",
                 "",
-                roomId);
+                roomId,
+                null);
     }
 
-    public void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName) {
+    public void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName, String metaData) {
 
         this.roomId = roomId;
 
@@ -443,7 +444,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 subscriberId,
                 subscriberCode,
                 streamName,
-                roomId);
+                roomId,
+                metaData);
     }
 
     public void joinToConferenceRoom(String roomId) {
@@ -978,7 +980,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Mode peerMode = peerInfo.mode;
             if (peerMode == Mode.PUBLISH && peerInfo.peerConnection == null) {
                 Log.i(TAG, "Processing publish request for peer streamId: " + peerInfo.id);
-                wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
+                wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId, peerInfo.metaData);
             }
 
             if (peerMode == Mode.PLAY && peerInfo.peerConnection == null) {
@@ -990,12 +992,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId) {
         publish(streamId, null, true, true,
-                null, null, streamId, null);
+                null, null, streamId, null, null);
     }
 
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
-                        String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
+                        String subscriberId, String subscriberCode, String streamName, String mainTrackId, String metaData) {
         Log.i(TAG, "Publish: " + streamId);
 
         this.handler.post(() -> {
@@ -1004,7 +1006,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
         });
 
-        createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null, Mode.PUBLISH);
+        createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, metaData, Mode.PUBLISH);
         init();
 
         if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled)){
@@ -1017,7 +1019,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         if (isWebSocketConnected()) {
             Log.i(TAG, "Publish request sent through ws for stream: " + streamId);
-            wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+            wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, metaData);
         } else {
             Log.w(TAG, "Websocket is not connected. Set publish requested. It will be processed when ws is connected.");
         }

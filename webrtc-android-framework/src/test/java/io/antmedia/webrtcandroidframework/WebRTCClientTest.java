@@ -163,9 +163,9 @@ public class WebRTCClientTest {
         webRTCClient.setAudioEnabled(audioCallEnabled);
         webRTCClient.setVideoEnabled(videoCallEnabled);
 
-        webRTCClient.publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null);
+        webRTCClient.publish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null, null);
 
-        verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null);
+        verify(wsHandler, times(1)).startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, null, null);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
@@ -321,7 +321,7 @@ public class WebRTCClientTest {
 
         verify(wsHandler, timeout(1000)).startPublish(streamId, ""
                 , true, true
-                , "", "", "", roomName);
+                , "", "", "", roomName, null);
 
         webRTCClient.joinToConferenceRoom(roomName);
         verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "");
@@ -678,7 +678,7 @@ public class WebRTCClientTest {
         webRTCClient.play(playStreamId, "", null, "", "", "");
 
         String publishStreamId = "publishStreamId";
-        webRTCClient.publish(publishStreamId, "", true, true, "","", "", "");
+        webRTCClient.publish(publishStreamId, "", true, true, "","", "", "", null);
 
         webRTCClient.onIceDisconnected(playStreamId);
         webRTCClient.onIceDisconnected(publishStreamId);
@@ -690,7 +690,7 @@ public class WebRTCClientTest {
 
         verify(webRTCClient, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
 
-        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(1)).startPublish(anyString(),anyString(),anyBoolean(),anyBoolean(),anyString(),anyString(),anyString(),anyString());
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(1)).startPublish(anyString(),anyString(),anyBoolean(),anyBoolean(),anyString(),anyString(),anyString(),anyString(),anyString());
 
     }
 
@@ -703,7 +703,7 @@ public class WebRTCClientTest {
         webRTCClient.joinToConferenceRoom(room, streamId);
         verify(wsHandler, timeout(1000)).startPublish(streamId, ""
                 , true, true
-                , "", "", "", room);
+                , "", "", "", room, null);
 
         webRTCClient.joinToConferenceRoom(room);
         verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "");
@@ -1154,7 +1154,7 @@ public class WebRTCClientTest {
 
         String publisher1 = "publisher1";
         webRTCClient.publish(publisher1);
-        verify(wsHandler, never()).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        verify(wsHandler, never()).startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString(), anyString());
 
         assertEquals(1, webRTCClient.getPeersForTest().size());
         WebRTCClient.PeerInfo publishPeer = webRTCClient.getPeersForTest().get(publisher1);
@@ -1169,7 +1169,7 @@ public class WebRTCClientTest {
         assertEquals(player1, playPeer.id);
 
         webRTCClient.onWebSocketConnected();
-        verify(wsHandler, times(1)).startPublish(eq(publishPeer.id), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
+        verify(wsHandler, times(1)).startPublish(eq(publishPeer.id), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString(), anyString());
         verify(wsHandler, times(1)).startPlay(eq(playPeer.id), anyString(), any(String[].class), anyString(), anyString(), anyString());
 
     }
