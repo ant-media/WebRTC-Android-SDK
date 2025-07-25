@@ -451,4 +451,9 @@ public class WebSocketConstants {
 
     public static final int WEBSOCKET_CONNECTION_TIMEOUT = 10000; //10 sec
 
+    /**
+     * It can be used to add metaData to a broadcast
+     */
+    public static final String META_DATA = "metaData";
+
 }

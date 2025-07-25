@@ -54,9 +54,10 @@ public interface IWebRTCClient {
      * @param subscriberCode:   code of the subscriber
      * @param streamName:       name of the stream
      * @param mainTrackId:      id of the main track
+     * @param metaData:         metaData of the stream
      */
     void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
-                 String subscriberId, String subscriberCode, String streamName, String mainTrackId);
+                 String subscriberId, String subscriberCode, String streamName, String mainTrackId, String metaData);
 
 
     /**
@@ -112,8 +113,9 @@ public interface IWebRTCClient {
      * @param subscriberId:     id of the subscriber
      * @param subscriberCode:   code of the subscriber
      * @param streamName:       name of the stream
+     * @param metaData:         metaData of the stream
      */
-    void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName);
+    void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName, String metaData);
 
     /**
      * This is used to join a conference room as player
