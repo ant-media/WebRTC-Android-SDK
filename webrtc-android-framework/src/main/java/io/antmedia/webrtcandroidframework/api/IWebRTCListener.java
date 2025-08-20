@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 
 /**
  * Created by karinca on 23.10.2017.
@@ -251,4 +252,15 @@ public interface IWebRTCListener {
      * It's called when user left P2P room.
      */
     void onLeft(String streamId);
+
+
+ /**
+  * It's called when Subscriber Count received.
+  */
+ void onSubscriberCount(String streamId, int count);
+
+ /**
+  * It's called when Subscriber List received.
+  */
+ void onSubscriberList(String streamId, Subscriber[] subscribers);
 }
