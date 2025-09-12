@@ -19,8 +19,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
-import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;

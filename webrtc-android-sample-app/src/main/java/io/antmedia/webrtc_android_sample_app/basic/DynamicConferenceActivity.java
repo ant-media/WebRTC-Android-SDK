@@ -26,6 +26,7 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -39,9 +40,11 @@ import io.antmedia.webrtcandroidframework.api.DefaultDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.core.DataChannelConstants;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.core.model.PlayStats;
 import io.antmedia.webrtcandroidframework.core.model.TrackStats;
 import io.antmedia.webrtcandroidframework.core.PermissionHandler;
+import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 public class DynamicConferenceActivity extends TestableActivity {
 
@@ -101,6 +104,8 @@ public class DynamicConferenceActivity extends TestableActivity {
      * This allows us to determine which video track belongs to which stream id.
      */
     private HashMap<String,VideoTrack> streamIdVideoTrackMap = new HashMap<>();
+
+    private List<String> allParticipants = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -222,10 +227,17 @@ public class DynamicConferenceActivity extends TestableActivity {
                 super.textMessageReceived(messageText);
                 try{
                     JSONObject msgJsonObj = new JSONObject(messageText);
-                    if(msgJsonObj.has(DataChannelConstants.EVENT_TYPE) && msgJsonObj.getString(DataChannelConstants.EVENT_TYPE).equals(DataChannelConstants.VIDEO_TRACK_ASSIGNMENT_LIST)){
-                        trackAssignments = msgJsonObj.getJSONArray(DataChannelConstants.PAYLOAD);
-                        matchStreamIdAndVideoTrack();
+                    if(msgJsonObj.has(DataChannelConstants.EVENT_TYPE)){
+                        String eventType = msgJsonObj.getString(DataChannelConstants.EVENT_TYPE);
+                        if(eventType.equals(DataChannelConstants.VIDEO_TRACK_ASSIGNMENT_LIST)){
+                            trackAssignments = msgJsonObj.getJSONArray(DataChannelConstants.PAYLOAD);
+                            matchStreamIdAndVideoTrack();
+                        }
+                        else if(eventType.equals(DataChannelConstants.TRACK_LIST_UPDATED)){
+                            webRTCClient.getBroadcastObject(streamId);
+                        }
                     }
+
                 }catch (Exception e){
                     Log.e(getClass().getSimpleName(),"Cant parse data channel message to JSON object. "+e.getMessage());
                 }
@@ -261,6 +273,21 @@ public class DynamicConferenceActivity extends TestableActivity {
                 decrementIdle();
                 publishStarted = true;
                 joinButton.setEnabled(true);
+            }
+            @Override
+            public void onReconnectionAttempt(String streamId, WebRTCClient.Mode mode) {
+                if(mode == WebRTCClient.Mode.PLAY)
+                    removeAllRenderers();
+            }
+
+            @Override
+            public void onBroadcastObject(Broadcast broadcast) {
+                if (broadcast.getStreamId().equals(streamId)) {
+                    handleMainTrackBroadcastObject(broadcast);
+                }else{
+                    handleSubTrackBroadcastObject(broadcast);
+                }
+
             }
 
             @Override
@@ -313,6 +340,14 @@ public class DynamicConferenceActivity extends TestableActivity {
                 decrementIdle();
                 joinButton.setEnabled(true);
             }
+            public SurfaceViewRenderer getVideoRenderer(VideoTrack track){
+//                for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
+//                    if (videoTrackID != null && !videoTrackID.isEmpty() && videoTrackID.equals(track.id())) {
+//                        return r;
+//                    }
+//                }
+                return  addSurfaceViewRenderer();
+            }
             @Override
             public void onVideoTrackEnded(VideoTrack track) {
                 String messageText = "Video track ended";
@@ -334,11 +369,14 @@ public class DynamicConferenceActivity extends TestableActivity {
                 callbackCalled(messageText);
 
                 runOnUiThread(() -> {
-                    SurfaceViewRenderer r = addSurfaceViewRenderer();
+                    SurfaceViewRenderer r = getVideoRenderer(track);
+                    r.setTag(R.id.accelerate,track.id());
+
                     if (r.getTag() == null) {
                         r.setTag(track);
                         webRTCClient.setRendererForVideoTrack(r, track);
                     }
+                    r.setTag(R.id.accelerate,track.id());
                     videoTrackList.add(track);
                     if(trackAssignments != null){
                            matchStreamIdAndVideoTrack();
@@ -365,7 +403,6 @@ public class DynamicConferenceActivity extends TestableActivity {
             if(webRTCClient.isSendVideoEnabled()){
                 webRTCClient.toggleSendVideo(false);
                 toggleSendVideoButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_camera_off));
-
             }else{
                 webRTCClient.toggleSendVideo(true);
                 toggleSendVideoButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_camera_on));
@@ -584,14 +621,26 @@ public class DynamicConferenceActivity extends TestableActivity {
         remoteParticipantsGridLayout.removeView(renderer);
         webRTCClient.getConfig().remoteVideoRenderers.remove(renderer);
     }
+    public void handleSubTrackBroadcastObject(Broadcast broadcast){
+        allParticipants.add(broadcast.getStreamId());
+    }
+    public void handleMainTrackBroadcastObject(Broadcast broadcast){
+        List <String> currentTracks = allParticipants;
+        List <String> subTracks = broadcast.getSubTrackStreamIds();
+
+        for(String trackId: currentTracks){
+            if (!subTracks.contains(trackId)) {
+                allParticipants.remove(trackId);
+            }
+        }
+    }
+
     public void removeAllRenderers(){
         ArrayList<SurfaceViewRenderer> toRemove = new ArrayList<>(webRTCClient.getConfig().remoteVideoRenderers);
         for (SurfaceViewRenderer r : toRemove) {
             webRTCClient.releaseRenderer(r);
-            runOnUiThread(() -> {
-                remoteParticipantsGridLayout.removeView(r);
-                webRTCClient.getConfig().remoteVideoRenderers.remove(r);
-            });
+            remoteParticipantsGridLayout.removeView(r);
+            webRTCClient.getConfig().remoteVideoRenderers.remove(r);
         }
     }
 }

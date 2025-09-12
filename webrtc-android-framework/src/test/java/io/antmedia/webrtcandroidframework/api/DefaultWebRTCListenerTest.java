@@ -7,7 +7,8 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
-import de.tavendo.autobahn.WebSocket;
+
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 import java.util.ArrayList;
@@ -72,11 +73,6 @@ public class DefaultWebRTCListenerTest {
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
 
-    @Test
-    public void testOnSignalChannelClosed() {
-        defaultWebRTCListener.onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification.NORMAL, "streamId");
-        verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
-    }
 
     @Test
     public void testStreamIdInUse() {
@@ -147,7 +143,7 @@ public class DefaultWebRTCListenerTest {
 
     @Test
     public void testOnReconnectionAttempt() {
-        defaultWebRTCListener.onReconnectionAttempt("streamId");
+        defaultWebRTCListener.onReconnectionAttempt("streamId", WebRTCClient.Mode.PUBLISH);
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
 
