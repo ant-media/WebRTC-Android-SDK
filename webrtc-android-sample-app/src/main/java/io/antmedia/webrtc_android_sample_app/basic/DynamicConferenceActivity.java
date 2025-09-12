@@ -314,7 +314,6 @@ public class DynamicConferenceActivity extends TestableActivity {
                 }else{
                     statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
                     statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
-                    removeAllRenderers();
                     joinButton.setEnabled(true);
                     joinButton.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R.drawable.ic_join_call));
                 }

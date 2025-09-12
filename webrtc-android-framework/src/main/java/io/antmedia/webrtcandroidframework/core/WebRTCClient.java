@@ -1388,7 +1388,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
 
            if (config.webRTCListener != null) {
-                //config.webRTCListener.onIceDisconnected(streamId);
+                config.webRTCListener.onIceDisconnected(streamId);
             }
 
             if (streamStoppedByUser) {
@@ -1466,10 +1466,25 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onConnected(String streamId) {
         Log.i(TAG, "Connected for streamId:" + streamId);
 
-        if(config.reconnectionEnabled &&  isConference() && isPublishConnected()){
-            Log.i(TAG,"Conference reconnection. Publish connected. Play not connected. Try to reconnect play.");
-            publishReconnectionHandler.removeCallbacksAndMessages(null);
-            publishReconnectionInProgress = false;
+        if(isConference() && config.reconnectionEnabled){
+            if(isPublishConnected()){
+                Log.i(TAG,"Conference reconnection. Publish connected. Play not connected. Try to reconnect play.");
+                publishReconnectionHandler.removeCallbacksAndMessages(null);
+                publishReconnectionInProgress = false;
+            }
+            if(isPlayConnected()){
+                playReconnectionHandler.removeCallbacksAndMessages(null);
+                playReconnectionInProgress = false;
+            }
+            if(isPlayConnected() && isPlayConnected()){
+                this.handler.post(() -> {
+                    if (config.webRTCListener != null) {
+                        config.webRTCListener.onReconnectionSuccess();
+                    }
+                });
+            }
+            streamStoppedByUser = false;
+            return;
         }
 
         if (config.reconnectionEnabled && isAllPeersConnected()) {
