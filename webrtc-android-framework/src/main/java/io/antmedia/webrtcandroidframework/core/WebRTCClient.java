@@ -1402,6 +1402,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return roomId != null;
     }
 
+    public void setRoomId(String roomId) {
+        this.roomId = roomId;
+    }
+
     private boolean isAllPeersConnected() {
         for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
             PeerConnection peerConnection = entry.getValue().peerConnection;
@@ -1462,6 +1466,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public boolean isPlayReconnecting() {
         return playReconnectionInProgress;
     }
+    @Override
+    public boolean isPublishReconnecting() {
+        return publishReconnectionInProgress;
+    }
+
 
     public void onConnected(String streamId) {
         Log.i(TAG, "Connected for streamId:" + streamId);
