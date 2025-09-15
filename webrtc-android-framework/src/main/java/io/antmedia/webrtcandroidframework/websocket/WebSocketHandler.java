@@ -10,8 +10,6 @@ import org.json.JSONObject;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -23,7 +21,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-import okio.ByteString;
 
 import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.DEFINITION;
 import static io.antmedia.webrtcandroidframework.websocket.WebSocketConstants.NOTIFICATION_COMMAND;
@@ -232,9 +229,6 @@ public class WebSocketHandler extends WebSocketListener{
                 }
                 else if (definition.equals(WebSocketConstants.PLAY_FINISHED)) {
                     signallingListener.onPlayFinished(streamId);
-                }
-                else  if(definition.equals(WebSocketConstants.PLAY_FINISHED)){
-
                 }
                 else if (definition.equals(WebSocketConstants.SESSION_RESTORED_DESCRIPTION)) {
                     signallingListener.onSessionRestored(streamId);
@@ -515,9 +509,7 @@ public class WebSocketHandler extends WebSocketListener{
 
     public void startPingPongTimer(){
         synchronized (this) {
-            Log.d(TAG, "Ping Pong timer is started");
             if(this.pingPongExecutor != null) {
-                Log.d(TAG,"-================================== no starting ping pong as its already registerd");
                 return;
             }
 
@@ -537,6 +529,7 @@ public class WebSocketHandler extends WebSocketListener{
             };
 
             pingPongExecutor = Executors.newSingleThreadScheduledExecutor();
+            Log.d(TAG, "Ping Pong timer is started");
             pingPongExecutor.scheduleAtFixedRate(timerTask, TIMER_DELAY, TIMER_PERIOD, TimeUnit.MILLISECONDS);
         }
 

@@ -282,11 +282,6 @@ public class DynamicConferenceActivity extends TestableActivity {
 
             @Override
             public void onBroadcastObject(Broadcast broadcast) {
-                if (broadcast.getStreamId().equals(streamId)) {
-                    handleMainTrackBroadcastObject(broadcast);
-                }else{
-                    handleSubTrackBroadcastObject(broadcast);
-                }
 
             }
 
@@ -339,14 +334,6 @@ public class DynamicConferenceActivity extends TestableActivity {
                 decrementIdle();
                 joinButton.setEnabled(true);
             }
-            public SurfaceViewRenderer getVideoRenderer(VideoTrack track){
-//                for (SurfaceViewRenderer r : webRTCClient.getConfig().remoteVideoRenderers) {
-//                    if (videoTrackID != null && !videoTrackID.isEmpty() && videoTrackID.equals(track.id())) {
-//                        return r;
-//                    }
-//                }
-                return  addSurfaceViewRenderer();
-            }
             @Override
             public void onVideoTrackEnded(VideoTrack track) {
                 String messageText = "Video track ended";
@@ -368,7 +355,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 callbackCalled(messageText);
 
                 runOnUiThread(() -> {
-                    SurfaceViewRenderer r = getVideoRenderer(track);
+                    SurfaceViewRenderer r = addSurfaceViewRenderer();
                     r.setTag(R.id.accelerate,track.id());
 
                     if (r.getTag() == null) {
@@ -619,19 +606,6 @@ public class DynamicConferenceActivity extends TestableActivity {
             return;
         remoteParticipantsGridLayout.removeView(renderer);
         webRTCClient.getConfig().remoteVideoRenderers.remove(renderer);
-    }
-    public void handleSubTrackBroadcastObject(Broadcast broadcast){
-        allParticipants.add(broadcast.getStreamId());
-    }
-    public void handleMainTrackBroadcastObject(Broadcast broadcast){
-        List <String> currentTracks = allParticipants;
-        List <String> subTracks = broadcast.getSubTrackStreamIds();
-
-        for(String trackId: currentTracks){
-            if (!subTracks.contains(trackId)) {
-                allParticipants.remove(trackId);
-            }
-        }
     }
 
     public void removeAllRenderers(){

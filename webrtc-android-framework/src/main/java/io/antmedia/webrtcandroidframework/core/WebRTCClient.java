@@ -1064,7 +1064,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
         createPeerInfo(streamId, token, false, false, subscriberId, subscriberCode, "", "", viewerInfo, Mode.PLAY);
 
-        if (playReconnectionInProgress) {
+        if (!isPlayReconnecting()) {
             init();
         }
 
@@ -1369,7 +1369,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 if (!isPlayConnected() && !playReconnectionInProgress) {
                     playReconnectionInProgress = true;
                     playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-                    Log.d(TAG, "------------------------------------- Play Reconection --------------------------------------");
+                    Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
                 }
             } else {
                 Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
@@ -1648,7 +1648,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onBroadcastObject(Broadcast broadcast) {
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
-                //config.webRTCListener.onBroadcastObject(broadcast);
+                config.webRTCListener.onBroadcastObject(broadcast);
             }
         });
     }
