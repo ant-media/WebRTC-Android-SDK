@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
 import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketConstants;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
+import okhttp3.WebSocket;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -41,7 +41,7 @@ public class WebSocketHandlerTest {
     private Handler handler;
 
     @Mock
-    private WebSocketConnection ws;
+    private WebSocket ws;
 
     @Mock
     private IceCandidate iceCandidate;
@@ -63,7 +63,7 @@ public class WebSocketHandlerTest {
         String message = "{\"command\": \"start\", \"streamId\": \"stream123\"}";
         doReturn(true).when(webSocketHandler).isConnected();
 
-        webSocketHandler.onTextMessage(message);
+        webSocketHandler.onMessage(ws,message);
 
         verify(signallingListener).onStartStreaming("stream123");
         
@@ -87,7 +87,7 @@ public class WebSocketHandlerTest {
         }
 
         String message = json.toString();
-        webSocketHandler.onTextMessage(message);
+        webSocketHandler.onMessage(ws,message);
 
         verify(signallingListener).onTakeConfiguration(eq(streamId), any(SessionDescription.class));
     }
@@ -111,7 +111,7 @@ public class WebSocketHandlerTest {
 
         String message = json.toString();
 
-        webSocketHandler.onTextMessage(message);
+        webSocketHandler.onMessage(ws,message);
 
         verify(signallingListener).onRemoteIceCandidate(eq(streamId), any(IceCandidate.class));
         
@@ -131,7 +131,7 @@ public class WebSocketHandlerTest {
 
         doReturn(true).when(webSocketHandler).isConnected();
         String message = json.toString();
-        webSocketHandler.onTextMessage(message);
+        webSocketHandler.onMessage(ws,message);
 
         verify(signallingListener).onLeftTheRoom(null);
     }
@@ -444,7 +444,7 @@ public class WebSocketHandlerTest {
 
         String message = json.toString();
 
-        webSocketHandler.onTextMessage(message);
+        webSocketHandler.onMessage(ws,message);
 
         ArgumentCaptor<Broadcast> captor = ArgumentCaptor.forClass(Broadcast.class);
         verify(signallingListener).onBroadcastObject(captor.capture());
@@ -457,12 +457,10 @@ public class WebSocketHandlerTest {
     }
 
     @Test
-    public void testWsConnect() throws InterruptedException, URISyntaxException, WebSocketException {
+    public void testWsConnect() throws InterruptedException, URISyntaxException  {
         String url = "wss://test.antmedia.io:5443/LiveApp/websocket";
-        doReturn(ws).when(webSocketHandler).creteWebSocket();
         webSocketHandler.connect(url);
-        Thread.sleep(3000);
-        verify(ws,times(1)).connect(new URI(url),webSocketHandler);
+        verify(webSocketHandler,times(1)).connectWebSocket(url);
     }
 
     @Test
