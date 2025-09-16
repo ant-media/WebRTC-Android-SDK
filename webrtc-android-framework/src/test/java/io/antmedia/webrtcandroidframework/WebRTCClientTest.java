@@ -222,7 +222,7 @@ public class WebRTCClientTest {
 
         webRTCClient.play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
 
-        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, "", subscriberCode, viewerInfo, false);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
@@ -324,7 +324,7 @@ public class WebRTCClientTest {
                 , "", "", "", roomName);
 
         webRTCClient.joinToConferenceRoom(roomName);
-        verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "");
+        verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "", "", false);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
@@ -706,7 +706,7 @@ public class WebRTCClientTest {
                 , "", "", "", room);
 
         webRTCClient.joinToConferenceRoom(room);
-        verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "");
+        verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "", "", false);
 
         webRTCClient.leaveFromConference(room);
         verify(wsHandler, timeout(1000)).stop(streamId);
@@ -1162,7 +1162,7 @@ public class WebRTCClientTest {
 
         String player1 = "player1";
         webRTCClient.play(player1);
-        verify(wsHandler, never()).startPlay(anyString(), anyString(), any(String[].class), anyString(), anyString(), anyString());
+        verify(wsHandler, never()).startPlay(anyString(), anyString(), any(String[].class), anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
         assertEquals(2, webRTCClient.getPeersForTest().size());
         WebRTCClient.PeerInfo playPeer = webRTCClient.getPeersForTest().get(player1);
@@ -1170,7 +1170,7 @@ public class WebRTCClientTest {
 
         webRTCClient.onWebSocketConnected();
         verify(wsHandler, times(1)).startPublish(eq(publishPeer.id), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        verify(wsHandler, times(1)).startPlay(eq(playPeer.id), anyString(), any(String[].class), anyString(), anyString(), anyString());
+        verify(wsHandler, times(1)).startPlay(eq(playPeer.id), anyString(), any(String[].class), anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
     }
 
