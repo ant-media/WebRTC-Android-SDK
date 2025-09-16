@@ -34,6 +34,7 @@ import io.antmedia.webrtc_android_sample_app.advanced.USBCameraActivity;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
 import io.antmedia.webrtc_android_sample_app.basic.DataChannelOnlyActivity;
 import io.antmedia.webrtc_android_sample_app.basic.DynamicConferenceActivity;
+import io.antmedia.webrtc_android_sample_app.basic.PushToTalkActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PeerActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PlayActivity;
 import io.antmedia.webrtc_android_sample_app.basic.PublishActivity;
@@ -83,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(PublishActivityWithAreYouSpeaking.class, "Publish with Are You Speaking");
         addActivity(StatsActivity.class, "Stats");
         addActivity(WebviewActivity.class, "Webview");
+        addActivity(PushToTalkActivity.class, "PTT");
 
     }
 

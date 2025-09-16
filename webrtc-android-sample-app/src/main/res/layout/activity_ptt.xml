@@ -28,14 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
-        android:gravity="center">
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Join Conference"
-            android:onClick="joinConference"
-            />
-    </LinearLayout>
+        android:gravity="center"/>
 
     <FrameLayout
         android:id="@+id/call_fragment_container"
