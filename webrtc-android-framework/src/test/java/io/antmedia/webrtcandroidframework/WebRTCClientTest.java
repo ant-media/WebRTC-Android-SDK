@@ -74,6 +74,7 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.PlayParams;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
@@ -209,6 +210,7 @@ public class WebRTCClientTest {
         String streamId = "stream" + RandomStringUtils.random(5);
         String token = "token" + RandomStringUtils.random(5);
         String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
+        String subscriberName = "name" + RandomStringUtils.random(5);
         String subscriberCode = "code" + RandomStringUtils.random(5);
         String viewerInfo = "info" + RandomStringUtils.random(5);
 
@@ -220,9 +222,20 @@ public class WebRTCClientTest {
         webRTCClient.setAudioEnabled(audioCallEnabled);
         webRTCClient.setVideoEnabled(videoCallEnabled);
 
-        webRTCClient.play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+        PlayParams params = new PlayParams();
+        params.setStreamId(streamId);
+        params.setToken(token);
+        params.setTracks(null);
+        params.setSubscriberId(subscriberId);
+        params.setSubscriberName(subscriberName);
+        params.setSubscriberCode(subscriberCode);
+        params.setViewerInfo(viewerInfo);
+        params.setDisableTracksByDefault(false);
 
-        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, "", subscriberCode, viewerInfo, false);
+
+        webRTCClient.play(params);
+
+        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, subscriberName, subscriberCode, viewerInfo, false);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
@@ -233,9 +246,12 @@ public class WebRTCClientTest {
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TOKEN, token);
             json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.SUBSCRIBER_NAME, subscriberName);
             json.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
             json.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
             json.put(WebSocketConstants.TRACK_LIST, new JSONArray());
+            json.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, false);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -351,9 +367,11 @@ public class WebRTCClientTest {
             jsonPlay.put(WebSocketConstants.STREAM_ID, roomName);
             jsonPlay.put(WebSocketConstants.TOKEN, "");
             jsonPlay.put(WebSocketConstants.SUBSCRIBER_ID, "");
+            jsonPlay.put(WebSocketConstants.SUBSCRIBER_NAME, "");
             jsonPlay.put(WebSocketConstants.SUBSCRIBER_CODE, "");
             jsonPlay.put(WebSocketConstants.VIEWER_INFO, "");
             jsonPlay.put(WebSocketConstants.TRACK_LIST, new JSONArray());
+            jsonPlay.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, false);
         } catch (JSONException e) {
             e.printStackTrace();
         }

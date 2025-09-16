@@ -194,6 +194,7 @@ public class WebSocketHandlerTest {
         expectedJson.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
         expectedJson.put(WebSocketConstants.SUBSCRIBER_NAME, subscriberName);
         expectedJson.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
+        expectedJson.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, false);
 
         assertEquals(expectedJson.toString(), jsonCaptor.getValue());
     }
