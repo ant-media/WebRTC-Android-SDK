@@ -87,6 +87,13 @@ public interface IWebRTCClient {
     void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo);
 
     /**
+     * This is used to play a WebRTC stream with a parameter object
+     *
+     * @param params the play parameters
+     */
+    void play(PlayParams params);
+
+    /**
      * This is used to join a peer to peer call
      *
      * @param streamId: id for the call
@@ -368,4 +375,26 @@ public interface IWebRTCClient {
      */
     boolean isSendVideoEnabled();
 
+    /**
+     * Called to get the subscriber count for a broadcast
+     *
+     * @param streamId: id for the broadcast
+     */
+    void getSubscriberCount(String streamId);
+
+    /**
+     * Called to get the subscriber list for a broadcast
+     *
+     * @param streamId: id for the broadcast
+     * @param offset: offset of the list
+     * @param size: size of the list
+     */
+    void getSubscriberList(String streamId, long offset, long size);
+
+    /**
+     * Called to get the debug info for the viewer
+     *
+     * @param streamId: id for the broadcast
+     */
+    void getDebugInfo(String streamId);
 }

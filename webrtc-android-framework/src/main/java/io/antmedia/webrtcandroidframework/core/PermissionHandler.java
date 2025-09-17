@@ -61,12 +61,20 @@ public class PermissionHandler {
     }
 
     public static boolean checkPublishPermissions(Activity activity, boolean bluetoothEnabled) {
+        return checkPublishPermissions(activity, bluetoothEnabled, true);
+    }
+
+    public static boolean checkPublishPermissions(Activity activity, boolean bluetoothEnabled, boolean videoEnabled) {
         ArrayList<String> permissions = new ArrayList<>();
         permissions.addAll(Arrays.asList(REQUIRED_MINIMUM_PERMISSIONS));
         permissions.addAll(Arrays.asList(PUBLISH_PERMISSIONS));
 
         if (bluetoothEnabled) {
             permissions.addAll(Arrays.asList(BLUETOOTH_PERMISSIONS));
+        }
+
+        if(!videoEnabled) {
+            permissions.remove(Manifest.permission.CAMERA);
         }
 
         return hasPermissions(activity, permissions);

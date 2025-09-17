@@ -80,6 +80,7 @@ public class PublishActivity extends TestableActivity {
                 .setBluetoothEnabled(bluetoothEnabled)
                 .setWebRTCListener(createWebRTCListener())
                 .setDataChannelObserver(createDatachannelObserver())
+                .setAudioCallEnabled(false)
                 .build();
 
         startStreamingButton = findViewById(R.id.start_streaming_button);

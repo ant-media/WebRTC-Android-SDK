@@ -176,10 +176,11 @@ public class WebSocketHandlerTest {
         String token = "token123";
         String[] tracks = {"track1", "track2"};
         String subscriberId = "subscriber123";
+        String subscriberName = "subscriberName";
         String subscriberCode = "code123";
         String viewerInfo = "viewerInfo";
 
-        webSocketHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
+        webSocketHandler.startPlay(streamId, token, tracks, subscriberId, subscriberName, subscriberCode, viewerInfo, false);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
@@ -191,7 +192,9 @@ public class WebSocketHandlerTest {
         expectedJson.put(WebSocketConstants.TRACK_LIST, new JSONArray(tracks));
         expectedJson.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
         expectedJson.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
+        expectedJson.put(WebSocketConstants.SUBSCRIBER_NAME, subscriberName);
         expectedJson.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
+        expectedJson.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, false);
 
         assertEquals(expectedJson.toString(), jsonCaptor.getValue());
     }
