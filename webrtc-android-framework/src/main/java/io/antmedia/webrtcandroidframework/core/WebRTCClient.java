@@ -994,16 +994,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     Log.i(TAG, "Processing publish request for peer streamId: " + peerInfo.id);
                     wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
                 }
-
-
                 if (!playReconnectionInProgress && peerMode == Mode.PLAY && peerInfo.peerConnection == null) {
-                    Log.i(TAG, "Processing play request for peer streamId: " + peerInfo.id);
-                    wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.metaData);
-                }
-
-            if (peerMode == Mode.PLAY && peerInfo.peerConnection == null) {
                 Log.i(TAG, "Processing play request for peer streamId: " + peerInfo.id);
                 wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberName, peerInfo.subscriberCode, peerInfo.metaData, peerInfo.disableTracksByDefault);
+                }
 
             }
         }
