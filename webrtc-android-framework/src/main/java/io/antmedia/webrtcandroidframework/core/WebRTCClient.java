@@ -674,7 +674,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 PeerConnection pc = peerInfo.peerConnection;
                 if (pc != null) {
                     Log.d(TAG, "Set local SDP from " + desc.type);
-                    pc.setLocalDescription(this, newDesc);
+                pc.setLocalDescription(this, newDesc);
                 }
             });
         }
@@ -1386,6 +1386,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 }
             } else {
                 Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
+                publishReconnectionInProgress = true;
                 peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
             }
         }
@@ -1396,18 +1397,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.handler.post(() -> {
             Log.d(TAG, "ICE disconnected");
 
-            if (config.reconnectionEnabled) {
-                rePublishPlay();
-            }
-
-           if (config.webRTCListener != null) {
+            if (config.webRTCListener != null) {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
 
             if (streamStoppedByUser) {
                 release(true);
+                return;
             }
 
+            if (config.reconnectionEnabled) {
+                rePublishPlay();
+            }
         });
     }
 
@@ -1515,6 +1516,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             publishReconnectionHandler.removeCallbacksAndMessages(null);
             playReconnectionHandler.removeCallbacksAndMessages(null);
             playReconnectionInProgress = false;
+            publishReconnectionInProgress = false;
             this.handler.post(() -> {
                 if (config.webRTCListener != null) {
                     config.webRTCListener.onReconnectionSuccess();

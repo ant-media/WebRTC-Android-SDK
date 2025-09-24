@@ -71,7 +71,7 @@ public class WebSocketHandler extends WebSocketListener{
     public WebSocket connectWebSocket(String wsServerUrl){
         synchronized (this) {
             if (isWsOpen) {
-                ws.cancel();
+                disconnect(true);
             }
             Request request = new Request.Builder().url(wsServerUrl).build();
             return client.newWebSocket(request, this);
@@ -79,28 +79,25 @@ public class WebSocketHandler extends WebSocketListener{
     }
     public void connect(final String wsUrl) {
         checkIfCalledOnValidThread();
-        if(wsUrl==null || wsUrl.isBlank())
+        if(wsUrl == null || wsUrl.isBlank())
             return;
         wsServerUrl = wsUrl;
         ws = connectWebSocket(wsServerUrl);
     }
 
     public void sendTextMessage(String message) {
-        handler.post(()->{
-            if (isConnected()) {
-                ws.send(message);
-                Log.e(TAG, "sent websocket message:" + message);
-            } else {
-                Log.d(TAG, "Web Socket is not connected");
-            }
-        });
+        if (isConnected()) {
+            ws.send(message);
+            Log.e(TAG, "sent websocket message:" + message);
+        } else {
+            Log.d(TAG, "Web Socket is not connected");
+        }
     }
 
     public void disconnect(boolean waitForComplete) {
         Log.d(TAG, "Disconnect WebSocket.");
-        ws.close(1000, "Disconnecting WebSocket");
-        ws.cancel();
         stopPingPongTimer();
+        ws.close(1000, "Disconnecting WebSocket");
         // Wait for websocket close event to prevent websocket library from
         // sending any pending messages to deleted looper thread.
         if (waitForComplete) {
@@ -127,25 +124,25 @@ public class WebSocketHandler extends WebSocketListener{
 
     @Override
     public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-        Log.d(TAG, "WebSocket connection opened.");
-        handler.post(() -> {
+        synchronized (this) {
+            Log.d(TAG, "WebSocket connection opened.");
             isWsOpen = true;
-            signallingListener.onWebSocketConnected();
             startPingPongTimer();
-        });
+            signallingListener.onWebSocketConnected();
+        }
     }
 
     @Override
     public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
         synchronized (this) {
-            isWsOpen = false;
+            stopPingPongTimer();
             handler.post(() -> {
                 Log.d(TAG, "WebSocket connection closed.");
                 signallingListener.onWebSocketDisconnected();
+                isWsOpen = false;
                 synchronized (closeEventLock) {
                     closeEvent = true;
                     closeEventLock.notify();
-                    stopPingPongTimer();
                 }
             });
         }
@@ -311,7 +308,6 @@ public class WebSocketHandler extends WebSocketListener{
 
                 String definition= json.getString(DEFINITION);
                 Log.d(TAG, "error command received: "+ definition);
-                //stopPingPongTimer();
 
                 signallingListener.onError(streamId, definition);
 
@@ -347,9 +343,9 @@ public class WebSocketHandler extends WebSocketListener{
 
         synchronized (this) {
             isWsOpen = false;
+            stopPingPongTimer();
             handler.post(() -> {
                 signallingListener.onWebSocketDisconnected();
-                stopPingPongTimer();
                 System.out.println("⚠️ WebSocket failure: " + t.getClass().getName() + " - " + t.getMessage());
                 if (response != null) {
                     System.out.println("HTTP code: " + response.code() + " / message: " + response.message());
@@ -556,25 +552,27 @@ public class WebSocketHandler extends WebSocketListener{
                 return;
             }
 
-            Runnable timerTask = new Runnable() {
-                @Override
-                public void run() {
-                    Log.d(TAG, "Ping Pong timer is executed");
-                    sendPingPongMessage();
-                    if (pingPongTimoutCount >= 3) {
-                        Log.d(TAG, "Ping Pong websocket response not received for 4 seconds");
-                        stopPingPongTimer();
-                        disconnect(true);
-                    }
-                    pingPongTimoutCount++;
-
-                }
-            };
-
-            pingPongExecutor = Executors.newSingleThreadScheduledExecutor();
-            Log.d(TAG, "Ping Pong timer is started");
-            pingPongExecutor.scheduleAtFixedRate(timerTask, TIMER_DELAY, TIMER_PERIOD, TimeUnit.MILLISECONDS);
         }
+        Runnable timerTask = new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Ping Pong timer is executed");
+                sendPingPongMessage();
+                if (pingPongTimoutCount >= 3) {
+                    Log.d(TAG, "Ping Pong websocket response not received for 4 seconds");
+                    stopPingPongTimer();
+                    isWsOpen = false;
+                    ws.cancel();
+                    disconnect(true);
+                }
+                pingPongTimoutCount++;
+
+            }
+        };
+
+        pingPongExecutor = Executors.newSingleThreadScheduledExecutor();
+        Log.d(TAG, "Ping Pong timer is started");
+        pingPongExecutor.scheduleAtFixedRate(timerTask, TIMER_DELAY, TIMER_PERIOD, TimeUnit.MILLISECONDS);
 
     }
 
@@ -669,7 +667,7 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public boolean isConnected() {
-        return ws !=null && isWsOpen;
+        return ws != null && isWsOpen;
     }
 
     public void forceStreamQuality(String mainTrackStreamId, String subTrackStreamId, int height) {
