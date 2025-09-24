@@ -128,8 +128,8 @@ public class WebSocketHandler extends WebSocketListener{
             isWsOpen = true;
             handler.post(() -> {
                 signallingListener.onWebSocketConnected();
-                startPingPongTimer();
             });
+            startPingPongTimer();
         }
     }
 
@@ -547,12 +547,6 @@ public class WebSocketHandler extends WebSocketListener{
 
 
     public void startPingPongTimer(){
-        synchronized (this) {
-            if(this.pingPongExecutor != null) {
-                return;
-            }
-
-        }
         Runnable timerTask = new Runnable() {
             @Override
             public void run() {
@@ -562,7 +556,6 @@ public class WebSocketHandler extends WebSocketListener{
                     Log.d(TAG, "Ping Pong websocket response not received for 4 seconds");
                     stopPingPongTimer();
                     isWsOpen = false;
-                    ws.cancel();
                     disconnect(true);
                 }
                 pingPongTimoutCount++;
@@ -570,9 +563,15 @@ public class WebSocketHandler extends WebSocketListener{
             }
         };
 
-        pingPongExecutor = Executors.newSingleThreadScheduledExecutor();
-        Log.d(TAG, "Ping Pong timer is started");
-        pingPongExecutor.scheduleAtFixedRate(timerTask, TIMER_DELAY, TIMER_PERIOD, TimeUnit.MILLISECONDS);
+        synchronized (this) {
+            if(this.pingPongExecutor != null) {
+                return;
+            }
+
+            pingPongExecutor = Executors.newSingleThreadScheduledExecutor();
+            Log.d(TAG, "Ping Pong timer is started");
+            pingPongExecutor.scheduleAtFixedRate(timerTask, TIMER_DELAY, TIMER_PERIOD, TimeUnit.MILLISECONDS);
+        }
 
     }
 
