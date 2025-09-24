@@ -277,10 +277,25 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
                     String broadcastJson = json.getString(WebSocketConstants.BROADCAST);
                     Broadcast broadcast = gson.fromJson(broadcastJson, Broadcast.class);
                     signallingListener.onBroadcastObject(broadcast);
-                }else if(definition.equals(WebSocketConstants.RESOLUTION_CHANGE_INFO_COMMAND)){
+                }
+                else if(definition.equals(WebSocketConstants.RESOLUTION_CHANGE_INFO_COMMAND)){
                     int resolution = json.getInt(WebSocketConstants.STREAM_HEIGHT);
                     signallingListener.onResolutionChange(streamId, resolution);
 
+                }
+                else if(definition.equals(WebSocketConstants.SUBSCRIBER_COUNT)){
+                    int count = json.getInt(WebSocketConstants.COUNT);
+                    signallingListener.onSubscriberCount(streamId, count);
+                }
+                else if(definition.equals(WebSocketConstants.SUBSCRIBER_LIST_NOTIFICATION)){
+                    JSONArray subscriberList = json.getJSONArray(WebSocketConstants.SUBCRIBER_LIST);
+                    Subscriber[] subscribers = new Subscriber[subscriberList.length()];
+                    for (int i = 0; i < subscriberList.length(); i++) {
+                        String subscriberJson = subscriberList.getString(i);
+                        Subscriber subscriber = gson.fromJson(subscriberJson, Subscriber.class);
+                        subscribers[i] = subscriber;
+                    }
+                    signallingListener.onSubscriberList(streamId, subscribers);
                 }
             }
             else if (commandText.equals(WebSocketConstants.TRACK_LIST)) {
@@ -338,6 +353,32 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
     }
 
+    public void getSubscriberCount(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_SUBSCRIBER_LIST_SIZE);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void getSubscriberList(String streamId, long offset, long size) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_SUBSCRIBER_LIST);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            json.put(WebSocketConstants.OFFSET, offset);
+            json.put(WebSocketConstants.SIZE, size);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void startPublish(String streamId, String token, boolean videoEnabled, boolean audioEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId){
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
@@ -358,7 +399,7 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         }
     }
 
-    public void startPlay(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo){
+    public void startPlay(String streamId, String token, String[] tracks, String subscriberId, String subscriberName, String subscriberCode, String viewerInfo, boolean disableTracksByDefault){
         checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
@@ -375,8 +416,10 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
 
             json.put(WebSocketConstants.TRACK_LIST, jsonArray);
             json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.SUBSCRIBER_NAME, subscriberName);
             json.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
             json.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
+            json.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, disableTracksByDefault);
 
             sendTextMessage(json.toString());
         } catch (JSONException e) {
@@ -685,4 +728,15 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         this.wsReconnectionHandler = wsReconnectionHandler;
     }
 
+    public void getDebugInfo(String streamId) {
+        checkIfCalledOnValidThread();
+        JSONObject json = new JSONObject();
+        try {
+            json.put(WebSocketConstants.COMMAND, WebSocketConstants.GET_DEBUG_INFO_COMMAND);
+            json.put(WebSocketConstants.STREAM_ID, streamId);
+            sendTextMessage(json.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

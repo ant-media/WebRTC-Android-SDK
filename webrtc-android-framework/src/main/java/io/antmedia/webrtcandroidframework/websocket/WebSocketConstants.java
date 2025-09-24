@@ -78,10 +78,41 @@ public class WebSocketConstants {
 
     public static final String ERROR_CODE = "error_code";
 
+    public static final String LINK_SESSION = "linkSession";
+
+    public static final String REGISTER_ORIGIN_SERVER = "registerOriginServer";
+
+    public static final String REGISTER_EDGE_SERVER = "registerEdgeServer";
+
+    public static final String REGISTER_BROADCAST = "registerBroadcast";
+
     public static final String NO_STREAM_EXIST = "no_stream_exist";
 
     public static final String JOIN_ROOM_COMMAND = "joinRoom";
 
+
+    /**
+     * This is the command that is sent from the server when a stream is started so that player can send a play command
+     * or take any action
+     */
+    public static final String STREAMING_STARTED = "streaming_started";
+
+    /**
+     * Command to get ICE server configuration to frontend from server
+     */
+    public static final String GET_ICE_SERVER_CONFIG = "getIceServerConfig";
+
+    public static final String ICE_SERVER_CONFIG_NOTIFICATION = "iceServerConfig";
+
+    public static final String STUN_SERVER_URI = "stunServerUri";
+
+    public static final String TURN_SERVER_USERNAME = "turnServerUsername";
+
+    public static final String TURN_SERVER_CREDENTIAL = "turnServerCredential";
+
+    /**
+     * Please use {@link #MAIN_TRACK} instead
+     */
     public static final String ROOM = "room";
 
     public static final String JOIN_COMMAND = "join";
@@ -103,6 +134,13 @@ public class WebSocketConstants {
     public static final String LEAVED_THE_ROOM = "leavedFromRoom";
 
     /**
+     * This is error definition and it's sent when one requests to get room information
+     * and there is no active stream or no room
+     */
+    public static final String ROOM_NOT_ACTIVE = "no_active_streams_in_room";
+
+
+    /**
      * this token is used to access resources or start broadcast when token security is enabled
      */
 
@@ -113,6 +151,11 @@ public class WebSocketConstants {
      * this subscriber id is used to access resources or start broadcast when time based subscriber security is enabled
      */
     public static final String SUBSCRIBER_ID = "subscriberId";
+
+    /**
+     * this subscriber name is the human readable name for a subscriber
+     */
+    public static final String SUBSCRIBER_NAME = "subscriberName";
 
     /**
      * this subscriber code is used to access resources or start broadcast when time based subscriber security is enabled
@@ -151,6 +194,13 @@ public class WebSocketConstants {
      */
     public static final String NOT_ALLOWED_UNREGISTERED_STREAM = "not_allowed_unregistered_streams";
 
+
+    /**
+     * This is sent back to the user if mainTrack
+     */
+    public static final String MAX_SUBTRACK_COUNT_REACHED = "main_track_has_max_subtrack_count__not_allowed_to_add_more_subtracks";
+
+
     /**
      * This is sent back to the user when there is no room specified in
      * joining the video conference
@@ -176,7 +226,15 @@ public class WebSocketConstants {
     public static final String STREAM_TIME_INVALID = "stream_not_active_or_expired";
 
 
+    /**
+     * This is sent back to the user if token is not valid
+     */
     public static final String UNAUTHORIZED = "unauthorized_access";
+
+    /**
+     * This is sent back to the user when subscriber is blocked to play or publish
+     */
+    public static final String BLOCKED = "user_blocked";
 
     /**
      * This is sent back to the user when a new play message received while
@@ -324,7 +382,7 @@ public class WebSocketConstants {
      * Error definition, it's send when remote description is not set, it's generally due to
      * encoder incompatibilities
      */
-    public static final Object NOT_SET_REMOTE_DESCRIPTION = "notSetRemoteDescription";
+    public static final String NOT_SET_REMOTE_DESCRIPTION = "notSetRemoteDescription";
 
     /**
      * P2P Mode used in session user parameters
@@ -405,6 +463,12 @@ public class WebSocketConstants {
     public static final String LICENCE_SUSPENDED = "license_suspended_please_renew_license";
 
     /**
+     * It's sent to determine mainTrackId if exists
+     */
+    public static final String MAIN_TRACK = "mainTrack";
+
+
+    /**
      * It's sent as parameter conference mode
      */
     public static final String MODE = "mode";
@@ -420,6 +484,11 @@ public class WebSocketConstants {
     public static final String AMCU = "amcu";
 
     /**
+     * It's sent for conference in MCU mode
+     */
+    public static final String MULTI_TRACK = "multitrack";
+
+    /**
      * It's sent for conference in legacy mode
      */
     public static final String LEGACY = "legacy";
@@ -430,14 +499,74 @@ public class WebSocketConstants {
     public static final String SESSION_RESTORED_DESCRIPTION = "session_restored";
 
     /**
-     * It's sent to determine mainTrackId if exists
+     * It's the field that maps sdp mid to stream id
      */
-    public static final String MAIN_TRACK = "mainTrack";
+    public static final String ID_MAPPING = "idMapping";
+
+    /**
+     * It can be used to add some meta data to a broadcast
+     */
+    public static final String META_DATA = "metaData";
+
+    /**
+     * Command to update the meta data for a broadcast
+     */
+    public static final String UPDATE_STREAM_META_DATA_COMMAND = "updateStreamMetaData";
+
+    /**
+     * Command to inform AMS if a stream is pinned in conference mode
+     */
+    public static final String ASSIGN_VIDEO_TRACK_COMMAND = "assignVideoTrackCommand";
+
+    /**
+     * Command to change visible streams in conference mode, used for pagination
+     */
+    public static final String UPDATE_VIDEO_TRACK_ASSIGNMENTS_COMMAND = "updateVideoTrackAssignmentsCommand";
+
+    /**
+     * Command to set max video track count in conference
+     */
+    public static final String SET_MAX_VIDEO_TRACK_COUNT_COMMAND = "setMaxVideoTrackCountCommand";
+
+    /**
+     * Command to get debug info in conference
+     */
+    public static final String GET_DEBUG_INFO_COMMAND = "getDebugInfo";
+
+    /**
+     * Generated debug info in conference
+     */
+    public static final String DEBUG_INFO = "debugInfo";
+
+    /**
+     * Track id that is pinned for a stream
+     */
+    public static final String VIDEO_TRACK_ID = "videoTrackId";
+
+    /**
+     * Start index of a list for pagination
+     */
+    public static final String OFFSET = "offset";
+
+    /**
+     * Length of a page for pagination
+     */
+    public static final String SIZE = "size";
+
+    /**
+     * maximum number of tracks
+     */
+    public static final String MAX_TRACK_COUNT = "maxTrackCount";
 
     /**
      * Command to get broadcast object
      */
     public static final String GET_BROADCAST_OBJECT_COMMAND = "getBroadcastObject";
+
+    /**
+     * Command to get video track assignments
+     */
+    public static final String GET_VIDEO_TRACK_ASSIGNMENTS_COMMAND = "getVideoTrackAssignmentsCommand";
 
     /**
      * broadcast object notification
@@ -448,6 +577,161 @@ public class WebSocketConstants {
      * broadcast object constant
      */
     public static final String BROADCAST = "broadcast";
+
+    public static final String AUTH_TOKEN_NOT_VALID_ERROR_DEFINITION = "authenticationTokenNotValid";
+
+    public static final String MISSING_PARAMETER_DEFINITION = "missingParameter";
+
+    /**
+     * Information field in websocket communication
+     */
+    public static final String INFORMATION = "information";
+
+    /**
+     * Success field in websocket communication. If it's value true, the operation is successful.
+     * If it's value is false, the operation is failed
+     */
+    public static final String SUCCESS = "success";
+
+    /**
+     * Topic field to send push notification
+     */
+    public static final String PUSH_NOTIFICATION_TOPIC = "pushNotificationTopic";
+
+    /**
+     * Subscriber id list to send push notification
+     */
+    public static final String SUBSCRIBER_ID_LIST_TO_NOTIFY = "subscriberIdsToNotify";
+
+    /**
+     * Participant role in the room
+     */
+    public static final String ROLE = "role";
+
+    /**
+     * Participant role in the room
+     */
+    public static final String DISABLE_TRACKS_BY_DEFAULT = "disableTracksByDefault";
+
+    /**
+     * Command to get subtrack infos for a main track
+     */
+    public static final String GET_SUBTRACKS_COMMAND = "getSubtracks";
+
+    /**
+     * Command to get subtrack count for a main track
+     */
+    public static final String GET_SUBTRACKS_COUNT_COMMAND = "getSubtracksCount";
+
+    /**
+     * subtrack (broadcast) object list notification
+     */
+    public static final String SUBTRACK_LIST_NOTIFICATION = "subtrackList";
+
+
+    /**
+     * Command to get subscriber list size
+     */
+    public static final String GET_SUBSCRIBER_LIST_SIZE = "getSubscriberCount";
+
+    /**
+     * subscriber count notification
+     */
+    public static final String SUBSCRIBER_COUNT = "subscriberCount";
+
+    /**
+     * Command to get subscribers for a stream
+     */
+    public static final String GET_SUBSCRIBER_LIST = "getSubscribers";
+
+    /**
+     * subscribers list notification
+     */
+    public static final String SUBSCRIBER_LIST_NOTIFICATION = "subscriberList";
+
+    /**
+     * status field in websocket communication
+     */
+    public static final String STATUS = "status";
+
+    /**
+     * sort field used for sorting subtracks
+     */
+    public static final String SORT_BY = "sortBy";
+
+    /**
+     * order (asc, desc) field used for ordering subtracks
+     */
+    public static final String ORDER_BY = "orderBy";
+
+    /**
+     * search field used for searching subtracks
+     */
+    public static final String SEARCH = "search";
+
+
+    /*
+     * count field in websocket communication
+     */
+    public static final String COUNT = "count";
+
+    /**
+     * subtrack (broadcast) object count notification
+     */
+    public static final String SUBTRACK_COUNT_NOTIFICATION = "subtrackCount";
+
+    /**
+     * subtrack (broadcast) object list
+     */
+    public static final String SUBTRACK_LIST = "subtrackList";
+
+    /**
+     * subscribers list
+     */
+    public static final String SUBCRIBER_LIST = "subscriberList";
+
+    /**
+     * This is the error definition that is sent when the stream does not get video or audio packet for the timeout duration.
+     * Currently it's implemented for WebRTC ingest
+     */
+    public static final String NO_PACKET_RECEIVED_FOR_TIMEOUT_DURATION = "noPacketReceivedForTimeoutDuration";
+
+    /**
+     * This is the error definition that is sent when mainTrack cannot be created or updated in publishing process.
+     */
+    public static final String MAINTRACK_DB_OPERATION_FAILED = "mainTrackDBOperationFailed";
+
+
+    /**
+     * This is passed in play websocket method to define the publisher stream id (if available) which uses same websocket channel with player
+     * For example in conference case a participant use same websocket to publish its stream and to play the others
+     */
+    public static final String USER_PUBLISH_ID = "userPublishId";
+
+    /**
+     * Notification to notify a new subtrack addition to a main track
+     */
+    public static final String SUBTRACK_ADDED = "subtrackAdded";
+
+    /**
+     * Notification to notify a new subtrack removal to a main track
+     */
+    public static final String SUBTRACK_REMOVED = "subtrackRemoved";
+
+    /**
+     * This is the error definition that is sent when the stream does not exist or not streaming
+     */
+    public static final String STREAM_NOT_EXIST_OR_NOT_STREAMING_DEFINITION = "stream_not_exist_or_not_streaming";
+
+    /**
+     * This is the error definition that is sent when the stream exits but not available as WebRTC because webrtc is not enabled
+     */
+    public static final String WEBRTC_NOT_ENABLED_TO_PLAYBACK_DEFINITION = "webrtc_not_enabled";
+
+    /**
+     * This is the definition that is sent when the is about to start for auto/start stop streams
+     */
+    public static final String STREAMING_STARTS_SOON_DEFINITION = "streaming_starts_soon";
 
     public static final int WEBSOCKET_CONNECTION_TIMEOUT = 10000; //10 sec
 

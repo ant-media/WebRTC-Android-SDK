@@ -74,6 +74,7 @@ import java.util.Set;
 import io.antmedia.webrtcandroidframework.api.IDataChannelObserver;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
+import io.antmedia.webrtcandroidframework.api.PlayParams;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.core.BlackFrameSender;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
@@ -209,6 +210,7 @@ public class WebRTCClientTest {
         String streamId = "stream" + RandomStringUtils.random(5);
         String token = "token" + RandomStringUtils.random(5);
         String subscriberId = "mySubscriber" + RandomStringUtils.random(5);
+        String subscriberName = "name" + RandomStringUtils.random(5);
         String subscriberCode = "code" + RandomStringUtils.random(5);
         String viewerInfo = "info" + RandomStringUtils.random(5);
 
@@ -220,9 +222,20 @@ public class WebRTCClientTest {
         webRTCClient.setAudioEnabled(audioCallEnabled);
         webRTCClient.setVideoEnabled(videoCallEnabled);
 
-        webRTCClient.play(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+        PlayParams params = new PlayParams();
+        params.setStreamId(streamId);
+        params.setToken(token);
+        params.setTracks(null);
+        params.setSubscriberId(subscriberId);
+        params.setSubscriberName(subscriberName);
+        params.setSubscriberCode(subscriberCode);
+        params.setViewerInfo(viewerInfo);
+        params.setDisableTracksByDefault(false);
 
-        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, subscriberCode, viewerInfo);
+
+        webRTCClient.play(params);
+
+        verify(wsHandler, times(1)).startPlay(streamId, token, null, subscriberId, subscriberName, subscriberCode, viewerInfo, false);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(1)).sendTextMessage(jsonCaptor.capture());
@@ -233,9 +246,12 @@ public class WebRTCClientTest {
             json.put(WebSocketConstants.STREAM_ID, streamId);
             json.put(WebSocketConstants.TOKEN, token);
             json.put(WebSocketConstants.SUBSCRIBER_ID, subscriberId);
+            json.put(WebSocketConstants.SUBSCRIBER_NAME, subscriberName);
             json.put(WebSocketConstants.SUBSCRIBER_CODE, subscriberCode);
             json.put(WebSocketConstants.VIEWER_INFO, viewerInfo);
             json.put(WebSocketConstants.TRACK_LIST, new JSONArray());
+            json.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, false);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -324,7 +340,7 @@ public class WebRTCClientTest {
                 , "", "", "", roomName);
 
         webRTCClient.joinToConferenceRoom(roomName);
-        verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "");
+        verify(wsHandler, timeout(1000)).startPlay(roomName, "", null, "", "", "", "", false);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(wsHandler, times(2)).sendTextMessage(jsonCaptor.capture());
@@ -351,9 +367,11 @@ public class WebRTCClientTest {
             jsonPlay.put(WebSocketConstants.STREAM_ID, roomName);
             jsonPlay.put(WebSocketConstants.TOKEN, "");
             jsonPlay.put(WebSocketConstants.SUBSCRIBER_ID, "");
+            jsonPlay.put(WebSocketConstants.SUBSCRIBER_NAME, "");
             jsonPlay.put(WebSocketConstants.SUBSCRIBER_CODE, "");
             jsonPlay.put(WebSocketConstants.VIEWER_INFO, "");
             jsonPlay.put(WebSocketConstants.TRACK_LIST, new JSONArray());
+            jsonPlay.put(WebSocketConstants.DISABLE_TRACKS_BY_DEFAULT, false);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -706,7 +724,7 @@ public class WebRTCClientTest {
                 , "", "", "", room);
 
         webRTCClient.joinToConferenceRoom(room);
-        verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "");
+        verify(wsHandler, timeout(1000)).startPlay(room, "", null, "", "", "", "", false);
 
         webRTCClient.leaveFromConference(room);
         verify(wsHandler, timeout(1000)).stop(streamId);
@@ -1162,7 +1180,7 @@ public class WebRTCClientTest {
 
         String player1 = "player1";
         webRTCClient.play(player1);
-        verify(wsHandler, never()).startPlay(anyString(), anyString(), any(String[].class), anyString(), anyString(), anyString());
+        verify(wsHandler, never()).startPlay(anyString(), anyString(), any(String[].class), anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
         assertEquals(2, webRTCClient.getPeersForTest().size());
         WebRTCClient.PeerInfo playPeer = webRTCClient.getPeersForTest().get(player1);
@@ -1170,7 +1188,7 @@ public class WebRTCClientTest {
 
         webRTCClient.onWebSocketConnected();
         verify(wsHandler, times(1)).startPublish(eq(publishPeer.id), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
-        verify(wsHandler, times(1)).startPlay(eq(playPeer.id), anyString(), any(String[].class), anyString(), anyString(), anyString());
+        verify(wsHandler, times(1)).startPlay(eq(playPeer.id), anyString(), any(String[].class), anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
     }
 

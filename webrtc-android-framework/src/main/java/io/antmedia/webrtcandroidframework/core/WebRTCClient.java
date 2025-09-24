@@ -82,10 +82,12 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
+import io.antmedia.webrtcandroidframework.api.PlayParams;
 import io.antmedia.webrtcandroidframework.api.WebRTCClientConfig;
 import io.antmedia.webrtcandroidframework.apprtc.AppRTCAudioManager;
 import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
 
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
@@ -178,10 +180,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         public boolean videoCallEnabled;
         public boolean audioCallEnabled;
         public String subscriberId;
+        public String subscriberName;
         public String subscriberCode;
         public String streamName;
         public String mainTrackId;
         public String metaData;
+        public boolean disableTracksByDefault = false;
+
         public boolean restartIce = false;
 
         public SessionDescription getLocalDescription() {
@@ -983,7 +988,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if (peerMode == Mode.PLAY && peerInfo.peerConnection == null) {
                 Log.i(TAG, "Processing play request for peer streamId: " + peerInfo.id);
-                wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.metaData);
+                wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberName, peerInfo.subscriberCode, peerInfo.metaData, peerInfo.disableTracksByDefault);
             }
         }
     }
@@ -1004,10 +1009,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
         });
 
-        createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null, Mode.PUBLISH);
+        createPeerInfo(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, "", subscriberCode, streamName, mainTrackId, null, false, Mode.PUBLISH);
         init();
 
-        if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled)){
+        if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled, videoCallEnabled || this.config.videoCallEnabled)){
             Toast.makeText(config.activity,"Publish permissions not granted. Cant publish.", Toast.LENGTH_LONG).show();
             Log.e(TAG,"Publish permissions not granted. Cant publish.");
             return;
@@ -1023,17 +1028,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
     }
 
-    private void createPeerInfo(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId, String metaData, Mode mode) {
+    private void createPeerInfo(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberName, String subscriberCode, String streamName, String mainTrackId, String metaData, boolean disableTracksByDefault, Mode mode) {
         PeerInfo peerInfo;
         peerInfo = new PeerInfo(streamId, mode);
         peerInfo.token = token;
         peerInfo.videoCallEnabled = videoCallEnabled || config.videoCallEnabled;
         peerInfo.audioCallEnabled = audioCallEnabled || config.audioCallEnabled;
         peerInfo.subscriberId = subscriberId;
+        peerInfo.subscriberName = subscriberName;
         peerInfo.subscriberCode = subscriberCode;
         peerInfo.streamName = streamName;
         peerInfo.mainTrackId = mainTrackId;
         peerInfo.metaData = metaData;
+        peerInfo.disableTracksByDefault = disableTracksByDefault;
         peers.put(streamId, peerInfo);
     }
 
@@ -1045,14 +1052,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         play(streamId, "", tracks, "", "", "");
     }
 
-    public void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo) {
-        Log.i(TAG, "Play: " + streamId);
+    @Override
+    public void play(PlayParams params) {
+        Log.i(TAG, "Play: " + params.getStreamId());
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
-                config.webRTCListener.onPlayAttempt(streamId);
+                config.webRTCListener.onPlayAttempt(params.getStreamId());
             }
         });
-        createPeerInfo(streamId, token, false, false, subscriberId, subscriberCode, "", "", viewerInfo, Mode.PLAY);
+        createPeerInfo(params.getStreamId(), params.getToken(), false, false, params.getSubscriberId(), params.getSubscriberName(), params.getSubscriberCode(), "", "", params.getViewerInfo(), params.isDisableTracksByDefault(), Mode.PLAY);
 
         if (!isReconnectionInProgress()) {
             init();
@@ -1066,14 +1074,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         initializeAudioManager();
 
-        Log.i(TAG, "Play: "+streamId);
+        Log.i(TAG, "Play: "+params.getStreamId());
 
         if (isWebSocketConnected()) {
-            Log.i(TAG, "Play request sent through ws for stream: " + streamId);
-            wsHandler.startPlay(streamId, token, tracks, subscriberId, subscriberCode, viewerInfo);
+            Log.i(TAG, "Play request sent through ws for stream: " + params.getStreamId());
+            wsHandler.startPlay(params.getStreamId(), params.getToken(), params.getTracks(), params.getSubscriberId(), params.getSubscriberName(), params.getSubscriberCode(), params.getViewerInfo(), params.isDisableTracksByDefault());
         } else {
             Log.w(TAG, "Websocket is not connected. Set play requested. It will be processed when ws is connected.");
         }
+    }
+
+    public void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo) {
+        PlayParams params = new PlayParams(streamId, token, tracks, subscriberId, "", subscriberCode, viewerInfo, false);
+        play(params);
     }
 
     public void join(String streamId) {
@@ -1370,18 +1383,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
 
-            if (streamStoppedByUser) {
-                release(true);
-                return;
-            }
+           if (streamStoppedByUser) {
+               release(true);
+               return;
+           }
 
-            if (config.reconnectionEnabled) {
-                rePublishPlay();
-            }
+           if (config.reconnectionEnabled) {
+               rePublishPlay();
+           }
 
-            if(isConference()){
-                releaseRemoteRenderers();
-            }
+           if (isConference()) {
+               releaseRemoteRenderers();
+           }
 
         });
     }
@@ -2871,4 +2884,42 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         this.localAudioTrack = localAudioTrack;
     }
 
+    @Override
+    public void onSubscriberCount(String streamId, int count) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onSubscriberCount(streamId, count);
+            }
+        });
+    }
+
+    @Override
+    public void onSubscriberList(String streamId, Subscriber[] subscribers) {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onSubscriberList(streamId, subscribers);
+            }
+        });
+    }
+
+    @Override
+    public void getSubscriberCount(String streamId) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.getSubscriberCount(streamId);
+        }
+    }
+
+    @Override
+    public void getSubscriberList(String streamId, long offset, long size) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.getSubscriberList(streamId, offset, size);
+        }
+    }
+
+    @Override
+    public void getDebugInfo(String streamId) {
+        if (wsHandler != null && wsHandler.isConnected()) {
+            wsHandler.getDebugInfo(streamId);
+        }
+    }
 }
