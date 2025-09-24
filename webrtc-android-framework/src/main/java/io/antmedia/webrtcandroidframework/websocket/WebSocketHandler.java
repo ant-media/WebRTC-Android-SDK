@@ -126,8 +126,10 @@ public class WebSocketHandler extends WebSocketListener{
         synchronized (this) {
             Log.d(TAG, "WebSocket connection opened.");
             isWsOpen = true;
-            startPingPongTimer();
-            signallingListener.onWebSocketConnected();
+            handler.post(() -> {
+                signallingListener.onWebSocketConnected();
+                startPingPongTimer();
+            });
         }
     }
 

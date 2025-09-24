@@ -1499,7 +1499,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 playReconnectionHandler.removeCallbacksAndMessages(null);
                 playReconnectionInProgress = false;
             }
-            if(isPlayConnected() && isPlayConnected()){
+            if(isPlayConnected() && isPublishConnected()){
                 this.handler.post(() -> {
                     if (config.webRTCListener != null) {
                         config.webRTCListener.onReconnectionSuccess();
