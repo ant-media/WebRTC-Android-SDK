@@ -78,7 +78,6 @@ public class WebSocketHandler extends WebSocketListener{
         }
     }
     public void connect(final String wsUrl) {
-        checkIfCalledOnValidThread();
         if(wsUrl == null || wsUrl.isBlank())
             return;
         wsServerUrl = wsUrl;
@@ -382,7 +381,6 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public void startPublish(String streamId, String token, boolean videoEnabled, boolean audioEnabled, String subscriberId, String subscriberCode, String streamName, String mainTrackId){
-        checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.PUBLISH_COMMAND);
