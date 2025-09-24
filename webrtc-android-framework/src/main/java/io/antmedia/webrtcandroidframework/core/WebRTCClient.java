@@ -1491,11 +1491,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         if(isConference() && config.reconnectionEnabled){
             if(isPublishConnected()){
-                Log.i(TAG,"Conference reconnection. Publish connected. Play not connected. Try to reconnect play.");
+                Log.i(TAG,"Publish reconnected");
                 publishReconnectionHandler.removeCallbacksAndMessages(null);
                 publishReconnectionInProgress = false;
             }
             if(isPlayConnected()){
+                Log.i(TAG,"Play reconnected");
                 playReconnectionHandler.removeCallbacksAndMessages(null);
                 playReconnectionInProgress = false;
             }
