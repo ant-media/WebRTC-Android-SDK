@@ -69,19 +69,19 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public WebSocket connectWebSocket(String wsServerUrl){
-        synchronized (this) {
-            if (isWsOpen) {
-                disconnect(true);
-            }
-            Request request = new Request.Builder().url(wsServerUrl).build();
-            return client.newWebSocket(request, this);
+        if (isWsOpen) {
+            disconnect(true);
         }
+        Request request = new Request.Builder().url(wsServerUrl).build();
+        return client.newWebSocket(request, this);
     }
     public void connect(final String wsUrl) {
-        if(wsUrl == null || wsUrl.isBlank())
-            return;
-        wsServerUrl = wsUrl;
-        ws = connectWebSocket(wsServerUrl);
+        synchronized (this) {
+            if (wsUrl == null || wsUrl.isBlank())
+                return;
+            wsServerUrl = wsUrl;
+            ws = connectWebSocket(wsServerUrl);
+        }
     }
 
     public void sendTextMessage(String message) {
@@ -136,11 +136,11 @@ public class WebSocketHandler extends WebSocketListener{
     @Override
     public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
         synchronized (this) {
+            isWsOpen = false;
             stopPingPongTimer();
             handler.post(() -> {
                 Log.d(TAG, "WebSocket connection closed.");
                 signallingListener.onWebSocketDisconnected();
-                isWsOpen = false;
                 synchronized (closeEventLock) {
                     closeEvent = true;
                     closeEventLock.notify();

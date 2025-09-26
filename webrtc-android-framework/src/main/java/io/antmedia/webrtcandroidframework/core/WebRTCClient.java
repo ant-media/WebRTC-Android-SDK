@@ -277,17 +277,17 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
 
 
-                    if (peerInfo.mode.equals(Mode.PUBLISH)) {
-                        if (pc != null) {
-                            pc.close();
-                            /*
-                            This is a FIX of a reconnection bug.
-                            If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
-                            pc.dispose();
-                            */
-                        }
+                    if (pc != null) {
+                        pc.close();
+                        /*
+                        This is a FIX of a reconnection bug.
+                        If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
+                        pc.dispose();
+                        */
+                    }
 
-                        config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
+                    config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
+                    if (peerInfo.mode.equals(Mode.PUBLISH)) {
 
                         Log.d(TAG, "Reconnect attempt for publish");
                         wsHandler.stop(peerInfo.id);
@@ -316,20 +316,19 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
 
+
+                    releaseRemoteRenderers();
+                    if (pc != null) {
+                        pc.close();
+                        /*
+                        This is a FIX of a reconnection bug.
+                        If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
+                        pc.dispose();
+                        */
+                    }
+
+                    config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
                     if (peerInfo.mode.equals(Mode.PLAY)) {
-
-                        releaseRemoteRenderers();
-
-                        if (pc != null) {
-                            pc.close();
-                            /*
-                            This is a FIX of a reconnection bug.
-                            If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
-                            pc.dispose();
-                            */
-                        }
-
-                        config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
                         Log.d(TAG, "Reconnect attempt for play");
 
                         play(peerInfo.id,
@@ -348,6 +347,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if(released || streamStoppedByUser){
                 return;
             }
+            if(wsHandler.pingPongExecutor == null){
+                wsHandler.startPingPongTimer();
+            }
+
             peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
 
             for (PeerInfo peerInfo : peers.values()) {
@@ -674,7 +677,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 PeerConnection pc = peerInfo.peerConnection;
                 if (pc != null) {
                     Log.d(TAG, "Set local SDP from " + desc.type);
-                pc.setLocalDescription(this, newDesc);
+                    pc.setLocalDescription(this, newDesc);
                 }
             });
         }
@@ -1379,11 +1382,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
                     Log.d(TAG, "------------------------------------- Publish Reconnection --------------------------------------");
                 }
-                if (!isPlayConnected() && !playReconnectionInProgress) {
-                    playReconnectionInProgress = true;
-                    playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-                    Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
-                }
             } else {
                 Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
                 publishReconnectionInProgress = true;
@@ -1490,6 +1488,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.i(TAG, "Connected for streamId:" + streamId);
 
         if(isConference() && config.reconnectionEnabled){
+            if (!isPlayConnected() && !playReconnectionInProgress) {
+                playReconnectionInProgress = true;
+                playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
+                Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
+            }
+
             if(isPublishConnected()){
                 Log.i(TAG,"Publish reconnected");
                 publishReconnectionHandler.removeCallbacksAndMessages(null);
