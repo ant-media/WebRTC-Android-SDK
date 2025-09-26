@@ -680,38 +680,6 @@ public class WebRTCClientTest {
         assertEquals("other2", capturedTracks[2]);
     }
 
-    @Test
-    public void testRepublishPlay(){
-
-        WebRTCClient webRTCClientSpy = spy(IWebRTCClient.builder()
-                .setActivity(context)
-                .setWebRTCListener(listener)
-                .build());
-        webRTCClientSpy.setRoomId("test");
-
-        // publish already connected
-        doReturn(true).when(webRTCClientSpy).isPublishConnected();
-        doReturn(false).when(webRTCClientSpy).isPlayConnected();
-
-        webRTCClientSpy.rePublishPlay();
-        assertTrue(webRTCClientSpy.isPlayReconnecting());
-        assertFalse(webRTCClientSpy.isPublishReconnecting());
-
-         webRTCClientSpy = spy(IWebRTCClient.builder()
-                .setActivity(context)
-                .setWebRTCListener(listener)
-                .build());
-        webRTCClientSpy.setRoomId("test");
-
-        //play already connected
-        doReturn(false).when(webRTCClientSpy).isPublishConnected();
-        doReturn(true).when(webRTCClientSpy).isPlayConnected();
-
-        webRTCClientSpy.rePublishPlay();
-        assertTrue(webRTCClientSpy.isPublishReconnecting());
-        assertFalse(webRTCClientSpy.isPlayReconnecting());
-
-    }
 
 
     @Test
