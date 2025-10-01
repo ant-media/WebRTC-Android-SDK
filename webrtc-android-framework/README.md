@@ -22,6 +22,11 @@ rtc_use_h264=true
 rtc_include_tests=false
 is_debug=false
 
+# set 16kb Alignment for build
+in libWebRTC/src/BUILD.gn set
+`
+ldflags = ["-Wl,-z,max-page-size=16384"]
+`
 # Java source files that needs to be copied from branch:
 
 src/sdk/android/api
