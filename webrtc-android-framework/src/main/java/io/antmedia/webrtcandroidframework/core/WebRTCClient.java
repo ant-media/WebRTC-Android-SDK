@@ -1375,12 +1375,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
 
             if (isConference()) {
+                if(isPublishConnected() && isPlayConnected()){
+                    onConnected(getPublishStreamId());
+                    Log.i(TAG, "------ Connected Automatically ----");
+                    return;
+                }
                 Log.i(TAG, "Conference! Will try to republish in  " + PEER_RECONNECTION_DELAY_MS + " ms.");
                 Log.i(TAG,"publish connected :"+ isPublishConnected() +"play connected" +isPlayConnected());
                 if (!isPublishConnected() && !publishReconnectionInProgress) {
                     publishReconnectionInProgress = true;
                     publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
                     Log.d(TAG, "------------------------------------- Publish Reconnection --------------------------------------");
+                }
+                if (!isPlayConnected() && !playReconnectionInProgress) {
+                    playReconnectionInProgress = true;
+                    playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
+                    Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
                 }
             } else {
                 Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
@@ -1488,12 +1498,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.i(TAG, "Connected for streamId:" + streamId);
 
         if(isConference() && config.reconnectionEnabled){
-            if (!isPlayConnected() && !playReconnectionInProgress) {
-                playReconnectionInProgress = true;
-                playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-                Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
-            }
-
             if(isPublishConnected()){
                 Log.i(TAG,"Publish reconnected");
                 publishReconnectionHandler.removeCallbacksAndMessages(null);
