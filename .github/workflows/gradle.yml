@@ -192,7 +192,7 @@ jobs:
             touch emulator.log               
             chmod 777 emulator.log
             adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
+            ./gradlew jacocoTestReport;
 
       - name: Archive Test Report
         if: always()
@@ -234,13 +234,6 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      
-    - name: Upload Emulator Logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: emulator-logs
-        path: emulator.log
         
     - name: Checkout repository
       uses: actions/checkout@v2
