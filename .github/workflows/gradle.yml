@@ -194,6 +194,13 @@ jobs:
             adb logcat io.antmedia:I >> emulator.log &
             ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
 
+      - name: Upload Emulator Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-logs
+          path: emulator.log
+
       - name: Archive Test Report
         if: always()
         uses: actions/upload-artifact@v4
