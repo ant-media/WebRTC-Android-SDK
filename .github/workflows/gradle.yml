@@ -192,7 +192,7 @@ jobs:
             touch emulator.log               
             chmod 777 emulator.log
             adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
+            ./gradlew jacocoTestReport;
 
       - name: Archive Test Report
         if: always()
@@ -234,6 +234,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
+        
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Delete runner
