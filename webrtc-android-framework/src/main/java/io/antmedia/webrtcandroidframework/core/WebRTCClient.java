@@ -1206,11 +1206,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         remoteVideoSinks.clear();
 
-        mainHandler.post(() -> {
-            //if closeInternal works before releasing renderer, app stucks
-            executor.execute(this::closeInternal);
-        });
-
 
         if (audioManager != null) {
             audioManager.stop();
@@ -1218,6 +1213,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
 
         config.webRTCListener.onShutdown();
+
+        mainHandler.post(() -> {
+            //if closeInternal works before releasing renderer, app stucks
+            executor.execute(this::closeInternal);
+        });
 
     }
 
