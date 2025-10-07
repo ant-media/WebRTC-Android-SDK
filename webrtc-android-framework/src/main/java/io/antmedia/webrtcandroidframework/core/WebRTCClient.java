@@ -2215,7 +2215,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Log.d(TAG, "Closing peer connections for " + entry.getValue().id);
             PeerConnection peerConnection = entry.getValue().peerConnection;
             if (peerConnection != null) {
-                peerConnection.dispose();
+                peerConnection.close();
                 entry.getValue().peerConnection = null;
             }
 
