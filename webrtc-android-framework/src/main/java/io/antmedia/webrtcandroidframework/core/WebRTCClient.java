@@ -75,6 +75,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Condition;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,6 +90,8 @@ import io.antmedia.webrtcandroidframework.websocket.AntMediaSignallingEvents;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 import io.antmedia.webrtcandroidframework.websocket.WebSocketHandler;
+import java.util.concurrent.locks.ReentrantLock;
+
 
 public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private static final String TAG = "WebRTCClient";
@@ -100,6 +104,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public static final String VIDEO_ROTATION_EXT_LINE = "a=extmap:3 urn:3gpp:video-orientation\r\n";
     public static final String USER_REVOKED_CAPTURE_SCREEN_PERMISSION = "User revoked permission to capture the screen.";
     public static int STAT_CALLBACK_PERIOD = 1000;
+    private final Semaphore releaseLock = new Semaphore(1);
 
     protected final ProxyVideoSink localVideoSink = new ProxyVideoSink();
     protected final List<ProxyVideoSink> remoteVideoSinks = new ArrayList<>();
@@ -248,7 +253,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
 
     private boolean released = false;
-
     private String roomId;
 
     private BlackFrameSender blackFrameSender;
@@ -1014,6 +1018,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void publish(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled,
                         String subscriberId, String subscriberCode, String streamName, String mainTrackId) {
+        try {
+            releaseLock.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         Log.i(TAG, "Publish: " + streamId);
 
         this.handler.post(() -> {
@@ -1026,6 +1035,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         init();
 
         if(!PermissionHandler.checkPublishPermissions(config.activity, config.bluetoothEnabled, videoCallEnabled || this.config.videoCallEnabled)){
+            releaseLock.release();
             Toast.makeText(config.activity,"Publish permissions not granted. Cant publish.", Toast.LENGTH_LONG).show();
             Log.e(TAG,"Publish permissions not granted. Cant publish.");
             return;
@@ -1039,6 +1049,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         } else {
             Log.w(TAG, "Websocket is not connected. Set publish requested. It will be processed when ws is connected.");
         }
+        releaseLock.release();
     }
 
     private void createPeerInfo(String streamId, String token, boolean videoCallEnabled, boolean audioCallEnabled, String subscriberId, String subscriberName, String subscriberCode, String streamName, String mainTrackId, String metaData, boolean disableTracksByDefault, Mode mode) {
@@ -1067,6 +1078,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     @Override
     public void play(PlayParams params) {
+        try {
+            releaseLock.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         Log.i(TAG, "Play: " + params.getStreamId());
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -1082,6 +1098,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if(!PermissionHandler.checkPlayPermissions(config.activity, config.bluetoothEnabled)){
             Toast.makeText(config.activity,"Play permissions not granted. Cant play.", Toast.LENGTH_LONG).show();
             Log.e(TAG,"Play permissions not granted. Cant play.");
+            releaseLock.release();
             return;
         }
 
@@ -1095,6 +1112,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         } else {
             Log.w(TAG, "Websocket is not connected. Set play requested. It will be processed when ws is connected.");
         }
+        releaseLock.release();
     }
 
     public void play(String streamId, String token, String[] tracks, String subscriberId, String subscriberCode, String viewerInfo) {
@@ -1119,8 +1137,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
   
     public void join(String streamId, String token) {
+        try {
+            releaseLock.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         Log.e(TAG, "Join: " + streamId);
-
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onJoinAttempt(streamId);
@@ -1136,6 +1158,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
 
         wsHandler.joinToPeer(streamId, token);
+        releaseLock.release();
     }
 
     public void getTrackList(String streamId, String token) {
@@ -1184,36 +1207,48 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void release(boolean closeWebsocket) {
-        released = true;
-        Log.i(getClass().getSimpleName(), "Releasing resources");
+        executor.execute(()->{
+            try {
+                releaseLock.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
 
-        if (closeWebsocket && wsHandler != null) {
-            wsHandler.disconnect(true);
-            wsHandler.stopReconnector();
-            wsHandler = null;
-        }
-        if (config.localVideoRenderer != null) {
-            releaseRenderer(config.localVideoRenderer, localVideoTrack, localVideoSink);
-        }
+            if (released) {
+                releaseLock.release();
+                return;
+            }
+            released = true;
+            Log.i(getClass().getSimpleName(), "Releasing resources");
 
-        releaseRemoteRenderers();
+            if (closeWebsocket && wsHandler != null) {
+                wsHandler.disconnect(true);
+                wsHandler.stopReconnector();
+                wsHandler = null;
+            }
+            if (config.localVideoRenderer != null) {
+                releaseRenderer(config.localVideoRenderer, localVideoTrack, localVideoSink);
+            }
 
-        localVideoTrack = null;
-        localAudioTrack = null;
+            releaseRemoteRenderers();
 
-        remoteVideoSinks.clear();
+            localVideoTrack = null;
+            localAudioTrack = null;
+
+            remoteVideoSinks.clear();
 
 
-        if (audioManager != null) {
-            audioManager.stop();
-            audioManager = null;
-        }
+            mainHandler.post(()->{
+                if (audioManager != null) {
+                    audioManager.stop();
+                    audioManager = null;
+                }
+            });
 
-        config.webRTCListener.onShutdown();
+            config.webRTCListener.onShutdown();
 
-        mainHandler.post(() -> {
-            //if closeInternal works before releasing renderer, app stucks
-            executor.execute(this::closeInternal);
+            closeInternal();
+
         });
 
     }
@@ -2279,6 +2314,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peerReconnectionHandler.removeCallbacksAndMessages(null);
         publishReconnectionHandler.removeCallbacksAndMessages(null);
         playReconnectionHandler.removeCallbacksAndMessages(null);
+        releaseLock.release();
     }
 
     private void clearStatsCollector(){
