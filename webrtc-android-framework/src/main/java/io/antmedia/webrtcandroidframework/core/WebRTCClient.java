@@ -1247,6 +1247,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         config.webRTCListener.onShutdown();
 
+        releaseLock.release();
+
         mainHandler.post(() -> {
             //if closeInternal works before releasing renderer, app stucks
             executor.execute(this::closeInternal);
@@ -1261,6 +1263,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if (videoTrack != null && videoSink != null)
                 videoTrack.removeSink(videoSink);
+            else{
+                Log.d("test","test");
+            }
             renderer.clearAnimation();
             mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
@@ -2242,6 +2247,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void closeInternal() {
+        try {
+            releaseLock.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         Log.d(TAG, "Closing resources.");
         if (statsTimer != null) {
             statsTimer.cancel();
