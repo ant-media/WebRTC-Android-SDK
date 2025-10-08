@@ -13,6 +13,7 @@ package io.antmedia.webrtcandroidframework.core;
 import android.app.Activity;
 import android.media.projection.MediaProjection;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
@@ -1231,6 +1232,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             }
 
             releaseRemoteRenderers();
+            localAudioTrack.setEnabled(false);
+            localVideoTrack.setEnabled(false);
 
             localVideoTrack = null;
             localAudioTrack = null;
@@ -1260,6 +1263,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if (videoTrack != null && videoSink != null)
                 videoTrack.removeSink(videoSink);
+            else{
+                Log.d("test","test");
+            }
             renderer.clearAnimation();
             mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
@@ -1970,7 +1976,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (factory != null) {
             throw new IllegalStateException("PeerConnectionFactory has already been constructed");
         }
-        executor.execute(() -> createPeerConnectionFactoryInternal(options));
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+            createPeerConnectionFactoryInternal(options);
+        });
     }
 
     public void createPeerConnection(String streamId, boolean createLocalTrack) {
