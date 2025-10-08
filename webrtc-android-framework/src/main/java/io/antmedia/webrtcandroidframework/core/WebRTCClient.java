@@ -1231,11 +1231,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
 
         releaseRemoteRenderers();
-        localAudioTrack.setEnabled(false);
-        localVideoTrack.setEnabled(false);
 
-        localVideoTrack = null;
-        localAudioTrack = null;
+        if(localAudioTrack != null) {
+            localAudioTrack.setEnabled(false);
+            localAudioTrack = null;
+        }
+
+        if(localVideoTrack!=null) {
+            localVideoTrack.setEnabled(false);
+            localVideoTrack = null;
+        }
 
         remoteVideoSinks.clear();
 
