@@ -1208,50 +1208,48 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void release(boolean closeWebsocket) {
-        executor.execute(()->{
-            try {
-                releaseLock.acquire();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            releaseLock.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
-            if (released) {
-                releaseLock.release();
-                return;
-            }
-            released = true;
-            Log.i(getClass().getSimpleName(), "Releasing resources");
+        if (released) {
+            releaseLock.release();
+            return;
+        }
+        released = true;
+        Log.i(getClass().getSimpleName(), "Releasing resources");
 
-            if (closeWebsocket && wsHandler != null) {
-                wsHandler.disconnect(true);
-                wsHandler.stopReconnector();
-                wsHandler = null;
-            }
-            if (config.localVideoRenderer != null) {
-                releaseRenderer(config.localVideoRenderer, localVideoTrack, localVideoSink);
-            }
+        if (closeWebsocket && wsHandler != null) {
+            wsHandler.disconnect(true);
+            wsHandler.stopReconnector();
+            wsHandler = null;
+        }
+        if (config.localVideoRenderer != null) {
+            releaseRenderer(config.localVideoRenderer, localVideoTrack, localVideoSink);
+        }
 
-            releaseRemoteRenderers();
-            localAudioTrack.setEnabled(false);
-            localVideoTrack.setEnabled(false);
+        releaseRemoteRenderers();
+        localAudioTrack.setEnabled(false);
+        localVideoTrack.setEnabled(false);
 
-            localVideoTrack = null;
-            localAudioTrack = null;
+        localVideoTrack = null;
+        localAudioTrack = null;
 
-            remoteVideoSinks.clear();
+        remoteVideoSinks.clear();
 
 
-            mainHandler.post(()->{
-                if (audioManager != null) {
-                    audioManager.stop();
-                    audioManager = null;
-                }
-            });
+        if (audioManager != null) {
+            audioManager.stop();
+            audioManager = null;
+        }
 
-            config.webRTCListener.onShutdown();
+        config.webRTCListener.onShutdown();
 
-            closeInternal();
-
+        mainHandler.post(() -> {
+            //if closeInternal works before releasing renderer, app stucks
+            executor.execute(this::closeInternal);
         });
 
     }
@@ -1263,9 +1261,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             if (videoTrack != null && videoSink != null)
                 videoTrack.removeSink(videoSink);
-            else{
-                Log.d("test","test");
-            }
             renderer.clearAnimation();
             mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
@@ -1425,11 +1420,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
                     Log.d(TAG, "------------------------------------- Publish Reconnection --------------------------------------");
                 }
-                if (!isPlayConnected() && !playReconnectionInProgress) {
-                    playReconnectionInProgress = true;
-                    playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-                    Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
-                }
             } else {
                 Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
                 publishReconnectionInProgress = true;
@@ -1536,6 +1526,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.i(TAG, "Connected for streamId:" + streamId);
 
         if(isConference() && config.reconnectionEnabled){
+            if (!isPlayConnected() && !playReconnectionInProgress) {
+                playReconnectionInProgress = true;
+                playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
+                Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
+            }
             if(isPublishConnected()){
                 Log.i(TAG,"Publish reconnected");
                 publishReconnectionHandler.removeCallbacksAndMessages(null);
@@ -2256,6 +2251,13 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Log.d(TAG, "Closing peer connections for " + entry.getValue().id);
             PeerConnection peerConnection = entry.getValue().peerConnection;
             if (peerConnection != null) {
+                for (RtpSender sender : peerConnection.getSenders()) {
+                    MediaStreamTrack track = sender.track();
+                    if (track != null) {
+                        track.setEnabled(false);
+                        track.dispose();
+                    }
+                }
                 peerConnection.close();
                 entry.getValue().peerConnection = null;
             }
