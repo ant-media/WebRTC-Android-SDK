@@ -1184,9 +1184,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void release(boolean closeWebsocket) {
-        if(released){
-            return;
-        }
         released = true;
         Log.i(getClass().getSimpleName(), "Releasing resources");
 
