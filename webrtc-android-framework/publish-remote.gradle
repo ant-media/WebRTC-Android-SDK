@@ -32,9 +32,9 @@ afterEvaluate {
 
                 // Two artifacts, the `aar` (or `jar`) and the sources
                 if (project.plugins.findPlugin("com.android.library")) {
-                    from components.release
+                    from components.findByName('release')
                 } else {
-                    from components.java
+                    from components.findByName('java')
                 }
 
                 artifact androidSourcesJar

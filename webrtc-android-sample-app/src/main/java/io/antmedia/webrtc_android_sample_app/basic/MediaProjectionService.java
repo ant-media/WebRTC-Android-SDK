@@ -10,14 +10,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.graphics.drawable.Icon;
-import android.media.projection.MediaProjection;
-import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
 
 import androidx.annotation.RequiresApi;
 
-import io.antmedia.webrtc_android_sample_app.R;
+import io.antmedia.webrtcandroidframework.R;
 
 public class MediaProjectionService extends Service {
 
