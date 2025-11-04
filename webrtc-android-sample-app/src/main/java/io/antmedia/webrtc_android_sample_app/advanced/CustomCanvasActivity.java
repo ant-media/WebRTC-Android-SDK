@@ -30,6 +30,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutionException;
 
+import javax.microedition.khronos.opengles.GL10;
+
 import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 import io.antmedia.webrtcandroidframework.api.IWebRTCClient;
 import io.antmedia.webrtcandroidframework.api.IWebRTCListener;
@@ -41,20 +43,12 @@ import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 public class CustomCanvasActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-
-    // Default camera lens value, change to CameraSelector.LENS_FACING_BACK to initialize with back camera
     private int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
     private int lensFacing = defaultLensFacing;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
-    private ByteBuffer[] buffers;
-    private int allocatedBufferSize;
-    private int currentBuffer = 0;
-    private static final int NUMBER_OF_BUFFERS=2;
-
     private GLSurfaceView surfaceView;
     private ImageProxyRenderer imageProxyRenderer;
 
-    private FrameLayout remoteViewContainer;
     WebRTCClient webRTCClient;
     private View broadcastingView;
 
@@ -63,7 +57,6 @@ public class CustomCanvasActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_canvas);
         broadcastingView = findViewById(R.id.broadcasting_text_view);
-        remoteViewContainer = (FrameLayout) findViewById(R.id.remote_video_view_container);
         setup();
     }
 
@@ -93,8 +86,8 @@ public class CustomCanvasActivity extends AppCompatActivity {
         surfaceView.setEGLConfigChooser(8,8,8,8,16,0);
         imageProxyRenderer = new ImageProxyRenderer(webRTCClient,this, new CanvasListener(){
             @Override
-            public void onSurfaceCreated(javax.microedition.khronos.opengles.GL10 gl, javax.microedition.khronos.egl.EGLConfig config){
-                Overlay logo = new Overlay(getApplicationContext(), io.antmedia.webrtcandroidframework.R.drawable.ic_launcher,0,0);
+            public void onSurfaceIntialized(GL10 gl) {
+                Overlay logo = new Overlay(getApplicationContext(), R.drawable.test,0,0);
                 logo.setSize(0.9f);
                 new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, 0f);
             }

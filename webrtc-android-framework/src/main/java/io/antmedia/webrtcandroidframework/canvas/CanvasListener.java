@@ -1,8 +1,10 @@
 package io.antmedia.webrtcandroidframework.canvas;
 
-import io.antmedia.webrtcandroidframework.api.DefaultWebRTCListener;
 interface ICanvasListener {
     public void onSurfaceCreated(javax.microedition.khronos.opengles.GL10 gl, javax.microedition.khronos.egl.EGLConfig config);
+
+    void onSurfaceIntialized(javax.microedition.khronos.opengles.GL10 gl);
+
     public void onSurfaceChanged(javax.microedition.khronos.opengles.GL10 gl, int width, int height) ;
     public void onDrawFrame(javax.microedition.khronos.opengles.GL10 gl);
 }
@@ -10,6 +12,10 @@ interface ICanvasListener {
 public class CanvasListener implements  ICanvasListener{
     @Override
     public void onSurfaceCreated(javax.microedition.khronos.opengles.GL10 gl, javax.microedition.khronos.egl.EGLConfig config){
+
+    }
+    @Override
+    public void onSurfaceIntialized(javax.microedition.khronos.opengles.GL10 gl){
 
     }
     @Override

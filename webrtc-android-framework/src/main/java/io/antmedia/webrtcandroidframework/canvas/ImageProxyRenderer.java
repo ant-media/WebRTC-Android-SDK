@@ -244,7 +244,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         setupLuminanceTexture(texV);
 
         texturesInitialized = false; // will initialize dimensions on first frame
-        listener.onSurfaceCreated(gl,config);
 
     }
 
@@ -314,6 +313,8 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, chromaW, chromaH, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, v);
 
             texturesInitialized = true;
+            listener.onSurfaceIntialized(gl);
+
         } else if (upload) {
             // Update textures with latest frame
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
