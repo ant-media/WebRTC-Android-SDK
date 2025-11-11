@@ -28,14 +28,17 @@ public class Overlay {
 
     public static int rendererWidth,rendererHeight;
     public static ArrayList<Overlay> overlayArray = new ArrayList<>();
+    public int width = 0,height = 0;
     public Overlay(Context ctx, int resId, float x, float y) {
         cx = x;
         cy = y;
         rendererAspect = (float) rendererWidth / rendererHeight;
 
         Bitmap bmp = BitmapFactory.decodeResource(ctx.getResources(), resId);
-        overlayAspect = (float) bmp.getWidth() / bmp.getHeight();
+        width = bmp.getWidth();
+        height =  bmp.getHeight();
 
+        overlayAspect = (float) width / height;
         texture = loadTexture(bmp);
         bmp.recycle();
 
@@ -196,5 +199,22 @@ public class Overlay {
         GLES20.glShaderSource(s, src);
         GLES20.glCompileShader(s);
         return s;
+    }
+    public void release() {
+        if (texture > 0) {
+            int[] tex = {texture};
+            GLES20.glDeleteTextures(1, tex, 0);
+            texture = -1;
+        }
+
+        if (program > 0) {
+            GLES20.glDeleteProgram(program);
+            program = -1;
+        }
+
+        vertexBuffer = null;
+        uvBuffer = null;
+
+        Overlay.overlayArray.remove(this);
     }
 }

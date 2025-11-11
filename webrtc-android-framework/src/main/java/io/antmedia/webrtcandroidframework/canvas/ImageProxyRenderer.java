@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework.canvas;
 
 import android.app.Activity;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -88,7 +89,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
     private ByteBuffer yData; // size width*height
     private ByteBuffer uData; // size (width/2)*(height/2)
     private ByteBuffer vData; // size (width/2)*(height/2)
-    private int frameWidth = 0, frameHeight = 0;
+    public int frameWidth = 0, frameHeight = 0;
     private boolean frameAvailable = false;
 
     // Transform controls
@@ -130,14 +131,14 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         updateTexTransform();
     }
 
-    public void submitImage(@NonNull ImageProxy image, boolean mirror, int rotationDegrees) {
+    public void submitImage(@NonNull ImageProxy image, int rotationDegrees) {
         final Rect crop = image.getCropRect();
         // Use crop rect to avoid CameraX-imposed center crop causing apparent zoom
         final int width = crop.width();
         final int height = crop.height();
-        setMirror(mirror);
+        setMirror(true);
         // For front camera (mirrored), use clockwise rotation; for back, counter-rotate.
-        setRotationDegrees(mirror ? rotationDegrees : -rotationDegrees);
+        setRotationDegrees(false ? rotationDegrees : -rotationDegrees);
 
         ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
         ImageProxy.PlaneProxy uPlane = image.getPlanes()[1];

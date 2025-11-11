@@ -2,6 +2,7 @@ package io.antmedia.webrtc_android_sample_app.advanced;
 
 import android.Manifest;
 import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
@@ -28,6 +29,7 @@ import androidx.lifecycle.LifecycleOwner;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import javax.microedition.khronos.opengles.GL10;
@@ -43,7 +45,7 @@ import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 public class CustomCanvasActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
+    private int defaultLensFacing = CameraSelector.LENS_FACING_BACK;
     private int lensFacing = defaultLensFacing;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private GLSurfaceView surfaceView;
@@ -84,12 +86,23 @@ public class CustomCanvasActivity extends AppCompatActivity {
         surfaceView = new GLSurfaceView(this);
         surfaceView.setEGLContextClientVersion(2);
         surfaceView.setEGLConfigChooser(8,8,8,8,16,0);
+
         imageProxyRenderer = new ImageProxyRenderer(webRTCClient,this, new CanvasListener(){
+
+            boolean overlayInitialize = false;
             @Override
             public void onSurfaceIntialized(GL10 gl) {
-                Overlay logo = new Overlay(getApplicationContext(), R.drawable.test,0,0);
-                logo.setSize(0.9f);
-                new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, 0f);
+                if(overlayInitialize){
+                    for (Overlay overlay:Overlay.overlayArray){
+                        overlay.updateRendererSize(imageProxyRenderer.frameWidth,imageProxyRenderer.frameHeight);
+                    }
+                }else{
+                    overlayInitialize = true;
+                    Overlay logo = new Overlay(getApplicationContext(), R.drawable.test,0,0);
+
+                    //logo.updateRendererSize(imageProxyRenderer.frameWidth,imageProxyRenderer.frameHeight);
+                    //new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, 0f);
+                }
             }
         });
         surfaceView.setRenderer(imageProxyRenderer);
@@ -104,6 +117,13 @@ public class CustomCanvasActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startStopStream(v,streamId);
+            }
+        });
+        final Button switchCam = findViewById(R.id.switchCam);
+        switchCam.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                switchCamera();
             }
         });
     }
@@ -214,14 +234,14 @@ public class CustomCanvasActivity extends AppCompatActivity {
 
         return orientation;
     }
-
+    ProcessCameraProvider cameraProvider;
     private void setupCamera() {
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(new Runnable() {
             @Override
             public void run() {
                 try {
-                    ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                     cameraProvider = cameraProviderFuture.get();
                     bindImageAnalysis(cameraProvider);
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();
@@ -229,7 +249,7 @@ public class CustomCanvasActivity extends AppCompatActivity {
             }
         }, ContextCompat.getMainExecutor(this));
     }
-
+    ImageAnalysis imageAnalysis;
     private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
         CameraResolutionPreset cameraPreset = CameraResolutionPreset.P640x480;
         int width;
@@ -243,7 +263,7 @@ public class CustomCanvasActivity extends AppCompatActivity {
             height = cameraPreset.getWidth();
         }
 
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+         imageAnalysis = new ImageAnalysis.Builder()
                 .setOutputImageRotationEnabled(true)
                 .setTargetResolution(new Size(width,height))
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -256,20 +276,62 @@ public class CustomCanvasActivity extends AppCompatActivity {
                 int applyDegrees = isFront ? degrees : -degrees;
                 imageProxyRenderer.submitImage(
                         image,
-                        isFront,
                         180
                 );
                 image.close();
             }
         });
 
-        CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(lensFacing).build();
-        cameraProvider.unbindAll();
-        cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis);
+        startCamera(cameraProvider,imageAnalysis);
 
     }
+    private void switchCamera() {
+        // Toggle between front and back
+        synchronized (this) {
+            if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                lensFacing = CameraSelector.LENS_FACING_FRONT;
+            } else {
+                lensFacing = CameraSelector.LENS_FACING_BACK;
+            }
 
+            // Rebind with new selector
+            startCamera(cameraProvider,imageAnalysis);
+        }
+    }
+    private void startCamera(ProcessCameraProvider provider , ImageAnalysis imageAnalysis) {
+        cameraProvider = provider;
 
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(lensFacing)
+                .build();
+
+        cameraProvider.unbindAll();
+        cameraProvider.bindToLifecycle(
+                (LifecycleOwner) this,
+                cameraSelector,
+                imageAnalysis
+        );
+    }
+    private void restartCamera() {
+        if (cameraProvider == null) return;
+
+        cameraProvider.unbindAll();
+
+        CameraSelector cameraSelector = new CameraSelector.Builder()
+                .requireLensFacing(lensFacing) // FRONT or BACK
+                .build();
+
+        cameraProvider.bindToLifecycle(
+                (LifecycleOwner) this,
+                cameraSelector,
+                imageAnalysis
+        );
+    }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        restartCamera();
+    }
     @Override
     protected void onResume() {
         super.onResume();

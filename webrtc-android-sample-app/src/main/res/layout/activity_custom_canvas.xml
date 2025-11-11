@@ -43,9 +43,17 @@
                 android:id="@+id/startCall"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
                 android:layout_weight="1"
-                android:text="Start"
-                android:layout_marginHorizontal="8dp" />
+                android:text="Start" />
+
+            <Button
+                android:id="@+id/switchCam"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:layout_weight="1"
+                android:text="switch camera" />
 
         </LinearLayout>
 
