@@ -130,8 +130,25 @@ public class Overlay {
     }
 
     private void updateVertexBuffer() {
-        float halfW = size / 2f;
-        float halfH = halfW / overlayAspect * rendererAspect;
+        float rendererAspect = (float) rendererWidth / rendererHeight;
+
+        float halfW, halfH;
+
+        // Normalize by the smaller renderer dimension to keep size visually constant
+        float scale = (rendererAspect >= 1f) ? (1f / rendererAspect) : 1f;
+
+        // Apply the scale so size appears consistent across orientations
+        float adjustedSize = size * scale;
+
+        if (rendererAspect >= 1f) {
+            // --- Landscape ---
+            halfW = adjustedSize / 2f;
+            halfH = (halfW / overlayAspect) * rendererAspect;
+        } else {
+            // --- Portrait ---
+            halfH = adjustedSize / 2f;
+            halfW = (halfH * overlayAspect) / rendererAspect;
+        }
 
         float[] v = {
                 cx - halfW, cy + halfH, 0f,

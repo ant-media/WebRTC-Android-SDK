@@ -99,9 +99,10 @@ public class CustomCanvasActivity extends AppCompatActivity {
                 }else{
                     overlayInitialize = true;
                     Overlay logo = new Overlay(getApplicationContext(), R.drawable.test,0,0);
-
-                    //logo.updateRendererSize(imageProxyRenderer.frameWidth,imageProxyRenderer.frameHeight);
-                    //new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, 0f);
+                    logo.setSize(0.5f);
+                    logo.updateRendererSize(imageProxyRenderer.frameWidth,imageProxyRenderer.frameHeight);
+                    Overlay text = new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, 0f);
+                    text.setSize(0.2f);
                 }
             }
         });
