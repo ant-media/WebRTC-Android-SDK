@@ -1,8 +1,6 @@
 package io.antmedia.webrtcandroidframework.canvas;
 
 import android.app.Activity;
-import android.content.res.Configuration;
-import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.opengl.GLES20;
@@ -10,21 +8,22 @@ import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
-
+import android.view.OrientationEventListener;
+import android.view.Surface;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
 import androidx.annotation.NonNull;
+import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageProxy;
-
 import org.webrtc.TextureBufferImpl;
 import org.webrtc.VideoFrame;
 import org.webrtc.YuvConverter;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-
-import io.antmedia.webrtcandroidframework.R;
 import io.antmedia.webrtcandroidframework.core.CustomVideoCapturer;
 import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 
@@ -44,6 +43,12 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             1f, 0f,
             0f, 1f,
             1f, 1f
+    };
+    private static final float[] MIRROREDTEXTCORD = new float[]{
+            1f, 0f,
+            0f, 0f,
+            1f, 1f,
+            0f, 1f
     };
 
     private static final String VERTEX_SHADER =
@@ -74,7 +79,10 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
                     "}";
 
     private FloatBuffer positionBuffer;
-    private FloatBuffer texCoordBuffer;
+    private FloatBuffer texCordBuffer;
+    private FloatBuffer mirroredTexCoordBuffer;
+    private FloatBuffer currentTextCordBuffer;
+
     private int program = -1;
     private int aPositionLoc = -1;
     private int aTexCoordLoc = -1;
@@ -96,7 +104,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
     private int rotationDegrees = 0; // 0, 90, 180, 270
     private boolean mirrorX = false; // mirror horizontally
     private final float[] texTransform = identity3();
-    private int surfaceWidth = 0, surfaceHeight = 0;
+    public int surfaceWidth = 0, surfaceHeight = 0;
     private WebRTCClient webRTCClient;
     private boolean callInProgress = false;
     private YuvConverter yuvConverter = new YuvConverter();
@@ -106,10 +114,44 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
 
     public Activity context;
     public CanvasListener listener;
-    public ImageProxyRenderer(WebRTCClient webRTCClient, Activity context,CanvasListener listener) {
+    public SurfaceView surfaceView;
+    public int currentOrientation = 0;
+    public ImageProxyRenderer(WebRTCClient webRTCClient, Activity context,SurfaceView surfaceView,CanvasListener listener) {
         this.webRTCClient = webRTCClient;
         this.context = context;
         this.listener = listener;
+        this.surfaceView = surfaceView;
+
+        OrientationEventListener orientationEventListener = new OrientationEventListener(context) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+
+                if (orientation >= 330 || orientation < 30) {
+                    currentOrientation = 0;
+
+                } else if (orientation >= 60 && orientation < 120) {
+                    currentOrientation = 90;
+
+                } else if (orientation >= 150 && orientation < 210) {
+                    currentOrientation = 180;
+
+                } else if (orientation >= 240 && orientation < 300) {
+                    currentOrientation = 270;
+
+                }
+                if((currentOrientation == 90 || currentOrientation == 270) && CameraProviderHelper.lensFacing == CameraSelector.LENS_FACING_FRONT){
+                    currentTextCordBuffer = mirroredTexCoordBuffer;
+                }
+                else {
+                    currentTextCordBuffer = texCordBuffer;
+                }
+                for (Overlay overlay : Overlay.overlayArray) {
+                    overlay.setRotation(currentOrientation);
+                }
+            }
+
+        };
+        orientationEventListener.enable();
     }
 
     public void setCallInProgress(boolean callInProgress) {
@@ -121,7 +163,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
     }
 
 
-    public void setMirror(boolean mirror) {
+    private void setMirror(boolean mirror) {
         mirrorX = mirror;
         updateTexTransform();
     }
@@ -131,14 +173,15 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         updateTexTransform();
     }
 
-    public void submitImage(@NonNull ImageProxy image, int rotationDegrees) {
+    int remoteRotation=0;
+    public void submitImage(@NonNull ImageProxy image) {
         final Rect crop = image.getCropRect();
         // Use crop rect to avoid CameraX-imposed center crop causing apparent zoom
         final int width = crop.width();
         final int height = crop.height();
         setMirror(true);
         // For front camera (mirrored), use clockwise rotation; for back, counter-rotate.
-        setRotationDegrees(false ? rotationDegrees : -rotationDegrees);
+        setRotationDegrees(false ? 180 : -180);
 
         ImageProxy.PlaneProxy yPlane = image.getPlanes()[0];
         ImageProxy.PlaneProxy uPlane = image.getPlanes()[1];
@@ -222,8 +265,13 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         positionBuffer = ByteBuffer.allocateDirect(POSITIONS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         positionBuffer.put(POSITIONS).position(0);
 
-        texCoordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        texCoordBuffer.put(TEXCOORDS).position(0);
+        texCordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        texCordBuffer.put(TEXCOORDS).position(0);
+
+        mirroredTexCoordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mirroredTexCoordBuffer.put(MIRROREDTEXTCORD).position(0);
+
+        currentTextCordBuffer = texCordBuffer;
 
         program = createProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         if (program == 0) throw new RuntimeException("Program creation failed");
@@ -246,6 +294,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
 
         texturesInitialized = false; // will initialize dimensions on first frame
 
+        setMirror(false);
     }
 
     @Override
@@ -353,7 +402,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         GLES20.glEnableVertexAttribArray(aPositionLoc);
         GLES20.glVertexAttribPointer(aPositionLoc, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
         GLES20.glEnableVertexAttribArray(aTexCoordLoc);
-        GLES20.glVertexAttribPointer(aTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
+        GLES20.glVertexAttribPointer(aTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, currentTextCordBuffer);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         listener.onDrawFrame(gl);
@@ -464,7 +513,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glEnableVertexAttribArray(aPositionLoc);
             GLES20.glVertexAttribPointer(aPositionLoc, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
             GLES20.glEnableVertexAttribArray(aTexCoordLoc);
-            GLES20.glVertexAttribPointer(aTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, texCoordBuffer);
+            GLES20.glVertexAttribPointer(aTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, texCordBuffer);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
             // Draw overlays into FBO - ensure they use proper blending
@@ -493,7 +542,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
                             () -> GLES20.glDeleteTextures(1, new int[]{finalCopiedTex}, 0)
                     );
                     VideoFrame.I420Buffer i420 = yuvConverter.convert(tbuf);
-                    VideoFrame vf = new VideoFrame(i420, 0, tsNs);
+                    VideoFrame vf = new VideoFrame(i420, currentOrientation, tsNs);
                     ((CustomVideoCapturer) webRTCClient.getVideoCapturer()).writeFrame(vf);
                     tbuf.release();
                     //i420.release();
@@ -591,7 +640,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         float[] rot = rotate(rotationDegrees);
         float[] t2 = translate(0.5f, 0.5f);
 
-        // Apply flip AFTER rotation to keep width/height handling consistent
         float[] m = multiply(t2, multiply(sFlipY, multiply(rot, multiply(sMirror, t1))));
         System.arraycopy(m, 0, texTransform, 0, 9);
     }
@@ -599,34 +647,43 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
     private void updateScaledPositions(int imgW, int imgH) {
         if (positionBuffer == null) return;
 
-        float xScale = 1f;
-        float yScale = 1f;
-
         if (surfaceWidth > 0 && surfaceHeight > 0 && imgW > 0 && imgH > 0) {
             float viewAspect = (float) surfaceWidth / surfaceHeight;
             float imgAspect = (float) imgW / imgH;
 
-            if (viewAspect > imgAspect) {
-                // Screen is wider than image — pad X
-                xScale = imgAspect / viewAspect;
-                yScale = 1f;
+            View parent = (View) surfaceView.getParent();
+            int parentW = parent.getWidth();
+            int parentH = parent.getHeight();
+
+            if (parentW == 0 || parentH == 0) return;
+
+            float parentAspect = (float) parentW / parentH;
+
+            float scaledWidthPx, scaledHeightPx;
+
+            if (parentAspect > imgAspect) {
+                // Parent is wider → image fills height, width scaled down
+                scaledHeightPx = parentH;
+                scaledWidthPx = parentH * imgAspect;
             } else {
-                // Screen is taller — pad Y
-                xScale = 1f;
-                yScale = viewAspect / imgAspect;
+                // Parent is taller → image fills width, height scaled down
+                scaledWidthPx = parentW;
+                scaledHeightPx = parentW / imgAspect;
+            }
+            if(isScaledHeightSet){
+                surfaceView.post(() -> {
+                    ViewGroup.LayoutParams lp = surfaceView.getLayoutParams();
+                    if (lp.width != (int) scaledWidthPx || lp.height != (int) scaledHeightPx) {
+                        lp.width = (int) scaledWidthPx;
+                        lp.height = (int) scaledHeightPx;
+                        surfaceView.setLayoutParams(lp);
+                    }
+                });
+                isScaledHeightSet =false;
             }
         }
-
-        float[] positions = new float[]{
-                -xScale,  yScale, 0f,
-                xScale,  yScale, 0f,
-                -xScale, -yScale, 0f,
-                xScale, -yScale, 0f
-        };
-
-        positionBuffer.clear();
-        positionBuffer.put(positions).position(0);
     }
+    static boolean isScaledHeightSet =true;
 
     private static float[] translate(float tx, float ty) {
         return new float[]{
@@ -664,4 +721,5 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         }
         return m;
     }
+
 }

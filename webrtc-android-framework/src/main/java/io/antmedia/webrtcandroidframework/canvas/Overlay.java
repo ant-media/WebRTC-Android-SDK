@@ -25,7 +25,11 @@ public class Overlay {
     private float cx = 0f, cy = 0f;
     private float overlayAspect = 1f;
     private float rendererAspect = 1f;
+    private float rotationDeg = 0f;
 
+    public void setRotation(float deg) {
+        rotationDeg = deg;
+    }
     public static int rendererWidth,rendererHeight;
     public static ArrayList<Overlay> overlayArray = new ArrayList<>();
     public int width = 0,height = 0;
@@ -96,9 +100,35 @@ public class Overlay {
         String vsh =
                 "attribute vec4 aPos;\n" +
                         "attribute vec2 aTex;\n" +
+                        "uniform float uAngle;\n" +
+                        "uniform float uAspect;\n" +
+                        "uniform vec2 uCenter;\n" +   // overlay center (cx, cy)
                         "varying vec2 vTex;\n" +
                         "void main() {\n" +
-                        "    gl_Position = aPos;\n" +
+
+                        // Move vertex into square coordinates
+                        "    vec2 p = aPos.xy;\n" +
+                        "    p.x *= uAspect;\n" +
+
+                        // Translate so center is at (0,0)
+                        "    vec2 c = vec2(uCenter.x * uAspect, uCenter.y);\n" +
+                        "    p -= c;\n" +
+
+                        // Do rotation
+                        "    float r = radians(uAngle);\n" +
+                        "    float s = sin(r);\n" +
+                        "    float t = cos(r);\n" +
+                        "    vec2 rp;\n" +
+                        "    rp.x = p.x * t - p.y * s;\n" +
+                        "    rp.y = p.x * s + p.y * t;\n" +
+
+                        // Translate back to original center
+                        "    rp += c;\n" +
+
+                        // Convert back to NDC
+                        "    rp.x /= uAspect;\n" +
+
+                        "    gl_Position = vec4(rp, aPos.z, 1.0);\n" +
                         "    vTex = vec2(aTex.x, 1.0 - aTex.y);\n" +
                         "}";
 
@@ -165,6 +195,7 @@ public class Overlay {
         vertexBuffer.put(v).position(0);
     }
 
+
     public void updateRendererSize(int w, int h) {
         rendererAspect = (float) w / h;
         updateVertexBuffer();
@@ -180,6 +211,15 @@ public class Overlay {
         int posLoc = GLES20.glGetAttribLocation(program, "aPos");
         int texLoc = GLES20.glGetAttribLocation(program, "aTex");
         int samplerLoc = GLES20.glGetUniformLocation(program, "tex");
+        int angleLoc = GLES20.glGetUniformLocation(program, "uAngle");
+        int aspectLoc = GLES20.glGetUniformLocation(program, "uAspect");
+        int centerLoc = GLES20.glGetUniformLocation(program, "uCenter");
+
+        GLES20.glUniform1f(angleLoc, rotationDeg);
+        GLES20.glUniform1f(aspectLoc, (float) rendererWidth / rendererHeight);
+
+        // IMPORTANT: pass center in NDC (cx, cy)
+        GLES20.glUniform2f(centerLoc, cx, cy);
 
         GLES20.glEnableVertexAttribArray(posLoc);
         GLES20.glVertexAttribPointer(posLoc, 3, GLES20.GL_FLOAT, false, 12, vertexBuffer);
@@ -195,6 +235,7 @@ public class Overlay {
 
         GLES20.glDisableVertexAttribArray(posLoc);
         GLES20.glDisableVertexAttribArray(texLoc);
+
         GLES20.glUseProgram(0);
         GLES20.glDisable(GLES20.GL_BLEND);
     }
