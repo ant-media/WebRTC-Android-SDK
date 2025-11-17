@@ -9,7 +9,6 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.OrientationEventListener;
-import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -104,12 +103,10 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
                     "}";
 
     private FloatBuffer positionBuffer;
-
-    private FloatBuffer normalTexCordBuffer;
     private FloatBuffer texCordBuffer;
-
+    private FloatBuffer normalTexCordBuffer; // Alias for texCordBuffer
     private FloatBuffer mirroredTexCoordBuffer;
-    private FloatBuffer flippedTexCoordBuffer; // For drawing FBO texture to screen (flip vertically)
+    private FloatBuffer flippedTexCoordBuffer;
 
     private int program = -1;
     private int aPositionLoc = -1;
@@ -213,7 +210,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         updateTexTransform();
     }
 
-    int remoteRotation=0;
     public void submitImage(@NonNull ImageProxy image) {
         final Rect crop = image.getCropRect();
         // Use crop rect to avoid CameraX-imposed center crop causing apparent zoom
@@ -309,7 +305,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         texCordBuffer.put(TEXCOORDS).position(0);
         normalTexCordBuffer = texCordBuffer;
 
-        mirroredTexCoordBuffer = ByteBuffer.allocateDirect(TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mirroredTexCoordBuffer = ByteBuffer.allocateDirect(MIRROREDTEXTCORD.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         mirroredTexCoordBuffer.put(MIRROREDTEXTCORD).position(0);
 
         flippedTexCoordBuffer = ByteBuffer.allocateDirect(FLIPPED_TEXCOORDS.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -427,38 +423,19 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texV);
             GLES20.glTexSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, chromaW, chromaH, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, v);
-        } else {
-            // No upload: ensure textures are bound
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texY);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texU);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texV);
         }
 
-        // Render once to FBO (video + overlays)
         renderToFBO(drawW, drawH);
-
-        // Use the rendered FBO texture for both display and WebRTC
-        // Draw FBO texture to screen for display
         drawTextureToScreen();
-
         listener.onDrawFrame(gl);
 
-        // Send to WebRTC if in call (reuse the same rendered texture)
         if (callInProgress && webRTCClient != null && renderedTexture > 0) {
             sendRenderedFrameToWebRTC(drawW, drawH);
         }
     }
 
-    /**
-     * Render video frame + overlays to FBO once
-     */
     private void renderToFBO(int drawW, int drawH) {
-        // Create or resize FBO if needed
         if (renderedFbo == 0 || renderedTextureWidth != drawW || renderedTextureHeight != drawH) {
-            // Clean up old resources
             if (renderedTexture > 0) {
                 GLES20.glDeleteTextures(1, new int[]{renderedTexture}, 0);
                 renderedTexture = 0;
@@ -468,19 +445,11 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
                 renderedFbo = 0;
             }
 
-            // Create texture
             int[] tex = new int[1];
             GLES20.glGenTextures(1, tex, 0);
             renderedTexture = tex[0];
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderedTexture);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, drawW, drawH, 0,
-                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+            setupRGBATexture(renderedTexture, drawW, drawH);
 
-            // Create FBO
             int[] fbo = new int[1];
             GLES20.glGenFramebuffers(1, fbo, 0);
             renderedFbo = fbo[0];
@@ -496,7 +465,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, prevFbo, 0);
 
         try {
-            // Bind FBO
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, renderedFbo);
             GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
                     GLES20.GL_TEXTURE_2D, renderedTexture, 0);
@@ -509,85 +477,67 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             }
 
             GLES20.glViewport(0, 0, drawW, drawH);
-
-            // Clear FBO
             GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
-            // Enable blending
             GLES20.glEnable(GLES20.GL_BLEND);
             GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
-            // Draw YUV frame to FBO
             GLES20.glUseProgram(program);
-
-            // Set chroma filtering
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+            
+            // Bind YUV textures
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-
-            // Samplers
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texY);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texU);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texV);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            
             GLES20.glUniform1i(uYLoc, 0);
             GLES20.glUniform1i(uULoc, 1);
             GLES20.glUniform1i(uVLoc, 2);
 
-            // Transform
             FloatBuffer mat = ByteBuffer.allocateDirect(9 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
             mat.put(texTransform).position(0);
             GLES20.glUniformMatrix3fv(uTexTransformLoc, 1, false, mat);
 
-            // Draw YUV quad
             GLES20.glEnableVertexAttribArray(aPositionLoc);
             GLES20.glVertexAttribPointer(aPositionLoc, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
             GLES20.glEnableVertexAttribArray(aTexCoordLoc);
             GLES20.glVertexAttribPointer(aTexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, texCordBuffer);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
-            // Draw overlays to FBO
             for (Overlay overlay : Overlay.overlayArray) {
                 overlay.draw();
             }
 
             GLES20.glDisable(GLES20.GL_BLEND);
-            GLES20.glFlush();
+            GLES20.glFinish(); // Ensure FBO rendering is complete before using the texture
 
         } finally {
-            // Restore GL state
             GLES20.glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, prevFbo[0]);
         }
     }
 
-    /**
-     * Draw the rendered FBO texture to screen for display
-     */
     private void drawTextureToScreen() {
-        if (renderedTexture <= 0) {
-            return;
-        }
+        if (renderedTexture <= 0) return;
 
-        // Save previous GL state
         int prevProgram = getCurrentProgram();
         int[] prevViewport = new int[4];
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, prevViewport, 0);
+        int[] prevFbo = new int[1];
+        GLES20.glGetIntegerv(GLES20.GL_FRAMEBUFFER_BINDING, prevFbo, 0);
 
         try {
-            // Set viewport to screen size
+            // Ensure we're not bound to the FBO when reading the texture
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
             GLES20.glViewport(0, 0, surfaceWidth, surfaceHeight);
-
-            // Use texture display program
             GLES20.glUseProgram(textureProgram);
-
-            // Bind rendered texture
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderedTexture);
             GLES20.glUniform1i(textureUTextureLoc, 0);
 
-            // Draw fullscreen quad with flipped texture coordinates (FBO textures are flipped vertically)
             GLES20.glEnableVertexAttribArray(textureAPositionLoc);
             GLES20.glVertexAttribPointer(textureAPositionLoc, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
             GLES20.glEnableVertexAttribArray(textureATexCoordLoc);
@@ -596,24 +546,16 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
 
             GLES20.glDisableVertexAttribArray(textureAPositionLoc);
             GLES20.glDisableVertexAttribArray(textureATexCoordLoc);
-
         } finally {
-            // Restore program and viewport
             GLES20.glUseProgram(prevProgram);
             GLES20.glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, prevFbo[0]);
         }
     }
 
-    /**
-     * Send the rendered FBO texture to WebRTC (reuse the same rendered frame)
-     * Creates a copy of the texture for WebRTC to avoid lifecycle issues
-     */
     private void sendRenderedFrameToWebRTC(int drawW, int drawH) {
-        if (renderedTexture <= 0) {
-            return;
-        }
+        if (renderedTexture <= 0) return;
 
-        // Save previous GL state
         int[] prevViewport = new int[4];
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, prevViewport, 0);
         int[] prevFbo = new int[1];
@@ -626,94 +568,79 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         int tempFbo = 0;
 
         try {
-            // Create a copy texture for WebRTC (to avoid lifecycle issues)
             int[] tex = new int[1];
             GLES20.glGenTextures(1, tex, 0);
             copiedTex = tex[0];
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, copiedTex);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, drawW, drawH, 0,
-                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+            setupRGBATexture(copiedTex, drawW, drawH);
 
-            // Create temporary FBO for copying
             int[] fbo = new int[1];
             GLES20.glGenFramebuffers(1, fbo, 0);
             tempFbo = fbo[0];
 
-            // Copy rendered texture to new texture
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, tempFbo);
             GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
                     GLES20.GL_TEXTURE_2D, copiedTex, 0);
 
-            int fboStatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-            if (fboStatus != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-                Log.e(TAG, "Copy FBO not complete: " + fboStatus);
-                if (copiedTex > 0) {
-                    GLES20.glDeleteTextures(1, new int[]{copiedTex}, 0);
-                }
+            if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+                Log.e(TAG, "Copy FBO not complete");
+                GLES20.glDeleteTextures(1, new int[]{copiedTex}, 0);
                 return;
             }
 
             GLES20.glViewport(0, 0, drawW, drawH);
-
-            // Use texture display program to copy
             GLES20.glUseProgram(textureProgram);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, renderedTexture);
             GLES20.glUniform1i(textureUTextureLoc, 0);
 
-            // Draw rendered texture to copy texture with flipped coordinates
-            // (FBO textures need Y-flip to match expected orientation for WebRTC)
             GLES20.glEnableVertexAttribArray(textureAPositionLoc);
             GLES20.glVertexAttribPointer(textureAPositionLoc, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
             GLES20.glEnableVertexAttribArray(textureATexCoordLoc);
             GLES20.glVertexAttribPointer(textureATexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, flippedTexCoordBuffer);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-            GLES20.glFlush();
+            GLES20.glFinish(); // Ensure copy is complete before using the texture
 
             GLES20.glDisableVertexAttribArray(textureAPositionLoc);
             GLES20.glDisableVertexAttribArray(textureATexCoordLoc);
 
-            // Send copied texture to WebRTC
-            long tsNs = TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime());
             if (eglHandler == null && webRTCClient.surfaceTextureHelper != null) {
                 eglHandler = webRTCClient.surfaceTextureHelper.getHandler();
             }
             if (eglHandler != null && copiedTex > 0) {
                 int finalCopiedTex = copiedTex;
                 TextureBufferImpl tbuf = new TextureBufferImpl(
-                        drawW, drawH,
-                        VideoFrame.TextureBuffer.Type.RGB,
-                        copiedTex,
-                        new Matrix(),
-                        eglHandler,
-                        yuvConverter,
+                        drawW, drawH, VideoFrame.TextureBuffer.Type.RGB, copiedTex,
+                        new Matrix(), eglHandler, yuvConverter,
                         () -> GLES20.glDeleteTextures(1, new int[]{finalCopiedTex}, 0)
                 );
                 VideoFrame.I420Buffer i420 = yuvConverter.convert(tbuf);
-                VideoFrame vf = new VideoFrame(i420, currentOrientation, tsNs);
+                VideoFrame vf = new VideoFrame(i420, currentOrientation,
+                        TimeUnit.MILLISECONDS.toNanos(SystemClock.elapsedRealtime()));
                 ((CustomVideoCapturer) webRTCClient.getVideoCapturer()).writeFrame(vf);
                 tbuf.release();
             }
-
         } catch (Exception e) {
             Log.e(TAG, "send rendered frame to WebRTC failed", e);
         } finally {
-            // Restore GL state
             GLES20.glUseProgram(prevProgram);
             GLES20.glActiveTexture(prevActive);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, prevTex2D);
             GLES20.glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, prevFbo[0]);
-
-            // Clean up temporary FBO
             if (tempFbo != 0) {
                 GLES20.glDeleteFramebuffers(1, new int[]{tempFbo}, 0);
             }
         }
+    }
+
+    private static void setupRGBATexture(int texId, int width, int height) {
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0,
+                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
     }
 
     // Helper methods to get GL state
