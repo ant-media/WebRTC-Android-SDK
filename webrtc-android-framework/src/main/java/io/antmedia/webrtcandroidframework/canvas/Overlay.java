@@ -33,6 +33,8 @@ public class Overlay {
     public static int rendererWidth,rendererHeight;
     public static ArrayList<Overlay> overlayArray = new ArrayList<>();
     public int width = 0,height = 0;
+    public boolean enabled = true;
+
     public Overlay(Context ctx, int resId, float x, float y) {
         cx = x;
         cy = y;

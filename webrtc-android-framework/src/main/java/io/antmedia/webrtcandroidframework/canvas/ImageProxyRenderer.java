@@ -163,19 +163,24 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             @Override
             public void onOrientationChanged(int orientation) {
 
-                if (orientation >= 330 || orientation < 30) {
+                if ((orientation >= 330 || orientation < 30) && currentOrientation != 0) {
                     currentOrientation = 0;
+                    listener.onOrientationChanged(0);
 
-                } else if (orientation >= 60 && orientation < 120) {
+                } else if ((orientation >= 60 && orientation < 120) && currentOrientation != 90) {
                     currentOrientation = 90;
+                    listener.onOrientationChanged(90);
 
-                } else if (orientation >= 150 && orientation < 210) {
+                } else if ((orientation >= 150 && orientation < 210) && currentOrientation != 180) {
                     currentOrientation = 180;
+                    listener.onOrientationChanged(180);
 
-                } else if (orientation >= 240 && orientation < 300) {
+                } else if ((orientation >= 240 && orientation < 300) && currentOrientation != 270) {
                     currentOrientation = 270;
+                    listener.onOrientationChanged(270);
 
                 }
+
                 if((currentOrientation == 90 || currentOrientation == 270) && CameraProviderHelper.lensFacing == CameraSelector.LENS_FACING_FRONT){
                     texCordBuffer = mirroredTexCoordBuffer;
                 }
@@ -348,9 +353,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         surfaceWidth = width;
         surfaceHeight = height;
         GLES20.glViewport(0, 0, width, height);
-        // Update overlay coordinate space
-        Overlay.rendererWidth = width;
-        Overlay.rendererHeight = height;
         listener.onSurfaceChanged(gl,width,height);
     }
 
@@ -408,7 +410,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, chromaW, chromaH, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, v);
 
             texturesInitialized = true;
-            listener.onSurfaceIntialized(gl);
 
         } else if (upload) {
             // Update textures with latest frame
@@ -508,7 +509,8 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
             for (Overlay overlay : Overlay.overlayArray) {
-                overlay.draw();
+                if(overlay.enabled)
+                    overlay.draw();
             }
 
             GLES20.glDisable(GLES20.GL_BLEND);
@@ -753,9 +755,16 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
                         lp.width = (int) scaledWidthPx;
                         lp.height = (int) scaledHeightPx;
                         surfaceView.setLayoutParams(lp);
+                        for (Overlay overlay: Overlay.overlayArray) {
+                            //overlay.updateRendererSize((int)scaledWidthPx,(int)scaledHeightPx);
+                        }
                     }
                 });
-                isScaledHeightSet =false;
+
+                Overlay.rendererWidth = (int) scaledWidthPx;
+                Overlay.rendererHeight = (int) scaledHeightPx;
+                listener.onSurfaceInitialized();
+                isScaledHeightSet = false;
             }
         }
     }
