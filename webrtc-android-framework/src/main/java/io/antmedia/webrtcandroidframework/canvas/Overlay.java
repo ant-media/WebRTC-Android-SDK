@@ -202,6 +202,11 @@ public class Overlay {
         rendererAspect = (float) w / h;
         updateVertexBuffer();
     }
+    public void setPosition(float x, float y) {
+        this.cx = x;
+        this.cy = y;
+        updateVertexBuffer();
+    }
 
     public void draw() {
         if (program <= 0 || texture <= 0) return;

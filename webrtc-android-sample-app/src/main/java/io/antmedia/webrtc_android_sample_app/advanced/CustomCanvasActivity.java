@@ -77,11 +77,12 @@ public class CustomCanvasActivity extends AppCompatActivity {
 
         imageProxyRenderer = new ImageProxyRenderer(webRTCClient,this,surfaceView, new CanvasListener(){
             boolean overlayInitialize = false;
+            Overlay logo;
             @Override
             public void onSurfaceInitialized() {
                 if(!overlayInitialize){
                     overlayInitialize = true;
-                    Overlay logo = new Overlay(getApplicationContext(), R.drawable.test,0.8f,0.8f);
+                    logo = new Overlay(getApplicationContext(), R.drawable.test,0.8f,0.8f);
                     logo.setSize(0.2f);
                     Overlay text = new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, -0.3f);
                     text.setSize(0.12f);
@@ -89,6 +90,12 @@ public class CustomCanvasActivity extends AppCompatActivity {
             }
             @Override
             public void onOrientationChanged(int orientation) {
+                if(orientation == 90){
+                    logo.setPosition(0,0);
+                }
+                else if(orientation == 0){
+                    logo.setPosition(0,0.6f);
+                }
             }
         });
         surfaceView.setRenderer(imageProxyRenderer);
