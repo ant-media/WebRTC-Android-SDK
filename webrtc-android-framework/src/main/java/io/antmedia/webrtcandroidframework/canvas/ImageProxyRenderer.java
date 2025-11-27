@@ -124,11 +124,16 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
     private boolean texturesInitialized = false;
 
     // Latest frame data copied from ImageProxy
+    // Use double buffering to prevent race conditions: camera writes to one set, render reads from other
     private final ReentrantLock frameLock = new ReentrantLock();
-    private ByteBuffer yData; // size width*height
+    private ByteBuffer yData; // size width*height (camera writes to this)
     private ByteBuffer uData; // size (width/2)*(height/2)
     private ByteBuffer vData; // size (width/2)*(height/2)
+    private ByteBuffer yDataRender; // Render thread reads from this (double buffer)
+    private ByteBuffer uDataRender;
+    private ByteBuffer vDataRender;
     public int frameWidth = 0, frameHeight = 0;
+    private int renderFrameWidth = 0, renderFrameHeight = 0;
     private boolean frameAvailable = false;
 
     // Transform controls
@@ -370,28 +375,63 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         int newW = 0, newH = 0;
         int currentW, currentH;
         
-        // Lock to check for new frame - keep lock brief to avoid blocking camera thread
+        // Lock to swap buffers - use double buffering to prevent race conditions
+        // Camera thread writes to yData/uData/vData, we read from yDataRender/uDataRender/vDataRender
         frameLock.lock();
         try {
             if (frameAvailable && yData != null && uData != null && vData != null) {
-                // Mark that we're using this frame
+                // Swap buffers: camera writes to one set, we read from the other
+                // Allocate render buffers if needed or if size changed
+                if (yDataRender == null || renderFrameWidth != frameWidth || renderFrameHeight != frameHeight) {
+                    int chromaW = frameWidth / 2;
+                    int chromaH = frameHeight / 2;
+                    yDataRender = ByteBuffer.allocateDirect(frameWidth * frameHeight).order(ByteOrder.nativeOrder());
+                    uDataRender = ByteBuffer.allocateDirect(chromaW * chromaH).order(ByteOrder.nativeOrder());
+                    vDataRender = ByteBuffer.allocateDirect(chromaW * chromaH).order(ByteOrder.nativeOrder());
+                    renderFrameWidth = frameWidth;
+                    renderFrameHeight = frameHeight;
+                }
+                
+                // Copy data from camera buffers to render buffers (atomic operation)
+                yData.position(0);
+                yDataRender.clear();
+                yDataRender.put(yData);
+                yDataRender.position(0);
+                
+                uData.position(0);
+                uDataRender.clear();
+                uDataRender.put(uData);
+                uDataRender.position(0);
+                
+                vData.position(0);
+                vDataRender.clear();
+                vDataRender.put(vData);
+                vDataRender.position(0);
+                
+                // Mark frame as processed
                 frameAvailable = false;
-                // Get references and dimensions while locked
-                y = yData;
-                u = uData;
-                v = vData;
-                y.position(0); 
-                u.position(0); 
-                v.position(0);
-                newW = frameWidth; 
+                
+                // Use render buffers for upload (safe to use after unlock)
+                y = yDataRender;
+                u = uDataRender;
+                v = vDataRender;
+                newW = frameWidth;
                 newH = frameHeight;
                 currentW = frameWidth;
                 currentH = frameHeight;
                 upload = true;
             } else {
-                // No new frame - use last known dimensions
-                currentW = frameWidth;
-                currentH = frameHeight;
+                // No new frame - use last known dimensions and render buffers if available
+                if (yDataRender != null) {
+                    y = yDataRender;
+                    u = uDataRender;
+                    v = vDataRender;
+                    y.position(0);
+                    u.position(0);
+                    v.position(0);
+                }
+                currentW = renderFrameWidth > 0 ? renderFrameWidth : frameWidth;
+                currentH = renderFrameHeight > 0 ? renderFrameHeight : frameHeight;
             }
         } finally {
             frameLock.unlock();
