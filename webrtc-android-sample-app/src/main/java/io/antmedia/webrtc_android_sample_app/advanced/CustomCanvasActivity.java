@@ -106,7 +106,7 @@ public class CustomCanvasActivity extends AppCompatActivity {
             }
         });
         surfaceView.setRenderer(imageProxyRenderer);
-        surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+        surfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
         FrameLayout local = findViewById(R.id.localPreview);
         FrameLayout.LayoutParams params =
@@ -183,6 +183,9 @@ public class CustomCanvasActivity extends AppCompatActivity {
             @Override
             public void analyze(@NonNull ImageProxy image) {
                 imageProxyRenderer.submitImage(image);
+                if (surfaceView != null) {
+                    surfaceView.requestRender();
+                }
                 image.close();
             }
         });
@@ -192,19 +195,11 @@ public class CustomCanvasActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (surfaceView != null) {
-            surfaceView.onResume();
-        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (surfaceView != null) {
-            surfaceView.onPause();
-        }
-        // Clean up overlays when pausing - their OpenGL resources will be invalid after pause
-        releaseOverlays();
     }
 
     @Override
@@ -215,7 +210,6 @@ public class CustomCanvasActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Clean up all resources
         releaseOverlays();
         
         if (cameraProviderHelper != null) {
