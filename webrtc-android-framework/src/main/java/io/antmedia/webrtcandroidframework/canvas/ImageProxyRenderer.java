@@ -247,6 +247,9 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         int chromaCropLeft = cropLeft / 2;
         int chromaCropTop = cropTop / 2;
 
+        // CRITICAL: Lock frame buffers to prevent race conditions with render thread
+        // Without this lock, the render thread can read while we're writing, causing glitches/blinks
+        frameLock.lock();
         try {
             if (frameWidth != width || frameHeight != height || yData == null) {
                 yData = ByteBuffer.allocateDirect(width * height).order(ByteOrder.nativeOrder());
@@ -296,6 +299,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             vData.position(0);
             frameAvailable = true;
         } finally {
+            frameLock.unlock();
         }
     }
 
@@ -364,27 +368,42 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         boolean upload = false;
         ByteBuffer y = null, u = null, v = null;
         int newW = 0, newH = 0;
+        int currentW, currentH;
+        
+        // Lock to check for new frame - keep lock brief to avoid blocking camera thread
         frameLock.lock();
         try {
             if (frameAvailable && yData != null && uData != null && vData != null) {
+                // Mark that we're using this frame
+                frameAvailable = false;
+                // Get references and dimensions while locked
                 y = yData;
                 u = uData;
                 v = vData;
-                y.position(0); u.position(0); v.position(0);
-                newW = frameWidth; newH = frameHeight;
-                frameAvailable = false;
+                y.position(0); 
+                u.position(0); 
+                v.position(0);
+                newW = frameWidth; 
+                newH = frameHeight;
+                currentW = frameWidth;
+                currentH = frameHeight;
                 upload = true;
+            } else {
+                // No new frame - use last known dimensions
+                currentW = frameWidth;
+                currentH = frameHeight;
             }
         } finally {
             frameLock.unlock();
         }
 
+        // Return early only if textures not initialized and no frame to upload
         if (!texturesInitialized && !upload) {
             return;
         }
 
-        int drawW = upload ? newW : frameWidth;
-        int drawH = upload ? newH : frameHeight;
+        int drawW = upload ? newW : currentW;
+        int drawH = upload ? newH : currentH;
         if (drawW <= 0 || drawH <= 0) {
             return;
         }
