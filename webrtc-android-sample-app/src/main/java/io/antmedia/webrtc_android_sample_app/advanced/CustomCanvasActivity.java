@@ -6,6 +6,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -39,6 +40,10 @@ public class CustomCanvasActivity extends AppCompatActivity {
 
     WebRTCClient webRTCClient;
     private View broadcastingView;
+    
+    // Overlay references for proper lifecycle management
+    private Overlay logoOverlay;
+    private Overlay textOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,25 +81,27 @@ public class CustomCanvasActivity extends AppCompatActivity {
         surfaceView.setEGLConfigChooser(8,8,8,8,16,0);
 
         imageProxyRenderer = new ImageProxyRenderer(webRTCClient,this,surfaceView, new CanvasListener(){
-            boolean overlayInitialize = false;
-            Overlay logo;
             @Override
             public void onSurfaceInitialized() {
-                if(!overlayInitialize){
-                    overlayInitialize = true;
-                    logo = new Overlay(getApplicationContext(), R.drawable.test,0.8f,0.8f);
-                    logo.setSize(0.2f);
-                    Overlay text = new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, -0.3f);
-                    text.setSize(0.12f);
+                // Recreate overlays if they don't exist (e.g., after surface was destroyed/recreated)
+                if(logoOverlay == null || textOverlay == null){
+                    // Ensure old references are cleaned up
+                    releaseOverlays();
+                    logoOverlay = new Overlay(getApplicationContext(), R.drawable.test,0.8f,0.8f);
+                    logoOverlay.setSize(0.2f);
+                    textOverlay = new Overlay(getApplicationContext(), "Hello", 64, Color.RED, 0f, -0.3f);
+                    textOverlay.setSize(0.12f);
                 }
             }
             @Override
             public void onOrientationChanged(int orientation) {
-                if(orientation == 90){
-                    logo.setPosition(0,0);
-                }
-                else if(orientation == 0){
-                    logo.setPosition(0,0.6f);
+                if(logoOverlay != null){
+                    if(orientation == 90){
+                        logoOverlay.setPosition(0,0);
+                    }
+                    else if(orientation == 0){
+                        logoOverlay.setPosition(0,0.6f);
+                    }
                 }
             }
         });
@@ -185,11 +192,19 @@ public class CustomCanvasActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (surfaceView != null) {
+            surfaceView.onResume();
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (surfaceView != null) {
+            surfaceView.onPause();
+        }
+        // Clean up overlays when pausing - their OpenGL resources will be invalid after pause
+        releaseOverlays();
     }
 
     @Override
@@ -200,5 +215,29 @@ public class CustomCanvasActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Clean up all resources
+        releaseOverlays();
+        
+        if (cameraProviderHelper != null) {
+            cameraProviderHelper.stopCamera();
+        }
+        
+        if (imageAnalysis != null) {
+            imageAnalysis.clearAnalyzer();
+        }
+        
+        if (webRTCClient != null) {
+        }
+    }
+    
+    private void releaseOverlays() {
+        if (logoOverlay != null) {
+            logoOverlay.release();
+            logoOverlay = null;
+        }
+        if (textOverlay != null) {
+            textOverlay.release();
+            textOverlay = null;
+        }
     }
 }
