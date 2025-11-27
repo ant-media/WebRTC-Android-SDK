@@ -146,6 +146,10 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
     private int renderedTexture = 0;
     private int renderedTextureWidth = 0;
     private int renderedTextureHeight = 0;
+    private boolean fboValid = false; // Track FBO validity to avoid checking status every frame
+    
+    // Cached matrix buffer to avoid allocation every frame
+    private FloatBuffer matrixBuffer;
 
     public ImageProxyRenderer() {}
 
@@ -243,8 +247,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
         int chromaCropLeft = cropLeft / 2;
         int chromaCropTop = cropTop / 2;
 
-        // Ensure buffers allocated
-        frameLock.lock();
         try {
             if (frameWidth != width || frameHeight != height || yData == null) {
                 yData = ByteBuffer.allocateDirect(width * height).order(ByteOrder.nativeOrder());
@@ -294,7 +296,6 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             vData.position(0);
             frameAvailable = true;
         } finally {
-            frameLock.unlock();
         }
     }
 
@@ -457,6 +458,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
 
             renderedTextureWidth = drawW;
             renderedTextureHeight = drawH;
+            fboValid = false; // Need to validate FBO after creation
         }
 
         // Save previous GL state
@@ -470,11 +472,14 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
                     GLES20.GL_TEXTURE_2D, renderedTexture, 0);
 
-            // Check FBO status
-            int fboStatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-            if (fboStatus != GLES20.GL_FRAMEBUFFER_COMPLETE) {
-                Log.e(TAG, "FBO not complete: " + fboStatus);
-                return;
+            // Only check FBO status when creating/updating, not every frame
+            if (!fboValid) {
+                int fboStatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+                if (fboStatus != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+                    Log.e(TAG, "FBO not complete: " + fboStatus);
+                    return;
+                }
+                fboValid = true;
             }
 
             GLES20.glViewport(0, 0, drawW, drawH);
@@ -498,9 +503,13 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glUniform1i(uULoc, 1);
             GLES20.glUniform1i(uVLoc, 2);
 
-            FloatBuffer mat = ByteBuffer.allocateDirect(9 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-            mat.put(texTransform).position(0);
-            GLES20.glUniformMatrix3fv(uTexTransformLoc, 1, false, mat);
+            // Use cached matrix buffer to avoid allocation every frame
+            if (matrixBuffer == null) {
+                matrixBuffer = ByteBuffer.allocateDirect(9 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+            }
+            matrixBuffer.clear();
+            matrixBuffer.put(texTransform).position(0);
+            GLES20.glUniformMatrix3fv(uTexTransformLoc, 1, false, matrixBuffer);
 
             GLES20.glEnableVertexAttribArray(aPositionLoc);
             GLES20.glVertexAttribPointer(aPositionLoc, 3, GLES20.GL_FLOAT, false, 0, positionBuffer);
@@ -514,7 +523,8 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             }
 
             GLES20.glDisable(GLES20.GL_BLEND);
-            GLES20.glFinish(); // Ensure FBO rendering is complete before using the texture
+            // Removed glFinish() - it blocks GPU pipeline and hurts performance
+            // FBO texture will be ready when needed due to GPU pipeline ordering
 
         } finally {
             GLES20.glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
@@ -600,7 +610,8 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             GLES20.glEnableVertexAttribArray(textureATexCoordLoc);
             GLES20.glVertexAttribPointer(textureATexCoordLoc, 2, GLES20.GL_FLOAT, false, 0, flippedTexCoordBuffer);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-            GLES20.glFinish(); // Ensure copy is complete before using the texture
+            // Removed glFinish() - use glFlush() for better performance while ensuring GPU progress
+            GLES20.glFlush();
 
             GLES20.glDisableVertexAttribArray(textureAPositionLoc);
             GLES20.glDisableVertexAttribArray(textureATexCoordLoc);
@@ -768,7 +779,7 @@ public class ImageProxyRenderer implements GLSurfaceView.Renderer {
             }
         }
     }
-    static boolean isScaledHeightSet =true;
+    boolean isScaledHeightSet =true;
 
     private static float[] translate(float tx, float ty) {
         return new float[]{
