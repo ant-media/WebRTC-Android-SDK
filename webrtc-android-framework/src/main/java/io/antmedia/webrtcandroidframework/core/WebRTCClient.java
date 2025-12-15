@@ -430,7 +430,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (config.initiateBeforeStream) {
             init();
         }
-        initializeAudioManager();
     }
 
     @Override
@@ -1049,6 +1048,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
 
 
+        initializeAudioManager();
+
         if (isWebSocketConnected()) {
             Log.i(TAG, "Publish request sent through ws for stream: " + streamId);
             wsHandler.startPublish(streamId, token, videoCallEnabled, audioCallEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
@@ -1108,6 +1109,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             return;
         }
 
+        initializeAudioManager();
 
         Log.i(TAG, "Play: "+params.getStreamId());
 
@@ -1158,7 +1160,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         peers.put(streamId, peerInfo);
 
         init();
-
+        initializeAudioManager();
 
 
         wsHandler.joinToPeer(streamId, token);
