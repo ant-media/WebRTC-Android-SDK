@@ -430,6 +430,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (config.initiateBeforeStream) {
             init();
         }
+        initializeAudioManager();
     }
 
     @Override
@@ -445,6 +446,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         return new SDPObserver(streamId);
     }
 
+    long startTime;
     public void joinToConferenceRoom(String roomId, String streamId) {
         this.roomId = roomId;
 
@@ -459,6 +461,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void joinToConferenceRoom(String roomId, String streamId, boolean videoCallEnabled, boolean audioCallEnabled, String token, String subscriberId, String subscriberCode, String streamName) {
 
         this.roomId = roomId;
+        System.out.println("start time ");
+        startTime = System.currentTimeMillis();
 
         publish(streamId, token,
                 videoCallEnabled, audioCallEnabled,
@@ -748,6 +752,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             return;
         }
 
+        handler.postAtFrontOfQueue(()->{
+            connectWebSocket();
+        });
+
         if (config.reconnectionEnabled) {
             createReconnectorRunnables();
         }
@@ -762,7 +770,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             initializeVideoCapturer();
         }
 
-        connectWebSocket();
         released = false;
     }
 
@@ -1002,8 +1009,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
                 }
                 if (!playReconnectionInProgress && peerMode == Mode.PLAY && peerInfo.peerConnection == null) {
-                Log.i(TAG, "Processing play request for peer streamId: " + peerInfo.id);
-                wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberName, peerInfo.subscriberCode, peerInfo.metaData, peerInfo.disableTracksByDefault);
+                    Log.i(TAG, "Processing play request for peer streamId: " + peerInfo.id);
+                    wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberName, peerInfo.subscriberCode, peerInfo.metaData, peerInfo.disableTracksByDefault);
                 }
 
             }
@@ -1041,7 +1048,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             return;
         }
 
-        handler.post(this::initializeAudioManager);
 
         if (isWebSocketConnected()) {
             Log.i(TAG, "Publish request sent through ws for stream: " + streamId);
@@ -1102,7 +1108,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             return;
         }
 
-        handler.post(this::initializeAudioManager);
 
         Log.i(TAG, "Play: "+params.getStreamId());
 
@@ -1154,7 +1159,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         init();
 
-        handler.post(this::initializeAudioManager);
 
 
         wsHandler.joinToPeer(streamId, token);
@@ -1533,6 +1537,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
 
     public void onConnected(String streamId) {
+        long totalTime =  System.currentTimeMillis() - startTime;
+        Log.i(TAG, "connected----------------" + String.valueOf(totalTime));
         Log.i(TAG, "Connected for streamId:" + streamId);
 
         if(isConference() && config.reconnectionEnabled){
@@ -1644,7 +1650,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         streamStoppedByUser = false;
         publishReconnectionInProgress = false;
 
-        this.handler.post(() -> {
+        this.handler.postAtFrontOfQueue(() -> {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onPublishStarted(streamId);
             }
@@ -3045,5 +3051,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         if (wsHandler != null && wsHandler.isConnected()) {
             wsHandler.getDebugInfo(streamId);
         }
+    }
+
+    @Override
+    public WebRTCClient getWebRTCClient() {
+        return this;
     }
 }
