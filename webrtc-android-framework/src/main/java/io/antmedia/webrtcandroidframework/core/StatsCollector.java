@@ -277,12 +277,16 @@ public class StatsCollector {
                         }
 
                         if (value.getMembers().containsKey(FRAMES_RECEIVED)) {
-                            long framesReceived = (long) value.getMembers().get(FRAMES_RECEIVED);
+                            Number framesReceivedNumber = (Number) value.getMembers().get(FRAMES_RECEIVED);
+                            long framesReceived = framesReceivedNumber.longValue();
+
                             videoTrackStats.setFramesReceived(framesReceived);
                         }
 
                         if (value.getMembers().containsKey(FRAMES_DROPPED)) {
-                            long framesDropped = (long) value.getMembers().get(FRAMES_DROPPED);
+                            Number framesDroppedNumber = (Number) value.getMembers().get(FRAMES_DROPPED);
+                            long framesDropped = framesDroppedNumber.longValue();
+
                             videoTrackStats.setFramesDropped(framesDropped);
                         }
 
@@ -298,9 +302,14 @@ public class StatsCollector {
                             trackIdentifier = trackIdentifier.substring(VIDEO_TRACK_ID.length());
                             videoTrackStats.setTrackId(trackIdentifier);
                             playStats.getVideoTrackStatsMap().put(trackIdentifier, videoTrackStats);
+                        } else if (value.getMembers().containsKey(TRACK_ID)) {
+                            String trackId = (String) value.getMembers().get(TRACK_ID);
+                            RTCStats track = report.getStatsMap().get(trackId);
+                            String trackIdentifier = (String) track.getMembers().get(TRACK_IDENTIFIER);
+                            trackIdentifier = trackIdentifier.substring(VIDEO_TRACK_ID.length());
+                            videoTrackStats.setTrackId(trackIdentifier);
+                            playStats.getVideoTrackStatsMap().put(trackIdentifier, videoTrackStats);
                         }
-
-
                     }
                 } else if (AUDIO.equals(value.getMembers().get(KIND))) {
                     if(value.getMembers().containsKey(SSRC)){
@@ -329,6 +338,14 @@ public class StatsCollector {
 
                         if (value.getMembers().containsKey(TRACK_IDENTIFIER)) { // must have track identifier.
                             String trackIdentifier = (String) value.getMembers().get(TRACK_IDENTIFIER);
+                            trackIdentifier = trackIdentifier.substring(AUDIO_TRACK_ID.length());
+                            audioTrackStat.setTrackId(trackIdentifier);
+                            playStats.getAudioTrackStatsMap().put(trackIdentifier, audioTrackStat);
+                        }
+                        else if (value.getMembers().containsKey(TRACK_ID)) {
+                            String trackId = (String) value.getMembers().get(TRACK_ID);
+                            RTCStats track = report.getStatsMap().get(trackId);
+                            String trackIdentifier = (String) track.getMembers().get(TRACK_IDENTIFIER);
                             trackIdentifier = trackIdentifier.substring(AUDIO_TRACK_ID.length());
                             audioTrackStat.setTrackId(trackIdentifier);
                             playStats.getAudioTrackStatsMap().put(trackIdentifier, audioTrackStat);

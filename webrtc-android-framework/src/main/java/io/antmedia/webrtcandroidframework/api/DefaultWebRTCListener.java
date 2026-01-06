@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
+import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 
 /**
  * Default implementation of {@link IWebRTCListener}
@@ -278,6 +279,18 @@ public class DefaultWebRTCListener implements IWebRTCListener {
 
     protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
+    }
+
+    @Override
+    public void onSubscriberCount(String streamId, int count) {
+        String messageText = "On Subscriber Count "+streamId;
+        callbackCalled(messageText);
+    }
+
+    @Override
+    public void onSubscriberList(String streamId, Subscriber[] subscribers) {
+        String messageText = "On Subscriber List "+streamId;
+        callbackCalled(messageText);
     }
 
 }
