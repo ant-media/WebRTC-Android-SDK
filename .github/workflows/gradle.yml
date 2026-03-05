@@ -59,7 +59,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
         sudo apt-get remove --purge python3-typing-extensions
-        sudo pip3 install python-openstackclient
+        python3 -m venv ~/.venv-openstack
+        ~/.venv-openstack/bin/pip install --upgrade pip
+        ~/.venv-openstack/bin/pip install python-openstackclient
+        echo "$HOME/.venv-openstack/bin" >> "$GITHUB_PATH"
 
     - name: server-id
       id: set-server-id
@@ -258,7 +261,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
         sudo apt-get remove --purge python3-typing-extensions
-        sudo pip3 install python-openstackclient
+        python3 -m venv ~/.venv-openstack
+        ~/.venv-openstack/bin/pip install --upgrade pip
+        ~/.venv-openstack/bin/pip install python-openstackclient
+        echo "$HOME/.venv-openstack/bin" >> "$GITHUB_PATH"
     - name: Delete CI Instance
       if: ${{ always() }}
       run: |
