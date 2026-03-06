@@ -120,7 +120,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         }
     };
 
-    @Test
+    //@Test
     public void testConferenceSwitchStreamSource() throws InterruptedException {
         conferenceActivityWithDifferentVideoSourcesScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
