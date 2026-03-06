@@ -158,7 +158,10 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.screen_share_button)).perform(click());
 
-        UiObject2 button2= device.wait(Until.findObject(By.text(SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT)), 100000);
+        UiObject2 button2 = device.wait(
+                Until.findObject(By.res("android:id/button1")),
+                10000
+        );
         assertNotNull(button2);
         button2.click();
 
