@@ -41,6 +41,7 @@ import androidx.test.uiautomator.Until;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
@@ -59,6 +60,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
+@Ignore("Disabled until the stream source switch scenario is re-enabled with an active @Test method")
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityWithDifferentVideoSourcesTest {
     private final String SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT ="Start now";
