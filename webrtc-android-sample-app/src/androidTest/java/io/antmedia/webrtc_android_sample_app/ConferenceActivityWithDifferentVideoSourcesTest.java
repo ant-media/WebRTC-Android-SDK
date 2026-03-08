@@ -48,6 +48,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
 
@@ -81,8 +82,9 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
     private String roomName;
 
     @Before
-    public void before() {
+    public void before() throws IOException {
         //try before method to make @Rule run properly
+        connectInternet();
         getInstrumentation().waitForIdleSync();
         Context context = ApplicationProvider.getApplicationContext();
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -134,14 +136,14 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         UiDevice device = UiDevice.getInstance(getInstrumentation());
 
         onView(withId(R.id.join_conference_button)).check(matches(withText("Join Conference")));
-        onView(withId(R.id.join_conference_button)).perform(click());
+        onView(withId(R.id.join_conference_button)).perform(performClick());
 
         Thread.sleep(5000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.show_stats_button)).perform(click());
+        onView(withId(R.id.show_stats_button)).perform(performClick());
 
         Thread.sleep(3000);
         onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
@@ -155,18 +157,18 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
 
         //Thread.sleep(3000);
 
-        onView(withId(R.id.screen_share_button)).perform(click());
+        onView(withId(R.id.screen_share_button)).perform(performClick());
 
         clickScreenSharePermissionButton(device);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.show_stats_button)).perform(click());
+        onView(withId(R.id.show_stats_button)).perform(performClick());
 
         assertVideoBytesSentChanged();
 
@@ -174,19 +176,19 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
 
         Thread.sleep(3000);
 
 
-        onView(withId(R.id.front_camera_button)).perform(click());
+        onView(withId(R.id.front_camera_button)).perform(performClick());
 
         Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.show_stats_button)).perform(click());
+        onView(withId(R.id.show_stats_button)).perform(performClick());
 
         assertVideoBytesSentChanged();
 
@@ -194,18 +196,18 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.rear_camera_button)).perform(click());
+        onView(withId(R.id.rear_camera_button)).perform(performClick());
 
         Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.show_stats_button)).perform(click());
+        onView(withId(R.id.show_stats_button)).perform(performClick());
 
         assertVideoBytesSentChanged();
 
@@ -215,20 +217,20 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.stats_popup_container)).perform(waitFor(2000));
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.join_conference_button)).perform(click());
+        onView(withId(R.id.join_conference_button)).perform(performClick());
 
         Thread.sleep(5000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
-        onView(withId(R.id.front_camera_button)).perform(click());
+        onView(withId(R.id.front_camera_button)).perform(performClick());
 
-        onView(withId(R.id.join_conference_button)).perform(click());
+        onView(withId(R.id.join_conference_button)).perform(performClick());
 
         Thread.sleep(3000);
 
@@ -237,7 +239,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.show_stats_button)).perform(click());
+        onView(withId(R.id.show_stats_button)).perform(performClick());
 
         assertVideoBytesSentChanged();
 
@@ -245,9 +247,9 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
 
-        onView(withId(R.id.join_conference_button)).perform(click());
+        onView(withId(R.id.join_conference_button)).perform(performClick());
 
         Thread.sleep(5000);
 
@@ -272,6 +274,35 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
                 uiController.loopMainThreadForAtLeast(millis);
             }
         };
+    }
+
+    public static ViewAction performClick() {
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return ViewMatchers.isDisplayed();
+            }
+
+            @Override
+            public String getDescription() {
+                return "Invoke View.performClick() on a displayed view.";
+            }
+
+            @Override
+            public void perform(UiController uiController, View view) {
+                view.performClick();
+                uiController.loopMainThreadUntilIdle();
+            }
+        };
+    }
+
+    private void connectInternet() throws IOException {
+        UiDevice
+                .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc wifi enable");
+        UiDevice
+                .getInstance(androidx.test.InstrumentationRegistry.getInstrumentation())
+                .executeShellCommand("svc data enable");
     }
 
     private void clickScreenSharePermissionButton(UiDevice device) {
