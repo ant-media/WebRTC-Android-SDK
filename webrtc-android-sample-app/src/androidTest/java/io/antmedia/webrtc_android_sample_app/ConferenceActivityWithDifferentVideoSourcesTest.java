@@ -62,7 +62,9 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityWithDifferentVideoSourcesTest {
-    private final String SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT ="Start now";
+    private static final long UI_WAIT_TIMEOUT_MS = 10000L;
+    private static final long STATS_RETRY_DELAY_MS = 1000L;
+    private static final int STATS_RETRY_COUNT = 5;
 
     private float videoBytesSent = 0;
 
@@ -159,28 +161,14 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.screen_share_button)).perform(click());
 
-        UiObject2 button2 = device.wait(
-                Until.findObject(By.res("android:id/button1")),
-                10000
-        );
-        assertNotNull(button2);
-        button2.click();
+        clickScreenSharePermissionButton(device);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
-
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
-            float value = Float.parseFloat(text);
-            assertTrue( value > 0);
-            assertTrue( value != videoBytesSent);
-            videoBytesSent = value;
-
-        });
+        assertVideoBytesSentChanged();
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
@@ -200,16 +188,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
-
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
-            float value = Float.parseFloat(text);
-            assertTrue( value > 0);
-            assertTrue( value != videoBytesSent);
-            videoBytesSent = value;
-
-        });
+        assertVideoBytesSentChanged();
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
@@ -228,15 +207,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
-
-        //after source switch video sending should continue.
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
-            float value = Float.parseFloat(text);
-            assertTrue( value > 0);
-            assertTrue( value != videoBytesSent);
-        });
+        assertVideoBytesSentChanged();
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
@@ -268,15 +239,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         onView(withId(R.id.show_stats_button)).perform(click());
 
-        Thread.sleep(3000);
-
-        //after source switch video sending should continue.
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
-            float value = Float.parseFloat(text);
-            assertTrue( value > 0);
-            assertTrue( value != videoBytesSent);
-        });
+        assertVideoBytesSentChanged();
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
@@ -309,6 +272,48 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
                 uiController.loopMainThreadForAtLeast(millis);
             }
         };
+    }
+
+    private void clickScreenSharePermissionButton(UiDevice device) {
+        UiObject2 permissionButton = device.wait(Until.findObject(By.res("android:id/button1")), UI_WAIT_TIMEOUT_MS);
+
+        if (permissionButton == null) {
+            permissionButton = device.wait(Until.findObject(By.textContains("Start")), UI_WAIT_TIMEOUT_MS);
+        }
+
+        if (permissionButton == null) {
+            permissionButton = device.wait(Until.findObject(By.textContains("Allow")), UI_WAIT_TIMEOUT_MS);
+        }
+
+        assertNotNull(permissionButton);
+        permissionButton.click();
+    }
+
+    private void assertVideoBytesSentChanged() throws InterruptedException {
+        float previousValue = videoBytesSent;
+        float lastObservedValue = previousValue;
+
+        for (int i = 0; i < STATS_RETRY_COUNT; i++) {
+            final float[] currentValue = {-1f};
+
+            onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+                if (noViewFoundException != null) {
+                    throw noViewFoundException;
+                }
+                currentValue[0] = Float.parseFloat(((TextView) view).getText().toString());
+            });
+            lastObservedValue = currentValue[0];
+
+            if (currentValue[0] > 0f && currentValue[0] != previousValue) {
+                videoBytesSent = currentValue[0];
+                return;
+            }
+
+            Thread.sleep(STATS_RETRY_DELAY_MS);
+        }
+
+        assertTrue("Video bytes sent did not progress. Previous: " + previousValue + ", current: " + lastObservedValue,
+                lastObservedValue > 0f && lastObservedValue != previousValue);
     }
 
 }
