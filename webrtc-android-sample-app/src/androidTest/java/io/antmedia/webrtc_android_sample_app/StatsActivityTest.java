@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
@@ -76,7 +77,7 @@ public class StatsActivityTest {
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         Thread.sleep(5000);
 
@@ -110,7 +111,10 @@ public class StatsActivityTest {
         };
 
         for (int id : audioTrackStatsTextViewIds) {
-            onView(withId(id)).check((view, noViewFoundException) -> {
+            onView(withId(id)).inRoot(isDialog()).check((view, noViewFoundException) -> {
+                if (noViewFoundException != null) {
+                    throw noViewFoundException;
+                }
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
 
@@ -119,16 +123,19 @@ public class StatsActivityTest {
         }
 
         for (int id : videoTrackStatsTextViewIds) {
-            onView(withId(id)).check((view, noViewFoundException) -> {
+            onView(withId(id)).inRoot(isDialog()).check((view, noViewFoundException) -> {
+                if (noViewFoundException != null) {
+                    throw noViewFoundException;
+                }
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
                 assertTrue(value > 0f);
             });
         }
 
-        onView(withId(R.id.stats_popup_close_button)).perform(click());
+        onView(withId(R.id.stats_popup_close_button)).inRoot(isDialog()).perform(click());
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         Thread.sleep(5000);
 
@@ -136,6 +143,15 @@ public class StatsActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    private void performActivityClick(ActivityScenario<StatsActivity> scenario, int viewId) {
+        scenario.onActivity(activity -> {
+            View view = activity.findViewById(viewId);
+            assertTrue("View " + viewId + " is missing", view != null);
+            assertTrue("View " + viewId + " is not clickable", view.isClickable());
+            view.performClick();
+        });
     }
 
     private void connectInternet() throws IOException {
