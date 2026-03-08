@@ -11,6 +11,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static org.hamcrest.CoreMatchers.anyOf;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -265,9 +266,7 @@ public class ConferenceActivityTest {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    RecyclerView recyclerView = (RecyclerView) view;
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -421,9 +420,7 @@ public class ConferenceActivityTest {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    RecyclerView recyclerView = (RecyclerView) view;
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
 
@@ -476,6 +473,25 @@ public class ConferenceActivityTest {
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
+        assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
+        assertTrue("Stats RecyclerView has no items", recyclerView.getAdapter().getItemCount() > 0);
+
+        recyclerView.scrollToPosition(0);
+        recyclerView.measure(
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED)
+        );
+        recyclerView.layout(0, 0, recyclerView.getMeasuredWidth(), recyclerView.getMeasuredHeight());
+
+        RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+        assertNotNull("Stats RecyclerView item 0 is not bound yet", viewHolder);
+
+        TextView textView = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+        assertNotNull("Track stats bytes received text view is missing", textView);
+        return textView;
     }
 
     private void disconnectInternet() throws IOException {
