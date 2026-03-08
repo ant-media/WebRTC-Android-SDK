@@ -20,8 +20,6 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
-import androidx.test.espresso.IdlingRegistry;
-import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
@@ -43,8 +41,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class StatsActivityTest {
-    private IdlingResource mIdlingResource;
-
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -69,11 +65,7 @@ public class StatsActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), StatsActivity.class);
         ActivityScenario<StatsActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> {
-            mIdlingResource = activity.getIdlingResource();
-            IdlingRegistry.getInstance().register(mIdlingResource);
-            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        });
+        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
@@ -141,8 +133,6 @@ public class StatsActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     private void performActivityClick(ActivityScenario<StatsActivity> scenario, int viewId) {

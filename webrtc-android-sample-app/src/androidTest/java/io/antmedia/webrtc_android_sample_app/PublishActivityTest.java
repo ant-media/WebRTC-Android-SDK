@@ -1,7 +1,6 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
@@ -11,13 +10,12 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
-import androidx.test.espresso.IdlingRegistry;
-import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
@@ -39,8 +37,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class PublishActivityTest {
-    private IdlingResource mIdlingResource;
-
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -66,15 +62,11 @@ public class PublishActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> {
-            mIdlingResource = activity.getIdlingResource();
-            IdlingRegistry.getInstance().register(mIdlingResource);
-            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        });
+        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
@@ -83,11 +75,10 @@ public class PublishActivityTest {
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
 
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
 
@@ -96,15 +87,11 @@ public class PublishActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> {
-            mIdlingResource = activity.getIdlingResource();
-            IdlingRegistry.getInstance().register(mIdlingResource);
-            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        });
+        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         Thread.sleep(10000);
 
@@ -125,14 +112,14 @@ public class PublishActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         Thread.sleep(10000);
 
@@ -153,15 +140,20 @@ public class PublishActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        performActivityClick(scenario, R.id.start_streaming_button);
 
         Thread.sleep(3000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
 
+    private void performActivityClick(ActivityScenario<PublishActivity> scenario, int viewId) {
+        scenario.onActivity(activity -> {
+            View view = activity.findViewById(viewId);
+            view.performClick();
+        });
     }
 
     private void disconnectInternet() throws IOException {

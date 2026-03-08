@@ -1,9 +1,9 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.swipeUp;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
@@ -23,9 +23,6 @@ import android.content.SharedPreferences;
 import androidx.preference.PreferenceManager;
 
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.espresso.IdlingRegistry;
-import androidx.test.espresso.IdlingResource;
-
 import androidx.test.espresso.UiController;
 import androidx.test.espresso.ViewAction;
 import androidx.test.espresso.matcher.ViewMatchers;
@@ -72,8 +69,6 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
-
-    private IdlingResource mIdlingResource;
 
     @Rule
     public ActivityScenarioRule<ConferenceActivityWithDifferentVideoSources> conferenceActivityWithDifferentVideoSourcesScenarioRule = new ActivityScenarioRule<>(ConferenceActivityWithDifferentVideoSources.class);
@@ -128,8 +123,6 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
     @Test
     public void testConferenceSwitchStreamSource() throws InterruptedException {
         conferenceActivityWithDifferentVideoSourcesScenarioRule.getScenario().onActivity(activity -> {
-            mIdlingResource = activity.getIdlingResource();
-            IdlingRegistry.getInstance().register(mIdlingResource);
             activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
         });
 
@@ -146,18 +139,18 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         onView(withId(R.id.show_stats_button)).perform(performClick());
 
         Thread.sleep(3000);
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
             String text = ((TextView) view).getText().toString();
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
             videoBytesSent = value;
         });
 
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+        onView(withId(R.id. stats_popup_container)).inRoot(isDialog()).perform(swipeUp());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).inRoot(isDialog()).perform(performClick());
 
         //Thread.sleep(3000);
 
@@ -172,11 +165,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         assertVideoBytesSentChanged();
 
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+        onView(withId(R.id. stats_popup_container)).inRoot(isDialog()).perform(swipeUp());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).inRoot(isDialog()).perform(performClick());
 
         Thread.sleep(3000);
 
@@ -192,11 +185,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         assertVideoBytesSentChanged();
 
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+        onView(withId(R.id. stats_popup_container)).inRoot(isDialog()).perform(swipeUp());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).inRoot(isDialog()).perform(performClick());
 
         Thread.sleep(3000);
 
@@ -211,13 +204,13 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         assertVideoBytesSentChanged();
 
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+        onView(withId(R.id. stats_popup_container)).inRoot(isDialog()).perform(swipeUp());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.stats_popup_container)).perform(waitFor(2000));
+        onView(withId(R.id.stats_popup_container)).inRoot(isDialog()).perform(waitFor(2000));
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).inRoot(isDialog()).perform(performClick());
 
         Thread.sleep(3000);
 
@@ -243,11 +236,11 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
 
         assertVideoBytesSentChanged();
 
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
+        onView(withId(R.id. stats_popup_container)).inRoot(isDialog()).perform(swipeUp());
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(performClick());
+        onView(withId(R.id.multitrack_stats_popup_close_button)).inRoot(isDialog()).perform(performClick());
 
         onView(withId(R.id.join_conference_button)).perform(performClick());
 
@@ -327,7 +320,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         for (int i = 0; i < STATS_RETRY_COUNT; i++) {
             final float[] currentValue = {-1f};
 
-            onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
                 if (noViewFoundException != null) {
                     throw noViewFoundException;
                 }
