@@ -187,14 +187,12 @@ public class ConferenceActivityTest {
 
        // Thread.sleep(5000);
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    RecyclerView recyclerView = (RecyclerView) view;
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -250,8 +248,12 @@ public class ConferenceActivityTest {
 
 
         //black frame sender should be working.
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
+            if (noViewFoundException != null) {
+                throw noViewFoundException;
+            }
+            TextView textView = requireTextView(view, "publish video bytes sent");
+            String text = textView.getText().toString();
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
 
@@ -261,7 +263,7 @@ public class ConferenceActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
@@ -290,8 +292,12 @@ public class ConferenceActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
+            if (noViewFoundException != null) {
+                throw noViewFoundException;
+            }
+            TextView textView = requireTextView(view, "publish video bytes sent");
+            String text = textView.getText().toString();
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
 
@@ -346,14 +352,12 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    RecyclerView recyclerView = (RecyclerView) view;
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -476,22 +480,25 @@ public class ConferenceActivityTest {
     }
 
     private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
-        assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
-        assertTrue("Stats RecyclerView has no items", recyclerView.getAdapter().getItemCount() > 0);
-
-        recyclerView.scrollToPosition(0);
-        recyclerView.measure(
-                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
-                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED)
-        );
-        recyclerView.layout(0, 0, recyclerView.getMeasuredWidth(), recyclerView.getMeasuredHeight());
+        RecyclerView.Adapter adapter = recyclerView.getAdapter();
+        assertNotNull("Stats RecyclerView adapter is null", adapter);
+        assertTrue("Stats RecyclerView has no items", adapter.getItemCount() > 0);
 
         RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-        assertNotNull("Stats RecyclerView item 0 is not bound yet", viewHolder);
-
+        if (viewHolder == null) {
+            int viewType = adapter.getItemViewType(0);
+            viewHolder = adapter.createViewHolder(recyclerView, viewType);
+            adapter.bindViewHolder(viewHolder, 0);
+        }
         TextView textView = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
         assertNotNull("Track stats bytes received text view is missing", textView);
         return textView;
+    }
+
+    private TextView requireTextView(android.view.View view, String description) {
+        assertNotNull(description + " view is missing", view);
+        assertTrue(description + " view is not a TextView", view instanceof TextView);
+        return (TextView) view;
     }
 
     private void disconnectInternet() throws IOException {
