@@ -197,17 +197,7 @@ jobs:
             adb logcat io.antmedia:I >> emulator.log &
             ./gradlew :webrtc-android-framework:testDebugUnitTest :webrtc-android-sample-app:testDebugUnitTest
 
-            TEST_CLASSES="
-            io.antmedia.webrtc_android_sample_app.ConferenceActivityTest
-            io.antmedia.webrtc_android_sample_app.ConferenceActivityWithDifferentVideoSourcesTest
-            io.antmedia.webrtc_android_sample_app.DynamicConferenceActivityTest
-            io.antmedia.webrtc_android_sample_app.PeerActivityTest
-            io.antmedia.webrtc_android_sample_app.PlayActivityTest
-            io.antmedia.webrtc_android_sample_app.PublishActivityTest
-            io.antmedia.webrtc_android_sample_app.ScreenCaptureActivityTest
-            io.antmedia.webrtc_android_sample_app.SettingsActivityTest
-            io.antmedia.webrtc_android_sample_app.StatsActivityTest
-            "
+            TEST_CLASSES="io.antmedia.webrtc_android_sample_app.ConferenceActivityTest io.antmedia.webrtc_android_sample_app.ConferenceActivityWithDifferentVideoSourcesTest io.antmedia.webrtc_android_sample_app.DynamicConferenceActivityTest io.antmedia.webrtc_android_sample_app.PeerActivityTest io.antmedia.webrtc_android_sample_app.PlayActivityTest io.antmedia.webrtc_android_sample_app.PublishActivityTest io.antmedia.webrtc_android_sample_app.ScreenCaptureActivityTest io.antmedia.webrtc_android_sample_app.SettingsActivityTest io.antmedia.webrtc_android_sample_app.StatsActivityTest"
 
             for test_class in $TEST_CLASSES; do
               echo "Running instrumentation test class: ${test_class}"
