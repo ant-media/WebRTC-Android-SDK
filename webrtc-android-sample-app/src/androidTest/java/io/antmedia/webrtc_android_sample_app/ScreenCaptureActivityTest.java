@@ -1,6 +1,7 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -44,7 +45,7 @@ public class ScreenCaptureActivityTest {
     private static final long STATUS_WAIT_TIMEOUT_MS = 10000L;
     private static final long STATUS_POLL_INTERVAL_MS = 500L;
     private static final long STATS_RETRY_DELAY_MS = 1000L;
-    private static final int STATS_RETRY_COUNT = 5;
+    private static final int STATS_RETRY_COUNT = 10;
 
     private float videoBytesSent = 0;
 
@@ -89,14 +90,14 @@ public class ScreenCaptureActivityTest {
         performActivityClick(scenario, R.id.show_stats_button);
 
         Thread.sleep(3000);
-        onView(withId(R.id.stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+        onView(withId(R.id.stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
             String text = ((TextView) view).getText().toString();
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
             videoBytesSent = value;
         });
 
-        performActivityClick(scenario, R.id.stats_popup_close_button);
+        onView(withId(R.id.stats_popup_close_button)).inRoot(isDialog()).perform(click());
 
         Thread.sleep(3000);
 
@@ -113,7 +114,7 @@ public class ScreenCaptureActivityTest {
 
         assertVideoBytesSentChanged();
 
-        performActivityClick(scenario, R.id.stats_popup_close_button);
+        onView(withId(R.id.stats_popup_close_button)).inRoot(isDialog()).perform(click());
 
         Thread.sleep(3000);
 
@@ -131,7 +132,7 @@ public class ScreenCaptureActivityTest {
         //after source switch video sending should continue.
         assertVideoBytesSentChanged();
 
-        performActivityClick(scenario, R.id.stats_popup_close_button);
+        onView(withId(R.id.stats_popup_close_button)).inRoot(isDialog()).perform(click());
 
         Thread.sleep(3000);
 
