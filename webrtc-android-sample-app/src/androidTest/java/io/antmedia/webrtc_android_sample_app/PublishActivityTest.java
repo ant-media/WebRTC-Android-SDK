@@ -11,6 +11,7 @@ import static org.junit.Assert.assertEquals;
 import android.content.Context;
 import android.content.Intent;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
@@ -37,6 +38,9 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class PublishActivityTest {
+    private static final long STATUS_WAIT_TIMEOUT_MS = 10000L;
+    private static final long STATUS_POLL_INTERVAL_MS = 500L;
+
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -77,8 +81,7 @@ public class PublishActivityTest {
 
         performActivityClick(scenario, R.id.start_streaming_button);
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
+        assertStatusEventually(scenario, R.string.disconnected);
 
     }
 
@@ -116,8 +119,7 @@ public class PublishActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
+        assertStatusEventually(scenario, R.string.disconnected);
 
         performActivityClick(scenario, R.id.start_streaming_button);
 
@@ -144,8 +146,7 @@ public class PublishActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
+        assertStatusEventually(scenario, R.string.disconnected);
 
     }
 
@@ -172,6 +173,33 @@ public class PublishActivityTest {
         UiDevice
                 .getInstance(InstrumentationRegistry.getInstrumentation())
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
+    }
+
+    private void assertStatusEventually(ActivityScenario<PublishActivity> scenario, int expectedStringRes) {
+        String expectedText = ApplicationProvider.getApplicationContext().getString(expectedStringRes);
+        AssertionError lastError = null;
+
+        long deadline = System.currentTimeMillis() + STATUS_WAIT_TIMEOUT_MS;
+        while (System.currentTimeMillis() < deadline) {
+            final String[] statusText = {null};
+            scenario.onActivity(activity -> {
+                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
+                statusText[0] = statusView.getText().toString();
+            });
+
+            if (expectedText.equals(statusText[0])) {
+                return;
+            }
+
+            lastError = new AssertionError("Expected status " + expectedText + " but was " + statusText[0]);
+            try {
+                Thread.sleep(STATUS_POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        throw lastError != null ? lastError : new AssertionError("Expected status " + expectedText);
     }
 
 
