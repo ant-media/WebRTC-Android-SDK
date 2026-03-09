@@ -78,6 +78,7 @@ public class PublishActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
 
+        assertStatusEventually(scenario, R.string.live);
 
         performActivityClick(scenario, R.id.start_streaming_button);
 

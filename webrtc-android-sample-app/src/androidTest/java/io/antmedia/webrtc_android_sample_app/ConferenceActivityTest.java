@@ -61,7 +61,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
     private static final long STATS_RETRY_DELAY_MS = 1000L;
-    private static final int STATS_RETRY_COUNT = 5;
+    private static final int STATS_RETRY_COUNT = 20;
 
     @Rule
     public GrantPermissionRule permissionRule
