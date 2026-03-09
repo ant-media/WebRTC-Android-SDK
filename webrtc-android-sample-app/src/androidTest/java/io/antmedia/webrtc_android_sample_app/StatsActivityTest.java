@@ -13,13 +13,14 @@ import static org.junit.Assert.assertTrue;
 
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
 import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
+import androidx.test.espresso.IdlingRegistry;
+import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
@@ -41,6 +42,8 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class StatsActivityTest {
+    private IdlingResource mIdlingResource;
+
     @Rule
     public GrantPermissionRule permissionRule
             = GrantPermissionRule.grant(PermissionHandler.FULL_PERMISSIONS);
@@ -65,11 +68,15 @@ public class StatsActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), StatsActivity.class);
         ActivityScenario<StatsActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        });
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(5000);
 
@@ -103,10 +110,7 @@ public class StatsActivityTest {
         };
 
         for (int id : audioTrackStatsTextViewIds) {
-            onView(withId(id)).inRoot(isDialog()).check((view, noViewFoundException) -> {
-                if (noViewFoundException != null) {
-                    throw noViewFoundException;
-                }
+            onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
 
@@ -115,33 +119,23 @@ public class StatsActivityTest {
         }
 
         for (int id : videoTrackStatsTextViewIds) {
-            onView(withId(id)).inRoot(isDialog()).check((view, noViewFoundException) -> {
-                if (noViewFoundException != null) {
-                    throw noViewFoundException;
-                }
+            onView(withId(id)).check((view, noViewFoundException) -> {
                 String text = ((TextView) view).getText().toString();
                 float value = Float.parseFloat(text);
                 assertTrue(value > 0f);
             });
         }
 
-        onView(withId(R.id.stats_popup_close_button)).inRoot(isDialog()).perform(click());
+        onView(withId(R.id.stats_popup_close_button)).perform(click());
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(5000);
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
-    }
 
-    private void performActivityClick(ActivityScenario<StatsActivity> scenario, int viewId) {
-        scenario.onActivity(activity -> {
-            View view = activity.findViewById(viewId);
-            assertTrue("View " + viewId + " is missing", view != null);
-            assertTrue("View " + viewId + " is not clickable", view.isClickable());
-            view.performClick();
-        });
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     private void connectInternet() throws IOException {

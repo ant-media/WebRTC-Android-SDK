@@ -195,20 +195,7 @@ jobs:
             touch emulator.log               
             chmod 777 emulator.log
             adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew :webrtc-android-framework:testDebugUnitTest :webrtc-android-sample-app:testDebugUnitTest
-
-            TEST_CLASSES="io.antmedia.webrtc_android_sample_app.ConferenceActivityTest io.antmedia.webrtc_android_sample_app.ConferenceActivityWithDifferentVideoSourcesTest io.antmedia.webrtc_android_sample_app.DynamicConferenceActivityTest io.antmedia.webrtc_android_sample_app.PeerActivityTest io.antmedia.webrtc_android_sample_app.PlayActivityTest io.antmedia.webrtc_android_sample_app.PublishActivityTest io.antmedia.webrtc_android_sample_app.ScreenCaptureActivityTest io.antmedia.webrtc_android_sample_app.SettingsActivityTest io.antmedia.webrtc_android_sample_app.StatsActivityTest"
-
-            for test_class in $TEST_CLASSES; do
-              echo "Running instrumentation test class: ${test_class}"
-              ./gradlew :webrtc-android-sample-app:connectedDebugAndroidTest \
-                -Pandroid.testInstrumentationRunnerArguments.class="${test_class}" || exit 1
-            done
-
-            ./gradlew \
-              :webrtc-android-framework:jacocoTestReport \
-              :webrtc-android-sample-app:jacocoTestReport \
-              -x :webrtc-android-sample-app:connectedDebugAndroidTest
+            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
 
       - name: Archive Test Report
         if: always()

@@ -1,6 +1,7 @@
 package io.antmedia.webrtc_android_sample_app;
 
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
@@ -10,13 +11,13 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
-import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.Espresso;
+import androidx.test.espresso.IdlingRegistry;
+import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
@@ -38,8 +39,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class PublishActivityTest {
-    private static final long STATUS_WAIT_TIMEOUT_MS = 10000L;
-    private static final long STATUS_POLL_INTERVAL_MS = 500L;
+    private IdlingResource mIdlingResource;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -66,11 +66,15 @@ public class PublishActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        });
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
@@ -78,11 +82,12 @@ public class PublishActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
 
-        assertStatusEventually(scenario, R.string.live);
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
-        assertStatusEventually(scenario, R.string.disconnected);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
 
@@ -91,11 +96,15 @@ public class PublishActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
+        scenario.onActivity(activity -> {
+            mIdlingResource = activity.getIdlingResource();
+            IdlingRegistry.getInstance().register(mIdlingResource);
+            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
+        });
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
         Espresso.closeSoftKeyboard();
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(10000);
 
@@ -116,13 +125,14 @@ public class PublishActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
-        assertStatusEventually(scenario, R.string.disconnected);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(10000);
 
@@ -143,19 +153,15 @@ public class PublishActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
-        assertStatusEventually(scenario, R.string.disconnected);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
-    }
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
-    private void performActivityClick(ActivityScenario<PublishActivity> scenario, int viewId) {
-        scenario.onActivity(activity -> {
-            View view = activity.findViewById(viewId);
-            view.performClick();
-        });
     }
 
     private void disconnectInternet() throws IOException {
@@ -174,33 +180,6 @@ public class PublishActivityTest {
         UiDevice
                 .getInstance(InstrumentationRegistry.getInstrumentation())
                 .executeShellCommand("svc data enable"); // Switch Mobile Data on again
-    }
-
-    private void assertStatusEventually(ActivityScenario<PublishActivity> scenario, int expectedStringRes) {
-        String expectedText = ApplicationProvider.getApplicationContext().getString(expectedStringRes);
-        AssertionError lastError = null;
-
-        long deadline = System.currentTimeMillis() + STATUS_WAIT_TIMEOUT_MS;
-        while (System.currentTimeMillis() < deadline) {
-            final String[] statusText = {null};
-            scenario.onActivity(activity -> {
-                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
-                statusText[0] = statusView.getText().toString();
-            });
-
-            if (expectedText.equals(statusText[0])) {
-                return;
-            }
-
-            lastError = new AssertionError("Expected status " + expectedText + " but was " + statusText[0]);
-            try {
-                Thread.sleep(STATUS_POLL_INTERVAL_MS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        throw lastError != null ? lastError : new AssertionError("Expected status " + expectedText);
     }
 
 

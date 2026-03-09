@@ -112,9 +112,7 @@ public class PublishActivity extends TestableActivity {
         else {
             startStreamingButton.setText("Start");
             Log.i(getClass().getSimpleName(), "Calling publish stop");
-            statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
-            statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
-            decrementIdle();
+
             webRTCClient.stop(streamId);
         }
     }

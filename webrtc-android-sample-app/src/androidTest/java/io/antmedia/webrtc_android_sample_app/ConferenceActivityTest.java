@@ -60,8 +60,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
-    private static final long STATS_RETRY_DELAY_MS = 1000L;
-    private static final int STATS_RETRY_COUNT = 20;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -88,7 +86,6 @@ public class ConferenceActivityTest {
 
     @After
     public void after() {
-        unregisterIdlingResource();
         System.out.println("after test");
         try {
             Thread.sleep(1000);
@@ -156,6 +153,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
 
@@ -189,12 +187,14 @@ public class ConferenceActivityTest {
 
        // Thread.sleep(5000);
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog())
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
+                    RecyclerView recyclerView = (RecyclerView) view;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -215,6 +215,7 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     @Test
@@ -249,12 +250,8 @@ public class ConferenceActivityTest {
 
 
         //black frame sender should be working.
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
-            if (noViewFoundException != null) {
-                throw noViewFoundException;
-            }
-            TextView textView = requireTextView(view, "publish video bytes sent");
-            String text = textView.getText().toString();
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
 
@@ -264,7 +261,7 @@ public class ConferenceActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog())
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
@@ -293,12 +290,8 @@ public class ConferenceActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).inRoot(isDialog()).check((view, noViewFoundException) -> {
-            if (noViewFoundException != null) {
-                throw noViewFoundException;
-            }
-            TextView textView = requireTextView(view, "publish video bytes sent");
-            String text = textView.getText().toString();
+        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
+            String text = ((TextView) view).getText().toString();
             float value = Float.parseFloat(text);
             assertTrue(value > 0f);
 
@@ -320,6 +313,7 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
 
@@ -352,12 +346,14 @@ public class ConferenceActivityTest {
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog())
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
+                    RecyclerView recyclerView = (RecyclerView) view;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
+                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -375,6 +371,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).perform(click());
 
         participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     @Test
@@ -475,50 +472,26 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
-        RecyclerView.Adapter adapter = recyclerView.getAdapter();
-        assertNotNull("Stats RecyclerView adapter is null", adapter);
-        int itemCount = adapter.getItemCount();
-        for (int i = 0; i < STATS_RETRY_COUNT && itemCount == 0; i++) {
-            try {
-                Thread.sleep(STATS_RETRY_DELAY_MS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            itemCount = adapter.getItemCount();
-        }
-        assertTrue("Stats RecyclerView has no items", itemCount > 0);
+        assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
+        assertTrue("Stats RecyclerView has no items", recyclerView.getAdapter().getItemCount() > 0);
+
+        recyclerView.scrollToPosition(0);
+        recyclerView.measure(
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
+                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED)
+        );
+        recyclerView.layout(0, 0, recyclerView.getMeasuredWidth(), recyclerView.getMeasuredHeight());
 
         RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-        if (viewHolder == null) {
-            int viewType = adapter.getItemViewType(0);
-            viewHolder = adapter.createViewHolder(recyclerView, viewType);
-            adapter.bindViewHolder(viewHolder, 0);
-        }
+        assertNotNull("Stats RecyclerView item 0 is not bound yet", viewHolder);
+
         TextView textView = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
         assertNotNull("Track stats bytes received text view is missing", textView);
         return textView;
-    }
-
-    private void unregisterIdlingResource() {
-        if (mIdlingResource == null) {
-            return;
-        }
-        try {
-            IdlingRegistry.getInstance().unregister(mIdlingResource);
-        } catch (IllegalArgumentException ignored) {
-            // Test may already have unregistered it.
-        } finally {
-            mIdlingResource = null;
-        }
-    }
-
-    private TextView requireTextView(android.view.View view, String description) {
-        assertNotNull(description + " view is missing", view);
-        assertTrue(description + " view is not a TextView", view instanceof TextView);
-        return (TextView) view;
     }
 
     private void disconnectInternet() throws IOException {

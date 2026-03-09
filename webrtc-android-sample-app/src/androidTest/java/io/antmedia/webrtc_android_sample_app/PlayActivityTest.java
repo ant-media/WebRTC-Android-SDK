@@ -12,8 +12,6 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
-import android.view.View;
-import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
@@ -27,7 +25,6 @@ import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
 import org.junit.Before;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,9 +41,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class PlayActivityTest {
-    private static final long STATUS_WAIT_TIMEOUT_MS = 10000L;
-    private static final long STATUS_POLL_INTERVAL_MS = 500L;
-
     private IdlingResource mIdlingResource;
 
     @Rule
@@ -56,11 +50,6 @@ public class PlayActivityTest {
     @Before
     public void before() throws IOException {
         connectInternet();
-    }
-
-    @After
-    public void after() {
-        unregisterIdlingResource();
     }
 
     @Rule
@@ -101,11 +90,15 @@ public class PlayActivityTest {
         Thread.sleep(3000);
 
         //Stop playing
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
-        assertStatusEventually(scenario, R.string.disconnected);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
+
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
+
     }
 
     @Test
@@ -147,14 +140,15 @@ public class PlayActivityTest {
 
         Thread.sleep(3000);
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
-        assertStatusEventually(scenario, R.string.disconnected);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(5000);
 
@@ -177,58 +171,15 @@ public class PlayActivityTest {
 
         Thread.sleep(3000);
 
-        performActivityClick(scenario, R.id.start_streaming_button);
+        onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(3000);
 
-        assertStatusEventually(scenario, R.string.disconnected);
-    }
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
-    private void performActivityClick(ActivityScenario<PlayActivity> scenario, int viewId) {
-        scenario.onActivity(activity -> {
-            View view = activity.findViewById(viewId);
-            view.performClick();
-        });
-    }
+        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
-    private void assertStatusEventually(ActivityScenario<PlayActivity> scenario, int expectedStringRes) {
-        String expectedText = ApplicationProvider.getApplicationContext().getString(expectedStringRes);
-        AssertionError lastError = null;
-
-        long deadline = System.currentTimeMillis() + STATUS_WAIT_TIMEOUT_MS;
-        while (System.currentTimeMillis() < deadline) {
-            final String[] statusText = {null};
-            scenario.onActivity(activity -> {
-                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
-                statusText[0] = statusView.getText().toString();
-            });
-
-            if (expectedText.equals(statusText[0])) {
-                return;
-            }
-
-            lastError = new AssertionError("Expected status " + expectedText + " but was " + statusText[0]);
-            try {
-                Thread.sleep(STATUS_POLL_INTERVAL_MS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        throw lastError != null ? lastError : new AssertionError("Expected status " + expectedText);
-    }
-
-    private void unregisterIdlingResource() {
-        if (mIdlingResource == null) {
-            return;
-        }
-        try {
-            IdlingRegistry.getInstance().unregister(mIdlingResource);
-        } catch (IllegalArgumentException ignored) {
-            // Resource may already be unregistered.
-        } finally {
-            mIdlingResource = null;
-        }
     }
 
     private void disconnectInternet() throws IOException {

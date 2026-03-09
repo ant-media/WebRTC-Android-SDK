@@ -279,9 +279,7 @@ public class ScreenCaptureActivity extends TestableActivity {
         else {
             startStreamingButton.setText("Start");
             Log.i(getClass().getSimpleName(), "Calling publish start");
-            publishStarted = false;
-            statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
-            statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+
             webRTCClient.stop(streamId);
         }
     }
@@ -342,7 +340,6 @@ public class ScreenCaptureActivity extends TestableActivity {
             @Override
             public void onPublishFinished(String streamId) {
                 super.onPublishFinished(streamId);
-                publishStarted = false;
                 statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
                 statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
                 //  decrementIdle();
