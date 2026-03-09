@@ -25,6 +25,7 @@ import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
 import org.junit.Before;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +51,11 @@ public class PlayActivityTest {
     @Before
     public void before() throws IOException {
         connectInternet();
+    }
+
+    @After
+    public void after() {
+        unregisterIdlingResource();
     }
 
     @Rule
@@ -96,9 +102,6 @@ public class PlayActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
     }
 
     @Test
@@ -177,9 +180,19 @@ public class PlayActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
+    }
 
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
+    private void unregisterIdlingResource() {
+        if (mIdlingResource == null) {
+            return;
+        }
+        try {
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
+        } catch (IllegalArgumentException ignored) {
+            // Resource may already be unregistered.
+        } finally {
+            mIdlingResource = null;
+        }
     }
 
     private void disconnectInternet() throws IOException {

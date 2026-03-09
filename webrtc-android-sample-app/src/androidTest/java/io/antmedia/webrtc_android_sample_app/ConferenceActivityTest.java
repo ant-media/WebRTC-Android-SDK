@@ -60,6 +60,8 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
+    private static final long STATS_RETRY_DELAY_MS = 1000L;
+    private static final int STATS_RETRY_COUNT = 5;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -86,6 +88,7 @@ public class ConferenceActivityTest {
 
     @After
     public void after() {
+        unregisterIdlingResource();
         System.out.println("after test");
         try {
             Thread.sleep(1000);
@@ -153,7 +156,6 @@ public class ConferenceActivityTest {
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
 
@@ -213,7 +215,6 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     @Test
@@ -319,7 +320,6 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
 
@@ -375,7 +375,6 @@ public class ConferenceActivityTest {
         onView(withId(R.id.join_conference_button)).perform(click());
 
         participant.leave();
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     @Test
@@ -476,13 +475,21 @@ public class ConferenceActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
     private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
         RecyclerView.Adapter adapter = recyclerView.getAdapter();
         assertNotNull("Stats RecyclerView adapter is null", adapter);
-        assertTrue("Stats RecyclerView has no items", adapter.getItemCount() > 0);
+        int itemCount = adapter.getItemCount();
+        for (int i = 0; i < STATS_RETRY_COUNT && itemCount == 0; i++) {
+            try {
+                Thread.sleep(STATS_RETRY_DELAY_MS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            itemCount = adapter.getItemCount();
+        }
+        assertTrue("Stats RecyclerView has no items", itemCount > 0);
 
         RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
         if (viewHolder == null) {
@@ -493,6 +500,19 @@ public class ConferenceActivityTest {
         TextView textView = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
         assertNotNull("Track stats bytes received text view is missing", textView);
         return textView;
+    }
+
+    private void unregisterIdlingResource() {
+        if (mIdlingResource == null) {
+            return;
+        }
+        try {
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
+        } catch (IllegalArgumentException ignored) {
+            // Test may already have unregistered it.
+        } finally {
+            mIdlingResource = null;
+        }
     }
 
     private TextView requireTextView(android.view.View view, String description) {

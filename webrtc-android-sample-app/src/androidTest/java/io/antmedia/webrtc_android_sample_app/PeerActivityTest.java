@@ -33,6 +33,7 @@ import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,6 +67,11 @@ public class PeerActivityTest {
     @Before
     public void before() throws IOException {
         connectInternet();
+    }
+
+    @After
+    public void after() {
+        unregisterIdlingResource();
     }
 
     @Rule
@@ -160,9 +166,6 @@ public class PeerActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         remoteP2PParticipant.leave();
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
     }
 
     @Test
@@ -295,10 +298,21 @@ public class PeerActivityTest {
                 .check(matches(withText(R.string.disconnected)));
 
         remoteP2PParticipant.leave();
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
     }
+
+    private void unregisterIdlingResource() {
+        if (mIdlingResource == null) {
+            return;
+        }
+        try {
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
+        } catch (IllegalArgumentException ignored) {
+            // Resource may already be unregistered.
+        } finally {
+            mIdlingResource = null;
+        }
+    }
+
     private void disconnectInternet() throws IOException {
         UiDevice
                 .getInstance(InstrumentationRegistry.getInstrumentation())

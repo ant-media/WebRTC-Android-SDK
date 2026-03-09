@@ -91,6 +91,7 @@ public class DynamicConferenceActivityTest {
 
     @After
     public void after() {
+        unregisterIdlingResource();
         System.out.println("after test");
         try {
             Thread.sleep(1000);
@@ -165,6 +166,19 @@ public class DynamicConferenceActivityTest {
             activity.removeAllRenderers();
             assertEquals(remoteParticipantsGridLayout.getChildCount(),0);
         });
+    }
+
+    private void unregisterIdlingResource() {
+        if (mIdlingResource == null) {
+            return;
+        }
+        try {
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
+        } catch (IllegalArgumentException ignored) {
+            // Resource may already be unregistered.
+        } finally {
+            mIdlingResource = null;
+        }
     }
 
 }
