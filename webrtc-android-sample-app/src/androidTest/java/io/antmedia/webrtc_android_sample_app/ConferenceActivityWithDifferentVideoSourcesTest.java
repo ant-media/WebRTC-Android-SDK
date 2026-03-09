@@ -60,7 +60,6 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
-@Ignore("Disabled until the stream source switch scenario is re-enabled with an active @Test method")
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityWithDifferentVideoSourcesTest {
     private final String SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT ="Start now";
@@ -122,7 +121,7 @@ public class ConferenceActivityWithDifferentVideoSourcesTest {
         }
     };
 
-    //@Test
+    @Test
     public void testConferenceSwitchStreamSource() throws InterruptedException {
         conferenceActivityWithDifferentVideoSourcesScenarioRule.getScenario().onActivity(activity -> {
             mIdlingResource = activity.getIdlingResource();
