@@ -60,6 +60,8 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
+    private static final long STATS_RETRY_DELAY_MS = 1000L;
+    private static final int STATS_RETRY_COUNT = 20;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -477,7 +479,16 @@ public class ConferenceActivityTest {
 
     private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
         assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
-        assertTrue("Stats RecyclerView has no items", recyclerView.getAdapter().getItemCount() > 0);
+        int itemCount = recyclerView.getAdapter().getItemCount();
+        for (int i = 0; i < STATS_RETRY_COUNT && itemCount == 0; i++) {
+            try {
+                Thread.sleep(STATS_RETRY_DELAY_MS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            itemCount = recyclerView.getAdapter().getItemCount();
+        }
+        assertTrue("Stats RecyclerView has no items", itemCount > 0);
 
         recyclerView.scrollToPosition(0);
         recyclerView.measure(
