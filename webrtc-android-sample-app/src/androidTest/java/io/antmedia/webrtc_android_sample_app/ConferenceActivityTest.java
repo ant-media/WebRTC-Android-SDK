@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.preference.PreferenceManager;
@@ -29,6 +30,9 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.IdlingResource;
+import androidx.test.espresso.UiController;
+import androidx.test.espresso.ViewAction;
+import androidx.test.espresso.matcher.ViewMatchers;
 
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -37,6 +41,7 @@ import androidx.test.uiautomator.UiDevice;
 
 
 
+import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -190,13 +195,14 @@ public class ConferenceActivityTest {
        // Thread.sleep(5000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .perform(waitForTrackStatsItem());
+
+        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    RecyclerView recyclerView = (RecyclerView) view;
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -264,6 +270,7 @@ public class ConferenceActivityTest {
         Thread.sleep(3000);
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .perform(waitForTrackStatsItem())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
@@ -349,13 +356,12 @@ public class ConferenceActivityTest {
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .perform(waitForTrackStatsItem())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    RecyclerView recyclerView = (RecyclerView) view;
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
-                    TextView textView1 = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
+                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -418,6 +424,7 @@ public class ConferenceActivityTest {
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
 
         onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
+                .perform(waitForTrackStatsItem())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
@@ -477,26 +484,45 @@ public class ConferenceActivityTest {
         IdlingRegistry.getInstance().unregister(mIdlingResource);
     }
 
+    private ViewAction waitForTrackStatsItem() {
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return ViewMatchers.isAssignableFrom(RecyclerView.class);
+            }
+
+            @Override
+            public String getDescription() {
+                return "wait for track stats recycler view to contain and bind the first item";
+            }
+
+            @Override
+            public void perform(UiController uiController, View view) {
+                RecyclerView recyclerView = (RecyclerView) view;
+                assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
+
+                for (int i = 0; i < STATS_RETRY_COUNT; i++) {
+                    if (recyclerView.getAdapter().getItemCount() > 0) {
+                        recyclerView.scrollToPosition(0);
+                        uiController.loopMainThreadUntilIdle();
+
+                        if (recyclerView.findViewHolderForAdapterPosition(0) != null) {
+                            return;
+                        }
+                    }
+                    uiController.loopMainThreadForAtLeast(STATS_RETRY_DELAY_MS);
+                }
+
+                throw new AssertionError("Stats RecyclerView has no items");
+            }
+        };
+    }
+
     private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
         assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
-        int itemCount = recyclerView.getAdapter().getItemCount();
-        for (int i = 0; i < STATS_RETRY_COUNT && itemCount == 0; i++) {
-            try {
-                Thread.sleep(STATS_RETRY_DELAY_MS);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            itemCount = recyclerView.getAdapter().getItemCount();
-        }
-        assertTrue("Stats RecyclerView has no items", itemCount > 0);
+        assertTrue("Stats RecyclerView has no items", recyclerView.getAdapter().getItemCount() > 0);
 
         recyclerView.scrollToPosition(0);
-        recyclerView.measure(
-                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED),
-                android.view.View.MeasureSpec.makeMeasureSpec(0, android.view.View.MeasureSpec.UNSPECIFIED)
-        );
-        recyclerView.layout(0, 0, recyclerView.getMeasuredWidth(), recyclerView.getMeasuredHeight());
-
         RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(0);
         assertNotNull("Stats RecyclerView item 0 is not bound yet", viewHolder);
 
