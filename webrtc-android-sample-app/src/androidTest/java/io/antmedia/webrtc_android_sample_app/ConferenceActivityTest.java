@@ -258,12 +258,12 @@ public class ConferenceActivityTest {
 
 
         //black frame sender should be working.
-        onView(withId(R.id.multitrack_stats_popup_bytes_sent_video_textview)).check((view, noViewFoundException) -> {
-            String text = ((TextView) view).getText().toString();
-            float value = Float.parseFloat(text);
-            assertTrue(value > 0f);
-
-        });
+        onView(withId(R.id.stats_popup_container))
+                .perform(waitForNumericTextViewValueGreaterThan(
+                        R.id.multitrack_stats_popup_bytes_sent_video_textview,
+                        0f,
+                        "Timed out waiting for sent video bytes to become positive"
+                ));
 
         onView(withId(R.id. stats_popup_container)).perform(swipeUp());
 
@@ -548,6 +548,45 @@ public class ConferenceActivityTest {
                 }
 
                 throw new AssertionError("Neither video nor audio stats RecyclerView has any items");
+            }
+        };
+    }
+
+    private ViewAction waitForNumericTextViewValueGreaterThan(int textViewId, float minimumValue, String timeoutMessage) {
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return ViewMatchers.isAssignableFrom(View.class);
+            }
+
+            @Override
+            public String getDescription() {
+                return timeoutMessage;
+            }
+
+            @Override
+            public void perform(UiController uiController, View view) {
+                for (int i = 0; i < STATS_RETRY_COUNT; i++) {
+                    TextView textView = view.findViewById(textViewId);
+                    if (textView != null) {
+                        String text = textView.getText().toString().trim();
+                        if (!text.isEmpty()) {
+                            try {
+                                float value = Float.parseFloat(text);
+                                if (value > minimumValue) {
+                                    return;
+                                }
+                            } catch (NumberFormatException ignored) {
+                                // Keep polling until the stats text becomes numeric.
+                            }
+                        }
+                    }
+                    uiController.loopMainThreadForAtLeast(STATS_RETRY_DELAY_MS);
+                }
+
+                TextView textView = view.findViewById(textViewId);
+                String currentValue = textView == null ? "<missing>" : textView.getText().toString();
+                throw new AssertionError(timeoutMessage + ". Current value: " + currentValue);
             }
         };
     }
