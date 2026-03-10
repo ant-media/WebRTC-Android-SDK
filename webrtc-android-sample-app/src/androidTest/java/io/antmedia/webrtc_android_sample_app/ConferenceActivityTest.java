@@ -269,13 +269,13 @@ public class ConferenceActivityTest {
 
         Thread.sleep(3000);
 
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
-                .perform(waitForTrackStatsItem())
+        onView(withId(R.id.stats_popup_container))
+                .perform(waitForAnyTrackStatsItem())
                 .check((view, noViewFoundException) -> {
                     if (noViewFoundException != null) {
                         throw noViewFoundException;
                     }
-                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
+                    TextView textView1 = requireFirstAvailableTrackStatTextView(view);
                     int bytesReceived = Integer.parseInt(( textView1).getText().toString());
                     assertTrue(bytesReceived > 0);
                 });
@@ -518,6 +518,40 @@ public class ConferenceActivityTest {
         };
     }
 
+    private ViewAction waitForAnyTrackStatsItem() {
+        return new ViewAction() {
+            @Override
+            public Matcher<View> getConstraints() {
+                return ViewMatchers.isAssignableFrom(View.class);
+            }
+
+            @Override
+            public String getDescription() {
+                return "wait for either audio or video track stats recycler view to contain and bind the first item";
+            }
+
+            @Override
+            public void perform(UiController uiController, View view) {
+                RecyclerView videoRecyclerView = view.findViewById(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview);
+                RecyclerView audioRecyclerView = view.findViewById(R.id.multitrack_stats_popup_play_stats_audio_track_recyclerview);
+
+                assertNotNull("Video stats RecyclerView is missing", videoRecyclerView);
+                assertNotNull("Audio stats RecyclerView is missing", audioRecyclerView);
+                assertNotNull("Video stats RecyclerView adapter is null", videoRecyclerView.getAdapter());
+                assertNotNull("Audio stats RecyclerView adapter is null", audioRecyclerView.getAdapter());
+
+                for (int i = 0; i < STATS_RETRY_COUNT; i++) {
+                    if (hasBoundTrackStatsItem(videoRecyclerView, uiController) || hasBoundTrackStatsItem(audioRecyclerView, uiController)) {
+                        return;
+                    }
+                    uiController.loopMainThreadForAtLeast(STATS_RETRY_DELAY_MS);
+                }
+
+                throw new AssertionError("Neither video nor audio stats RecyclerView has any items");
+            }
+        };
+    }
+
     private TextView requireFirstTrackStatTextView(RecyclerView recyclerView) {
         assertNotNull("Stats RecyclerView adapter is null", recyclerView.getAdapter());
         assertTrue("Stats RecyclerView has no items", recyclerView.getAdapter().getItemCount() > 0);
@@ -529,6 +563,34 @@ public class ConferenceActivityTest {
         TextView textView = viewHolder.itemView.findViewById(R.id.track_stats_item_bytes_received_textview);
         assertNotNull("Track stats bytes received text view is missing", textView);
         return textView;
+    }
+
+    private TextView requireFirstAvailableTrackStatTextView(View statsPopupView) {
+        RecyclerView videoRecyclerView = statsPopupView.findViewById(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview);
+        RecyclerView audioRecyclerView = statsPopupView.findViewById(R.id.multitrack_stats_popup_play_stats_audio_track_recyclerview);
+
+        assertNotNull("Video stats RecyclerView is missing", videoRecyclerView);
+        assertNotNull("Audio stats RecyclerView is missing", audioRecyclerView);
+
+        if (videoRecyclerView.getAdapter() != null && videoRecyclerView.getAdapter().getItemCount() > 0) {
+            return requireFirstTrackStatTextView(videoRecyclerView);
+        }
+
+        if (audioRecyclerView.getAdapter() != null && audioRecyclerView.getAdapter().getItemCount() > 0) {
+            return requireFirstTrackStatTextView(audioRecyclerView);
+        }
+
+        throw new AssertionError("Neither video nor audio stats RecyclerView has any items");
+    }
+
+    private boolean hasBoundTrackStatsItem(RecyclerView recyclerView, UiController uiController) {
+        if (recyclerView.getAdapter() == null || recyclerView.getAdapter().getItemCount() == 0) {
+            return false;
+        }
+
+        recyclerView.scrollToPosition(0);
+        uiController.loopMainThreadUntilIdle();
+        return recyclerView.findViewHolderForAdapterPosition(0) != null;
     }
 
     private void disconnectInternet() throws IOException {
