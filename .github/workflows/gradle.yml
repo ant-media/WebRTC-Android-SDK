@@ -181,9 +181,6 @@ jobs:
         run: python3 multitrack-conference-server.py &
 
       - name: Run Tests and Generate Report
-        id: run_tests
-        continue-on-error: true
-        timeout-minutes: 60
         uses: reactivecircus/android-emulator-runner@v2.32.0
         with:
           api-level: 30
@@ -205,7 +202,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Test report
-          if-no-files-found: warn
           path: |
             webrtc-android-sample-app/build/reports/tests/testDebugUnitTest/
             webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/
@@ -219,19 +215,11 @@ jobs:
             emulator.log
 
       - name: Upload Test Report to Codecov
-        if: always()
-        continue-on-error: true
         uses: codecov/codecov-action@v3.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: webrtc-android-framework/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml,webrtc-android-sample-app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           fail_ci_if_error: true
-
-      - name: Fail workflow if tests failed
-        if: steps.run_tests.outcome == 'failure'
-        run: |
-          echo "Android test step failed. Reports were uploaded before failing the job."
-          exit 1
 
       - name: Deploy to Sonatype
         #deploy only in master branches
