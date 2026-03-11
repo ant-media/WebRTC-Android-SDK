@@ -59,7 +59,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
         sudo apt-get remove --purge python3-typing-extensions
-        sudo pip3 install python-openstackclient
+        python3 -m venv ~/.venv-openstack
+        ~/.venv-openstack/bin/pip install --upgrade pip
+        ~/.venv-openstack/bin/pip install python-openstackclient
+        echo "$HOME/.venv-openstack/bin" >> "$GITHUB_PATH"
 
     - name: server-id
       id: set-server-id
@@ -180,9 +183,9 @@ jobs:
       - name: Run Tests and Generate Report
         uses: reactivecircus/android-emulator-runner@v2.32.0
         with:
-          api-level: 33
+          api-level: 30
+          target: default
           arch: x86_64
-          target: playstore
           emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
           force-avd-creation: false
           disable-animations: true
@@ -258,7 +261,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev libffi-dev libssl-dev
         sudo apt-get remove --purge python3-typing-extensions
-        sudo pip3 install python-openstackclient
+        python3 -m venv ~/.venv-openstack
+        ~/.venv-openstack/bin/pip install --upgrade pip
+        ~/.venv-openstack/bin/pip install python-openstackclient
+        echo "$HOME/.venv-openstack/bin" >> "$GITHUB_PATH"
     - name: Delete CI Instance
       if: ${{ always() }}
       run: |
