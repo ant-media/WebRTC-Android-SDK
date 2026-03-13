@@ -224,6 +224,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private boolean renderVideo = true;
     @androidx.annotation.Nullable
     public RtpSender localVideoSender;
+    public RtpSender localAudioSender;
 
     @androidx.annotation.Nullable
     private AudioTrack localAudioTrack;
@@ -824,8 +825,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         executor.execute(() -> {
             createMediaConstraintsInternal();
-            createVideoTrack(videoCapturer);
-            createAudioTrack();
+            if (config.videoCallEnabled && videoCapturer != null) {
+                createVideoTrack(videoCapturer);
+            }
+            if (config.audioCallEnabled) {
+                createAudioTrack();
+            }
         });
     }
 
@@ -1867,7 +1872,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
         MediaStreamTrack newTrack = createVideoTrack(videoCapturer);
         if (localVideoSender != null) {
-            localVideoSender.setTrack(newTrack, true);
+            try {
+                localVideoSender.setTrack(newTrack, true);
+            } catch (IllegalStateException e) {
+                Log.w(TAG, "RtpSender has been disposed, cannot set video track: " + e.getMessage());
+            }
         }
 
     }
@@ -2080,7 +2089,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     if (config.videoCallEnabled) {
                         peerConnection.addTrack(createVideoTrack(videoCapturer), mediaStreamLabels);
                     }
-                    peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+                    if (config.audioCallEnabled) {
+                        peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
+                    }
 
                 }catch (IllegalStateException e){
                     Log.e(TAG,"Could not add track to PC. Is it in closed state? Peer connection state " + peerConnection.connectionState().name()+" Error message: "+e.getMessage());
@@ -2089,6 +2100,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
                 if (config.videoCallEnabled) {
                     findVideoSender(streamId);
+                }
+                if (config.audioCallEnabled) {
+                    findAudioSender(streamId);
                 }
             }
 
@@ -2287,7 +2301,29 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         executor.execute(() -> {
             sendAudioEnabled = enableAudio;
             if (localAudioTrack != null) {
-                localAudioTrack.setEnabled(enableAudio);
+                if (enableAudio) {
+                    // Re-enable track and add it back to sender if it was removed
+                    localAudioTrack.setEnabled(true);
+                    if (localAudioSender != null) {
+                        try {
+                            if (localAudioSender.track() == null) {
+                                localAudioSender.setTrack(localAudioTrack, false);
+                            }
+                        } catch (IllegalStateException e) {
+                            Log.w(TAG, "RtpSender has been disposed, cannot set audio track: " + e.getMessage());
+                        }
+                    }
+                } else {
+                    // Remove track from sender to stop SRTP packets
+                    if (localAudioSender != null) {
+                        try {
+                            localAudioSender.setTrack(null, false);
+                        } catch (IllegalStateException e) {
+                            Log.w(TAG, "RtpSender has been disposed, cannot remove audio track: " + e.getMessage());
+                        }
+                    }
+                    localAudioTrack.setEnabled(false);
+                }
             }
         });
     }
@@ -2299,20 +2335,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         }
         executor.execute(() -> {
             sendVideoEnabled = enableVideo;
-            if (enableVideo) {
-                if(blackFrameSender != null && blackFrameSender.isRunning()){
-                    blackFrameSender.stop();
-                    blackFrameSender = null;
+            // Stop black frame sender if running
+            if(blackFrameSender != null && blackFrameSender.isRunning()){
+                blackFrameSender.stop();
+                blackFrameSender = null;
+            }
+            
+            if (localVideoTrack != null) {
+                // Disable/enable the track instead of sending black frames
+                localVideoTrack.setEnabled(enableVideo);
+                
+                if (enableVideo) {
+                    // Start video source when enabling
+                    startVideoSourceInternal();
+                } else {
+                    // Stop video source when disabling
+                    stopVideoSourceInternal();
                 }
-                changeVideoSource(StreamSource.FRONT_CAMERA);
-            } else {
-                changeVideoSource(StreamSource.CUSTOM);
-                blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
-                blackFrameSender.start();
             }
         });
     }
-
     public void createOffer(String streamId) {
 
         executor.execute(() -> {
@@ -2448,26 +2490,26 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 return;
             }
             Log.d(TAG, "Requested max video bitrate: " + maxBitrateKbps);
-            if (localVideoSender == null) {
-                Log.w(TAG, "Sender is not ready.");
-                return;
-            }
+            
+            try {
+                RtpParameters parameters = localVideoSender.getParameters();
+                if (parameters == null || parameters.encodings.isEmpty()) {
+                    Log.w(TAG, "RtpParameters are not ready.");
+                    return;
+                }
 
-            RtpParameters parameters = localVideoSender.getParameters();
-            if (parameters.encodings.isEmpty()) {
-                Log.w(TAG, "RtpParameters are not ready.");
-                return;
+                for (RtpParameters.Encoding encoding : parameters.encodings) {
+                    // Null value means no limit.
+                    encoding.maxBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS;
+                    encoding.minBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS / 2;
+                }
+                if (!localVideoSender.setParameters(parameters)) {
+                    Log.e(TAG, "RtpSender.setParameters failed.");
+                }
+                Log.d(TAG, "Configured max video bitrate to: " + maxBitrateKbps);
+            } catch (IllegalStateException e) {
+                Log.w(TAG, "RtpSender has been disposed, cannot set video bitrate: " + e.getMessage());
             }
-
-            for (RtpParameters.Encoding encoding : parameters.encodings) {
-                // Null value means no limit.
-                encoding.maxBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS;
-                encoding.minBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS / 2;
-            }
-            if (!localVideoSender.setParameters(parameters)) {
-                Log.e(TAG, "RtpSender.setParameters failed.");
-            }
-            Log.d(TAG, "Configured max video bitrate to: " + maxBitrateKbps);
         });
     }
 
@@ -2508,6 +2550,23 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     if (trackType.equals(VIDEO_TRACK_TYPE)) {
                         Log.d(TAG, "Found video sender.");
                         localVideoSender = sender;
+                    }
+                }
+            }
+        }
+    }
+
+    private void findAudioSender(String streamId) {
+        PeerConnection pc = getPeerConnectionFor(streamId);
+
+        if (pc != null) {
+            for (RtpSender sender : pc.getSenders()) {
+                MediaStreamTrack track = sender.track();
+                if (track != null) {
+                    String trackType = track.kind();
+                    if (trackType.equals("audio")) {
+                        Log.d(TAG, "Found audio sender.");
+                        localAudioSender = sender;
                     }
                 }
             }
