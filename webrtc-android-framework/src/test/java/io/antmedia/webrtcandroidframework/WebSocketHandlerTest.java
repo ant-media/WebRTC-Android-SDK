@@ -147,7 +147,7 @@ public class WebSocketHandlerTest {
         String streamName = "testStream";
         String mainTrackId = "track123";
 
-        webSocketHandler.startPublish(streamId, token, videoEnabled, audioEnabled, subscriberId, subscriberCode, streamName, mainTrackId);
+        webSocketHandler.startPublish(streamId, token, videoEnabled, audioEnabled, subscriberId, subscriberCode, streamName, mainTrackId, null);
 
         ArgumentCaptor<String> jsonCaptor = ArgumentCaptor.forClass(String.class);
         verify(webSocketHandler, times(1)).sendTextMessage(jsonCaptor.capture());
@@ -163,6 +163,7 @@ public class WebSocketHandlerTest {
             json.put(WebSocketConstants.VIDEO, videoEnabled);
             json.put(WebSocketConstants.AUDIO, audioEnabled);
             json.put(WebSocketConstants.MAIN_TRACK, mainTrackId);
+            json.put(WebSocketConstants.META_DATA, null);
         } catch (JSONException e) {
             e.printStackTrace();
         }
