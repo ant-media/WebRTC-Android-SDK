@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
 
-import io.antmedia.webrtc_android_sample_app.R;
+import io.antmedia.webrtcandroidframework.R;
 
 public class NotificationHelper {
 

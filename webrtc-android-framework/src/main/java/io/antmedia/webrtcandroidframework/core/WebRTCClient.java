@@ -211,7 +211,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @androidx.annotation.Nullable
     private AudioSource audioSource;
     @androidx.annotation.Nullable
-    private SurfaceTextureHelper surfaceTextureHelper;
+    public SurfaceTextureHelper surfaceTextureHelper;
     @androidx.annotation.Nullable
     private VideoSource videoSource;
     private boolean preferIsac;

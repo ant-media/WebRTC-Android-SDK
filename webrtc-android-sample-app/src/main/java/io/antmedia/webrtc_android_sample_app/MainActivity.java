@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
+import io.antmedia.webrtc_android_sample_app.advanced.CustomCanvasActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.notification.CallNotificationActivity;
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithSpeakerIndicator;
 import io.antmedia.webrtc_android_sample_app.advanced.MP3PublishActivity;
@@ -69,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         addActivity(PeerActivity.class, "Peer");
         addActivity(DynamicConferenceActivity.class, "Dynamic Conference");
         addActivity(ConferenceActivity.class, "Conference");
+        addActivity(CustomCanvasActivity.class, "Custom Canvas");
         addActivity(ScreenCaptureActivity.class, "Screen Share");
         addActivity(DataChannelOnlyActivity.class, "DC Only");
         addActivity(MP3PublishActivity.class, "mp3");

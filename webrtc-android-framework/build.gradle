@@ -8,7 +8,7 @@ ext {
 apply from: 'publish-remote.gradle'
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 35
 
     defaultConfig {
         minSdkVersion 21
@@ -55,8 +55,8 @@ tasks.withType(Test) {
 
 task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest','createDebugCoverageReport']) {
     reports {
-        xml.enabled = true
-        html.enabled = true
+        xml.required = true
+        html.required = true
     }
 
     def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
@@ -85,4 +85,10 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+
+    def camerax_version = "1.5.0"
+    implementation "androidx.camera:camera-core:$camerax_version"
+    implementation "androidx.camera:camera-camera2:$camerax_version"
+    implementation "androidx.camera:camera-lifecycle:$camerax_version"
+    implementation "androidx.camera:camera-view:$camerax_version"
 }

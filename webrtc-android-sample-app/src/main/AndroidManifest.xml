@@ -75,6 +75,12 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+        <activity
+            android:name=".advanced.CustomCanvasActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.DayNight"
+            android:screenOrientation="portrait"
+            android:configChanges="keyboard|screenSize|smallestScreenSize|screenLayout"/>
         <activity android:name=".basic.ScreenCaptureActivity"
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
@@ -148,6 +154,7 @@
             android:exported="true"
             android:theme="@style/Theme.AppCompat.DayNight"
             android:configChanges="orientation|keyboard|screenSize|smallestScreenSize|screenLayout"/>
+
 
 
 
