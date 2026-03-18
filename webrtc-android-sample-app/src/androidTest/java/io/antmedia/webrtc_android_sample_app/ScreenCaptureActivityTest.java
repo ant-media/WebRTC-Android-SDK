@@ -83,8 +83,10 @@ public class ScreenCaptureActivityTest {
 
         onView(withId(R.id.rbScreen)).perform(click());
 
-        UiObject2 button = device.wait(Until.findObject(By.text(SCREEN_SHARE_PERMISSION_DIALOG_START_NOW_TEXT)), 100000);
-        assertNotNull(button);
+        UiObject2 button = device.wait(
+                Until.findObject(By.res("android:id/button1")),
+                10000
+        );
         button.click();
 
         onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
