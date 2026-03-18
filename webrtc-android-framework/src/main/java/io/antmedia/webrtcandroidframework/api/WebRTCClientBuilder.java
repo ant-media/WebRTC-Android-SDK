@@ -156,4 +156,14 @@ public class WebRTCClientBuilder {
         webRTCClientConfig.bluetoothEnabled = bluetoothEnabled;
         return this;
     }
+
+    public WebRTCClientBuilder setDisableBlackFrameSender(boolean disableBlackFrameSender) {
+        webRTCClientConfig.disableBlackFrameSender = disableBlackFrameSender;
+        return this;
+    }
+
+    public WebRTCClientBuilder setDisableSilenceWhenMuted(boolean disableSilenceWhenMuted) {
+        webRTCClientConfig.disableSilenceWhenMuted = disableSilenceWhenMuted;
+        return this;
+    }
 }

@@ -2289,6 +2289,28 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (localAudioTrack != null) {
                 localAudioTrack.setEnabled(enableAudio);
             }
+            // When disableSilenceWhenMuted: use setTrack to stop RTP transmission when muted (setEnabled sends silence packets)
+            if (config.disableSilenceWhenMuted) {
+                MediaStreamTrack trackToSend = (enableAudio && localAudioTrack != null) ? localAudioTrack : null;
+                for (PeerInfo peerInfo : peers.values()) {
+                    PeerConnection pc = peerInfo.peerConnection;
+                    if (pc != null) {
+                        try {
+                            for (RtpSender sender : pc.getSenders()) {
+                                MediaStreamTrack track = sender.track();
+                                boolean isAudioSender = (track != null && MediaStreamTrack.AUDIO_TRACK_KIND.equals(track.kind()))
+                                        || (track == null && sender.dtmf() != null);
+                                if (isAudioSender) {
+                                    sender.setTrack(trackToSend, false);
+                                    break;
+                                }
+                            }
+                        } catch (IllegalStateException e) {
+                            Log.w(TAG, "Peer connection may be closed, skipping audio sender update: " + e.getMessage());
+                        }
+                    }
+                }
+            }
         });
     }
 
@@ -2307,8 +2329,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 changeVideoSource(StreamSource.FRONT_CAMERA);
             } else {
                 changeVideoSource(StreamSource.CUSTOM);
-                blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
-                blackFrameSender.start();
+                if (!config.disableBlackFrameSender) {
+                    blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
+                    blackFrameSender.start();
+                }
             }
         });
     }
@@ -2831,6 +2855,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setDataChannelEnabled(boolean dataChannelEnabled) {
         this.config.dataChannelEnabled = dataChannelEnabled;
+    }
+
+    public void setDisableBlackFrameSender(boolean disableBlackFrameSender) {
+        this.config.disableBlackFrameSender = disableBlackFrameSender;
+    }
+
+    public void setDisableSilenceWhenMuted(boolean disableSilenceWhenMuted) {
+        this.config.disableSilenceWhenMuted = disableSilenceWhenMuted;
     }
 
     public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {
