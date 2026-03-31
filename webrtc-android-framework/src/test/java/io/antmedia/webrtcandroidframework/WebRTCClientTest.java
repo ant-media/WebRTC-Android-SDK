@@ -1301,7 +1301,7 @@ public class WebRTCClientTest {
         verify(renderer).clearImage();
         verify(renderer).release();
         verify(renderer).setTag(null);
-        verify(renderer).setTag(renderer.getId(), null);
+        verify(renderer).setTag(1, null);
     }
 
     @Test
