@@ -1301,6 +1301,28 @@ public class WebRTCClientTest {
         verify(renderer).clearImage();
         verify(renderer).release();
         verify(renderer).setTag(null);
+        verify(renderer).setTag(renderer.getId(), null);
+    }
+
+    @Test
+    public void releaseRenderer_withoutTrackAndSink_stillClearsAndReleases()
+            throws NoSuchFieldException, IllegalAccessException {
+        SurfaceViewRenderer renderer = mock(SurfaceViewRenderer.class);
+        when(renderer.getId()).thenReturn(2);
+        when(renderer.getTag()).thenReturn(null);
+        when(renderer.getTag(2)).thenReturn(null);
+
+        Field field = WebRTCClient.class.getDeclaredField("mainHandler");
+        field.setAccessible(true);
+        field.set(webRTCClient, getMockHandler());
+
+        webRTCClient.releaseRenderer(renderer);
+
+        verify(renderer).clearAnimation();
+        verify(renderer).clearImage();
+        verify(renderer).release();
+        verify(renderer).setTag(null);
+        verify(renderer).setTag(2, null);
     }
 
     @Test
