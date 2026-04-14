@@ -1270,16 +1270,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
         VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
 
-        if (videoTrack != null && videoSink != null)
-            videoTrack.removeSink(videoSink);
-        else{
-            Log.d("test","test");
-        }
-        renderer.clearAnimation();
-        mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
-        renderer.release();
-        renderer.setTag(null);
+
+            if (videoTrack != null && videoSink != null) {
+                videoTrack.removeSink(videoSink);
+            }
+
+            renderer.clearAnimation();
+            renderer.clearImage();
+            renderer.release();
+            renderer.setTag(null);
+            renderer.setTag(renderer.getId(), null);
+        });
     }
 
     private void releaseRemoteRenderers() {
