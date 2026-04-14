@@ -46,7 +46,7 @@ public class WebSocketHandler extends WebSocketListener{
     private AntMediaSignallingEvents signallingListener;
     public ScheduledExecutorService pingPongExecutor;
     private int pingPongTimoutCount = 0;
-    public static final  long TIMER_DELAY  = 3000L;
+    public static final  long TIMER_DELAY  = 1000L; // Reduced from 3000L for faster connection detection
     public static final  long TIMER_PERIOD = 2000L;
 
     public static final long WEBSOCKET_RECONNECTION_CONTROL_PERIOD_MS = 5000;
@@ -55,7 +55,14 @@ public class WebSocketHandler extends WebSocketListener{
 
     private Handler wsReconnectionHandler = new Handler();
 
-    OkHttpClient client = new OkHttpClient();
+    // Optimized OkHttpClient with reduced timeouts for faster connection
+    OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(3, TimeUnit.SECONDS) // Reduced from default 10s to 3s
+            .readTimeout(5, TimeUnit.SECONDS) // Reduced from default 10s to 5s
+            .writeTimeout(5, TimeUnit.SECONDS) // Reduced from default 10s to 5s
+            .pingInterval(20, TimeUnit.SECONDS) // Enable WebSocket ping for keep-alive
+            .retryOnConnectionFailure(true) // Enable automatic retry on connection failure
+            .build();
 
     Gson gson;
 
@@ -70,9 +77,11 @@ public class WebSocketHandler extends WebSocketListener{
 
     public WebSocket connectWebSocket(String wsServerUrl){
         if (isWsOpen) {
-            disconnect(true);
+            disconnect(false); // Use false to avoid blocking during reconnection
         }
-        Request request = new Request.Builder().url(wsServerUrl).build();
+        Request request = new Request.Builder()
+                .url(wsServerUrl)
+                .build();
         return client.newWebSocket(request, this);
     }
     public void connect(final String wsUrl) {
@@ -80,6 +89,10 @@ public class WebSocketHandler extends WebSocketListener{
             if (wsUrl == null || wsUrl.isBlank())
                 return;
             wsServerUrl = wsUrl;
+            // Reset close event flag before connecting
+            synchronized (closeEventLock) {
+                closeEvent = false;
+            }
             ws = connectWebSocket(wsServerUrl);
         }
     }
@@ -127,7 +140,7 @@ public class WebSocketHandler extends WebSocketListener{
             Log.d(TAG, "WebSocket connection opened.");
             isWsOpen = true;
             startPingPongTimer();
-            handler.post(() -> {
+            handler.postAtFrontOfQueue(() -> {
                 signallingListener.onWebSocketConnected();
             });
         }
@@ -402,7 +415,6 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public void startPlay(String streamId, String token, String[] tracks, String subscriberId, String subscriberName, String subscriberCode, String viewerInfo, boolean disableTracksByDefault){
-        checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.PLAY_COMMAND);
@@ -430,7 +442,6 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public void registerPushNotificationToken(String subscriberId, String authToken, String pushNotificationToken, String tokenType) {
-        checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.REGISTER_PUSH_NOTIFICATION_TOKEN_COMMAND);
@@ -445,7 +456,6 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public void sendPushNotification(String subscriberId, String authToken, JSONObject pushNotificationContent, JSONArray receiverSubscriberIdArray) {
-        checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.SEND_PUSH_NOTIFICATION_COMMAND);
@@ -485,7 +495,6 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public void sendConfiguration(String streamId, final SessionDescription sdp, String type) {
-        checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.TAKE_CONFIGURATION_COMMAND);
@@ -499,7 +508,6 @@ public class WebSocketHandler extends WebSocketListener{
     }
 
     public void sendLocalIceCandidate(String streamId, final IceCandidate candidate) {
-        checkIfCalledOnValidThread();
         JSONObject json = new JSONObject();
         try {
             json.put(WebSocketConstants.COMMAND, WebSocketConstants.TAKE_CANDIDATE_COMMAND);
