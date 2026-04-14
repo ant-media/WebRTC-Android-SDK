@@ -4,8 +4,8 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 
-import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 
@@ -60,8 +60,6 @@ public interface IWebRTCListener {
  void noStreamExistsToPlay(String streamId);
 
  void onError(String description, String streamId);
-
- void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId);
 
  /**
   * It's called if client tried to stream with a stream id that is currently used in another stream.
@@ -138,7 +136,7 @@ public interface IWebRTCListener {
      * @param streamId
      * It's called when reconnection attempt is started
      */
-    void onReconnectionAttempt(String streamId);
+    void onReconnectionAttempt(String streamId, WebRTCClient.Mode ClientType);
 
     /**
      * It's called when joiened the room
@@ -264,3 +262,4 @@ public interface IWebRTCListener {
   */
  void onSubscriberList(String streamId, Subscriber[] subscribers);
 }
+
