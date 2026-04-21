@@ -1281,7 +1281,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             renderer.release();
             renderer.setTag(null);
             renderer.setTag(renderer.getId(), null);
-        });
     }
 
     private void releaseRemoteRenderers() {
