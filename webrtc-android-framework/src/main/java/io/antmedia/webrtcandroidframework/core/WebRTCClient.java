@@ -46,6 +46,7 @@ import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
@@ -2289,6 +2290,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (localAudioTrack != null) {
                 localAudioTrack.setEnabled(enableAudio);
             }
+            if (config.disableSilenceWhenMuted) {
+                setLocalAudioCaptureEnabled(enableAudio);
+                updateAudioSenderTrack(enableAudio);
+            }
         });
     }
 
@@ -2307,8 +2312,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 changeVideoSource(StreamSource.FRONT_CAMERA);
             } else {
                 changeVideoSource(StreamSource.CUSTOM);
-                blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
-                blackFrameSender.start();
+                if (!config.disableBlackFrameSender) {
+                    blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
+                    blackFrameSender.start();
+                }
             }
         });
     }
@@ -2509,6 +2516,54 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                         Log.d(TAG, "Found video sender.");
                         localVideoSender = sender;
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Stops or resumes local microphone capture (no AudioRecord / no custom push) when
+     */
+    private void setLocalAudioCaptureEnabled(boolean enabled) {
+        if (config.customAudioFeed) {
+            CustomWebRtcAudioRecord input = getAudioInput();
+            if (input != null) {
+                input.setStarted(enabled);
+            }
+            return;
+        }
+        for (PeerInfo peerInfo : peers.values()) {
+            PeerConnection pc = peerInfo.peerConnection;
+            if (pc != null) {
+                try {
+                    pc.setAudioRecording(enabled);
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "setAudioRecording: " + enabled, e);
+                }
+            }
+        }
+    }
+
+    private void updateAudioSenderTrack(boolean enable) {
+        for (PeerInfo peerInfo : peers.values()) {
+            PeerConnection pc = peerInfo.peerConnection;
+            if (pc == null) {
+                continue;
+            }
+            for (RtpTransceiver transceiver : pc.getTransceivers()) {
+                if (transceiver.getMediaType() != MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO) {
+                    continue;
+                }
+                RtpTransceiver.RtpTransceiverDirection dir = transceiver.getDirection();
+                if (dir != RtpTransceiver.RtpTransceiverDirection.SEND_RECV
+                        && dir != RtpTransceiver.RtpTransceiverDirection.SEND_ONLY) {
+                    continue;
+                }
+                RtpSender sender = transceiver.getSender();
+                if (enable && localAudioTrack != null) {
+                    sender.setTrack(localAudioTrack, false);
+                } else {
+                    sender.setTrack(null, false);
                 }
             }
         }
@@ -2831,6 +2886,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setDataChannelEnabled(boolean dataChannelEnabled) {
         this.config.dataChannelEnabled = dataChannelEnabled;
+    }
+
+    public void setDisableBlackFrameSender(boolean disableBlackFrameSender) {
+        this.config.disableBlackFrameSender = disableBlackFrameSender;
+    }
+
+    public void setDisableSilenceWhenMuted(boolean disableSilenceWhenMuted) {
+        this.config.disableSilenceWhenMuted = disableSilenceWhenMuted;
     }
 
     public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {
