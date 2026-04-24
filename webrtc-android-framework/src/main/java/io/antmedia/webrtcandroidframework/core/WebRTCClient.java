@@ -46,6 +46,7 @@ import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
@@ -2289,27 +2290,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (localAudioTrack != null) {
                 localAudioTrack.setEnabled(enableAudio);
             }
-            // When disableSilenceWhenMuted: use setTrack to stop RTP transmission when muted (setEnabled sends silence packets)
             if (config.disableSilenceWhenMuted) {
-                MediaStreamTrack trackToSend = (enableAudio && localAudioTrack != null) ? localAudioTrack : null;
-                for (PeerInfo peerInfo : peers.values()) {
-                    PeerConnection pc = peerInfo.peerConnection;
-                    if (pc != null) {
-                        try {
-                            for (RtpSender sender : pc.getSenders()) {
-                                MediaStreamTrack track = sender.track();
-                                boolean isAudioSender = (track != null && MediaStreamTrack.AUDIO_TRACK_KIND.equals(track.kind()))
-                                        || (track == null && sender.dtmf() != null);
-                                if (isAudioSender) {
-                                    sender.setTrack(trackToSend, false);
-                                    break;
-                                }
-                            }
-                        } catch (IllegalStateException e) {
-                            Log.w(TAG, "Peer connection may be closed, skipping audio sender update: " + e.getMessage());
-                        }
-                    }
-                }
+                setLocalAudioCaptureEnabled(enableAudio);
+                updateAudioSenderTrack(enableAudio);
             }
         });
     }
@@ -2533,6 +2516,54 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                         Log.d(TAG, "Found video sender.");
                         localVideoSender = sender;
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Stops or resumes local microphone capture (no AudioRecord / no custom push) when
+     */
+    private void setLocalAudioCaptureEnabled(boolean enabled) {
+        if (config.customAudioFeed) {
+            CustomWebRtcAudioRecord input = getAudioInput();
+            if (input != null) {
+                input.setStarted(enabled);
+            }
+            return;
+        }
+        for (PeerInfo peerInfo : peers.values()) {
+            PeerConnection pc = peerInfo.peerConnection;
+            if (pc != null) {
+                try {
+                    pc.setAudioRecording(enabled);
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "setAudioRecording: " + enabled, e);
+                }
+            }
+        }
+    }
+
+    private void updateAudioSenderTrack(boolean enable) {
+        for (PeerInfo peerInfo : peers.values()) {
+            PeerConnection pc = peerInfo.peerConnection;
+            if (pc == null) {
+                continue;
+            }
+            for (RtpTransceiver transceiver : pc.getTransceivers()) {
+                if (transceiver.getMediaType() != MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO) {
+                    continue;
+                }
+                RtpTransceiver.RtpTransceiverDirection dir = transceiver.getDirection();
+                if (dir != RtpTransceiver.RtpTransceiverDirection.SEND_RECV
+                        && dir != RtpTransceiver.RtpTransceiverDirection.SEND_ONLY) {
+                    continue;
+                }
+                RtpSender sender = transceiver.getSender();
+                if (enable && localAudioTrack != null) {
+                    sender.setTrack(localAudioTrack, false);
+                } else {
+                    sender.setTrack(null, false);
                 }
             }
         }

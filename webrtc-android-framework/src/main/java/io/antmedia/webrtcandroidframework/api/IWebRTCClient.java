@@ -203,10 +203,10 @@ public interface IWebRTCClient {
     void setDisableBlackFrameSender(boolean disable);
 
     /**
-     * Disable silence packets when audio is muted via toggleSendAudio(false).
-     * When true, RTP transmission is stopped when muted (no silence packets sent).
+     * When true, {@link #toggleSendAudio(boolean)} turns the mic (or custom audio feed) fully off:
+     * no RTP, no capture. When false, only the track is muted (default WebRTC behavior).
      *
-     * @param disable true to stop RTP when muted, false for default behavior (sends silence)
+     * @param disable true for full mute (stop mic and RTP), false for default behavior
      */
     void setDisableSilenceWhenMuted(boolean disable);
 
