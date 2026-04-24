@@ -191,9 +191,9 @@ public class WebRTCClientConfig {
     public boolean disableBlackFrameSender = false;
 
     /*
-     * Flag indicating whether silence packets are disabled when audio is muted.
-     * When true, RTP transmission is stopped when toggleSendAudio(false) is called (no silence packets sent).
-     * When false, muted audio still sends silence packets (default WebRTC behavior).
+     * When true, toggleSendAudio(false) fully mutes: stops the microphone / custom audio push,
+     * stops RTP (no Opus comfort-noise packets). toggleSendAudio(true) restarts capture and sending.
+     * When false, only the local track is disabled; default WebRTC behavior (may still send silence RTP).
      */
     public boolean disableSilenceWhenMuted = false;
 }
