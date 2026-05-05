@@ -165,7 +165,6 @@ public class AppRTCAudioManager {
 
   private AppRTCAudioManager(Context context) {
     Log.d(TAG, "ctor");
-    ThreadUtils.checkIsOnMainThread();
     apprtcContext = context;
     audioManager = ((AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
     bluetoothManager = AppRTCBluetoothManager.create(context, this);
