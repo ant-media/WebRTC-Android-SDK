@@ -1055,6 +1055,14 @@ public class WebRTCClientTest {
         verify(sender, never()).setParameters(any());
 
         webRTCClient.localVideoSender = sender;
+        PeerConnection pc = mock(PeerConnection.class);
+        MediaStreamTrack videoTrack = mock(MediaStreamTrack.class);
+        when(videoTrack.kind()).thenReturn("video");
+        when(sender.track()).thenReturn(videoTrack);
+        when(pc.getSenders()).thenReturn(Collections.singletonList(sender));
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo("stream1", WebRTCClient.Mode.PUBLISH);
+        peerInfo.peerConnection = pc;
+        webRTCClient.getPeersForTest().put("stream1", peerInfo);
         RtpParameters parameters = mock(RtpParameters.class);
         when(sender.getParameters()).thenReturn(parameters);
         webRTCClient.setDegradationPreference(degradationPreference);
@@ -1077,6 +1085,14 @@ public class WebRTCClientTest {
         verify(sender, never()).setParameters(any());
 
         webRTCClient.localVideoSender = sender;
+        PeerConnection pc = mock(PeerConnection.class);
+        MediaStreamTrack videoTrack = mock(MediaStreamTrack.class);
+        when(videoTrack.kind()).thenReturn("video");
+        when(sender.track()).thenReturn(videoTrack);
+        when(pc.getSenders()).thenReturn(Collections.singletonList(sender));
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo("stream1", WebRTCClient.Mode.PUBLISH);
+        peerInfo.peerConnection = pc;
+        webRTCClient.getPeersForTest().put("stream1", peerInfo);
 
         RtpParameters.Encoding encodings  = mock(RtpParameters.Encoding.class);
         List<RtpParameters.Encoding> mockEncoding = Collections.emptyList();
@@ -1364,6 +1380,68 @@ public class WebRTCClientTest {
                     // Verify that setEnabled(true) was called
                     verify(localAudioTrackMock, times(1)).setEnabled(true);
                 });
+    }
+
+    @Test
+    public void testDisableBlackFrameSender_blackFrameSenderNotActivatedWhenDisabled() {
+        webRTCClient.setDisableBlackFrameSender(true);
+        webRTCClient.getConfig().videoCallEnabled = true;
+
+        CustomVideoCapturer customVideoCapturerMock = mock(CustomVideoCapturer.class);
+        doNothing().when(customVideoCapturerMock).writeFrame(any());
+        webRTCClient.setVideoCapturer(customVideoCapturerMock);
+        when(webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.CUSTOM)).thenReturn(customVideoCapturerMock);
+
+        webRTCClient.toggleSendVideo(false);
+
+        await().atMost(2, SECONDS).untilAsserted(() ->
+                assertNull(webRTCClient.getBlackFrameSender()));
+        assertTrue(webRTCClient.getConfig().videoSource == IWebRTCClient.StreamSource.CUSTOM);
+    }
+
+    @Test
+    public void testDisableSilenceWhenMuted_doesNotDetachAudioSender() throws NoSuchFieldException, IllegalAccessException {
+        String streamId = "stream1";
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
+        PeerConnection pc = mock(PeerConnection.class);
+        peerInfo.peerConnection = pc;
+
+        RtpSender audioSender = mock(RtpSender.class);
+        AudioTrack audioTrackMock = mock(AudioTrack.class);
+        RtpParameters parameters = mock(RtpParameters.class);
+        RtpParameters.Encoding encoding = new RtpParameters.Encoding(null, true, null);
+        List<RtpParameters.Encoding> encodings = new ArrayList<>();
+        encodings.add(encoding);
+        when(audioTrackMock.kind()).thenReturn(MediaStreamTrack.AUDIO_TRACK_KIND);
+        when(audioSender.track()).thenReturn(audioTrackMock);
+        when(audioSender.getParameters()).thenReturn(parameters);
+        when(audioSender.setParameters(parameters)).thenReturn(true);
+        when(pc.getSenders()).thenReturn(Collections.singletonList(audioSender));
+
+        Field field = RtpParameters.class.getDeclaredField("encodings");
+        field.setAccessible(true);
+        field.set(parameters, encodings);
+
+        webRTCClient.getPeersForTest().put(streamId, peerInfo);
+        webRTCClient.setLocalAudioTrack(audioTrackMock);
+        webRTCClient.setDisableSilenceWhenMuted(true);
+
+        webRTCClient.toggleSendAudio(false);
+
+        await().atMost(2, SECONDS).untilAsserted(() -> {
+            verify(audioTrackMock).setEnabled(false);
+            verify(audioSender, never()).setTrack(null, false);
+            verify(audioSender).setParameters(parameters);
+            assertFalse(encoding.active);
+        });
+
+        webRTCClient.toggleSendAudio(true);
+
+        await().atMost(2, SECONDS).untilAsserted(() -> {
+            verify(audioTrackMock).setEnabled(true);
+            verify(audioSender, times(2)).setParameters(parameters);
+            assertTrue(encoding.active);
+        });
     }
 
     @Test
