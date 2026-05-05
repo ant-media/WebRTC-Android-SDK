@@ -7,8 +7,8 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 
-import de.tavendo.autobahn.WebSocket;
 import io.antmedia.webrtcandroidframework.core.StreamInfo;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 import io.antmedia.webrtcandroidframework.websocket.Subscriber;
 
@@ -78,11 +78,6 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
-    @Override
-    public void onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification code, String streamId) {
-        String messageText = "Signal channel closed for " + streamId + " : " + code;
-        callbackCalled(messageText);
-    }
 
     @Override
     public void streamIdInUse(String streamId) {
@@ -158,7 +153,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     }
 
     @Override
-    public void onReconnectionAttempt(String streamId) {
+    public void onReconnectionAttempt(String streamId, WebRTCClient.Mode mode) {
         String messageText = "Reconnection attempt for " + streamId;
         callbackCalled(messageText);
     }
@@ -280,7 +275,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
     protected void callbackCalled(String messageText) {
         Log.d(DefaultWebRTCListener.class.getName(), messageText);
     }
-
+  
     @Override
     public void onSubscriberCount(String streamId, int count) {
         String messageText = "On Subscriber Count "+streamId;
@@ -293,4 +288,7 @@ public class DefaultWebRTCListener implements IWebRTCListener {
         callbackCalled(messageText);
     }
 
+
 }
+
+
