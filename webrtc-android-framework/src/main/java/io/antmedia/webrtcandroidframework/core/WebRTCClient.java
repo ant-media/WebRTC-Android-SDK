@@ -2160,15 +2160,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void setDegradationPreference(RtpParameters.DegradationPreference degradationPreference) {
-        if (localVideoSender == null) {
-            Log.w(TAG, "Sender is not ready.");
-            return;
-        }
         executor.execute(() -> {
-            RtpParameters newParameters = localVideoSender.getParameters();
-            if (newParameters != null) {
-                newParameters.degradationPreference = degradationPreference;
-                localVideoSender.setParameters(newParameters);
+            RtpSender videoSender = findVideoSender();
+            if (videoSender == null) {
+                Log.w(TAG, "Sender is not ready.");
+                return;
+            }
+            try {
+                RtpParameters newParameters = videoSender.getParameters();
+                if (newParameters != null) {
+                    newParameters.degradationPreference = degradationPreference;
+                    videoSender.setParameters(newParameters);
+                }
+            } catch (IllegalStateException e) {
+                localVideoSender = null;
+                Log.w(TAG, "Video sender is not available: " + e.getMessage());
             }
         });
     }
@@ -2289,8 +2295,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         config.audioCallEnabled = enable;
 
         executor.execute(() -> {
+            boolean shouldSendAudio = enable && sendAudioEnabled;
             if (localAudioTrack != null) {
-                localAudioTrack.setEnabled(enable);
+                localAudioTrack.setEnabled(shouldSendAudio);
+            }
+            if (config.disableSilenceWhenMuted) {
+                setAudioSenderEnabled(shouldSendAudio);
             }
         });
     }
@@ -2316,6 +2326,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             boolean shouldSendAudio = enableAudio && config.audioCallEnabled;
             if (localAudioTrack != null) {
                 localAudioTrack.setEnabled(shouldSendAudio);
+            }
+            if (config.disableSilenceWhenMuted) {
+                setAudioSenderEnabled(shouldSendAudio);
             }
         });
     }
@@ -2474,28 +2487,32 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             return;
         }
         executor.execute(() -> {
-            if (localVideoSender == null) {
-                return;
-            }
             Log.d(TAG, "Requested max video bitrate: " + maxBitrateKbps);
-            if (localVideoSender == null) {
+            RtpSender videoSender = findVideoSender();
+            if (videoSender == null) {
                 Log.w(TAG, "Sender is not ready.");
                 return;
             }
 
-            RtpParameters parameters = localVideoSender.getParameters();
-            if (parameters.encodings.isEmpty()) {
-                Log.w(TAG, "RtpParameters are not ready.");
-                return;
-            }
+            try {
+                RtpParameters parameters = videoSender.getParameters();
+                if (parameters.encodings.isEmpty()) {
+                    Log.w(TAG, "RtpParameters are not ready.");
+                    return;
+                }
 
-            for (RtpParameters.Encoding encoding : parameters.encodings) {
-                // Null value means no limit.
-                encoding.maxBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS;
-                encoding.minBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS / 2;
-            }
-            if (!localVideoSender.setParameters(parameters)) {
-                Log.e(TAG, "RtpSender.setParameters failed.");
+                for (RtpParameters.Encoding encoding : parameters.encodings) {
+                    // Null value means no limit.
+                    encoding.maxBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS;
+                    encoding.minBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS / 2;
+                }
+                if (!videoSender.setParameters(parameters)) {
+                    Log.e(TAG, "RtpSender.setParameters failed.");
+                }
+            } catch (IllegalStateException e) {
+                localVideoSender = null;
+                Log.w(TAG, "Video sender is not available: " + e.getMessage());
+                return;
             }
             Log.d(TAG, "Configured max video bitrate to: " + maxBitrateKbps);
         });
@@ -2530,6 +2547,37 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private void findVideoSender(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
         findVideoSender(pc);
+    }
+
+    private void setAudioSenderEnabled(boolean enabled) {
+        for (PeerInfo peerInfo : peers.values()) {
+            PeerConnection pc = peerInfo.peerConnection;
+            if (pc == null) {
+                continue;
+            }
+            try {
+                for (RtpSender sender : pc.getSenders()) {
+                    MediaStreamTrack track = sender.track();
+                    if (track == null || !MediaStreamTrack.AUDIO_TRACK_KIND.equals(track.kind())) {
+                        continue;
+                    }
+                    RtpParameters parameters = sender.getParameters();
+                    if (parameters == null || parameters.encodings.isEmpty()) {
+                        Log.w(TAG, "Audio RtpParameters are not ready.");
+                        return;
+                    }
+                    for (RtpParameters.Encoding encoding : parameters.encodings) {
+                        encoding.active = enabled;
+                    }
+                    if (!sender.setParameters(parameters)) {
+                        Log.e(TAG, "Audio RtpSender.setParameters failed.");
+                    }
+                    return;
+                }
+            } catch (IllegalStateException e) {
+                Log.w(TAG, "Audio sender is not available: " + e.getMessage());
+            }
+        }
     }
 
     @androidx.annotation.Nullable
