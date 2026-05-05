@@ -183,4 +183,17 @@ public class WebRTCClientConfig {
      * Flag for connecting bluetooth headphones.
      */
     public boolean bluetoothEnabled = false;
+
+    /*
+     * Flag indicating whether black frame sender is disabled when video is toggled off.
+     * When true, no black frames will be sent when toggleSendVideo(false) is called.
+     */
+    public boolean disableBlackFrameSender = false;
+
+    /*
+     * Flag indicating whether silence packets are disabled when audio is muted.
+     * When true, RTP transmission is stopped when toggleSendAudio(false) is called (no silence packets sent).
+     * When false, muted audio still sends silence packets (default WebRTC behavior).
+     */
+    public boolean disableSilenceWhenMuted = false;
 }

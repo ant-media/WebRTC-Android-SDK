@@ -1367,6 +1367,46 @@ public class WebRTCClientTest {
     }
 
     @Test
+    public void testDisableBlackFrameSender_blackFrameSenderNotActivatedWhenDisabled() {
+        webRTCClient.setDisableBlackFrameSender(true);
+        webRTCClient.getConfig().videoCallEnabled = true;
+
+        CustomVideoCapturer customVideoCapturerMock = mock(CustomVideoCapturer.class);
+        doNothing().when(customVideoCapturerMock).writeFrame(any());
+        webRTCClient.setVideoCapturer(customVideoCapturerMock);
+        when(webRTCClient.createVideoCapturer(IWebRTCClient.StreamSource.CUSTOM)).thenReturn(customVideoCapturerMock);
+
+        webRTCClient.toggleSendVideo(false);
+
+        await().atMost(2, SECONDS).untilAsserted(() ->
+                assertNull(webRTCClient.getBlackFrameSender()));
+        assertTrue(webRTCClient.getConfig().videoSource == IWebRTCClient.StreamSource.CUSTOM);
+    }
+
+    @Test
+    public void testDisableSilenceWhenMuted_doesNotDetachAudioSender() {
+        String streamId = "stream1";
+        WebRTCClient.PeerInfo peerInfo = new WebRTCClient.PeerInfo(streamId, WebRTCClient.Mode.PUBLISH);
+        PeerConnection pc = mock(PeerConnection.class);
+        peerInfo.peerConnection = pc;
+
+        RtpSender audioSender = mock(RtpSender.class);
+        AudioTrack audioTrackMock = mock(AudioTrack.class);
+        when(pc.getSenders()).thenReturn(Collections.singletonList(audioSender));
+
+        webRTCClient.getPeersForTest().put(streamId, peerInfo);
+        webRTCClient.setLocalAudioTrack(audioTrackMock);
+        webRTCClient.setDisableSilenceWhenMuted(true);
+
+        webRTCClient.toggleSendAudio(false);
+
+        await().atMost(2, SECONDS).untilAsserted(() -> {
+            verify(audioTrackMock).setEnabled(false);
+            verify(audioSender, never()).setTrack(null, false);
+        });
+    }
+
+    @Test
     public void testTurnServer(){
         String turnServerUri = "turn:example.antmedia.io";
         String turnServerUsername = "testUserName";

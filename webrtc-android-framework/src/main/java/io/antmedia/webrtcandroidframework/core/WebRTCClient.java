@@ -1853,23 +1853,50 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void changeVideoCapturer(VideoCapturer newVideoCapturer) {
-        try {
-            if (videoCapturer != null) {
-                videoCapturer.stopCapture();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        videoCapturerStopped = true;
+        VideoCapturer oldVideoCapturer = videoCapturer;
+        VideoTrack oldVideoTrack = localVideoTrack;
         videoCapturer = newVideoCapturer;
         localVideoTrack = null;
 
         MediaStreamTrack newTrack = createVideoTrack(videoCapturer);
-        if (localVideoSender != null) {
-            localVideoSender.setTrack(newTrack, true);
+        RtpSender videoSender = findVideoSender();
+        if (videoSender == null || newTrack == null) {
+            Log.e(TAG, "Video sender or new video track is not available while changing video capturer.");
+            stopVideoCapturer(newVideoCapturer);
+            videoCapturer = oldVideoCapturer;
+            localVideoTrack = oldVideoTrack;
+            return;
         }
 
+        try {
+            if (!videoSender.setTrack(newTrack, true)) {
+                Log.e(TAG, "RtpSender.setTrack failed while changing video capturer.");
+                stopVideoCapturer(newVideoCapturer);
+                videoCapturer = oldVideoCapturer;
+                localVideoTrack = oldVideoTrack;
+                return;
+            }
+        } catch (IllegalStateException e) {
+            localVideoSender = null;
+            stopVideoCapturer(newVideoCapturer);
+            videoCapturer = oldVideoCapturer;
+            localVideoTrack = oldVideoTrack;
+            Log.e(TAG, "Video sender was disposed while changing video capturer.", e);
+            return;
+        }
+
+        stopVideoCapturer(oldVideoCapturer);
+
+    }
+
+    private void stopVideoCapturer(@androidx.annotation.Nullable VideoCapturer capturer) {
+        try {
+            if (capturer != null) {
+                capturer.stopCapture();
+            }
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Could not stop video capturer.", e);
+        }
     }
 
     /**
@@ -2286,8 +2313,9 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void toggleSendAudio(boolean enableAudio) {
         executor.execute(() -> {
             sendAudioEnabled = enableAudio;
+            boolean shouldSendAudio = enableAudio && config.audioCallEnabled;
             if (localAudioTrack != null) {
-                localAudioTrack.setEnabled(enableAudio);
+                localAudioTrack.setEnabled(shouldSendAudio);
             }
         });
     }
@@ -2307,8 +2335,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 changeVideoSource(StreamSource.FRONT_CAMERA);
             } else {
                 changeVideoSource(StreamSource.CUSTOM);
-                blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
-                blackFrameSender.start();
+                if (!config.disableBlackFrameSender) {
+                    blackFrameSender = new BlackFrameSender((CustomVideoCapturer) getVideoCapturer());
+                    blackFrameSender.start();
+                }
             }
         });
     }
@@ -2499,7 +2529,22 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private void findVideoSender(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
+        findVideoSender(pc);
+    }
 
+    @androidx.annotation.Nullable
+    private RtpSender findVideoSender() {
+        for (PeerInfo peerInfo : peers.values()) {
+            RtpSender sender = findVideoSender(peerInfo.peerConnection);
+            if (sender != null) {
+                return sender;
+            }
+        }
+        return null;
+    }
+
+    @androidx.annotation.Nullable
+    private RtpSender findVideoSender(@androidx.annotation.Nullable PeerConnection pc) {
         if (pc != null) {
             for (RtpSender sender : pc.getSenders()) {
                 MediaStreamTrack track = sender.track();
@@ -2508,10 +2553,12 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     if (trackType.equals(VIDEO_TRACK_TYPE)) {
                         Log.d(TAG, "Found video sender.");
                         localVideoSender = sender;
+                        return sender;
                     }
                 }
             }
         }
+        return null;
     }
 
     private static String getSdpVideoCodecName(String codec) {
@@ -2831,6 +2878,14 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public void setDataChannelEnabled(boolean dataChannelEnabled) {
         this.config.dataChannelEnabled = dataChannelEnabled;
+    }
+
+    public void setDisableBlackFrameSender(boolean disableBlackFrameSender) {
+        this.config.disableBlackFrameSender = disableBlackFrameSender;
+    }
+
+    public void setDisableSilenceWhenMuted(boolean disableSilenceWhenMuted) {
+        this.config.disableSilenceWhenMuted = disableSilenceWhenMuted;
     }
 
     public void setFactory(@androidx.annotation.Nullable PeerConnectionFactory factory) {
