@@ -162,6 +162,9 @@ public class ConferenceActivity extends TestableActivity {
                 .setDataChannelObserver(createDatachannelObserver())
                 .build();
 
+        webRTCClient.setDisableBlackFrameSender(true);
+        webRTCClient.setDisableSilenceWhenMuted(true);
+
         joinButton = findViewById(R.id.join_conference_button);
         joinButton.setOnClickListener(v -> {
             joinLeaveRoom();
