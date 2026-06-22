@@ -289,6 +289,11 @@ public class EglRenderer implements VideoSink {
       renderThreadHandler.removeCallbacks(logStatisticsRunnable);
       // Release EGL and GL resources on render thread.
       renderThreadHandler.postAtFrontOfQueue(() -> {
+        // Clear surface before EGL teardown so the last video frame is not left visible.
+        if (eglBase != null && eglBase.hasSurface()) {
+          eglBase.makeCurrent();
+          clearSurfaceOnRenderThread(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
+        }
         // Detach current shader program.
         synchronized (EglBase.lock) {
           GLES20.glUseProgram(/* program= */ 0);
