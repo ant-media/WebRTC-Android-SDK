@@ -201,7 +201,7 @@ public class DynamicConferenceActivity extends TestableActivity {
                 webRTCClient.joinToConferenceRoom(roomId);
             }
             else {
-                webRTCClient.joinToConferenceRoom(roomId, streamId, videoCallEnabled, audioCallEnabled, "", "", "", "");
+                webRTCClient.joinToConferenceRoom(roomId, streamId, videoCallEnabled, audioCallEnabled, "", "", "", "", null);
             }
 
         }
