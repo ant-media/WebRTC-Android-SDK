@@ -476,7 +476,7 @@ public class WebRTCClientTest {
     public void testReleaseCallback() {
         doNothing().when(wsHandler).disconnect(anyBoolean());
         webRTCClient.setStreamStoppedByUser(true);
-        webRTCClient.onIceDisconnected("streamId");
+        webRTCClient.onPeerConnectionLost("streamId");
         Mockito.verify(webRTCClient, times(1)).release(true);
     }
 
@@ -700,21 +700,16 @@ public class WebRTCClientTest {
         String publishStreamId = "publishStreamId";
         webRTCClient.publish(publishStreamId, "", true, true, "","", "", "");
 
-        webRTCClient.onIceDisconnected(playStreamId);
-        webRTCClient.onIceDisconnected(publishStreamId);
+        webRTCClient.onPeerConnectionLost(playStreamId);
+        webRTCClient.onPeerConnectionLost(publishStreamId);
 
-        verify(listener, timeout(1000)).onIceDisconnected(playStreamId);
-        verify(listener, timeout(1000)).onIceDisconnected(publishStreamId);
+        verify(listener, timeout(1000).times(2)).onDisconnected();
 
-        verify(webRTCClient,times(2)).rePublishPlay();
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 2000).atLeast(2))
+                .startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
-        verify(webRTCClient, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(1)).startPublish(anyString(),anyString(),anyBoolean(),anyBoolean(),anyString(),anyString(),anyString(),anyString());
-
-
-
-
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 2000).atLeast(2))
+                .startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test

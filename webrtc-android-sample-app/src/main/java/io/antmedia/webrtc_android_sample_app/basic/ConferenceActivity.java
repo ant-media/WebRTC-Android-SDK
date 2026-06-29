@@ -278,12 +278,21 @@ public class ConferenceActivity extends TestableActivity {
             public void onIceDisconnected(String streamId) {
                 super.onIceDisconnected(streamId);
 
-                if(webRTCClient.isReconnectionInProgress()){
+                if(webRTCClient.isReconnectionInProgress() || webRTCClient.getConfig().reconnectionEnabled){
                     statusIndicatorTextView.setTextColor(getResources().getColor(R.color.blue));
                     statusIndicatorTextView.setText(getResources().getString(R.string.reconnecting));
                 }else{
                     statusIndicatorTextView.setTextColor(getResources().getColor(R.color.red));
                     statusIndicatorTextView.setText(getResources().getString(R.string.disconnected));
+                }
+            }
+
+            @Override
+            public void onIceConnected(String streamId) {
+                super.onIceConnected(streamId);
+                if (webRTCClient.isPublishConnected() && webRTCClient.isPlayConnected()) {
+                    statusIndicatorTextView.setTextColor(getResources().getColor(R.color.green));
+                    statusIndicatorTextView.setText(getResources().getString(R.string.live));
                 }
             }
 
