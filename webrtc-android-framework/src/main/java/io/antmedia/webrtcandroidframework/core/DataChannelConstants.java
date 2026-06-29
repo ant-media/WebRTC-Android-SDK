@@ -3,6 +3,7 @@ package io.antmedia.webrtcandroidframework.core;
 public class DataChannelConstants {
 
     public static final String VIDEO_TRACK_ASSIGNMENT_LIST = "VIDEO_TRACK_ASSIGNMENT_LIST";
+    public static final String TRACK_LIST_UPDATED = "TRACK_LIST_UPDATED";
     public static final String PAYLOAD = "payload";
     public static final String TRACK_ID = "trackId";
     public static final String VIDEO_LABEL = "videoLabel";

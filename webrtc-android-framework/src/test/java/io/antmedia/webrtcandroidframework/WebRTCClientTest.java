@@ -1,6 +1,7 @@
 package io.antmedia.webrtcandroidframework;
 
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.reset;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -63,6 +64,7 @@ import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -474,7 +476,7 @@ public class WebRTCClientTest {
     public void testReleaseCallback() {
         doNothing().when(wsHandler).disconnect(anyBoolean());
         webRTCClient.setStreamStoppedByUser(true);
-        webRTCClient.onIceDisconnected("streamId");
+        webRTCClient.onPeerConnectionLost("streamId");
         Mockito.verify(webRTCClient, times(1)).release(true);
     }
 
@@ -698,18 +700,16 @@ public class WebRTCClientTest {
         String publishStreamId = "publishStreamId";
         webRTCClient.publish(publishStreamId, "", true, true, "","", "", "");
 
-        webRTCClient.onIceDisconnected(playStreamId);
-        webRTCClient.onIceDisconnected(publishStreamId);
+        webRTCClient.onPeerConnectionLost(playStreamId);
+        webRTCClient.onPeerConnectionLost(publishStreamId);
 
-        verify(listener, timeout(1000)).onIceDisconnected(playStreamId);
-        verify(listener, timeout(1000)).onIceDisconnected(publishStreamId);
+        verify(listener, timeout(1000).times(2)).onDisconnected();
 
-        verify(webRTCClient,times(2)).rePublishPlay();
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 2000).atLeast(2))
+                .startPlay(anyString(), anyString(), any(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
-        verify(webRTCClient, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
-
-        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(1)).startPublish(anyString(),anyString(),anyBoolean(),anyBoolean(),anyString(),anyString(),anyString(),anyString());
-
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 2000).atLeast(2))
+                .startPublish(anyString(), anyString(), anyBoolean(), anyBoolean(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test

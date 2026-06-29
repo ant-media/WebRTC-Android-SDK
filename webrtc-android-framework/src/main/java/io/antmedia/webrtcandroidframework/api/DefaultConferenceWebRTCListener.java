@@ -2,6 +2,7 @@ package io.antmedia.webrtcandroidframework.api;
 
 import org.webrtc.VideoTrack;
 
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
 import io.antmedia.webrtcandroidframework.websocket.Broadcast;
 
 /**
@@ -50,6 +51,7 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
 
         if (publishReconnecting) {
             publishReconnecting = false;
+            return;
         }
 
         webRTCClient.play(roomId);
@@ -84,8 +86,8 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     }
 
     @Override
-    public void onReconnectionAttempt(String streamId) {
-        super.onReconnectionAttempt(streamId);
+    public void onReconnectionAttempt(String streamId, WebRTCClient.Mode mode) {
+        super.onReconnectionAttempt(streamId, mode);
         if(streamId.equals(this.streamId)) {
             publishReconnecting = true;
         }

@@ -270,6 +270,14 @@ public interface IWebRTCClient {
      */
     boolean isReconnectionInProgress();
 
+    boolean isPlayConnected();
+
+    boolean isPublishConnected();
+
+    boolean isPlayReconnecting();
+
+    boolean isPublishReconnecting();
+
     /**
      * Get the error
      *

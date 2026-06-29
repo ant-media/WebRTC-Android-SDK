@@ -538,10 +538,12 @@ class WebRtcAudioTrack {
 
   // Releases the native AudioTrack resources.
   private void releaseAudioResources() {
-    Logging.d(TAG, "releaseAudioResources");
-    if (audioTrack != null) {
-      audioTrack.release();
-      audioTrack = null;
+    synchronized (this) {
+      Logging.d(TAG, "releaseAudioResources");
+      if (audioTrack != null) {
+        audioTrack.release();
+        audioTrack = null;
+      }
     }
   }
 

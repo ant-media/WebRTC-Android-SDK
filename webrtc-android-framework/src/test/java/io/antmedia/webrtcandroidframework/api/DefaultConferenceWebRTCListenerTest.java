@@ -19,7 +19,8 @@ import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 
-import de.tavendo.autobahn.WebSocket;
+import io.antmedia.webrtcandroidframework.core.WebRTCClient;
+
 
 public class DefaultConferenceWebRTCListenerTest{
     private String roomId;
@@ -82,11 +83,6 @@ public class DefaultConferenceWebRTCListenerTest{
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
 
-    @Test
-    public void testOnSignalChannelClosed() {
-        defaultWebRTCListener.onSignalChannelClosed(WebSocket.WebSocketConnectionObserver.WebSocketCloseNotification.NORMAL, "streamId");
-        verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
-    }
 
     @Test
     public void testStreamIdInUse() {
@@ -157,7 +153,7 @@ public class DefaultConferenceWebRTCListenerTest{
 
     @Test
     public void testOnReconnectionAttempt() {
-        defaultWebRTCListener.onReconnectionAttempt("streamId");
+        defaultWebRTCListener.onReconnectionAttempt("streamId", WebRTCClient.Mode.PUBLISH);
         verify(defaultWebRTCListener, times(1)).callbackCalled(anyString());
     }
 
@@ -199,16 +195,16 @@ public class DefaultConferenceWebRTCListenerTest{
 
     @Test
     public void testReconnecting() {
-        defaultWebRTCListener.onReconnectionAttempt(roomId);
+        defaultWebRTCListener.onReconnectionAttempt(roomId,WebRTCClient.Mode.PUBLISH);
         assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
 
-        defaultWebRTCListener.onReconnectionAttempt(streamId);
+        defaultWebRTCListener.onReconnectionAttempt(streamId,WebRTCClient.Mode.PUBLISH);
         assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
 
         defaultWebRTCListener.onPublishStarted(streamId);
         assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
 
-        defaultWebRTCListener.onReconnectionAttempt(streamId);
+        defaultWebRTCListener.onReconnectionAttempt(streamId,WebRTCClient.Mode.PUBLISH);
         assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
 
         defaultWebRTCListener.onSessionRestored(streamId);
@@ -223,16 +219,16 @@ public class DefaultConferenceWebRTCListenerTest{
         assertFalse(defaultWebRTCListener.isPublishReconnectingForTest());
         verify(mockWebRTCClient, times(1)).play(roomId);
 
-        //playStarted false, but play should not be called because publish is reconnecting state
-        defaultWebRTCListener.onReconnectionAttempt(streamId);
+        // publish reconnecting - WebRTCClient handles play reconnect, don't start play again
+        defaultWebRTCListener.onReconnectionAttempt(streamId,WebRTCClient.Mode.PUBLISH);
         assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
         defaultWebRTCListener.onPublishStarted(streamId);
-        verify(mockWebRTCClient, times(2)).play(roomId);
+        verify(mockWebRTCClient, times(1)).play(roomId);
 
-        //playStarted will be true, so play should not be called
+        //playStarted will be true, play is still called on publish restart (e.g. republish)
         defaultWebRTCListener.onPlayStarted(roomId);
         defaultWebRTCListener.onPublishStarted(streamId);
-        verify(mockWebRTCClient, times(3)).play(roomId);
+        verify(mockWebRTCClient, times(2)).play(roomId);
     }
     @Test
     public void testOnPeerConnectionCreated() {
