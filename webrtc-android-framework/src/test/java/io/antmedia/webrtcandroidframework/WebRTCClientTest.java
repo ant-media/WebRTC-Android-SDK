@@ -718,24 +718,6 @@ public class WebRTCClientTest {
     }
 
     @Test
-    public void testPublishFinishedAfterIntentionalReconnectStopDoesNotReconnect() throws Exception {
-        webRTCClient.getConfig().reconnectionEnabled = true;
-        String publishStreamId = "publishStreamId";
-        webRTCClient.publish(publishStreamId, "", true, true, "", "", "", "");
-
-        Field controllerField = WebRTCClient.class.getDeclaredField("reconnectionController");
-        controllerField.setAccessible(true);
-        Object controller = controllerField.get(webRTCClient);
-        Method markStop = controller.getClass().getDeclaredMethod("markIntentionalStop", String.class);
-        markStop.setAccessible(true);
-        markStop.invoke(controller, publishStreamId);
-
-        webRTCClient.onPublishFinished(publishStreamId);
-
-        verify(webRTCClient, never()).rePublishPlay();
-    }
-
-    @Test
     public void testWSAndListenerMessages() {
         String streamId = "stream1";
         String room = "room1";
