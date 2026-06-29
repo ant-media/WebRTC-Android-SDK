@@ -119,8 +119,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private String errorString = null;
 
     private boolean streamStoppedByUser = false;
-    private boolean publishReconnectionInProgress = false;
-    private boolean playReconnectionInProgress = false;
 
     private boolean autoPlayTracks = false;
     private boolean waitingForPlay = false;
@@ -241,17 +239,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     private boolean removeVideoRotationExtension = true;
 
-    //reconnection parameters
-    private Handler peerReconnectionHandler = new Handler();
-    private Handler publishReconnectionHandler = new Handler();
-    private Handler playReconnectionHandler = new Handler();
-
-    private Runnable peerReconnectorRunnable;
-    private Runnable publishReconnectorRunnable;
-    private Runnable playReconnectorRunnable;
-
     public static final long PEER_RECONNECTION_DELAY_MS = 3000;
     public static final long PEER_RECONNECTION_RETRY_DELAY_MS = 10000;
+
+    private final ReconnectionController reconnectionController = new ReconnectionController();
 
     private boolean released = false;
     private String roomId;
@@ -264,149 +255,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
 
     public void createReconnectorRunnables() {
-        //only used in conference.
-        publishReconnectorRunnable = () -> {
-            if(released || streamStoppedByUser){
-                return;
-            }
-            if(wsHandler.pingPongExecutor == null){
-                wsHandler.startPingPongTimer();
-            }
-            publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
-
-            for (PeerInfo peerInfo : peers.values()) {
-                PeerConnection pc = peerInfo.peerConnection;
-                if (pc == null ||
-                        (pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
-                                && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
-                                && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
-
-
-                    if (pc != null) {
-                        pc.close();
-                        /*
-                        This is a FIX of a reconnection bug.
-                        If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
-                        pc.dispose();
-                        */
-                    }
-
-                    config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
-                    if (peerInfo.mode.equals(Mode.PUBLISH)) {
-
-                        Log.d(TAG, "Reconnect attempt for publish");
-                        wsHandler.stop(peerInfo.id);
-                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
-
-
-                    }
-                }
-            }
-        };
-        //only used in conference.
-        playReconnectorRunnable = () -> {
-            if(released || streamStoppedByUser){
-                return;
-            }
-            if(wsHandler.pingPongExecutor == null){
-                wsHandler.startPingPongTimer();
-            }
-
-            playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
-
-            for (PeerInfo peerInfo : peers.values()) {
-                PeerConnection pc = peerInfo.peerConnection;
-                if (pc == null ||
-                        (pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
-                                && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
-                                && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
-
-
-                    releaseRemoteRenderers();
-                    if (pc != null) {
-                        pc.close();
-                        /*
-                        This is a FIX of a reconnection bug.
-                        If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
-                        pc.dispose();
-                        */
-                    }
-
-                    config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
-                    if (peerInfo.mode.equals(Mode.PLAY)) {
-                        Log.d(TAG, "Reconnect attempt for play");
-
-                        play(peerInfo.id,
-                                peerInfo.token,
-                                null,
-                                peerInfo.subscriberId,
-                                peerInfo.subscriberCode,
-                                peerInfo.metaData
-                        );
-                    }
-                }
-            }
-        };
-
-        peerReconnectorRunnable = () -> {
-            if(released || streamStoppedByUser){
-                return;
-            }
-            if(wsHandler.pingPongExecutor == null){
-                wsHandler.startPingPongTimer();
-            }
-
-            peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
-
-            for (PeerInfo peerInfo : peers.values()) {
-                PeerConnection pc = peerInfo.peerConnection;
-                if (pc == null ||
-                        (pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
-                                && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
-                                && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
-
-
-                    if (pc != null) {
-                        pc.close();
-                        /*
-                        This is a FIX of a reconnection bug.
-                        If dispose is used instead of close, in one of consequent reconnection attempts segmentation fault occurs.
-                        pc.dispose();
-                        */
-                    }
-
-                    config.webRTCListener.onReconnectionAttempt(peerInfo.id,peerInfo.mode);
-                    if (peerInfo.mode.equals(Mode.PUBLISH)) {
-
-                        Log.d(TAG, "Reconnect attempt for publish");
-                        wsHandler.stop(peerInfo.id);
-                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
-
-
-                    } else if (peerInfo.mode.equals(Mode.PLAY)) {
-                        if(config.remoteVideoRenderers.size() == 1){ //if its multitrack play dont release.
-                            releaseRemoteRenderers();
-                        }
-                        Log.d(TAG, "Reconnect attempt for play");
-
-                        play(peerInfo.id,
-                                peerInfo.token,
-                                null,
-                                peerInfo.subscriberId,
-                                peerInfo.subscriberCode,
-                                peerInfo.metaData
-                        );
-
-                    } else if (peerInfo.mode.equals(Mode.P2P)) {
-                        releaseRemoteRenderers();
-                        Log.d(TAG, "Reconnect attempt for P2P");
-                        wsHandler.leaveFromP2P(peerInfo.id);
-                        config.localVideoRenderer.setZOrderOnTop(true);
-                        join(peerInfo.id, peerInfo.token);
-                    }
-                }
-            }
-        };
+        reconnectionController.initialize();
     }
 
     public WebRTCClient(WebRTCClientConfig config) {
@@ -548,10 +397,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 if (newState == PeerConnection.PeerConnectionState.CONNECTED) {
                     onConnected(streamId);
                 } else if (newState == PeerConnection.PeerConnectionState.DISCONNECTED) {
-                    onDisconnected();
+                    onPeerConnectionLost(streamId);
                 } else if (newState == PeerConnection.PeerConnectionState.FAILED) {
                     reportError(streamId, "DTLS connection failed.");
-                    onDisconnected();
+                    onPeerConnectionLost(streamId);
                 }
             });
         }
@@ -995,20 +844,61 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (wsHandler == null) {
                 return;
             }
+            if (reconnectionController.isReconnectionInProgress()) {
+                Log.d(TAG, "Reconnection in progress, deferring publish/play resume to reconnection controller");
+                return;
+            }
+            if (hasDeadPeerConnections()) {
+                Log.i(TAG, "Dead peer connections detected on websocket connect, scheduling reconnection");
+                reconnectionController.requestReconnection();
+                return;
+            }
             for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
                 PeerInfo peerInfo = entry.getValue();
                 Mode peerMode = peerInfo.mode;
-                if (!publishReconnectionInProgress && peerMode == Mode.PUBLISH && peerInfo.peerConnection == null) {
+                if (peerMode == Mode.PUBLISH && shouldResumePublish(peerInfo)) {
                     Log.i(TAG, "Processing publish request for peer streamId: " + peerInfo.id);
+                    if (peerInfo.peerConnection != null) {
+                        reconnectionController.markIntentionalStop(peerInfo.id);
+                        wsHandler.stop(peerInfo.id);
+                    }
                     wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
                 }
-                if (!playReconnectionInProgress && peerMode == Mode.PLAY && peerInfo.peerConnection == null) {
+                if (peerMode == Mode.PLAY && shouldResumePlay(peerInfo)) {
                 Log.i(TAG, "Processing play request for peer streamId: " + peerInfo.id);
+                if (peerInfo.peerConnection != null) {
+                    reconnectionController.markIntentionalStop(peerInfo.id);
+                    wsHandler.stop(peerInfo.id);
+                }
                 wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberName, peerInfo.subscriberCode, peerInfo.metaData, peerInfo.disableTracksByDefault);
                 }
 
             }
         }
+    }
+
+    private boolean hasDeadPeerConnections() {
+        for (PeerInfo peerInfo : peers.values()) {
+            PeerConnection peerConnection = peerInfo.peerConnection;
+            if (peerConnection != null && isPeerConnectionDead(peerConnection)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean shouldResumePublish(PeerInfo peerInfo) {
+        if (peerInfo.peerConnection == null) {
+            return !reconnectionController.isReconnectionInProgress();
+        }
+        return reconnectionController.isPublishReconnecting() && !isPeerFullyConnected(peerInfo.peerConnection);
+    }
+
+    private boolean shouldResumePlay(PeerInfo peerInfo) {
+        if (peerInfo.peerConnection == null) {
+            return !reconnectionController.isReconnectionInProgress();
+        }
+        return reconnectionController.isPlayReconnecting() && !isPeerFullyConnected(peerInfo.peerConnection);
     }
 
     public void publish(String streamId) {
@@ -1264,19 +1154,21 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void releaseRenderer(SurfaceViewRenderer renderer, VideoTrack track, VideoSink sink) {
-        VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
-        VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
+        mainHandler.post(() -> {
+            VideoTrack videoTrack = (track != null) ? track : (VideoTrack) renderer.getTag();
+            VideoSink videoSink = (sink != null) ? sink : (VideoSink) renderer.getTag(renderer.getId());
 
-        if (videoTrack != null && videoSink != null)
-            videoTrack.removeSink(videoSink);
-        else{
-            Log.d("test","test");
-        }
-        renderer.clearAnimation();
-        mainHandler.postAtFrontOfQueue(renderer::clearImage);
 
-        renderer.release();
-        renderer.setTag(null);
+            if (videoTrack != null && videoSink != null) {
+                videoTrack.removeSink(videoSink);
+            }
+
+            renderer.clearAnimation();
+            renderer.clearImage();
+            renderer.release();
+            renderer.setTag(null);
+            renderer.setTag(renderer.getId(), null);
+        });
     }
 
     private void releaseRemoteRenderers() {
@@ -1408,59 +1300,100 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             if (config.webRTCListener != null) {
                 config.webRTCListener.onIceConnected(streamId);
             }
+
+            reconnectionController.onPeerConnectionEstablished(streamId);
         });
     }
 
     public void rePublishPlay() {
-        synchronized (this) {
-            if (streamStoppedByUser) {
-                return;
-            }
-
-            if (isConference()) {
-                if(isPublishConnected() && isPlayConnected()){
-                    onConnected(getPublishStreamId());
-                    Log.i(TAG, "------ Connected Automatically ----");
-                    return;
-                }
-                Log.i(TAG, "Conference! Will try to republish in  " + PEER_RECONNECTION_DELAY_MS + " ms.");
-                Log.i(TAG,"publish connected :"+ isPublishConnected() +"play connected" +isPlayConnected());
-                if (!isPublishConnected() && !publishReconnectionInProgress) {
-                    publishReconnectionInProgress = true;
-                    publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-                    Log.d(TAG, "------------------------------------- Publish Reconnection --------------------------------------");
-                }
-                if (!isPlayConnected() && !playReconnectionInProgress) {
-                    playReconnectionInProgress = true;
-                    playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-                    Log.d(TAG, "------------------------------------- Play Reconnection --------------------------------------");
-                }
-            } else {
-                Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
-                publishReconnectionInProgress = true;
-                peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-            }
-        }
+        reconnectionController.requestReconnection();
     }
 
     public void onIceDisconnected(String streamId) {
 
         this.handler.post(() -> {
-            Log.d(TAG, "ICE disconnected");
+            Log.d(TAG, "ICE disconnected for streamId: " + streamId);
 
             if (config.webRTCListener != null) {
                 config.webRTCListener.onIceDisconnected(streamId);
             }
 
-            if (streamStoppedByUser) {
-                release(true);
-                return;
-            }
-
-            if (config.reconnectionEnabled) {
-                rePublishPlay();
+            // Reconnection is handled from PeerConnection state changes to avoid duplicate work.
+            if (reconnectionController.shouldIgnoreDisconnect(streamId)) {
+                Log.d(TAG, "Ignoring ICE disconnect during reconnect teardown: " + streamId);
             }
         });
+    }
+
+    public void onPeerConnectionLost(String streamId) {
+        this.handler.post(() -> {
+            Log.d(TAG, "Peer connection lost for streamId: " + streamId);
+
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onDisconnected();
+            }
+
+            handlePeerConnectionLoss(streamId);
+        });
+    }
+
+    private void handlePeerConnectionLoss(String streamId) {
+        if (reconnectionController.shouldIgnoreDisconnect(streamId)) {
+            Log.d(TAG, "Ignoring peer connection loss during reconnect teardown: " + streamId);
+            return;
+        }
+
+        if (streamStoppedByUser) {
+            release(true);
+            return;
+        }
+
+        if (config.reconnectionEnabled) {
+            reconnectionController.onPeerConnectionLost(streamId);
+        }
+    }
+
+    private boolean isPeerFullyConnected(PeerConnection peerConnection) {
+        if (peerConnection == null) {
+            return false;
+        }
+        PeerConnection.PeerConnectionState connectionState = peerConnection.connectionState();
+        PeerConnection.IceConnectionState iceState = peerConnection.iceConnectionState();
+        return connectionState == PeerConnection.PeerConnectionState.CONNECTED
+                && (iceState == PeerConnection.IceConnectionState.CONNECTED
+                || iceState == PeerConnection.IceConnectionState.COMPLETED);
+    }
+
+    private boolean isPeerConnecting(PeerConnection peerConnection) {
+        if (peerConnection == null) {
+            return false;
+        }
+        if (peerConnection.connectionState() == PeerConnection.PeerConnectionState.CONNECTING) {
+            return true;
+        }
+        PeerConnection.IceConnectionState iceState = peerConnection.iceConnectionState();
+        return iceState == PeerConnection.IceConnectionState.NEW
+                || iceState == PeerConnection.IceConnectionState.CHECKING;
+    }
+
+    private boolean isPeerConnectionInProgress(PeerConnection peerConnection) {
+        return isPeerFullyConnected(peerConnection) || isPeerConnecting(peerConnection);
+    }
+
+    private boolean isPeerConnectionDead(PeerConnection peerConnection) {
+        if (peerConnection == null) {
+            return true;
+        }
+        PeerConnection.PeerConnectionState connectionState = peerConnection.connectionState();
+        if (connectionState == PeerConnection.PeerConnectionState.FAILED
+                || connectionState == PeerConnection.PeerConnectionState.DISCONNECTED
+                || connectionState == PeerConnection.PeerConnectionState.CLOSED) {
+            return true;
+        }
+        PeerConnection.IceConnectionState iceState = peerConnection.iceConnectionState();
+        return iceState == PeerConnection.IceConnectionState.FAILED
+                || iceState == PeerConnection.IceConnectionState.DISCONNECTED
+                || iceState == PeerConnection.IceConnectionState.CLOSED;
     }
 
     private boolean isConference(){
@@ -1472,13 +1405,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     private boolean isAllPeersConnected() {
-        for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
-            PeerConnection peerConnection = entry.getValue().peerConnection;
-            if(peerConnection == null){
-                return false;
-            }
-            PeerConnection.PeerConnectionState peerConnectionState = peerConnection.connectionState();
-            if(peerConnectionState != PeerConnection.PeerConnectionState.CONNECTED){
+        if (peers.isEmpty()) {
+            return false;
+        }
+        for (PeerInfo peerInfo : peers.values()) {
+            if (!isPeerFullyConnected(peerInfo.peerConnection)) {
                 return false;
             }
         }
@@ -1499,84 +1430,63 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
+    @Override
     public boolean isPublishConnected(){
         for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
-            PeerConnection peerConnection = entry.getValue().peerConnection;
-            if(peerConnection == null){
-                return false;
+            if (entry.getValue().mode != Mode.PUBLISH) {
+                continue;
             }
-            PeerConnection.IceConnectionState peerConnectionState = peerConnection.iceConnectionState();
-            if(entry.getValue().mode == Mode.PUBLISH && peerConnectionState != PeerConnection.IceConnectionState.CONNECTED){
+            if (!isPeerFullyConnected(entry.getValue().peerConnection)) {
                 return false;
             }
         }
         return true;
     }
 
+    @Override
     public boolean isPlayConnected(){
         for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
-            PeerConnection peerConnection = entry.getValue().peerConnection;
-            if(peerConnection == null){
-                return false;
+            if (entry.getValue().mode != Mode.PLAY) {
+                continue;
             }
-            PeerConnection.PeerConnectionState peerConnectionState = peerConnection.connectionState();
-            if(entry.getValue().mode == Mode.PLAY && peerConnectionState != PeerConnection.PeerConnectionState.CONNECTED){
+            if (!isPeerFullyConnected(entry.getValue().peerConnection)) {
                 return false;
             }
         }
         return true;
+    }
+
+    private boolean hasPeerWithMode(Mode mode) {
+        for (PeerInfo peerInfo : peers.values()) {
+            if (peerInfo.mode == mode) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public boolean isPlayReconnecting() {
-        return playReconnectionInProgress;
+        return reconnectionController.isPlayReconnecting();
     }
     @Override
     public boolean isPublishReconnecting() {
-        return publishReconnectionInProgress;
+        return reconnectionController.isPublishReconnecting();
     }
 
 
     public void onConnected(String streamId) {
         Log.i(TAG, "Connected for streamId:" + streamId);
-
-        if(isConference() && config.reconnectionEnabled){
-
-            if(isPublishConnected()){
-                Log.i(TAG,"Publish reconnected");
-                publishReconnectionHandler.removeCallbacksAndMessages(null);
-                publishReconnectionInProgress = false;
-            }
-            if(isPlayConnected()){
-                Log.i(TAG,"Play reconnected");
-                playReconnectionHandler.removeCallbacksAndMessages(null);
-                playReconnectionInProgress = false;
-            }
-            if(isPlayConnected() && isPublishConnected()){
-                this.handler.post(() -> {
-                    if (config.webRTCListener != null) {
-                        config.webRTCListener.onReconnectionSuccess();
-                    }
-                });
-            }
-            streamStoppedByUser = false;
-            return;
-        }
-
-        if (config.reconnectionEnabled && isAllPeersConnected()) {
-            Log.i(TAG, "All peers reconnected. Reconnection completed successfully.");
-            peerReconnectionHandler.removeCallbacksAndMessages(null);
-            publishReconnectionHandler.removeCallbacksAndMessages(null);
-            playReconnectionHandler.removeCallbacksAndMessages(null);
-            playReconnectionInProgress = false;
-            publishReconnectionInProgress = false;
-            this.handler.post(() -> {
-                if (config.webRTCListener != null) {
-                    config.webRTCListener.onReconnectionSuccess();
-                }
-            });
-        }
+        reconnectionController.onPeerConnectionEstablished(streamId);
         streamStoppedByUser = false;
+    }
+
+    private void notifyReconnectionSuccess() {
+        this.handler.post(() -> {
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onReconnectionSuccess();
+            }
+        });
     }
 
     public void onPeerConnectionClosed() {
@@ -1606,7 +1516,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                 if(peerInfo != null){
                     PeerConnection pc = peerInfo.peerConnection;
                     if (pc == null) {
-                        boolean createLocalTrack = peerInfo.mode == Mode.P2P;
+                        boolean createLocalTrack = peerInfo.mode == Mode.P2P || peerInfo.mode == Mode.PUBLISH;
                         createPeerConnection(streamId, createLocalTrack);
                     }
                 }
@@ -1621,7 +1531,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     @Override
     public void onPublishFinished(String streamId) {
-        if(!isStreamStoppedByUser()){
+        if (!isStreamStoppedByUser() && !reconnectionController.consumeIntentionalStop(streamId)) {
             rePublishPlay();
         }
         this.handler.post(() -> {
@@ -1635,7 +1545,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onPlayFinished(String streamId) {
         waitingForPlay = false;
-        if(!isStreamStoppedByUser()){
+        if (!isStreamStoppedByUser() && !reconnectionController.consumeIntentionalStop(streamId)) {
             rePublishPlay();
         }
         this.handler.post(() -> {
@@ -1649,7 +1559,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onPublishStarted(String streamId) {
         Log.d(TAG,"Publish started.");
         streamStoppedByUser = false;
-        publishReconnectionInProgress = false;
 
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -1664,7 +1573,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.d(TAG, "Play started.");
 
         streamStoppedByUser = false;
-        playReconnectionInProgress = false;
         waitingForPlay = false;
 
         this.handler.post(() -> {
@@ -2336,11 +2244,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         onPeerConnectionClosed();
 
         clearStatsCollector();
-        playReconnectionInProgress = false;
-        publishReconnectionInProgress = false;
-        peerReconnectionHandler.removeCallbacksAndMessages(null);
-        publishReconnectionHandler.removeCallbacksAndMessages(null);
-        playReconnectionHandler.removeCallbacksAndMessages(null);
+        reconnectionController.stop();
     }
 
     private void clearStatsCollector(){
@@ -2926,7 +2830,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public boolean isReconnectionInProgress() {
-        return publishReconnectionInProgress || playReconnectionInProgress;
+        return reconnectionController.isReconnectionInProgress();
     }
 
     public CustomWebRtcAudioRecord getAudioInput() {
@@ -2969,7 +2873,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public void setPeerReconnectionHandler(Handler peerReconnectionHandler) {
-        this.peerReconnectionHandler = peerReconnectionHandler;
+        reconnectionController.setHandler(peerReconnectionHandler);
     }
 
     public ArrayList<PeerConnection.IceServer> getIceServers() {
@@ -3039,6 +2943,396 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void getDebugInfo(String streamId) {
         if (wsHandler != null && wsHandler.isConnected()) {
             wsHandler.getDebugInfo(streamId);
+        }
+    }
+
+    /**
+     * Unified peer reconnection: debounced start, periodic retries, and clean peer teardown.
+     */
+    private final class ReconnectionController {
+        private Handler handler = new Handler();
+        private Runnable retryRunnable;
+        private Runnable initialDelayRunnable;
+        private boolean retryLoopActive = false;
+        private boolean initialDelayPending = false;
+        private boolean publishReconnectionInProgress = false;
+        private boolean playReconnectionInProgress = false;
+        private boolean conferenceRecoveryPending = false;
+        private final Map<String, Long> lastReconnectAttemptMs = new ConcurrentHashMap<>();
+
+        private final Set<String> tearingDownStreamIds = ConcurrentHashMap.newKeySet();
+        private final Set<String> intentionalStopStreamIds = ConcurrentHashMap.newKeySet();
+
+        boolean shouldIgnoreDisconnect(String streamId) {
+            return tearingDownStreamIds.contains(streamId);
+        }
+
+        void markIntentionalStop(String streamId) {
+            intentionalStopStreamIds.add(streamId);
+        }
+
+        boolean consumeIntentionalStop(String streamId) {
+            return intentionalStopStreamIds.remove(streamId);
+        }
+
+        void initialize() {
+            if (retryRunnable != null) {
+                return;
+            }
+            retryRunnable = this::runRetryCycle;
+        }
+
+        void setHandler(Handler reconnectionHandler) {
+            this.handler = reconnectionHandler;
+        }
+
+        boolean isPublishReconnecting() {
+            return publishReconnectionInProgress;
+        }
+
+        boolean isPlayReconnecting() {
+            return playReconnectionInProgress;
+        }
+
+        boolean isReconnectionInProgress() {
+            return publishReconnectionInProgress || playReconnectionInProgress || retryLoopActive || initialDelayPending;
+        }
+
+        void requestReconnection() {
+            synchronized (WebRTCClient.this) {
+                if (!config.reconnectionEnabled || released || streamStoppedByUser) {
+                    return;
+                }
+
+                if (retryLoopActive || initialDelayPending) {
+                    return;
+                }
+
+                if (isConference()) {
+                    if (isPublishConnected() && isPlayConnected()) {
+                        onPeerConnectionEstablished(getPublishStreamId());
+                        return;
+                    }
+                    conferenceRecoveryPending = true;
+                    markConferenceReconnectionTargets();
+                    Log.i(TAG, "Conference reconnection scheduled. publishConnected=" + isPublishConnected()
+                            + " playConnected=" + isPlayConnected());
+                } else {
+                    publishReconnectionInProgress = true;
+                    playReconnectionInProgress = true;
+                    Log.i(TAG, "Peer reconnection scheduled in " + PEER_RECONNECTION_DELAY_MS + " ms.");
+                }
+
+                scheduleInitialReconnect();
+            }
+        }
+
+        void onPeerConnectionLost(String streamId) {
+            synchronized (WebRTCClient.this) {
+                if (!config.reconnectionEnabled || released || streamStoppedByUser) {
+                    return;
+                }
+
+                if (shouldIgnoreDisconnect(streamId)) {
+                    Log.d(TAG, "Ignoring peer connection loss during reconnect teardown: " + streamId);
+                    return;
+                }
+
+                PeerInfo peerInfo = getPeerInfoFor(streamId);
+                if (peerInfo == null) {
+                    requestReconnection();
+                    return;
+                }
+
+                markReconnectionTarget(peerInfo.mode);
+                if (isConference()) {
+                    conferenceRecoveryPending = true;
+                    markConferenceReconnectionTargets();
+                }
+
+                if (retryLoopActive || initialDelayPending) {
+                    if (peerInfo.peerConnection != null && isPeerConnectionDead(peerInfo.peerConnection)) {
+                        Log.d(TAG, "Peer connection dead during active reconnection, accelerating retry for: " + streamId);
+                        accelerateRetry();
+                    } else {
+                        Log.d(TAG, "Reconnection already active, ignoring disconnect for streamId: " + streamId);
+                    }
+                    return;
+                }
+
+                Log.i(TAG, "Peer connection lost, scheduling reconnection for streamId: " + streamId
+                        + " mode: " + peerInfo.mode);
+                scheduleInitialReconnect();
+            }
+        }
+
+        private void accelerateRetry() {
+            if (initialDelayPending && initialDelayRunnable != null) {
+                handler.removeCallbacks(initialDelayRunnable);
+                initialDelayPending = false;
+                startRetryLoop();
+                return;
+            }
+            if (retryLoopActive && retryRunnable != null) {
+                handler.removeCallbacks(retryRunnable);
+                handler.post(retryRunnable);
+            }
+        }
+
+        private void markReconnectionTarget(Mode mode) {
+            if (mode == Mode.PUBLISH) {
+                publishReconnectionInProgress = true;
+            } else if (mode == Mode.PLAY) {
+                playReconnectionInProgress = true;
+            } else {
+                publishReconnectionInProgress = true;
+                playReconnectionInProgress = true;
+            }
+        }
+
+        private void markConferenceReconnectionTargets() {
+            if (hasPeerWithMode(Mode.PUBLISH)) {
+                publishReconnectionInProgress = true;
+            }
+            if (hasPeerWithMode(Mode.PLAY)) {
+                playReconnectionInProgress = true;
+            }
+        }
+
+        void onPeerConnectionEstablished(String streamId) {
+            if (!config.reconnectionEnabled) {
+                return;
+            }
+
+            if (isConference()) {
+                updateConferenceReconnectionFlags();
+                tryCompleteConferenceReconnection();
+                return;
+            }
+
+            if (isReconnectionInProgress() && isAllPeersConnected()) {
+                completeReconnection();
+            }
+        }
+
+        private void updateConferenceReconnectionFlags() {
+            if (publishReconnectionInProgress && isPublishConnected()) {
+                publishReconnectionInProgress = false;
+            }
+            if (playReconnectionInProgress && isPlayConnected()) {
+                playReconnectionInProgress = false;
+            }
+        }
+
+        private void tryCompleteConferenceReconnection() {
+            if (!conferenceRecoveryPending && !isReconnectionInProgress()) {
+                return;
+            }
+            if (!isPublishConnected() || !isPlayConnected()) {
+                return;
+            }
+            Log.i(TAG, "Conference publish and play fully connected after recovery.");
+            completeReconnection();
+        }
+
+        void stop() {
+            handler.removeCallbacksAndMessages(null);
+            retryLoopActive = false;
+            initialDelayPending = false;
+            publishReconnectionInProgress = false;
+            playReconnectionInProgress = false;
+            conferenceRecoveryPending = false;
+            tearingDownStreamIds.clear();
+            intentionalStopStreamIds.clear();
+            lastReconnectAttemptMs.clear();
+        }
+
+        private void scheduleInitialReconnect() {
+            if (retryLoopActive || initialDelayPending) {
+                return;
+            }
+            initialDelayPending = true;
+            initialDelayRunnable = () -> {
+                initialDelayPending = false;
+                startRetryLoop();
+            };
+            handler.postDelayed(initialDelayRunnable, PEER_RECONNECTION_DELAY_MS);
+        }
+
+        private void startRetryLoop() {
+            if (released || streamStoppedByUser) {
+                return;
+            }
+            if (allReconnectionTargetsConnected()) {
+                completeReconnection();
+                return;
+            }
+            retryLoopActive = true;
+            runRetryCycle();
+        }
+
+        private void runRetryCycle() {
+            if (released || streamStoppedByUser) {
+                stop();
+                return;
+            }
+
+            ensurePingPongTimer();
+
+            if (allReconnectionTargetsConnected()) {
+                completeReconnection();
+                return;
+            }
+
+            for (PeerInfo peerInfo : peers.values()) {
+                if (shouldReconnectPeer(peerInfo)) {
+                    reconnectPeer(peerInfo);
+                }
+            }
+
+            updateReconnectionFlags();
+            tryCompleteConferenceReconnection();
+
+            if (allReconnectionTargetsConnected()) {
+                completeReconnection();
+                return;
+            }
+
+            handler.postDelayed(retryRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
+        }
+
+        private void completeReconnection() {
+            Log.i(TAG, "Reconnection completed successfully.");
+            stop();
+            notifyReconnectionSuccess();
+        }
+
+        private void ensurePingPongTimer() {
+            if (wsHandler != null && wsHandler.pingPongExecutor == null) {
+                wsHandler.startPingPongTimer();
+            }
+        }
+
+        private void updateReconnectionFlags() {
+            if (!isConference()) {
+                return;
+            }
+            if (publishReconnectionInProgress && isPublishConnected()) {
+                publishReconnectionInProgress = false;
+            }
+            if (playReconnectionInProgress && isPlayConnected()) {
+                playReconnectionInProgress = false;
+            }
+        }
+
+        private boolean allReconnectionTargetsConnected() {
+            if (isConference()) {
+                boolean publishNeeded = hasPeerWithMode(Mode.PUBLISH);
+                boolean playNeeded = hasPeerWithMode(Mode.PLAY);
+                if (publishNeeded && (publishReconnectionInProgress || !isPublishConnected())) {
+                    return false;
+                }
+                if (playNeeded && (playReconnectionInProgress || !isPlayConnected())) {
+                    return false;
+                }
+                return true;
+            }
+            return isAllPeersConnected();
+        }
+
+        private boolean shouldReconnectPeer(PeerInfo peerInfo) {
+            if (isPeerFullyConnected(peerInfo.peerConnection)) {
+                return false;
+            }
+
+            if (isConference()) {
+                if (peerInfo.mode == Mode.PUBLISH && !publishReconnectionInProgress) {
+                    return false;
+                }
+                if (peerInfo.mode == Mode.PLAY && !playReconnectionInProgress) {
+                    return false;
+                }
+                return shouldForceConferenceReconnect(peerInfo);
+            }
+
+            return !isPeerConnectionInProgress(peerInfo.peerConnection);
+        }
+
+        private boolean shouldForceConferenceReconnect(PeerInfo peerInfo) {
+            PeerConnection peerConnection = peerInfo.peerConnection;
+            Long lastAttempt = lastReconnectAttemptMs.get(peerInfo.id);
+            boolean withinGracePeriod = lastAttempt != null
+                    && System.currentTimeMillis() - lastAttempt < PEER_RECONNECTION_RETRY_DELAY_MS;
+
+            if (peerConnection == null) {
+                // Signaling already sent, waiting for server SDP / peer connection creation
+                return !withinGracePeriod;
+            }
+            if (isPeerConnectionDead(peerConnection)) {
+                return true;
+            }
+            if (isPeerConnecting(peerConnection)) {
+                return false;
+            }
+            if (withinGracePeriod) {
+                return false;
+            }
+            return !isPeerFullyConnected(peerConnection);
+        }
+
+        private void reconnectPeer(PeerInfo peerInfo) {
+            lastReconnectAttemptMs.put(peerInfo.id, System.currentTimeMillis());
+            tearingDownStreamIds.add(peerInfo.id);
+            closePeerConnectionForReconnect(peerInfo);
+            handler.postDelayed(() -> tearingDownStreamIds.remove(peerInfo.id), PEER_RECONNECTION_DELAY_MS);
+
+            if (config.webRTCListener != null) {
+                config.webRTCListener.onReconnectionAttempt(peerInfo.id, peerInfo.mode);
+            }
+
+            if (peerInfo.mode == Mode.PUBLISH) {
+                Log.d(TAG, "Reconnect attempt for publish: " + peerInfo.id);
+                if (isWebSocketConnected()) {
+                    markIntentionalStop(peerInfo.id);
+                    wsHandler.stop(peerInfo.id);
+                    wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled,
+                            peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
+                } else {
+                    Log.w(TAG, "Websocket not connected, deferring publish reconnect for: " + peerInfo.id);
+                }
+            } else if (peerInfo.mode == Mode.PLAY) {
+                if (config.remoteVideoRenderers.size() == 1) {
+                    releaseRemoteRenderers();
+                }
+                Log.d(TAG, "Reconnect attempt for play: " + peerInfo.id);
+                if (isWebSocketConnected()) {
+                    markIntentionalStop(peerInfo.id);
+                    wsHandler.stop(peerInfo.id);
+                    wsHandler.startPlay(peerInfo.id, peerInfo.token, null, peerInfo.subscriberId, peerInfo.subscriberName,
+                            peerInfo.subscriberCode, peerInfo.metaData, peerInfo.disableTracksByDefault);
+                } else {
+                    Log.w(TAG, "Websocket not connected, deferring play reconnect for: " + peerInfo.id);
+                }
+            } else if (peerInfo.mode == Mode.P2P) {
+                releaseRemoteRenderers();
+                Log.d(TAG, "Reconnect attempt for P2P: " + peerInfo.id);
+                wsHandler.leaveFromP2P(peerInfo.id);
+                if (config.localVideoRenderer != null) {
+                    config.localVideoRenderer.setZOrderOnTop(true);
+                }
+                join(peerInfo.id, peerInfo.token);
+            }
+        }
+
+        private void closePeerConnectionForReconnect(PeerInfo peerInfo) {
+            PeerConnection peerConnection = peerInfo.peerConnection;
+            if (peerConnection != null) {
+                peerConnection.close();
+                peerInfo.peerConnection = null;
+            }
+            peerInfo.setLocalDescription(null);
+            peerInfo.setQueuedRemoteCandidates(new ArrayList<>());
+            peerInfo.restartIce = false;
         }
     }
 }

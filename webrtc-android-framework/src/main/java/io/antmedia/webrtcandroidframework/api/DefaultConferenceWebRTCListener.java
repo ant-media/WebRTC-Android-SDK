@@ -51,6 +51,7 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
 
         if (publishReconnecting) {
             publishReconnecting = false;
+            return;
         }
 
         webRTCClient.play(roomId);

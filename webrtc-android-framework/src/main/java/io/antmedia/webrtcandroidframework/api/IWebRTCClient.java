@@ -272,6 +272,8 @@ public interface IWebRTCClient {
 
     boolean isPlayConnected();
 
+    boolean isPublishConnected();
+
     boolean isPlayReconnecting();
 
     boolean isPublishReconnecting();
