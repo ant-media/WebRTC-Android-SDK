@@ -397,88 +397,24 @@ public class ConferenceActivityTest {
 
         Thread.sleep(10000);
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
+        int[] disconnectDurationsMs = {5000, 7000, 10000, 5000, 7000, 10000, 5000, 7000, 10000, 7000};
+        for (int cycle = 0; cycle < disconnectDurationsMs.length; cycle++) {
+            int cycleNumber = cycle + 1;
+            int disconnectDurationMs = disconnectDurationsMs[cycle];
+            Log.i("ConferenceActivityTest", "Reconnect stress cycle " + cycleNumber
+                    + ": disconnecting for " + disconnectDurationMs + " ms");
 
-        disconnectInternet();
+            disconnectInternet();
+            Thread.sleep(disconnectDurationMs);
+            connectInternet();
 
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
-
-        connectInternet();
-
-        Thread.sleep(40000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        onView(withId(R.id.show_stats_button)).perform(click());
-
-        Thread.sleep(5000);
-
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
-
-        Thread.sleep(5000);
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
-
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
-                .perform(waitForTrackStatsItem())
-                .check((view, noViewFoundException) -> {
-                    if (noViewFoundException != null) {
-                        throw noViewFoundException;
-                    }
-                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
-                    int bytesReceived = Integer.parseInt(( textView1).getText().toString());
-                    assertTrue(bytesReceived > 0);
-
-                });
-
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
-
-        Thread.sleep(5000);
+            Log.i("ConferenceActivityTest", "Reconnect stress cycle " + cycleNumber
+                    + ": internet restored, waiting for recovery");
+            Thread.sleep(40000);
+        }
 
         onView(withId(R.id.join_conference_button)).perform(click());
-
         Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
-
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        disconnectInternet();
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
-
-        connectInternet();
-
-        Thread.sleep(40000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);

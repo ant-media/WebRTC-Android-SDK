@@ -704,7 +704,7 @@ public class WebRTCClientTest {
         verify(listener, timeout(1000)).onIceDisconnected(playStreamId);
         verify(listener, timeout(1000)).onIceDisconnected(publishStreamId);
 
-        verify(webRTCClient,times(2)).rePublishPlay();
+        verify(webRTCClient,times(2)).rePublishPlay(anyString());
 
         verify(webRTCClient, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000).atLeast(2)).play(anyString(), anyString(), any(), anyString(), anyString(), anyString());
 

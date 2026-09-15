@@ -114,7 +114,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private String errorString = null;
 
     private boolean streamStoppedByUser = false;
-    private boolean reconnectionInProgress = false;
+    private boolean publishReconnectionInProgress = false;
+    private boolean playReconnectionInProgress = false;
 
     private boolean autoPlayTracks = false;
     private boolean waitingForPlay = false;
@@ -267,6 +268,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
 
             for (PeerInfo peerInfo : peers.values()) {
+                if (!peerInfo.mode.equals(Mode.PUBLISH)) {
+                    continue;
+                }
+
                 PeerConnection pc = peerInfo.peerConnection;
                 if (pc == null ||
                         (pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
@@ -284,14 +289,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     }
 
                     config.webRTCListener.onReconnectionAttempt(peerInfo.id);
-                    if (peerInfo.mode.equals(Mode.PUBLISH)) {
 
-                        Log.d(TAG, "Reconnect attempt for publish");
-                        wsHandler.stop(peerInfo.id);
-                        wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
-
-
-                    }
+                    Log.d(TAG, "Reconnect attempt for publish");
+                    wsHandler.stop(peerInfo.id);
+                    wsHandler.startPublish(peerInfo.id, peerInfo.token, peerInfo.videoCallEnabled, peerInfo.audioCallEnabled, peerInfo.subscriberId, peerInfo.subscriberCode, peerInfo.streamName, peerInfo.mainTrackId);
                 }
             }
         };
@@ -305,6 +306,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_RETRY_DELAY_MS);
 
             for (PeerInfo peerInfo : peers.values()) {
+                if (!peerInfo.mode.equals(Mode.PLAY)) {
+                    continue;
+                }
+
                 PeerConnection pc = peerInfo.peerConnection;
                 if (pc == null ||
                         (pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
@@ -322,17 +327,15 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                     }
 
                     config.webRTCListener.onReconnectionAttempt(peerInfo.id);
-                    if (peerInfo.mode.equals(Mode.PLAY)) {
-                        Log.d(TAG, "Reconnect attempt for play");
+                    Log.d(TAG, "Reconnect attempt for play");
 
-                        play(peerInfo.id,
-                                peerInfo.token,
-                                null,
-                                peerInfo.subscriberId,
-                                peerInfo.subscriberCode,
-                                peerInfo.metaData
-                        );
-                    }
+                    play(peerInfo.id,
+                            peerInfo.token,
+                            null,
+                            peerInfo.subscriberId,
+                            peerInfo.subscriberCode,
+                            peerInfo.metaData
+                    );
                 }
             }
         };
@@ -1362,17 +1365,38 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         });
     }
 
-    public void rePublishPlay() {
-        if (streamStoppedByUser || reconnectionInProgress) {
+    public void rePublishPlay(String streamId) {
+        if (streamStoppedByUser) {
             return;
         }
-        reconnectionInProgress = true;
 
-        if(isConference()){
-            Log.i(TAG, "Conference! Will try to republish in  " + PEER_RECONNECTION_DELAY_MS + " ms.");
-            publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
-        }else{
-            Log.i(TAG, "Peer was connected before. Will try to republish/replay in " + PEER_RECONNECTION_DELAY_MS + " ms.");
+        PeerInfo peerInfo = getPeerInfoFor(streamId);
+        if (peerInfo == null) {
+            return;
+        }
+
+        if (peerInfo.mode == Mode.PUBLISH) {
+            if (publishReconnectionInProgress) {
+                return;
+            }
+            publishReconnectionInProgress = true;
+        } else if (peerInfo.mode == Mode.PLAY) {
+            if (playReconnectionInProgress) {
+                return;
+            }
+            playReconnectionInProgress = true;
+        }
+
+        if (isConference()) {
+            if (peerInfo.mode == Mode.PUBLISH) {
+                publishReconnectionHandler.removeCallbacksAndMessages(null);
+                publishReconnectionHandler.postDelayed(publishReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
+            } else if (peerInfo.mode == Mode.PLAY) {
+                playReconnectionHandler.removeCallbacksAndMessages(null);
+                playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
+            }
+        } else {
+            peerReconnectionHandler.removeCallbacksAndMessages(null);
             peerReconnectionHandler.postDelayed(peerReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
         }
     }
@@ -1392,7 +1416,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
            }
 
            if (config.reconnectionEnabled) {
-               rePublishPlay();
+               rePublishPlay(streamId);
            }
 
            if (isConference()) {
@@ -1465,16 +1489,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onConnected(String streamId) {
         Log.i(TAG, "Connected for streamId:" + streamId);
 
-        if(config.reconnectionEnabled && reconnectionInProgress  && isConference() && isPublishConnected() && !isPlayConnected()){
+        if (config.reconnectionEnabled && isReconnectionInProgress() && isConference() && isPublishConnected() && !isPlayConnected()){
             Log.i(TAG,"Conference reconnection. Publish connected. Play not connected. Try to reconnect play.");
-            publishReconnectionHandler.removeCallbacksAndMessages(null);
+            playReconnectionInProgress = true;
+            playReconnectionHandler.removeCallbacksAndMessages(null);
             playReconnectionHandler.postDelayed(playReconnectorRunnable, PEER_RECONNECTION_DELAY_MS);
             return;
         }
 
-        if (config.reconnectionEnabled && reconnectionInProgress && isAllPeersConnected()) {
+        if (config.reconnectionEnabled && isReconnectionInProgress() && isAllPeersConnected()) {
             Log.i(TAG, "All peers reconnected. Reconnection completed successfully.");
-            reconnectionInProgress = false;
+            publishReconnectionInProgress = false;
+            playReconnectionInProgress = false;
             peerReconnectionHandler.removeCallbacksAndMessages(null);
             publishReconnectionHandler.removeCallbacksAndMessages(null);
             playReconnectionHandler.removeCallbacksAndMessages(null);
@@ -1551,6 +1577,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onPublishStarted(String streamId) {
         Log.d(TAG,"Publish started.");
         streamStoppedByUser = false;
+        publishReconnectionHandler.removeCallbacksAndMessages(null);
 
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -1565,7 +1592,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.d(TAG, "Play started.");
 
         streamStoppedByUser = false;
-        reconnectionInProgress = false;
+        playReconnectionHandler.removeCallbacksAndMessages(null);
         waitingForPlay = false;
 
         this.handler.post(() -> {
@@ -2221,7 +2248,8 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         onPeerConnectionClosed();
 
         clearStatsCollector();
-        reconnectionInProgress = false;
+        publishReconnectionInProgress = false;
+        playReconnectionInProgress = false;
         peerReconnectionHandler.removeCallbacksAndMessages(null);
         publishReconnectionHandler.removeCallbacksAndMessages(null);
         playReconnectionHandler.removeCallbacksAndMessages(null);
@@ -2810,7 +2838,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     }
 
     public boolean isReconnectionInProgress() {
-        return reconnectionInProgress;
+        return publishReconnectionInProgress || playReconnectionInProgress;
     }
 
     public CustomWebRtcAudioRecord getAudioInput() {
