@@ -396,8 +396,10 @@ public class ConferenceActivityTest {
         RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
         Thread.sleep(10000);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.live)));
 
-        int[] disconnectDurationsMs = {5000, 7000, 10000, 5000, 7000, 10000, 5000, 7000, 10000, 7000};
+        int[] disconnectDurationsMs = {1000, 3000, 5000, 7000, 10000, 1000, 3000, 5000, 7000, 10000};
         for (int cycle = 0; cycle < disconnectDurationsMs.length; cycle++) {
             int cycleNumber = cycle + 1;
             int disconnectDurationMs = disconnectDurationsMs[cycle];
@@ -411,10 +413,14 @@ public class ConferenceActivityTest {
             Log.i("ConferenceActivityTest", "Reconnect stress cycle " + cycleNumber
                     + ": internet restored, waiting for recovery");
             Thread.sleep(40000);
+            onView(withId(R.id.broadcasting_text_view))
+                    .check(matches(withText(R.string.live)));
         }
 
         onView(withId(R.id.join_conference_button)).perform(click());
         Thread.sleep(3000);
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
