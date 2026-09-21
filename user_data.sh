@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 sudo apt-get update && apt-get install jq curl unzip openjdk-17-jdk ffmpeg -y -qq
 
 GITHUB_TOKEN=""
@@ -34,14 +36,16 @@ cat <<EOF >> ~/actions-runner/.path
 EOF"
 
 # Install Android SDK
+SDK_ARCHIVE="/tmp/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+curl --fail --location --retry 5 --retry-all-errors \
+  --output "$SDK_ARCHIVE" \
+  "https://dl.google.com/android/repository/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+install -d -o "$USER" -g "$USER" \
+  "/home/$USER/android/cmdline-tools/latest" \
+  "/home/$USER/android/tmp"
+su - $USER -c "unzip -q '$SDK_ARCHIVE' -d ~/android/tmp/"
+su - $USER -c "mv ~/android/tmp/cmdline-tools/* ~/android/cmdline-tools/latest/"
 su - $USER -c "
-wget https://dl.google.com/android/repository/commandlinetools-linux-"$SDK_VERSION"_latest.zip
-mkdir -p ~/android/cmdline-tools/latest
-mkdir -p ~/android/tmp
-unzip ~/commandlinetools-linux-"$SDK_VERSION"_latest.zip -d ~/android/tmp/
-mv ~/android/tmp/cmdline-tools/* ~/android/cmdline-tools/latest/
-echo $HOME >> /tmp/id.txt
-whoami >> /tmp/id.txt
 cat <<EOF >> ~/.bashrc
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
 export ANDROID_HOME=/home/$USER/android/
@@ -50,6 +54,7 @@ export PATH=/home/$USER/android/cmdline-tools/latest/bin:/home/$USER/android/pla
 EOF"
 
 test -x /home/$USER/android/cmdline-tools/latest/bin/sdkmanager
+/home/$USER/android/cmdline-tools/latest/bin/sdkmanager --version
 
 # Start the runner only after the Android SDK tools and environment are ready.
 cd /home/$USER/actions-runner/
