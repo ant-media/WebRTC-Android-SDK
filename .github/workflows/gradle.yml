@@ -166,7 +166,9 @@ jobs:
 
           install_android_package "platform-tools_r37.0.1-linux.zip" "platform-tools" "platform-tools_r37.0.1-linux.zip" "platform-tools"
           install_android_package "build-tools_r34-linux.zip" "build-tools/34.0.0" "build-tools_r34-linux.zip" "android-14"
+          install_android_package "build-tools_r30.0.3-linux.zip" "build-tools/30.0.3" "build-tools_r30.0.3-linux.zip" "android-11"
           install_android_package "platform-30_r03.zip" "platforms/android-30" "platform-30_r03.zip" "android-11"
+          install_android_package "platform-34-ext7_r03.zip" "platforms/android-34" "platform-34-ext7_r03.zip" "android-34"
           install_android_package "emulator-linux_x64-15917651.zip" "emulator" "emulator-linux_x64-15917651.zip" "emulator"
           install_android_package "x86_64-30_r11.zip" "system-images/android-30/default/x86_64" "sys-img/android/x86_64-30_r11.zip" "x86_64"
 
@@ -191,6 +193,18 @@ jobs:
           register_android_package "platform-tools" "platform-tools" "37"
           register_android_package "build-tools/34.0.0" "build-tools;34.0.0" "34"
           register_android_package "emulator" "emulator" "36"
+          cat > "/home/ubuntu/android/build-tools/30.0.3/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:generic="http://schemas.android.com/repository/android/generic/02">
+            <localPackage path="build-tools;30.0.3" obsolete="false">
+              <type-details xsi:type="generic:genericDetailsType"/>
+              <revision><major>30</major><minor>0</minor><micro>3</micro></revision>
+              <display-name>Android SDK Build-Tools 30.0.3</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
           cat > "/home/ubuntu/android/platforms/android-30/package.xml" <<EOF
           <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
           <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
@@ -205,6 +219,23 @@ jobs:
               </type-details>
               <revision><major>3</major></revision>
               <display-name>Android SDK Platform 30</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+          cat > "/home/ubuntu/android/platforms/android-34/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/03">
+            <localPackage path="platforms;android-34" obsolete="false">
+              <type-details xsi:type="sdk:platformDetailsType">
+                <api-level>34</api-level>
+                <codename/>
+                <base-extension>true</base-extension>
+                <layoutlib api="15"/>
+              </type-details>
+              <revision><major>3</major></revision>
+              <display-name>Android SDK Platform 34</display-name>
             </localPackage>
           </ns2:repository>
           EOF
@@ -224,6 +255,13 @@ jobs:
             </localPackage>
           </ns2:repository>
           EOF
+
+          mkdir -p /home/ubuntu/android/licenses
+          printf '%s\n' \
+            '8933bad161af4178b1185d1a37fbf41ea5269c55' \
+            'd56f5187479451eabf01fb78af6dfcb131a6481e' \
+            '24333f8a63b6825ea9c5514f83c2829b004d1fee' \
+            > /home/ubuntu/android/licenses/android-sdk-license
 
           echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=/home/ubuntu/android" >> "$GITHUB_ENV"
