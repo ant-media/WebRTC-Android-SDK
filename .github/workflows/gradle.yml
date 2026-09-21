@@ -277,20 +277,57 @@ jobs:
         run: python3 multitrack-conference-server.py &
 
       - name: Run Tests and Generate Report
-        uses: reactivecircus/android-emulator-runner@v2.32.0
-        with:
-          api-level: 30
-          target: default
-          arch: x86_64
-          force-avd-creation: false
-          disable-animations: true
-          cores: 3
-          emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
-          script: |
-            touch emulator.log               
-            chmod 777 emulator.log
-            adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
+        run: |
+          AVD_NAME="test"
+          AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
+          mkdir -p "$AVD_DIR"
+          cat > "$HOME/.android/avd/${AVD_NAME}.ini" <<EOF
+          avd.ini.encoding=UTF-8
+          path=$AVD_DIR
+          path.rel=avd/${AVD_NAME}.avd
+          target=android-30
+          EOF
+          cat > "$AVD_DIR/config.ini" <<EOF
+          AvdId=$AVD_NAME
+          PlayStore.enabled=false
+          abi.type=x86_64
+          avd.ini.displayname=$AVD_NAME
+          avd.ini.encoding=UTF-8
+          disk.dataPartition.size=2G
+          fastboot.forceColdBoot=yes
+          hw.cpu.arch=x86_64
+          hw.cpu.ncore=3
+          hw.gpu.enabled=yes
+          hw.gpu.mode=swiftshader_indirect
+          hw.keyboard=yes
+          hw.lcd.density=420
+          hw.lcd.height=1920
+          hw.lcd.width=1080
+          hw.ramSize=2048
+          image.sysdir.1=system-images/android-30/default/x86_64/
+          runtime.network.latency=none
+          runtime.network.speed=full
+          showDeviceFrame=no
+          skin.dynamic=yes
+          tag.display=Default Android System Image
+          tag.id=default
+          vm.heapSize=256
+          EOF
+
+          emulator -avd "$AVD_NAME" -no-snapshot-save -gpu swiftshader_indirect \
+            -no-window -noaudio -no-boot-anim > emulator-start.log 2>&1 &
+          EMULATOR_PID=$!
+          trap 'adb emu kill >/dev/null 2>&1 || kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+          timeout 120 adb wait-for-device
+          timeout 600 bash -c 'until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 5; done'
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+          touch emulator.log
+          chmod 777 emulator.log
+          adb logcat io.antmedia:I >> emulator.log &
+          ./gradlew jacocoTestReport
 
       - name: Archive Test Report
         if: always()
