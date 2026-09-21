@@ -190,8 +190,24 @@ jobs:
 
           register_android_package "platform-tools" "platform-tools" "37"
           register_android_package "build-tools/34.0.0" "build-tools;34.0.0" "34"
-          register_android_package "platforms/android-30" "platforms;android-30" "3"
           register_android_package "emulator" "emulator" "36"
+          cat > "/home/ubuntu/android/platforms/android-30/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/03">
+            <localPackage path="platforms;android-30" obsolete="false">
+              <type-details xsi:type="sdk:platformDetailsType">
+                <api-level>30</api-level>
+                <codename/>
+                <base-extension>true</base-extension>
+                <layoutlib api="15"/>
+              </type-details>
+              <revision><major>3</major></revision>
+              <display-name>Android SDK Platform 30</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
           cat > "/home/ubuntu/android/system-images/android-30/default/x86_64/package.xml" <<EOF
           <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
           <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
