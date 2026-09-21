@@ -141,12 +141,36 @@ jobs:
           SDK_VERSION="13114758"
           SDK_ARCHIVE="$RUNNER_TEMP/commandlinetools-linux-${SDK_VERSION}_latest.zip"
           SDK_TMP="$RUNNER_TEMP/android-command-line-tools"
+          SDK_MIRROR="https://redirector.gvt1.com/edgedl/android/repository"
           mkdir -p /home/ubuntu/android/cmdline-tools/latest "$SDK_TMP"
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$SDK_ARCHIVE" \
-            "https://redirector.gvt1.com/edgedl/android/repository/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+            "$SDK_MIRROR/commandlinetools-linux-${SDK_VERSION}_latest.zip"
           unzip -q -o "$SDK_ARCHIVE" -d "$SDK_TMP"
           cp -a "$SDK_TMP/cmdline-tools/." /home/ubuntu/android/cmdline-tools/latest/
+
+          install_android_package() {
+            local archive_name="$1"
+            local destination="$2"
+            local remote_path="${3:-$archive_name}"
+            local archive="$RUNNER_TEMP/$archive_name"
+            local extract_dir="$RUNNER_TEMP/${archive_name%.zip}"
+            mkdir -p "$extract_dir" "/home/ubuntu/android/$destination"
+            curl --fail --location --retry 5 --retry-all-errors \
+              --output "$archive" "$SDK_MIRROR/$remote_path"
+            unzip -q -o "$archive" -d "$extract_dir"
+            local package_file
+            package_file="$(find "$extract_dir" -name package.xml -print -quit)"
+            test -n "$package_file"
+            cp -a "$(dirname "$package_file")/." "/home/ubuntu/android/$destination/"
+          }
+
+          install_android_package "platform-tools_r37.0.1-linux.zip" "platform-tools"
+          install_android_package "build-tools_r34-linux.zip" "build-tools/34.0.0"
+          install_android_package "platform-30_r03.zip" "platforms/android-30"
+          install_android_package "emulator-linux_x64-15917651.zip" "emulator"
+          install_android_package "x86_64-30_r11.zip" "system-images/android-30/default/x86_64" "sys-img/android/x86_64-30_r11.zip"
+
           echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "/home/ubuntu/android/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
