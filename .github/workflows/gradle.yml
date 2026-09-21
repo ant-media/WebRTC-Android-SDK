@@ -144,7 +144,7 @@ jobs:
           mkdir -p /home/ubuntu/android/cmdline-tools/latest "$SDK_TMP"
           curl --fail --location --retry 5 --retry-all-errors \
             --output "$SDK_ARCHIVE" \
-            "https://dl.google.com/android/repository/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+            "https://redirector.gvt1.com/edgedl/android/repository/commandlinetools-linux-${SDK_VERSION}_latest.zip"
           unzip -q -o "$SDK_ARCHIVE" -d "$SDK_TMP"
           cp -a "$SDK_TMP/cmdline-tools/." /home/ubuntu/android/cmdline-tools/latest/
           echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
