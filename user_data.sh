@@ -20,14 +20,11 @@ cat <<EOF >> ~/actions-runner/.env
 ANDROID_HOME=/home/$USER/android
 ANDROID_SDK_ROOT=/home/$USER/android
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
+PATH=/home/$USER/android/cmdline-tools/latest/bin:/home/$USER/android/platform-tools:/home/$USER/android/emulator:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 EOF"
 
 su - $USER -c "
 /home/$USER/actions-runner/config.sh --url https://github.com/$RUNNER_ORG --token $RUNNER_TOKEN --unattended"
-
-cd /home/$USER/actions-runner/
-./svc.sh install $USER
-./svc.sh start
 
 # Install Android SDK
 su - $USER -c "
@@ -41,7 +38,11 @@ whoami >> /tmp/id.txt
 cat <<EOF >> ~/.bashrc
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
 export ANDROID_HOME=/home/$USER/android/
-export PATH=/home/$USER/android/tools:\${PATH}
-export PATH=/home/$USER/android/emulator:\${PATH}
-export PATH=/home/$USER/android/platform-tools:\${PATH}
+export ANDROID_SDK_ROOT=/home/$USER/android/
+export PATH=/home/$USER/android/cmdline-tools/latest/bin:/home/$USER/android/platform-tools:/home/$USER/android/emulator:\${PATH}
 EOF"
+
+# Start the runner only after the Android SDK tools and environment are ready.
+cd /home/$USER/actions-runner/
+./svc.sh install $USER
+./svc.sh start
