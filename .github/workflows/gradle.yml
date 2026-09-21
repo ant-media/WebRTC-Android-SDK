@@ -138,12 +138,22 @@ jobs:
       - uses: actions/checkout@v3
       - name: Configure Android SDK environment
         run: |
+          SDK_VERSION="11076708"
+          SDK_ARCHIVE="$RUNNER_TEMP/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+          SDK_TMP="$RUNNER_TEMP/android-command-line-tools"
+          mkdir -p /home/ubuntu/android/cmdline-tools/latest "$SDK_TMP"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$SDK_ARCHIVE" \
+            "https://dl.google.com/android/repository/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+          unzip -q -o "$SDK_ARCHIVE" -d "$SDK_TMP"
+          cp -a "$SDK_TMP/cmdline-tools/." /home/ubuntu/android/cmdline-tools/latest/
           echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "/home/ubuntu/android/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
           echo "/home/ubuntu/android/platform-tools" >> "$GITHUB_PATH"
           echo "/home/ubuntu/android/emulator" >> "$GITHUB_PATH"
           test -x /home/ubuntu/android/cmdline-tools/latest/bin/sdkmanager
+          /home/ubuntu/android/cmdline-tools/latest/bin/sdkmanager --version
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
