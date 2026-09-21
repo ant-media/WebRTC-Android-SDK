@@ -15,16 +15,23 @@ su - $USER -c "
 mkdir -p actions-runner
 cd actions-runner
 curl -o actions-runner-linux-x64-$RUNNER_VERSION.tar.gz -L https://github.com/actions/runner/releases/download/v$RUNNER_VERSION/actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
-tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
+tar xzf ./actions-runner-linux-x64-$RUNNER_VERSION.tar.gz"
+
+su - $USER -c "
+/home/$USER/actions-runner/config.sh --url https://github.com/$RUNNER_ORG --token $RUNNER_TOKEN --unattended"
+
+# config.sh creates the runner environment files, so customize them afterwards.
+su - $USER -c "
 cat <<EOF >> ~/actions-runner/.env
 ANDROID_HOME=/home/$USER/android
 ANDROID_SDK_ROOT=/home/$USER/android
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
-PATH=/home/$USER/android/cmdline-tools/latest/bin:/home/$USER/android/platform-tools:/home/$USER/android/emulator:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+EOF
+cat <<EOF >> ~/actions-runner/.path
+/home/$USER/android/cmdline-tools/latest/bin
+/home/$USER/android/platform-tools
+/home/$USER/android/emulator
 EOF"
-
-su - $USER -c "
-/home/$USER/actions-runner/config.sh --url https://github.com/$RUNNER_ORG --token $RUNNER_TOKEN --unattended"
 
 # Install Android SDK
 su - $USER -c "
@@ -41,6 +48,8 @@ export ANDROID_HOME=/home/$USER/android/
 export ANDROID_SDK_ROOT=/home/$USER/android/
 export PATH=/home/$USER/android/cmdline-tools/latest/bin:/home/$USER/android/platform-tools:/home/$USER/android/emulator:\${PATH}
 EOF"
+
+test -x /home/$USER/android/cmdline-tools/latest/bin/sdkmanager
 
 # Start the runner only after the Android SDK tools and environment are ready.
 cd /home/$USER/actions-runner/
