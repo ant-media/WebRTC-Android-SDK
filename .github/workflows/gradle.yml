@@ -170,6 +170,30 @@ jobs:
           install_android_package "emulator-linux_x64-15917651.zip" "emulator" "emulator-linux_x64-15917651.zip" "emulator"
           install_android_package "x86_64-30_r11.zip" "system-images/android-30/default/x86_64" "sys-img/android/x86_64-30_r11.zip" "x86_64"
 
+          register_android_package() {
+            local destination="$1"
+            local package_path="$2"
+            local version="$3"
+            cat > "/home/ubuntu/android/$destination/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:generic="http://schemas.android.com/repository/android/generic/02">
+            <localPackage path="$package_path" obsolete="false">
+              <type-details xsi:type="generic:genericDetailsType"/>
+              <revision><major>$version</major></revision>
+              <display-name>$package_path</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+          }
+
+          register_android_package "platform-tools" "platform-tools" "37"
+          register_android_package "build-tools/34.0.0" "build-tools;34.0.0" "34"
+          register_android_package "platforms/android-30" "platforms;android-30" "3"
+          register_android_package "emulator" "emulator" "36"
+          register_android_package "system-images/android-30/default/x86_64" "system-images;android-30;default;x86_64" "11"
+
           echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "/home/ubuntu/android/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
