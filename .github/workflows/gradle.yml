@@ -192,7 +192,22 @@ jobs:
           register_android_package "build-tools/34.0.0" "build-tools;34.0.0" "34"
           register_android_package "platforms/android-30" "platforms;android-30" "3"
           register_android_package "emulator" "emulator" "36"
-          register_android_package "system-images/android-30/default/x86_64" "system-images;android-30;default;x86_64" "11"
+          cat > "/home/ubuntu/android/system-images/android-30/default/x86_64/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:sys-img="http://schemas.android.com/sdk/android/repo/sys-img2/04">
+            <localPackage path="system-images;android-30;default;x86_64" obsolete="false">
+              <type-details xsi:type="sys-img:sysImgDetailsType">
+                <api-level>30</api-level>
+                <tag><id>default</id><display>Default Android System Image</display></tag>
+                <abi>x86_64</abi>
+              </type-details>
+              <revision><major>11</major></revision>
+              <display-name>Intel x86_64 Atom System Image</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
 
           echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=/home/ubuntu/android" >> "$GITHUB_ENV"
