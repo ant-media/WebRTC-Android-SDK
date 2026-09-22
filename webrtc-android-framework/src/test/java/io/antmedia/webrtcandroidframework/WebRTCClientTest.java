@@ -713,6 +713,29 @@ public class WebRTCClientTest {
     }
 
     @Test
+    public void testReconnectStateIsNotClearedBySignallingCallbacks()
+            throws NoSuchFieldException, IllegalAccessException {
+        setPrivateBooleanField("publishReconnectionInProgress", true);
+        setPrivateBooleanField("playReconnectionInProgress", true);
+
+        webRTCClient.onPublishStarted("publishStreamId");
+        assertTrue(webRTCClient.isReconnectionInProgress());
+
+        webRTCClient.onPlayStarted("playStreamId");
+        assertTrue(webRTCClient.isReconnectionInProgress());
+
+        webRTCClient.onSessionRestored("publishStreamId");
+        assertTrue(webRTCClient.isReconnectionInProgress());
+    }
+
+    private void setPrivateBooleanField(String fieldName, boolean value)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = WebRTCClient.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.setBoolean(webRTCClient, value);
+    }
+
+    @Test
     public void testWSAndListenerMessages() {
         String streamId = "stream1";
         String room = "room1";

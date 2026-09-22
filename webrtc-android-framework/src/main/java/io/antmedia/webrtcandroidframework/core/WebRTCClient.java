@@ -340,7 +340,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
 
-
+                    forcePlayReconnection = false;
                     if (pc != null) {
                         pc.close();
                         /*
@@ -1536,6 +1536,11 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
             Log.i(TAG, "All peers reconnected. Reconnection completed successfully.");
             publishReconnectionInProgress = false;
             playReconnectionInProgress = false;
+            publishStopSentForReconnection = false;
+            publishReconnectAttemptCount = 0;
+            publishWebSocketReconnectSent = false;
+            forcePublishReconnection = false;
+            forcePlayReconnection = false;
             peerReconnectionHandler.removeCallbacksAndMessages(null);
             publishReconnectionHandler.removeCallbacksAndMessages(null);
             playReconnectionHandler.removeCallbacksAndMessages(null);
@@ -1612,12 +1617,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     public void onPublishStarted(String streamId) {
         Log.d(TAG,"Publish started.");
         streamStoppedByUser = false;
-        publishReconnectionInProgress = false;
-        publishStopSentForReconnection = false;
-        publishReconnectionHandler.removeCallbacksAndMessages(null);
-        publishReconnectAttemptCount = 0;
-        publishWebSocketReconnectSent = false;
-
 
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -1632,8 +1631,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         Log.d(TAG, "Play started.");
 
         streamStoppedByUser = false;
-        playReconnectionInProgress = false;
-        playReconnectionHandler.removeCallbacksAndMessages(null);
         waitingForPlay = false;
 
         this.handler.post(() -> {
@@ -1682,16 +1679,6 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     @Override
     public void onSessionRestored(String streamId) {
         streamStoppedByUser = false;
-
-        PeerInfo peerInfo = getPeerInfoFor(streamId);
-        if (peerInfo != null && peerInfo.mode == Mode.PUBLISH) {
-            publishReconnectionInProgress = false;
-            publishStopSentForReconnection = false;
-            publishReconnectionHandler.removeCallbacksAndMessages(null);
-            publishReconnectAttemptCount = 0;
-            publishWebSocketReconnectSent = false;
-
-        }
 
         this.handler.post(() -> {
             if (config.webRTCListener != null) {
@@ -2314,6 +2301,10 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
         publishReconnectionInProgress = false;
         playReconnectionInProgress = false;
         publishStopSentForReconnection = false;
+        publishReconnectAttemptCount = 0;
+        publishWebSocketReconnectSent = false;
+        forcePublishReconnection = false;
+        forcePlayReconnection = false;
         peerReconnectionHandler.removeCallbacksAndMessages(null);
         publishReconnectionHandler.removeCallbacksAndMessages(null);
         playReconnectionHandler.removeCallbacksAndMessages(null);
