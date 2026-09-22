@@ -51,6 +51,14 @@ public class ConferenceActivity extends TestableActivity {
     private String streamId;
     private String serverUrl;
     private IWebRTCClient webRTCClient;
+
+    public IWebRTCClient getWebRTCClient() {
+        return webRTCClient;
+    }
+
+    public String getPublishStreamId() {
+        return streamId;
+    }
     private String roomId;
     private boolean playOnly;
     private boolean bluetoothEnabled = false;

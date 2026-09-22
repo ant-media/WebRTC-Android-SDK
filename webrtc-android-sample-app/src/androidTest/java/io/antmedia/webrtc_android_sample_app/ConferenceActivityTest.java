@@ -70,6 +70,7 @@ public class ConferenceActivityTest {
     private static final String TAG = "ConferenceActivityTest";
     private static final long RECONNECT_TIMEOUT_MS = 90000L;
     private static final long RECONNECT_STATUS_POLL_INTERVAL_MS = 1000L;
+    private static final long RECONNECT_STABILITY_PERIOD_MS = 5000L;
     private static final long STATS_RETRY_DELAY_MS = 1000L;
     private static final int STATS_RETRY_COUNT = 20;
 
@@ -434,12 +435,26 @@ public class ConferenceActivityTest {
         String expectedStatus = ApplicationProvider.getApplicationContext().getString(expectedStatusResId);
         long startTimeMs = SystemClock.elapsedRealtime();
         AtomicReference<String> actualStatus = new AtomicReference<>("<unavailable>");
+        AtomicReference<String> connectionState = new AtomicReference<>("<unavailable>");
+        AtomicReference<Boolean> connectionHealthy = new AtomicReference<>(false);
         String lastLoggedStatus = null;
+        String lastLoggedConnectionState = null;
+        long healthySinceMs = -1;
 
         while (SystemClock.elapsedRealtime() - startTimeMs < timeoutMs) {
             conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
                 TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
                 actualStatus.set(statusView == null ? "<missing view>" : statusView.getText().toString());
+                String publishStreamId = activity.getPublishStreamId();
+                boolean reconnecting = activity.getWebRTCClient().isReconnectionInProgress();
+                boolean publishConnected = publishStreamId != null
+                        && activity.getWebRTCClient().isStreaming(publishStreamId);
+                boolean playConnected = activity.getWebRTCClient().isStreaming(roomName);
+                connectionHealthy.set(!reconnecting && publishConnected && playConnected);
+                connectionState.set("reconnecting=" + reconnecting
+                        + ", publishStreamId=" + publishStreamId
+                        + ", publishConnected=" + publishConnected
+                        + ", playConnected=" + playConnected);
             });
 
             long elapsedMs = SystemClock.elapsedRealtime() - startTimeMs;
@@ -448,9 +463,26 @@ public class ConferenceActivityTest {
                         + actualStatus.get() + "' after " + elapsedMs + " ms");
                 lastLoggedStatus = actualStatus.get();
             }
-            if (expectedStatus.equals(actualStatus.get())) {
+            if (!connectionState.get().equals(lastLoggedConnectionState)) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber + ": connection state changed after "
+                        + elapsedMs + " ms: " + connectionState.get());
+                lastLoggedConnectionState = connectionState.get();
+            }
+
+            boolean healthy = expectedStatus.equals(actualStatus.get()) && connectionHealthy.get();
+            if (healthy && healthySinceMs < 0) {
+                healthySinceMs = SystemClock.elapsedRealtime();
                 Log.i(TAG, "Reconnect stress cycle " + cycleNumber
-                        + ": recovery completed after " + elapsedMs + " ms");
+                        + ": connection is healthy; starting " + RECONNECT_STABILITY_PERIOD_MS
+                        + " ms stability check");
+            } else if (!healthy) {
+                healthySinceMs = -1;
+            }
+
+            if (healthySinceMs >= 0
+                    && SystemClock.elapsedRealtime() - healthySinceMs >= RECONNECT_STABILITY_PERIOD_MS) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                        + ": stable recovery completed after " + elapsedMs + " ms");
                 return;
             }
             Thread.sleep(RECONNECT_STATUS_POLL_INTERVAL_MS);
@@ -458,10 +490,11 @@ public class ConferenceActivityTest {
 
         long elapsedMs = SystemClock.elapsedRealtime() - startTimeMs;
         Log.e(TAG, "Reconnect stress cycle " + cycleNumber + ": timed out after " + elapsedMs
-                + " ms; expected='" + expectedStatus + "', actual='" + actualStatus.get() + "'");
+                + " ms; expected='" + expectedStatus + "', actual='" + actualStatus.get()
+                + "', " + connectionState.get());
         throw new AssertionError("Reconnect stress cycle " + cycleNumber + " did not recover within "
                 + timeoutMs + " ms. Expected status '" + expectedStatus + "' but was '"
-                + actualStatus.get() + "'.");
+                + actualStatus.get() + "'; " + connectionState.get() + ".");
     }
 
     private ViewAction waitForTrackStatsItem() {
