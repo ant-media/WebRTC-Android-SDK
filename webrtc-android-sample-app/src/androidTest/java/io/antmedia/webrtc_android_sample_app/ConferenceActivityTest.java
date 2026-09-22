@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -51,6 +52,7 @@ import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
@@ -65,6 +67,9 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
+    private static final String TAG = "ConferenceActivityTest";
+    private static final long RECONNECT_TIMEOUT_MS = 90000L;
+    private static final long RECONNECT_STATUS_POLL_INTERVAL_MS = 1000L;
     private static final long STATS_RETRY_DELAY_MS = 1000L;
     private static final int STATS_RETRY_COUNT = 20;
 
@@ -403,18 +408,16 @@ public class ConferenceActivityTest {
         for (int cycle = 0; cycle < disconnectDurationsMs.length; cycle++) {
             int cycleNumber = cycle + 1;
             int disconnectDurationMs = disconnectDurationsMs[cycle];
-            Log.i("ConferenceActivityTest", "Reconnect stress cycle " + cycleNumber
+            Log.i(TAG, "Reconnect stress cycle " + cycleNumber
                     + ": disconnecting for " + disconnectDurationMs + " ms");
 
             disconnectInternet();
             Thread.sleep(disconnectDurationMs);
             connectInternet();
 
-            Log.i("ConferenceActivityTest", "Reconnect stress cycle " + cycleNumber
-                    + ": internet restored, waiting for recovery");
-            Thread.sleep(40000);
-            onView(withId(R.id.broadcasting_text_view))
-                    .check(matches(withText(R.string.live)));
+            Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                    + ": internet restored, waiting up to " + RECONNECT_TIMEOUT_MS + " ms for Live");
+            waitForBroadcastStatus(R.string.live, RECONNECT_TIMEOUT_MS, cycleNumber);
         }
 
         onView(withId(R.id.join_conference_button)).perform(click());
@@ -424,6 +427,41 @@ public class ConferenceActivityTest {
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    private void waitForBroadcastStatus(int expectedStatusResId, long timeoutMs, int cycleNumber)
+            throws InterruptedException {
+        String expectedStatus = ApplicationProvider.getApplicationContext().getString(expectedStatusResId);
+        long startTimeMs = SystemClock.elapsedRealtime();
+        AtomicReference<String> actualStatus = new AtomicReference<>("<unavailable>");
+        String lastLoggedStatus = null;
+
+        while (SystemClock.elapsedRealtime() - startTimeMs < timeoutMs) {
+            conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
+                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
+                actualStatus.set(statusView == null ? "<missing view>" : statusView.getText().toString());
+            });
+
+            long elapsedMs = SystemClock.elapsedRealtime() - startTimeMs;
+            if (!actualStatus.get().equals(lastLoggedStatus)) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber + ": status changed to '"
+                        + actualStatus.get() + "' after " + elapsedMs + " ms");
+                lastLoggedStatus = actualStatus.get();
+            }
+            if (expectedStatus.equals(actualStatus.get())) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                        + ": recovery completed after " + elapsedMs + " ms");
+                return;
+            }
+            Thread.sleep(RECONNECT_STATUS_POLL_INTERVAL_MS);
+        }
+
+        long elapsedMs = SystemClock.elapsedRealtime() - startTimeMs;
+        Log.e(TAG, "Reconnect stress cycle " + cycleNumber + ": timed out after " + elapsedMs
+                + " ms; expected='" + expectedStatus + "', actual='" + actualStatus.get() + "'");
+        throw new AssertionError("Reconnect stress cycle " + cycleNumber + " did not recover within "
+                + timeoutMs + " ms. Expected status '" + expectedStatus + "' but was '"
+                + actualStatus.get() + "'.");
     }
 
     private ViewAction waitForTrackStatsItem() {

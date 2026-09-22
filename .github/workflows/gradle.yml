@@ -364,7 +364,7 @@ jobs:
 
           touch emulator.log
           chmod 777 emulator.log
-          adb logcat io.antmedia:I >> emulator.log &
+          adb logcat -v threadtime '*:V' >> emulator.log &
           ./gradlew jacocoTestReport
 
       - name: Archive Test Report
