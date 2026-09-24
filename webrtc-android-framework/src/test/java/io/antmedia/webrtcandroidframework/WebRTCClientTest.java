@@ -728,11 +728,51 @@ public class WebRTCClientTest {
         assertTrue(webRTCClient.isReconnectionInProgress());
     }
 
+    @Test
+    public void testConferenceReconnectWaitsForPlayIceConnection()
+            throws NoSuchFieldException, IllegalAccessException {
+        setPrivateBooleanField("publishReconnectionInProgress", true);
+        setPrivateBooleanField("playReconnectionInProgress", true);
+        setPrivateStringField("roomId", "room1");
+
+        PeerConnection publishConnection = mock(PeerConnection.class);
+        when(publishConnection.iceConnectionState())
+                .thenReturn(PeerConnection.IceConnectionState.CONNECTED);
+        WebRTCClient.PeerInfo publishPeer = new WebRTCClient.PeerInfo(
+                "publishStream", WebRTCClient.Mode.PUBLISH);
+        publishPeer.peerConnection = publishConnection;
+
+        PeerConnection playConnection = mock(PeerConnection.class);
+        when(playConnection.connectionState())
+                .thenReturn(PeerConnection.PeerConnectionState.CONNECTED);
+        when(playConnection.iceConnectionState())
+                .thenReturn(PeerConnection.IceConnectionState.DISCONNECTED);
+        WebRTCClient.PeerInfo playPeer = new WebRTCClient.PeerInfo(
+                "room1", WebRTCClient.Mode.PLAY);
+        playPeer.peerConnection = playConnection;
+
+        webRTCClient.getPeersForTest().put(publishPeer.id, publishPeer);
+        webRTCClient.getPeersForTest().put(playPeer.id, playPeer);
+
+        webRTCClient.onConnected(publishPeer.id);
+
+        assertTrue(webRTCClient.isReconnectionInProgress());
+        assertFalse(webRTCClient.isStreaming(playPeer.id));
+        verify(listener, never()).onReconnectionSuccess();
+    }
+
     private void setPrivateBooleanField(String fieldName, boolean value)
             throws NoSuchFieldException, IllegalAccessException {
         Field field = WebRTCClient.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.setBoolean(webRTCClient, value);
+    }
+
+    private void setPrivateStringField(String fieldName, String value)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = WebRTCClient.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(webRTCClient, value);
     }
 
     @Test

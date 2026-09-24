@@ -1468,11 +1468,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private boolean isAllPeersConnected() {
         for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
             PeerConnection peerConnection = entry.getValue().peerConnection;
-            if(peerConnection == null){
-                return false;
-            }
-            PeerConnection.PeerConnectionState peerConnectionState = peerConnection.connectionState();
-            if(peerConnectionState != PeerConnection.PeerConnectionState.CONNECTED){
+            if (!isPeerConnected(peerConnection)) {
                 return false;
             }
         }
@@ -1496,11 +1492,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private boolean isPublishConnected(){
         for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
             PeerConnection peerConnection = entry.getValue().peerConnection;
-            if(peerConnection == null){
-                return false;
-            }
-            PeerConnection.PeerConnectionState peerConnectionState = peerConnection.connectionState();
-            if(entry.getValue().mode == Mode.PUBLISH && peerConnectionState != PeerConnection.PeerConnectionState.CONNECTED){
+            if (entry.getValue().mode == Mode.PUBLISH && !isPeerConnected(peerConnection)) {
                 return false;
             }
         }
@@ -1510,11 +1502,7 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
     private boolean isPlayConnected(){
         for (Map.Entry<String, PeerInfo> entry : peers.entrySet()) {
             PeerConnection peerConnection = entry.getValue().peerConnection;
-            if(peerConnection == null){
-                return false;
-            }
-            PeerConnection.PeerConnectionState peerConnectionState = peerConnection.connectionState();
-            if(entry.getValue().mode == Mode.PLAY && peerConnectionState != PeerConnection.PeerConnectionState.CONNECTED){
+            if (entry.getValue().mode == Mode.PLAY && !isPeerConnected(peerConnection)) {
                 return false;
             }
         }
@@ -1569,7 +1557,16 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
     public boolean isStreaming(String streamId) {
         PeerConnection pc = getPeerConnectionFor(streamId);
-        return pc != null && pc.iceConnectionState().equals(PeerConnection.IceConnectionState.CONNECTED);
+        return isPeerConnected(pc);
+    }
+
+    private boolean isPeerConnected(PeerConnection peerConnection) {
+        if (peerConnection == null) {
+            return false;
+        }
+        PeerConnection.IceConnectionState iceConnectionState = peerConnection.iceConnectionState();
+        return iceConnectionState == PeerConnection.IceConnectionState.CONNECTED
+                || iceConnectionState == PeerConnection.IceConnectionState.COMPLETED;
     }
 
     @Override
