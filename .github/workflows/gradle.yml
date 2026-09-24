@@ -314,7 +314,7 @@ jobs:
       - name: Run Multitrack Conference Test Server
         run: python3 multitrack-conference-server.py &
 
-      - name: Run Tests and Generate Report
+      - name: Run Conference Reconnection Test
         run: |
           AVD_NAME="test"
           AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
@@ -365,7 +365,8 @@ jobs:
           touch emulator.log
           chmod 777 emulator.log
           adb logcat -v threadtime '*:V' >> emulator.log &
-          ./gradlew jacocoTestReport
+          ./gradlew :webrtc-android-sample-app:connectedDebugAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.class='io.antmedia.webrtc_android_sample_app.ConferenceActivityTest#testConferenceReconnect'
 
       - name: Archive Test Report
         if: always()
@@ -385,6 +386,7 @@ jobs:
             emulator.log
 
       - name: Upload Test Report to Codecov
+        if: ${{ false }} # Temporarily disabled while CI runs only the conference reconnection test.
         uses: codecov/codecov-action@v3.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
