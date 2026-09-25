@@ -373,11 +373,18 @@ public class WebRTCClient implements IWebRTCClient, AntMediaSignallingEvents {
 
             for (PeerInfo peerInfo : peers.values()) {
                 PeerConnection pc = peerInfo.peerConnection;
-                if (pc == null ||
+                boolean forceReconnect = (peerInfo.mode == Mode.PUBLISH && forcePublishReconnection)
+                        || (peerInfo.mode == Mode.PLAY && forcePlayReconnection);
+                if (forceReconnect || pc == null ||
                         (pc.iceConnectionState() != PeerConnection.IceConnectionState.CHECKING
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.CONNECTED
                                 && pc.iceConnectionState() != PeerConnection.IceConnectionState.COMPLETED)) {
 
+                    if (peerInfo.mode == Mode.PUBLISH) {
+                        forcePublishReconnection = false;
+                    } else if (peerInfo.mode == Mode.PLAY) {
+                        forcePlayReconnection = false;
+                    }
 
                     if (pc != null) {
                         pc.close();

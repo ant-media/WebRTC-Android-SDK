@@ -761,6 +761,27 @@ public class WebRTCClientTest {
         verify(listener, never()).onReconnectionSuccess();
     }
 
+    @Test
+    public void testWebSocketDisconnectForcesPublishReconnectWhenIceIsConnected() {
+        webRTCClient.createReconnectorRunnables();
+        webRTCClient.setPeerReconnectionHandler(getMockHandler());
+
+        PeerConnection publishConnection = mock(PeerConnection.class);
+        when(publishConnection.iceConnectionState())
+                .thenReturn(PeerConnection.IceConnectionState.CONNECTED);
+        WebRTCClient.PeerInfo publishPeer = new WebRTCClient.PeerInfo(
+                "publishStream", WebRTCClient.Mode.PUBLISH);
+        publishPeer.peerConnection = publishConnection;
+        webRTCClient.getPeersForTest().put(publishPeer.id, publishPeer);
+
+        webRTCClient.onWebSocketDisconnected();
+
+        verify(wsHandler, timeout(WebRTCClient.PEER_RECONNECTION_DELAY_MS + 1000))
+                .startPublish(eq(publishPeer.id), anyString(), anyBoolean(), anyBoolean(),
+                        anyString(), anyString(), anyString(), any());
+        webRTCClient.stop(publishPeer.id);
+    }
+
     private void setPrivateBooleanField(String fieldName, boolean value)
             throws NoSuchFieldException, IllegalAccessException {
         Field field = WebRTCClient.class.getDeclaredField(fieldName);
