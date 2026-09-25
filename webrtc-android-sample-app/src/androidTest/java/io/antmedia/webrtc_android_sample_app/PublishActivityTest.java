@@ -11,6 +11,8 @@ import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.SystemClock;
+import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
@@ -39,6 +41,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class PublishActivityTest {
+    private static final long STOP_TIMEOUT_MS = 10000;
     private IdlingResource mIdlingResource;
 
     @Rule
@@ -127,10 +130,7 @@ public class PublishActivityTest {
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
+        waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
@@ -155,13 +155,32 @@ public class PublishActivityTest {
 
         onView(withId(R.id.start_streaming_button)).perform(click());
 
-        Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
+        waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
 
         IdlingRegistry.getInstance().unregister(mIdlingResource);
 
+    }
+
+    private void waitForBroadcastStatus(ActivityScenario<PublishActivity> scenario,
+                                        int expectedStatusResId, long timeoutMs)
+            throws InterruptedException {
+        String expectedStatus = ApplicationProvider.getApplicationContext().getString(expectedStatusResId);
+        long startTimeMs = SystemClock.elapsedRealtime();
+        String[] actualStatus = {"<unavailable>"};
+
+        while (SystemClock.elapsedRealtime() - startTimeMs < timeoutMs) {
+            scenario.onActivity(activity -> {
+                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
+                actualStatus[0] = statusView == null ? "<missing view>" : statusView.getText().toString();
+            });
+            if (expectedStatus.equals(actualStatus[0])) {
+                return;
+            }
+            Thread.sleep(250);
+        }
+
+        onView(withId(R.id.broadcasting_text_view))
+                .check(matches(withText(expectedStatusResId)));
     }
 
     private void disconnectInternet() throws IOException {
