@@ -24,6 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,6 +43,7 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
 @RunWith(AndroidJUnit4.class)
 public class PublishActivityTest {
     private static final long STOP_TIMEOUT_MS = 10000;
+    private static final long STOP_SETTLE_DELAY_MS = 3000;
     private IdlingResource mIdlingResource;
 
     @Rule
@@ -52,6 +54,14 @@ public class PublishActivityTest {
     @Before
     public void before() throws IOException {
         connectInternet();
+    }
+
+    @After
+    public void unregisterIdlingResource() {
+        if (mIdlingResource != null) {
+            IdlingRegistry.getInstance().unregister(mIdlingResource);
+            mIdlingResource = null;
+        }
     }
 
     @Rule
@@ -90,8 +100,6 @@ public class PublishActivityTest {
 
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
     }
 
     @Test
@@ -132,6 +140,10 @@ public class PublishActivityTest {
 
         waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
 
+        // onPublishFinished updates the status before peer teardown has necessarily completed.
+        // Let teardown settle before publishing the same stream id again.
+        Thread.sleep(STOP_SETTLE_DELAY_MS);
+
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         Thread.sleep(10000);
@@ -156,8 +168,6 @@ public class PublishActivityTest {
         onView(withId(R.id.start_streaming_button)).perform(click());
 
         waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
 
     }
 
