@@ -48,11 +48,14 @@ public class DefaultConferenceWebRTCListener extends DefaultWebRTCListener {
     public void onPublishStarted(String streamId) {
         super.onPublishStarted(streamId);
 
-        if (publishReconnecting) {
+        if (publishReconnecting || webRTCClient.isReconnectionInProgress()) {
             publishReconnecting = false;
+            return;
         }
 
-        webRTCClient.play(roomId);
+        if (!playStarted) {
+            webRTCClient.play(roomId);
+        }
 
     }
 

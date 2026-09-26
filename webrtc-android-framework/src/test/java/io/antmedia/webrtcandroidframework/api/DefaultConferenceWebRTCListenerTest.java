@@ -226,13 +226,15 @@ public class DefaultConferenceWebRTCListenerTest{
         //playStarted false, but play should not be called because publish is reconnecting state
         defaultWebRTCListener.onReconnectionAttempt(streamId);
         assertTrue(defaultWebRTCListener.isPublishReconnectingForTest());
+        when(mockWebRTCClient.isReconnectionInProgress()).thenReturn(true);
         defaultWebRTCListener.onPublishStarted(streamId);
-        verify(mockWebRTCClient, times(2)).play(roomId);
+        verify(mockWebRTCClient, times(1)).play(roomId);
 
         //playStarted will be true, so play should not be called
+        when(mockWebRTCClient.isReconnectionInProgress()).thenReturn(false);
         defaultWebRTCListener.onPlayStarted(roomId);
         defaultWebRTCListener.onPublishStarted(streamId);
-        verify(mockWebRTCClient, times(3)).play(roomId);
+        verify(mockWebRTCClient, times(1)).play(roomId);
     }
     @Test
     public void testOnPeerConnectionCreated() {
