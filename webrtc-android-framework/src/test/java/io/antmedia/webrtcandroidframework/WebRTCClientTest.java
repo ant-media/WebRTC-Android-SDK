@@ -713,10 +713,16 @@ public class WebRTCClientTest {
     }
 
     @Test
-    public void testReconnectStateIsNotClearedBySignallingCallbacks()
-            throws NoSuchFieldException, IllegalAccessException {
-        setPrivateBooleanField("publishReconnectionInProgress", true);
-        setPrivateBooleanField("playReconnectionInProgress", true);
+    public void testReconnectStateIsNotClearedBySignallingCallbacks() {
+        webRTCClient.setPeerReconnectionHandler(mock(Handler.class));
+        WebRTCClient.PeerInfo publishPeer = new WebRTCClient.PeerInfo(
+                "publishStreamId", WebRTCClient.Mode.PUBLISH);
+        WebRTCClient.PeerInfo playPeer = new WebRTCClient.PeerInfo(
+                "playStreamId", WebRTCClient.Mode.PLAY);
+        webRTCClient.getPeersForTest().put(publishPeer.id, publishPeer);
+        webRTCClient.getPeersForTest().put(playPeer.id, playPeer);
+        webRTCClient.rePublishPlay(publishPeer.id);
+        webRTCClient.rePublishPlay(playPeer.id);
 
         webRTCClient.onPublishStarted("publishStreamId");
         assertTrue(webRTCClient.isReconnectionInProgress());
@@ -731,8 +737,6 @@ public class WebRTCClientTest {
     @Test
     public void testConferenceReconnectWaitsForPlayIceConnection()
             throws NoSuchFieldException, IllegalAccessException {
-        setPrivateBooleanField("publishReconnectionInProgress", true);
-        setPrivateBooleanField("playReconnectionInProgress", true);
         setPrivateStringField("roomId", "room1");
 
         PeerConnection publishConnection = mock(PeerConnection.class);
@@ -753,6 +757,8 @@ public class WebRTCClientTest {
 
         webRTCClient.getPeersForTest().put(publishPeer.id, publishPeer);
         webRTCClient.getPeersForTest().put(playPeer.id, playPeer);
+        webRTCClient.rePublishPlay(publishPeer.id);
+        webRTCClient.rePublishPlay(playPeer.id);
 
         webRTCClient.onConnected(publishPeer.id);
 
@@ -780,13 +786,6 @@ public class WebRTCClientTest {
                 .startPublish(eq(publishPeer.id), anyString(), anyBoolean(), anyBoolean(),
                         anyString(), anyString(), anyString(), any());
         webRTCClient.stop(publishPeer.id);
-    }
-
-    private void setPrivateBooleanField(String fieldName, boolean value)
-            throws NoSuchFieldException, IllegalAccessException {
-        Field field = WebRTCClient.class.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.setBoolean(webRTCClient, value);
     }
 
     private void setPrivateStringField(String fieldName, String value)
