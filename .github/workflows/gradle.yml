@@ -136,6 +136,140 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
+      - name: Configure Android SDK environment
+        run: |
+          SDK_VERSION="13114758"
+          SDK_ARCHIVE="$RUNNER_TEMP/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+          SDK_TMP="$RUNNER_TEMP/android-command-line-tools"
+          SDK_MIRROR="https://redirector.gvt1.com/edgedl/android/repository"
+          mkdir -p /home/ubuntu/android/cmdline-tools/latest "$SDK_TMP"
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "$SDK_ARCHIVE" \
+            "$SDK_MIRROR/commandlinetools-linux-${SDK_VERSION}_latest.zip"
+          unzip -q -o "$SDK_ARCHIVE" -d "$SDK_TMP"
+          cp -a "$SDK_TMP/cmdline-tools/." /home/ubuntu/android/cmdline-tools/latest/
+
+          install_android_package() {
+            local archive_name="$1"
+            local destination="$2"
+            local remote_path="${3:-$archive_name}"
+            local source_dir="$4"
+            local archive="$RUNNER_TEMP/$archive_name"
+            local extract_dir="$RUNNER_TEMP/${archive_name%.zip}"
+            mkdir -p "$extract_dir" "/home/ubuntu/android/$destination"
+            curl --fail --location --retry 5 --retry-all-errors \
+              --output "$archive" "$SDK_MIRROR/$remote_path"
+            unzip -q -o "$archive" -d "$extract_dir"
+            test -d "$extract_dir/$source_dir"
+            cp -a "$extract_dir/$source_dir/." "/home/ubuntu/android/$destination/"
+          }
+
+          install_android_package "platform-tools_r37.0.1-linux.zip" "platform-tools" "platform-tools_r37.0.1-linux.zip" "platform-tools"
+          install_android_package "build-tools_r34-linux.zip" "build-tools/34.0.0" "build-tools_r34-linux.zip" "android-14"
+          install_android_package "build-tools_r30.0.3-linux.zip" "build-tools/30.0.3" "build-tools_r30.0.3-linux.zip" "android-11"
+          install_android_package "platform-30_r03.zip" "platforms/android-30" "platform-30_r03.zip" "android-11"
+          install_android_package "platform-34-ext7_r03.zip" "platforms/android-34" "platform-34-ext7_r03.zip" "android-34"
+          install_android_package "emulator-linux_x64-15917651.zip" "emulator" "emulator-linux_x64-15917651.zip" "emulator"
+          install_android_package "x86_64-30_r11.zip" "system-images/android-30/default/x86_64" "sys-img/android/x86_64-30_r11.zip" "x86_64"
+
+          register_android_package() {
+            local destination="$1"
+            local package_path="$2"
+            local version="$3"
+            cat > "/home/ubuntu/android/$destination/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:generic="http://schemas.android.com/repository/android/generic/02">
+            <localPackage path="$package_path" obsolete="false">
+              <type-details xsi:type="generic:genericDetailsType"/>
+              <revision><major>$version</major></revision>
+              <display-name>$package_path</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+          }
+
+          register_android_package "platform-tools" "platform-tools" "37"
+          register_android_package "build-tools/34.0.0" "build-tools;34.0.0" "34"
+          register_android_package "emulator" "emulator" "36"
+          cat > "/home/ubuntu/android/build-tools/30.0.3/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:generic="http://schemas.android.com/repository/android/generic/02">
+            <localPackage path="build-tools;30.0.3" obsolete="false">
+              <type-details xsi:type="generic:genericDetailsType"/>
+              <revision><major>30</major><minor>0</minor><micro>3</micro></revision>
+              <display-name>Android SDK Build-Tools 30.0.3</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+          cat > "/home/ubuntu/android/platforms/android-30/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/03">
+            <localPackage path="platforms;android-30" obsolete="false">
+              <type-details xsi:type="sdk:platformDetailsType">
+                <api-level>30</api-level>
+                <codename/>
+                <base-extension>true</base-extension>
+                <layoutlib api="15"/>
+              </type-details>
+              <revision><major>3</major></revision>
+              <display-name>Android SDK Platform 30</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+          cat > "/home/ubuntu/android/platforms/android-34/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/03">
+            <localPackage path="platforms;android-34" obsolete="false">
+              <type-details xsi:type="sdk:platformDetailsType">
+                <api-level>34</api-level>
+                <codename/>
+                <base-extension>true</base-extension>
+                <layoutlib api="15"/>
+              </type-details>
+              <revision><major>3</major></revision>
+              <display-name>Android SDK Platform 34</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+          cat > "/home/ubuntu/android/system-images/android-30/default/x86_64/package.xml" <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <ns2:repository xmlns:ns2="http://schemas.android.com/repository/android/common/02"
+                          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                          xmlns:sys-img="http://schemas.android.com/sdk/android/repo/sys-img2/04">
+            <localPackage path="system-images;android-30;default;x86_64" obsolete="false">
+              <type-details xsi:type="sys-img:sysImgDetailsType">
+                <api-level>30</api-level>
+                <tag><id>default</id><display>Default Android System Image</display></tag>
+                <abi>x86_64</abi>
+              </type-details>
+              <revision><major>11</major></revision>
+              <display-name>Intel x86_64 Atom System Image</display-name>
+            </localPackage>
+          </ns2:repository>
+          EOF
+
+          mkdir -p /home/ubuntu/android/licenses
+          printf '%s\n' \
+            '8933bad161af4178b1185d1a37fbf41ea5269c55' \
+            'd56f5187479451eabf01fb78af6dfcb131a6481e' \
+            '24333f8a63b6825ea9c5514f83c2829b004d1fee' \
+            > /home/ubuntu/android/licenses/android-sdk-license
+
+          echo "ANDROID_HOME=/home/ubuntu/android" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=/home/ubuntu/android" >> "$GITHUB_ENV"
+          echo "/home/ubuntu/android/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "/home/ubuntu/android/platform-tools" >> "$GITHUB_PATH"
+          echo "/home/ubuntu/android/emulator" >> "$GITHUB_PATH"
+          test -x /home/ubuntu/android/cmdline-tools/latest/bin/sdkmanager
+          /home/ubuntu/android/cmdline-tools/latest/bin/sdkmanager --version
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -181,21 +315,57 @@ jobs:
         run: python3 multitrack-conference-server.py &
 
       - name: Run Tests and Generate Report
-        uses: reactivecircus/android-emulator-runner@v2.32.0
-        with:
-          api-level: 30
-          target: default
-          arch: x86_64
-          emulator-build: 9322596 #31.3.14.0 It can be get by running -> ./emulator -version
-          force-avd-creation: false
-          disable-animations: true
-          cores: 3
-          emulator-options: -no-snapshot-save -gpu swiftshader_indirect -no-window -noaudio -no-boot-anim
-          script: |
-            touch emulator.log               
-            chmod 777 emulator.log
-            adb logcat io.antmedia:I >> emulator.log &
-            ./gradlew jacocoTestReport; EXIT_CODE=$?; exit $EXIT_CODE
+        run: |
+          AVD_NAME="test"
+          AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
+          mkdir -p "$AVD_DIR"
+          cat > "$HOME/.android/avd/${AVD_NAME}.ini" <<EOF
+          avd.ini.encoding=UTF-8
+          path=$AVD_DIR
+          path.rel=avd/${AVD_NAME}.avd
+          target=android-30
+          EOF
+          cat > "$AVD_DIR/config.ini" <<EOF
+          AvdId=$AVD_NAME
+          PlayStore.enabled=false
+          abi.type=x86_64
+          avd.ini.displayname=$AVD_NAME
+          avd.ini.encoding=UTF-8
+          disk.dataPartition.size=2G
+          fastboot.forceColdBoot=yes
+          hw.cpu.arch=x86_64
+          hw.cpu.ncore=3
+          hw.gpu.enabled=yes
+          hw.gpu.mode=swiftshader_indirect
+          hw.keyboard=yes
+          hw.lcd.density=420
+          hw.lcd.height=1920
+          hw.lcd.width=1080
+          hw.ramSize=2048
+          image.sysdir.1=system-images/android-30/default/x86_64/
+          runtime.network.latency=none
+          runtime.network.speed=full
+          showDeviceFrame=no
+          skin.dynamic=yes
+          tag.display=Default Android System Image
+          tag.id=default
+          vm.heapSize=256
+          EOF
+
+          emulator -avd "$AVD_NAME" -no-snapshot-save -gpu swiftshader_indirect \
+            -no-window -noaudio -no-boot-anim > emulator-start.log 2>&1 &
+          EMULATOR_PID=$!
+          trap 'adb emu kill >/dev/null 2>&1 || kill "$EMULATOR_PID" >/dev/null 2>&1 || true' EXIT
+          timeout 120 adb wait-for-device
+          timeout 600 bash -c 'until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 5; done'
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+          touch emulator.log
+          chmod 777 emulator.log
+          adb logcat -v threadtime '*:V' >> emulator.log &
+          ./gradlew jacocoTestReport
 
       - name: Archive Test Report
         if: always()

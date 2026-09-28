@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -51,6 +52,7 @@ import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.antmedia.webrtc_android_sample_app.advanced.ConferenceActivityWithDifferentVideoSources;
 import io.antmedia.webrtc_android_sample_app.basic.ConferenceActivity;
@@ -65,6 +67,10 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class ConferenceActivityTest {
+    private static final String TAG = "ConferenceActivityTest";
+    private static final long RECONNECT_TIMEOUT_MS = 90000L;
+    private static final long RECONNECT_STATUS_POLL_INTERVAL_MS = 1000L;
+    private static final long RECONNECT_STABILITY_PERIOD_MS = 5000L;
     private static final long STATS_RETRY_DELAY_MS = 1000L;
     private static final int STATS_RETRY_COUNT = 20;
 
@@ -396,92 +402,99 @@ public class ConferenceActivityTest {
         RemoteConferenceParticipant participant = RemoteConferenceParticipant.addConferenceParticipant(roomName, runningTest);
 
         Thread.sleep(10000);
-
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.live)));
 
-        disconnectInternet();
+        int[] disconnectDurationsMs = {1000, 3000, 5000, 7000, 10000, 1000, 3000, 5000, 7000, 10000};
+        for (int cycle = 0; cycle < disconnectDurationsMs.length; cycle++) {
+            int cycleNumber = cycle + 1;
+            int disconnectDurationMs = disconnectDurationsMs[cycle];
+            Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                    + ": disconnecting for " + disconnectDurationMs + " ms");
 
-        Thread.sleep(10000);
+            disconnectInternet();
+            Thread.sleep(disconnectDurationMs);
+            connectInternet();
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
-
-        connectInternet();
-
-        Thread.sleep(40000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        onView(withId(R.id.show_stats_button)).perform(click());
-
-        Thread.sleep(5000);
-
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
-
-        Thread.sleep(5000);
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview)).inRoot(isDialog()).check(matches(isDisplayed()));
-
-        onView(withId(R.id.multitrack_stats_popup_play_stats_video_track_recyclerview))
-                .perform(waitForTrackStatsItem())
-                .check((view, noViewFoundException) -> {
-                    if (noViewFoundException != null) {
-                        throw noViewFoundException;
-                    }
-                    TextView textView1 = requireFirstTrackStatTextView((RecyclerView) view);
-                    int bytesReceived = Integer.parseInt(( textView1).getText().toString());
-                    assertTrue(bytesReceived > 0);
-
-                });
-
-        onView(withId(R.id. stats_popup_container)).perform(swipeUp());
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.multitrack_stats_popup_close_button)).perform(click());
-
-        Thread.sleep(5000);
+            Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                    + ": internet restored, waiting up to " + RECONNECT_TIMEOUT_MS + " ms for Live");
+            waitForBroadcastStatus(R.string.live, RECONNECT_TIMEOUT_MS, cycleNumber);
+        }
 
         onView(withId(R.id.join_conference_button)).perform(click());
-
         Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
-
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        disconnectInternet();
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
-
-        connectInternet();
-
-        Thread.sleep(40000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.join_conference_button)).perform(click());
-
-        Thread.sleep(3000);
-
         onView(withId(R.id.broadcasting_text_view))
                 .check(matches(withText(R.string.disconnected)));
 
         participant.leave();
         IdlingRegistry.getInstance().unregister(mIdlingResource);
+    }
+
+    private void waitForBroadcastStatus(int expectedStatusResId, long timeoutMs, int cycleNumber)
+            throws InterruptedException {
+        String expectedStatus = ApplicationProvider.getApplicationContext().getString(expectedStatusResId);
+        long startTimeMs = SystemClock.elapsedRealtime();
+        AtomicReference<String> actualStatus = new AtomicReference<>("<unavailable>");
+        AtomicReference<String> connectionState = new AtomicReference<>("<unavailable>");
+        AtomicReference<Boolean> connectionHealthy = new AtomicReference<>(false);
+        String lastLoggedStatus = null;
+        String lastLoggedConnectionState = null;
+        long healthySinceMs = -1;
+
+        while (SystemClock.elapsedRealtime() - startTimeMs < timeoutMs) {
+            conferenceActivityScenarioRule.getScenario().onActivity(activity -> {
+                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
+                actualStatus.set(statusView == null ? "<missing view>" : statusView.getText().toString());
+                String publishStreamId = activity.getPublishStreamId();
+                boolean reconnecting = activity.getWebRTCClient().isReconnectionInProgress();
+                boolean publishConnected = publishStreamId != null
+                        && activity.getWebRTCClient().isStreaming(publishStreamId);
+                boolean playConnected = activity.getWebRTCClient().isStreaming(roomName);
+                connectionHealthy.set(!reconnecting && publishConnected && playConnected);
+                connectionState.set("reconnecting=" + reconnecting
+                        + ", publishStreamId=" + publishStreamId
+                        + ", publishConnected=" + publishConnected
+                        + ", playConnected=" + playConnected);
+            });
+
+            long elapsedMs = SystemClock.elapsedRealtime() - startTimeMs;
+            if (!actualStatus.get().equals(lastLoggedStatus)) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber + ": status changed to '"
+                        + actualStatus.get() + "' after " + elapsedMs + " ms");
+                lastLoggedStatus = actualStatus.get();
+            }
+            if (!connectionState.get().equals(lastLoggedConnectionState)) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber + ": connection state changed after "
+                        + elapsedMs + " ms: " + connectionState.get());
+                lastLoggedConnectionState = connectionState.get();
+            }
+
+            boolean healthy = expectedStatus.equals(actualStatus.get()) && connectionHealthy.get();
+            if (healthy && healthySinceMs < 0) {
+                healthySinceMs = SystemClock.elapsedRealtime();
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                        + ": connection is healthy; starting " + RECONNECT_STABILITY_PERIOD_MS
+                        + " ms stability check");
+            } else if (!healthy) {
+                healthySinceMs = -1;
+            }
+
+            if (healthySinceMs >= 0
+                    && SystemClock.elapsedRealtime() - healthySinceMs >= RECONNECT_STABILITY_PERIOD_MS) {
+                Log.i(TAG, "Reconnect stress cycle " + cycleNumber
+                        + ": stable recovery completed after " + elapsedMs + " ms");
+                return;
+            }
+            Thread.sleep(RECONNECT_STATUS_POLL_INTERVAL_MS);
+        }
+
+        long elapsedMs = SystemClock.elapsedRealtime() - startTimeMs;
+        Log.e(TAG, "Reconnect stress cycle " + cycleNumber + ": timed out after " + elapsedMs
+                + " ms; expected='" + expectedStatus + "', actual='" + actualStatus.get()
+                + "', " + connectionState.get());
+        throw new AssertionError("Reconnect stress cycle " + cycleNumber + " did not recover within "
+                + timeoutMs + " ms. Expected status '" + expectedStatus + "' but was '"
+                + actualStatus.get() + "'; " + connectionState.get() + ".");
     }
 
     private ViewAction waitForTrackStatsItem() {

@@ -127,6 +127,19 @@ public class WebSocketHandler implements WebSocket.WebSocketConnectionObserver {
         Log.d(TAG, "Disconnecting WebSocket done.");
     }
 
+    public void reconnect() {
+        checkIfCalledOnValidThread();
+        if (wsServerUrl == null || wsServerUrl.isBlank()) {
+            return;
+        }
+
+        Log.d(TAG, "Recreating WebSocket connection.");
+        if (ws != null) {
+            ws.disconnect();
+        }
+        connect(wsServerUrl);
+    }
+
     public void checkIfCalledOnValidThread() {
         if (Thread.currentThread() != handler.getLooper().getThread()) {
             throw new IllegalStateException("WebSocket method is not called on valid thread");

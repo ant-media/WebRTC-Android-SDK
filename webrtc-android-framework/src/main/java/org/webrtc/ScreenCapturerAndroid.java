@@ -136,8 +136,10 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   }
 
   @Override
-  public synchronized void stopCapture() {
+  public void stopCapture() {
     checkNotDisposed();
+    // Do not hold the capturer monitor while waiting for the SurfaceTextureHelper thread.
+    // onFrame() may already be running there and enter synchronized changeCaptureFormat().
     ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
       @Override
       public void run() {

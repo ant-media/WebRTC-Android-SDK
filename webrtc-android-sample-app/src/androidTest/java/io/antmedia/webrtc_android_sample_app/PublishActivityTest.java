@@ -1,23 +1,16 @@
 package io.antmedia.webrtc_android_sample_app;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.Assert.assertEquals;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.SystemClock;
+import android.widget.TextView;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.espresso.Espresso;
-import androidx.test.espresso.IdlingRegistry;
-import androidx.test.espresso.IdlingResource;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.uiautomator.UiDevice;
@@ -39,7 +32,9 @@ import io.antmedia.webrtcandroidframework.core.PermissionHandler;
  */
 @RunWith(AndroidJUnit4.class)
 public class PublishActivityTest {
-    private IdlingResource mIdlingResource;
+    private static final long STOP_TIMEOUT_MS = 10000;
+    private static final long STOP_SETTLE_DELAY_MS = 3000;
+    private static final long CONNECTION_TIMEOUT_MS = 60000;
 
     @Rule
     public GrantPermissionRule permissionRule
@@ -62,33 +57,17 @@ public class PublishActivityTest {
     }
 
     @Test
-    public void testPublishing() {
+    public void testPublishing() throws InterruptedException {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> {
-            mIdlingResource = activity.getIdlingResource();
-            IdlingRegistry.getInstance().register(mIdlingResource);
-            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        });
+        scenario.onActivity(activity ->
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
 
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
-        Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Stop")));
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.connecting), withText(R.string.live))));
-
-
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
+        clickStartStopButton(scenario);
+        waitForBroadcastStatus(scenario, R.string.live, CONNECTION_TIMEOUT_MS);
+        clickStartStopButton(scenario);
+        waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
     }
 
     @Test
@@ -96,72 +75,80 @@ public class PublishActivityTest {
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), PublishActivity.class);
         ActivityScenario<PublishActivity> scenario = ActivityScenario.launch(intent);
 
-        scenario.onActivity(activity -> {
-            mIdlingResource = activity.getIdlingResource();
-            IdlingRegistry.getInstance().register(mIdlingResource);
-            activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS));
-        });
+        scenario.onActivity(activity ->
+                activity.sendBroadcast(new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)));
 
-        onView(withId(R.id.start_streaming_button)).check(matches(withText("Start")));
-        Espresso.closeSoftKeyboard();
-        onView(withId(R.id.start_streaming_button)).perform(click());
+        clickStartStopButton(scenario);
+        waitForBroadcastStatus(scenario, R.string.live, CONNECTION_TIMEOUT_MS);
 
-        Thread.sleep(10000);
+        reconnectAndWaitUntilLive(scenario);
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
+        clickStartStopButton(scenario);
 
+        waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
+
+        // onPublishFinished updates the status before peer teardown has necessarily completed.
+        // Let teardown settle before publishing the same stream id again.
+        Thread.sleep(STOP_SETTLE_DELAY_MS);
+
+        clickStartStopButton(scenario);
+        waitForBroadcastStatus(scenario, R.string.live, CONNECTION_TIMEOUT_MS);
+
+        reconnectAndWaitUntilLive(scenario);
+
+        clickStartStopButton(scenario);
+
+        waitForBroadcastStatus(scenario, R.string.disconnected, STOP_TIMEOUT_MS);
+
+    }
+
+    private void reconnectAndWaitUntilLive(ActivityScenario<PublishActivity> scenario)
+            throws IOException, InterruptedException {
         disconnectInternet();
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
+        waitForAnyBroadcastStatus(scenario, CONNECTION_TIMEOUT_MS,
+                R.string.disconnected, R.string.reconnecting);
 
         connectInternet();
+        waitForBroadcastStatus(scenario, R.string.live, CONNECTION_TIMEOUT_MS);
+    }
 
-        Thread.sleep(40000);
+    private void clickStartStopButton(ActivityScenario<PublishActivity> scenario) {
+        scenario.onActivity(activity ->
+                activity.findViewById(R.id.start_streaming_button).performClick());
+    }
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
+    private void waitForBroadcastStatus(ActivityScenario<PublishActivity> scenario,
+                                        int expectedStatusResId, long timeoutMs)
+            throws InterruptedException {
+        waitForAnyBroadcastStatus(scenario, timeoutMs, expectedStatusResId);
+    }
 
-        onView(withId(R.id.start_streaming_button)).perform(click());
+    private void waitForAnyBroadcastStatus(ActivityScenario<PublishActivity> scenario,
+                                           long timeoutMs, int... expectedStatusResIds)
+            throws InterruptedException {
+        Context context = ApplicationProvider.getApplicationContext();
+        String[] expectedStatuses = new String[expectedStatusResIds.length];
+        for (int i = 0; i < expectedStatusResIds.length; i++) {
+            expectedStatuses[i] = context.getString(expectedStatusResIds[i]);
+        }
+        long startTimeMs = SystemClock.elapsedRealtime();
+        String[] actualStatus = {"<unavailable>"};
 
-        Thread.sleep(3000);
+        while (SystemClock.elapsedRealtime() - startTimeMs < timeoutMs) {
+            scenario.onActivity(activity -> {
+                TextView statusView = activity.findViewById(R.id.broadcasting_text_view);
+                actualStatus[0] = statusView == null ? "<missing view>" : statusView.getText().toString();
+            });
+            for (String expectedStatus : expectedStatuses) {
+                if (expectedStatus.equals(actualStatus[0])) {
+                    return;
+                }
+            }
+            Thread.sleep(250);
+        }
 
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
-
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        disconnectInternet();
-
-        Thread.sleep(10000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(anyOf(withText(R.string.disconnected), withText(R.string.reconnecting))));
-
-        connectInternet();
-
-        Thread.sleep(40000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.live)));
-
-        onView(withId(R.id.start_streaming_button)).perform(click());
-
-        Thread.sleep(3000);
-
-        onView(withId(R.id.broadcasting_text_view))
-                .check(matches(withText(R.string.disconnected)));
-
-        IdlingRegistry.getInstance().unregister(mIdlingResource);
-
+        throw new AssertionError("Timed out waiting for broadcast status "
+                + java.util.Arrays.toString(expectedStatuses) + "; last status was " + actualStatus[0]);
     }
 
     private void disconnectInternet() throws IOException {
