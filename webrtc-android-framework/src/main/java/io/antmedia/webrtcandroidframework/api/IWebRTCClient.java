@@ -195,6 +195,22 @@ public interface IWebRTCClient {
     void setAudioEnabled(boolean enabled);
 
     /**
+     * Disable black frame sender when video is toggled off via toggleSendVideo(false).
+     * When true, no black frames will be sent when the camera is turned off during a call.
+     *
+     * @param disable true to disable black frame sender, false to enable (default)
+     */
+    void setDisableBlackFrameSender(boolean disable);
+
+    /**
+     * Disable silence packets when audio is muted via toggleSendAudio(false).
+     * When true, RTP transmission is stopped when muted (no silence packets sent).
+     *
+     * @param disable true to stop RTP when muted, false for default behavior (sends silence)
+     */
+    void setDisableSilenceWhenMuted(boolean disable);
+
+    /**
      * enable/disable played track stream from the server
      *
      * @param streamId      id for the main track
